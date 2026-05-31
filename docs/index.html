@@ -284,13 +284,9 @@ footer {
       📍 Malaga + Ellenbrook &nbsp;·&nbsp; Perth, WA &nbsp;·&nbsp; $11.95/week, no lock-in
     </div>
   </div>
-  <div style="display:flex;gap:8px;">
-    <a href="team.html" style="color:rgba(255,255,255,0.8);text-decoration:none;font-size:13px;padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);">✅ Actions</a>
-    <a href="planner.html" style="color:rgba(255,255,255,0.8);text-decoration:none;font-size:13px;padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);">📅 Planner</a>
-  </div>
   <div class="header-meta">
-    <div>Updated: <strong>31 May 2026, 06:48 UTC</strong></div>
-    <div>Data refresh: 2026-05-30T07:33:45.322127Z</div>
+    <div>Updated: <strong>31 May 2026, 12:19 UTC</strong></div>
+    <div>Data refresh: 2026-05-31T08:03:07.570435Z</div>
     <span class="header-badge">Auto-updates every Monday</span>
   </div>
 </header>
@@ -300,33 +296,34 @@ footer {
   <div class="status-item"><span class="status-label">GA4:</span> <strong>✅ Live</strong></div>
   <div class="status-item"><span class="status-label">Search Console:</span> <strong>✅ Live</strong></div>
   <div class="status-item"><span class="status-label">Google Ads:</span> <strong>✅ Live</strong></div>
+  <div class="status-item"><span class="status-label">Ahrefs:</span> <strong>✅ Live</strong></div>
   <div class="status-item"><span class="status-label">GBP / Maps:</span> <strong>✅ Live</strong></div>
   <div class="status-item"><span class="status-label">Meta Ads:</span> <strong>✅ Live</strong></div>
   <div style="margin-left:auto;font-size:11px;color:var(--muted);">
-    Run <code>python scripts/pull_all.py</code> to refresh data
+    Run <code>bash scripts/weekly-report.sh</code> to refresh all data + run agents
   </div>
 </div>
 
-<!-- ── KPI ROW ────────────────────────────────────────────────── -->
-<div class="kpi-grid mb">
+<!-- ── KPI ROW — 6 cards ──────────────────────────────────────── -->
+<div class="kpi-grid mb" style="grid-template-columns:repeat(3,1fr)">
   <div class="kpi-card">
     <span class="kpi-icon">📊</span>
     <div class="kpi-label">Weekly Sessions</div>
-    <div class="kpi-value">3,055</div>
+    <div class="kpi-value">3,069</div>
     <div class="kpi-change down">
-      ↓ -27.3% vs prior week
+      ↓ -22.4% vs prior week
     </div>
-    <div class="kpi-sub">Prior: 4,201</div>
+    <div class="kpi-sub">Prior: 3,957</div>
   </div>
 
   <div class="kpi-card ">
     <span class="kpi-icon">🎯</span>
     <div class="kpi-label">Conversions</div>
-    <div class="kpi-value">486</div>
+    <div class="kpi-value">499</div>
     <div class="kpi-change down">
-      ↓ -9.5% vs prior week
+      ↓ -3.9% vs prior week
     </div>
-    <div class="kpi-sub">Conv. rate: 15.9% (prior 12.8%)</div>
+    <div class="kpi-sub">Conv. rate: 16.3% (prior 13.1%)</div>
   </div>
 
   <div class="kpi-card">
@@ -348,19 +345,43 @@ footer {
     </div>
     <div class="kpi-sub">Mal: $35.14 · Ell: $12.71</div>
   </div>
+
+  <!-- SEO Health Score -->
+  <div class="kpi-card" style="border-left-color:#ef4444">
+    <span class="kpi-icon">🔍</span>
+    <div class="kpi-label">SEO Health Score</div>
+    <div class="kpi-value" style="color:#ef4444">3<small style="font-size:16px;font-weight:400;color:var(--muted)">/100</small></div>
+    <div class="kpi-change down">
+      🔴 Needs work
+    </div>
+    <div class="kpi-sub">
+      0 top-3 · 0 page-1 · DR 7.0
+    </div>
+  </div>
+
+  <!-- Organic Value ($) -->
+  <div class="kpi-card ">
+    <span class="kpi-icon">🌱</span>
+    <div class="kpi-label">Organic Value (SEO)</div>
+    <div class="kpi-value">$0</div>
+    <div class="kpi-change up">
+       n/a vs prior week
+    </div>
+    <div class="kpi-sub">Equiv. ad spend replaced · 0 visits</div>
+  </div>
 </div>
 
 <!-- ── GA4 + GSC ──────────────────────────────────────────────── -->
-<div class="section-title">📊 Web Traffic · 2026-05-23 → 2026-05-30</div>
+<div class="section-title">📊 Web Traffic · 2026-05-24 → 2026-05-31</div>
 <div class="grid-2 mb">
   <div class="card">
-    <h3>Google Analytics 4 <span class="card-period">2026-05-23 → 2026-05-30</span></h3>
-    <div class="stat-row"><span class="stat-label">Sessions</span><span class="stat-value">3,055 (-27.3%)</span></div>
-    <div class="stat-row"><span class="stat-label">Users</span><span class="stat-value">2,435</span></div>
-    <div class="stat-row"><span class="stat-label">New Users</span><span class="stat-value">2,109</span></div>
-    <div class="stat-row"><span class="stat-label">Conversions</span><span class="stat-value">486 (-9.5%)</span></div>
-    <div class="stat-row"><span class="stat-label">Conv. Rate</span><span class="stat-value">15.9%</span></div>
-    <div class="stat-row"><span class="stat-label">Mobile Share</span><span class="stat-value warn">87%</span></div>
+    <h3>Google Analytics 4 <span class="card-period">2026-05-24 → 2026-05-31</span></h3>
+    <div class="stat-row"><span class="stat-label">Sessions</span><span class="stat-value">3,069 (-22.4%)</span></div>
+    <div class="stat-row"><span class="stat-label">Users</span><span class="stat-value">2,388</span></div>
+    <div class="stat-row"><span class="stat-label">New Users</span><span class="stat-value">2,054</span></div>
+    <div class="stat-row"><span class="stat-label">Conversions</span><span class="stat-value">499 (-3.9%)</span></div>
+    <div class="stat-row"><span class="stat-label">Conv. Rate</span><span class="stat-value">16.3%</span></div>
+    <div class="stat-row"><span class="stat-label">Mobile Share</span><span class="stat-value warn">85%</span></div>
     <div style="margin-top:14px;">
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">TRAFFIC BY CHANNEL</div>
       <div class="chart-wrap"><canvas id="channelChart"></canvas></div>
@@ -368,10 +389,10 @@ footer {
   </div>
 
   <div class="card">
-    <h3>Google Search Console <span class="card-period">2026-05-02 → 2026-05-30</span></h3>
-    <div class="stat-row"><span class="stat-label">Organic Clicks</span><span class="stat-value">1,735</span></div>
-    <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-value">6,934</span></div>
-    <div class="stat-row"><span class="stat-label">Avg. CTR</span><span class="stat-value">25.02%</span></div>
+    <h3>Google Search Console <span class="card-period">2026-05-03 → 2026-05-31</span></h3>
+    <div class="stat-row"><span class="stat-label">Organic Clicks</span><span class="stat-value">1,809</span></div>
+    <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-value">7,245</span></div>
+    <div class="stat-row"><span class="stat-label">Avg. CTR</span><span class="stat-value">24.97%</span></div>
     <div class="stat-row"><span class="stat-label">Avg. Position</span><span class="stat-value">#1.5</span></div>
     <div style="margin-top:14px;">
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">TOP QUERIES</div>
@@ -381,70 +402,124 @@ footer {
         <tr>
           <td class="rank">#1</td>
           <td class="query-text">chasing better malaga</td>
-          <td class="num">567</td>
-          <td class="num">1,683</td>
-          <td class="num">33.7%</td>
+          <td class="num">598</td>
+          <td class="num">1,782</td>
+          <td class="num">33.6%</td>
           <td class="num">#1.1</td>
         </tr>
         <tr>
           <td class="rank">#2</td>
           <td class="query-text">chasing better ellenbrook</td>
-          <td class="num">425</td>
-          <td class="num">848</td>
-          <td class="num">50.1%</td>
+          <td class="num">449</td>
+          <td class="num">894</td>
+          <td class="num">50.2%</td>
           <td class="num">#1.1</td>
         </tr>
         <tr>
           <td class="rank">#3</td>
           <td class="query-text">chasing better</td>
-          <td class="num">393</td>
-          <td class="num">1,435</td>
-          <td class="num">27.4%</td>
-          <td class="num">#1.4</td>
+          <td class="num">397</td>
+          <td class="num">1,465</td>
+          <td class="num">27.1%</td>
+          <td class="num">#1.3</td>
         </tr>
         <tr>
           <td class="rank">#4</td>
           <td class="query-text">chasing better cancel membership</td>
-          <td class="num">29</td>
-          <td class="num">42</td>
-          <td class="num">69.0%</td>
+          <td class="num">30</td>
+          <td class="num">44</td>
+          <td class="num">68.2%</td>
           <td class="num">#1.0</td>
         </tr>
         <tr>
           <td class="rank">#5</td>
           <td class="query-text">chasing better gym</td>
-          <td class="num">25</td>
-          <td class="num">105</td>
-          <td class="num">23.8%</td>
-          <td class="num">#2.0</td>
+          <td class="num">28</td>
+          <td class="num">113</td>
+          <td class="num">24.8%</td>
+          <td class="num">#1.9</td>
         </tr>
         <tr>
           <td class="rank">#6</td>
           <td class="query-text">chasingbetter</td>
-          <td class="num">23</td>
-          <td class="num">141</td>
-          <td class="num">16.3%</td>
-          <td class="num">#2.3</td>
+          <td class="num">24</td>
+          <td class="num">158</td>
+          <td class="num">15.2%</td>
+          <td class="num">#2.4</td>
         </tr>
         <tr>
           <td class="rank">#7</td>
-          <td class="query-text">chasingbetter247</td>
-          <td class="num">16</td>
-          <td class="num">85</td>
-          <td class="num">18.8%</td>
-          <td class="num">#2.9</td>
+          <td class="query-text">chasing better 247</td>
+          <td class="num">15</td>
+          <td class="num">41</td>
+          <td class="num">36.6%</td>
+          <td class="num">#1.3</td>
         </tr>
         <tr>
           <td class="rank">#8</td>
-          <td class="query-text">chasing better 247</td>
-          <td class="num">14</td>
-          <td class="num">41</td>
-          <td class="num">34.2%</td>
-          <td class="num">#1.3</td>
+          <td class="query-text">chasingbetter247</td>
+          <td class="num">15</td>
+          <td class="num">90</td>
+          <td class="num">16.7%</td>
+          <td class="num">#3.9</td>
         </tr></tbody>
       </table>
     </div>
   </div>
+</div>
+
+<!-- ── SEO KEYWORD TRACKER ────────────────────────────────────── -->
+<div class="section-title">🔍 SEO — Keyword Rankings &amp; Organic Value</div>
+<div class="grid-2 mb">
+
+  <!-- Organic value tracker -->
+  <div class="card">
+    <h3>🌱 Organic Value Tracker <span class="card-period">SEO replacing Google Ads</span></h3>
+    <div class="stat-row">
+      <span class="stat-label">Organic traffic value</span>
+      <span class="stat-value ">$0/wk</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">WoW change</span>
+      <span class="stat-value good">n/a ↓</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Organic traffic</span>
+      <span class="stat-value">0 visits/wk</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Domain Rating</span>
+      <span class="stat-value">7.0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Keywords ranking</span>
+      <span class="stat-value">0 top-3 &nbsp;·&nbsp; 0 page-1 &nbsp;·&nbsp; 0 page-2</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Not yet ranking</span>
+      <span class="stat-value ">0 / 20 priority KWs</span>
+    </div>
+
+    <!-- WoW movers -->
+    <p style="color:var(--muted);font-size:12px;margin-top:8px">No WoW data yet</p>
+  </div>
+
+  <!-- Keyword gap vs Revo -->
+  <div class="card">
+    <h3>🎯 Keyword Gap — vs Revo Fitness <span class="card-period">AU rankings</span></h3>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
+      Keywords Revo ranks for that CB247 doesn't — highest-priority content opportunities
+    </div>
+    <p style="color:var(--muted);font-size:12px;padding:10px 0">No Ahrefs data yet — run pull_ahrefs.py</p>
+  </div>
+</div>
+
+<!-- Target keyword ranking table -->
+<div class="card mb">
+  <h3>📋 20 Priority Keywords — Ranking Tracker
+    <span class="card-period">0 top-3 · 0 page-1 · 0 not ranking</span>
+  </h3>
+  <p style="color:var(--muted);font-size:12px;padding:10px 0">No Ahrefs data yet — run pull_ahrefs.py</p>
 </div>
 
 <!-- ── TOP PAGES ──────────────────────────────────────────────── -->
@@ -456,62 +531,62 @@ footer {
         <tr>
           <td class="rank">#1</td>
           <td class="page-path">/</td>
-          <td class="num">4,781</td>
-          <td class="num">2,240</td>
+          <td class="num">4,704</td>
+          <td class="num">2,177</td>
         </tr>
         <tr>
           <td class="rank">#2</td>
           <td class="page-path">/reformer-pilates</td>
-          <td class="num">596</td>
-          <td class="num">304</td>
+          <td class="num">615</td>
+          <td class="num">312</td>
         </tr>
         <tr>
           <td class="rank">#3</td>
           <td class="page-path">/contact</td>
-          <td class="num">461</td>
-          <td class="num">241</td>
+          <td class="num">448</td>
+          <td class="num">231</td>
         </tr>
         <tr>
           <td class="rank">#4</td>
           <td class="page-path">/group-fitness-timetable</td>
-          <td class="num">396</td>
-          <td class="num">181</td>
+          <td class="num">382</td>
+          <td class="num">173</td>
         </tr>
         <tr>
           <td class="rank">#5</td>
           <td class="page-path">/thank-you</td>
-          <td class="num">324</td>
-          <td class="num">173</td>
+          <td class="num">336</td>
+          <td class="num">172</td>
         </tr>
         <tr>
           <td class="rank">#6</td>
-          <td class="page-path">/personal-training</td>
-          <td class="num">244</td>
-          <td class="num">109</td>
+          <td class="page-path">/resources/post-workout-recovery</td>
+          <td class="num">246</td>
+          <td class="num">130</td>
         </tr>
         <tr>
           <td class="rank">#7</td>
-          <td class="page-path">/resources/post-workout-recovery</td>
-          <td class="num">240</td>
-          <td class="num">126</td>
+          <td class="page-path">/personal-training</td>
+          <td class="num">228</td>
+          <td class="num">101</td>
         </tr>
         <tr>
           <td class="rank">#8</td>
           <td class="page-path">/kids-hub</td>
-          <td class="num">207</td>
-          <td class="num">73</td>
+          <td class="num">213</td>
+          <td class="num">75</td>
         </tr>
         <tr>
           <td class="rank">#9</td>
-          <td class="page-path">/neon21</td>
-          <td class="num">202</td>
-          <td class="num">82</td>
+          <td class="page-path">/faqs</td>
+          <td class="num">203</td>
+          <td class="num">92</td>
         </tr>
         <tr>
           <td class="rank">#10</td>
-          <td class="page-path">/faqs</td>
-          <td class="num">187</td>
-          <td class="num">85</td>
+          <td class="page-path">/neon21</td>
+          <td class="num">197</td>
+          <td class="num">75</td>
         </tr></tbody>
   </table>
 </div>
@@ -670,7 +745,7 @@ footer {
 <footer>
   CB247 Marketing Agent — Auto-updated every Monday &nbsp;·&nbsp;
   Contact: <a href="mailto:tia@chasingbetter.com.au">tia@chasingbetter.com.au</a> &nbsp;·&nbsp;
-  Generated: 31 May 2026, 06:48 UTC
+  Generated: 31 May 2026, 12:19 UTC
 </footer>
 
 </div><!-- /wrap -->
@@ -678,8 +753,8 @@ footer {
 <script>
 // ── Channel chart ────────────────────────────────────────────────
 const srcLabels = ["Organic Search", "Paid Social", "Direct", "Cross-network", "Paid Search", "Organic Social"];
-const srcVals   = [948, 795, 519, 483, 245, 105];
-const srcPcts   = [31.0, 26.0, 17.0, 15.8, 8.0, 3.4];
+const srcVals   = [947, 731, 516, 481, 240, 130];
+const srcPcts   = [30.9, 23.8, 16.8, 15.7, 7.8, 4.2];
 const TEAL = '#3FA69A';
 
 if (document.getElementById('channelChart') && srcLabels.length) {
