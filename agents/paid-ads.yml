@@ -1,0 +1,13 @@
+name: paid-ads
+model: minimax/minimax-m2.7
+skills: meta-ads-optimizer, google-ads-optimizer, utm-standardizer
+tools: Read, Write(outputs/creatives/**), Write(state/**)
+context_files:
+  - context/psychology-triggers.md
+  - context/seasonal-calendar.md
+  - context/brand-voice.md
+  - context/research-competitors.md
+Input: outputs/blueprints/ (blueprint must exist first)
+Output: outputs/creatives/[campaign]/paid-ads/
+  meta-ads-complete.md + google-ads-complete.md
+End: print "PAID ADS COMPLETE — review before launch"

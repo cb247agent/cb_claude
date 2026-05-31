@@ -92,14 +92,16 @@ Read these data files and synthesise the weekly market intelligence report:
 - state/reddit-intel.json      (Perth/fitness Reddit discussions)
 - state/google-trends.json     (trending topics in Perth/WA)
 - state/fb-ads-intel.json      (Revo + Anytime active Facebook ads)
+- context/seasonal-calendar.md (active campaigns, upcoming events, trigger rules)
 
 Output a structured markdown report covering:
-1. TOP 5 TRENDING FITNESS TOPICS in Perth/AU this week (from Google Trends + Reddit)
-2. PERTH MARKET SIGNALS — what's happening: FIFO seasons, events, cost-of-living sentiment
-3. WHAT COMPETITORS ARE RUNNING — Revo Fitness + Anytime Fitness Meta/FB ads right now (themes, offers, angles)
-4. 5 CONTENT ANGLES CB247 should use this week (specific, actionable, tied to data)
-5. REDDIT PAIN POINTS — exact language Perth people use about gyms (use for copy)
-6. OPPORTUNITIES — what competitors are NOT saying that CB247 should own
+1. SEASONAL ALERT — check context/seasonal-calendar.md: what is ACTIVE right now, what is within 21 days, what needs prep within 60 days. Flag if a campaign should be spawned this week.
+2. TOP 5 TRENDING FITNESS TOPICS in Perth/AU this week (from Google Trends + Reddit)
+3. PERTH MARKET SIGNALS — what's happening: FIFO seasons, events, cost-of-living sentiment
+4. WHAT COMPETITORS ARE RUNNING — Revo Fitness + Anytime Fitness Meta/FB ads right now (themes, offers, angles)
+5. 5 CONTENT ANGLES CB247 should use this week — aligned with seasonal context + data
+6. REDDIT PAIN POINTS — exact language Perth people use about gyms (use for copy)
+7. OPPORTUNITIES — what competitors are NOT saying that CB247 should own
 
 Be specific. Use actual data from the files. No filler.
 Save to: outputs/research/weekly-research-$DATE.md" \
@@ -286,14 +288,21 @@ log "Agent 8/9 — Content Agent"
 run_agent "content-agent" \
 "You are the CB247 Content Agent. Today is $DATE.
 Generate a full week of READY-TO-PUBLISH content — the team should be able to copy-paste.
-Content is SEO-led, ICP-driven, and informed by viral trends.
+Content is SEO-led, ICP-driven, seasonally aware, and informed by viral trends.
 
 Read these files:
 - outputs/seo/weekly-seo-brief-$DATE.md          (keyword briefs, ranking data)
 - outputs/research/content-intel-$DATE.md         (viral hooks, formats, audio)
 - outputs/research/audience-weekly-$DATE.md       (ICP language, tone, pain points)
 - outputs/research/competitor-weekly-$DATE.md     (competitor gaps to exploit)
+- outputs/research/weekly-research-$DATE.md       (seasonal alert from Agent 1 — check this first)
 - context/brand-voice.md                          (CB247 tone and voice rules)
+- context/seasonal-calendar.md                    (active campaigns + upcoming events)
+- context/psychology-triggers.md                  (conversion triggers — every piece needs min 2)
+
+SEASONAL RULE: If Agent 1 flagged a seasonal alert, at least 2 of the 5 social posts and 1 reel script must reflect the active campaign angle. If a school holiday or event is within 14 days, include Kids Hub content.
+
+PSYCHOLOGY RULE: Every ad copy variation and every reel script must use at least 2 triggers from context/psychology-triggers.md. Name which triggers you used at the top of each piece.
 
 CB247: AlwaysBetter. Teal. \$11.95/week. Malaga + Ellenbrook. No lock-in.
 Services: 24/7 gym, Reformer Pilates, Sauna, Ice Bath, Kids Hub, CrossFit, Spin, Yoga, PT, FIFO freeze.
@@ -339,8 +348,11 @@ Read ALL of these:
 - outputs/research/competitor-weekly-$DATE.md
 - outputs/research/paid-ads-weekly-$DATE.md
 - outputs/content/weekly-content-$DATE.md
+- context/seasonal-calendar.md
 
 Output a concise executive strategy document covering:
+0. SEASONAL STATUS — Always first. What campaign is ACTIVE right now. What is within 21 days (trigger full campaign brief). What needs planning within 60 days. One clear directive for Tia on seasonal priority this week.
+
 1. WEEKLY SCORECARD
    - SEO Health Score: X/100 (from ranking data)
    - Organic Traffic Value: \$X/week (WoW change)

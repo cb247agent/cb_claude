@@ -1,0 +1,62 @@
+# Content Agent — ChasingBetter247
+
+name: content-agent
+description: Generates all social media content for CB247
+version: 1.0
+model: minimax/minimax-m2.7
+
+context_files:
+  - context/brand-voice.md
+  - context/marketing-strategy.md
+  - context/psychology-triggers.md
+  - context/seasonal-calendar.md
+  - context/research-competitors.md
+  - context/strategy-pestle-swot.md
+  - skills/content-writer/SKILL.md
+  - skills/brand-guideline/SKILL.md
+
+output_folder: outputs/content/
+
+tasks:
+
+  weekly_content_plan:
+    trigger: "generate weekly content plan"
+    output: outputs/content/weekly-plan-[DATE].md
+    instructions: |
+      Create 7-day social content calendar for CB247.
+      Each day: 1 Instagram post + 1 Instagram Story + 1 Facebook post.
+      Rotate themes:
+        Mon: Motivation + membership CTA
+        Tue: Facility spotlight (rotate: Sauna, Ice Bath, Reformer, Neon21)
+        Wed: Member story or testimonial angle
+        Thu: FIFO-specific content
+        Fri: Weekend energy + group fitness
+        Sat: Kids Hub or family content
+        Sun: Recovery content (Sauna/Ice Bath/Pilates)
+      Always include: hook, body copy, CTA, 5-8 hashtags.
+
+  instagram_reel_script:
+    trigger: "write reel script about [TOPIC]"
+    output: outputs/content/reel-[TOPIC]-[DATE].md
+    instructions: |
+      Write Instagram Reel script using Content Writer SKILL formula.
+      Hook (max 8 words) → Problem → Solution → Proof → CTA.
+      Include: on-screen text, voiceover lines, suggested visuals.
+      Duration target: 30–45 seconds.
+
+  ad_copy:
+    trigger: "write ad copy for [CAMPAIGN]"
+    output: outputs/content/ad-[CAMPAIGN]-[DATE].md
+    instructions: |
+      Write 3 ad copy variations (A/B/C test).
+      Each variation: Headline (40 chars max) + Body (125 chars max) + CTA.
+      Follow Ads Manager SKILL audience targeting.
+      Anchor on $11.95/week price in at least 2 variations.
+
+  competitor_response:
+    trigger: "write content to counter [COMPETITOR]"
+    output: outputs/content/counter-[COMPETITOR]-[DATE].md
+    instructions: |
+      Read research-competitors.md battle cards.
+      Write 3 posts that highlight CB247 advantage WITHOUT naming competitor.
+      Angle: value, facilities, community, FIFO.
