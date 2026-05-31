@@ -263,8 +263,10 @@ CONTENT_ITEMS = [
         "title": "Blog — Best Gym Malaga",
         "assignee": "John", "assigneeRole": "SEO Specialist",
         "caption": "Targeting 'best gym Malaga' — 320 searches/month. H1: 'The Best Gym in Malaga? Here's Why 8,000 Members Chose CB247'. Full outline and keyword map ready.",
-        "instructions": "Target keyword: 'best gym malaga' (320/mo, KD 18). Secondary: 'gym malaga perth', 'cheap gym malaga'. Word count: 1,200–1,500 words. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities (list all: 24/7, Kids Hub, Sauna, Ice Bath, Reformer Pilates, Neon21) → H2: Pricing Comparison (CB247 vs Revo vs Anytime) → H2: Member Reviews → H2: FAQ → CTA: 'Join from $11.95/week'. Internal links: homepage, Malaga page, pricing page. Mark adds draft to WordPress as pending.\n\n📄 Full Brief (share this link with John): https://cb247agent.github.io/cb_claude/briefs/p3.html",
+        "instructions": "Target keyword: 'best gym malaga' (320/mo, KD 18). Secondary: 'gym malaga perth', 'cheap gym malaga'. Word count: 1,200–1,500 words. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities (list all: 24/7, Kids Hub, Sauna, Ice Bath, Reformer Pilates, Neon21) → H2: Pricing Comparison (CB247 vs Revo vs Anytime) → H2: Member Reviews → H2: FAQ → CTA: 'Join from $11.95/week'. Internal links: homepage, Malaga page, pricing page. Mark adds draft to WordPress as pending.",
         "kw": "best gym malaga", "dueDate": "+2",
+        "draftLink": "https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html",
+        "draftReviewers": "John (SEO), Jane (QC), Ange",
     },
     {
         "id": "p4", "day": 2, "platform": "instagram", "type": "Instagram Post",
@@ -372,6 +374,25 @@ def generate_briefs(content_items):
         kw_block = (f'<div class="section"><div class="label">🎯 Target Keyword</div>'
                     f'<div class="kw">{item["kw"]}</div></div>') if item.get("kw") else ""
 
+        reviewers = item.get("draftReviewers", "John, Jane, Ange")
+        draft_block = ""
+        if item.get("draftLink"):
+            dl = item["draftLink"]
+            draft_block = (
+                f'<div class="section" style="background:#f0fdf4;border-left:4px solid #3FA69A">'
+                f'<div class="label" style="color:#166534;margin-bottom:10px">📄 Draft Content — Read &amp; Review</div>'
+                f'<p style="font-size:13px;color:#374151;margin-bottom:14px">'
+                f'The draft is ready. Open it, read the full content, then use the approval buttons to approve, request adjustments, or reject.</p>'
+                f'<a href="{dl}" target="_blank" '
+                f'style="display:inline-flex;align-items:center;gap:8px;background:#3FA69A;color:#fff;'
+                f'text-decoration:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700">'
+                f'📖 Open Draft → {item["title"]}</a>'
+                f'<p style="font-size:11px;color:#6b7280;margin-top:10px">'
+                f'Share this link with {reviewers} for review:<br>'
+                f'<code style="background:#e5e7eb;padding:2px 6px;border-radius:4px;font-size:11px">{dl}</code></p>'
+                f'</div>'
+            )
+
         brief_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -430,6 +451,7 @@ def generate_briefs(content_items):
     <div class="caption-box">{item["caption"]}</div>
   </div>
   {kw_block}
+  {draft_block}
   <div class="approval-section">
     <div class="label">📝 Tia's Review — {item["id"].upper()}</div>
     <div class="approval-grid">
@@ -958,6 +980,11 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
           <button class="status-cycle-btn" id="modal-cycle-btn" onclick="cycleFromModal()">Cycle Status →</button>
         </div>
       </div>
+      <div id="modal-draft-link-wrap" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px 16px">
+        <div class="modal-section-label" style="color:#166534;margin-bottom:8px">📄 Draft Content — Ready for Review</div>
+        <a href="#" target="_blank" class="brief-link" style="background:#3FA69A;color:#fff;border-color:#3FA69A;font-size:12px">📖 Open Draft → Read &amp; Review</a>
+        <div style="font-size:11px;color:#6b7280;margin-top:8px">Share this link with John (SEO), Jane (QC), and Ange for review</div>
+      </div>
       <div class="modal-approval">
         <div class="modal-section-label" style="color:#92400e;margin-bottom:10px">📝 Tia's Approval</div>
         <div class="approval-btns">
@@ -1366,7 +1393,7 @@ function renderGBP() {
 const PLANNER_ITEMS = [
   {id:'p1',day:0,platform:'gbp',type:'GBP Post',title:'GBP Post — Sauna & Ice Bath',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.',instructions:'Post to both Malaga and Ellenbrook GBP profiles. Use a high-quality photo of the sauna or ice bath area. Best posting time: Tuesday 7–9am or Saturday 8am. Include the $11.95 price point and \'no lock-in\' in the first sentence for SEO. Tag location: Malaga.',kw:'sauna gym perth',dueDate:'+0'},
   {id:'p2',day:1,platform:'instagram',type:'Instagram Reel',title:'Reel — FIFO Lifestyle',assignee:'Agust',assigneeRole:'Video Creator',caption:'Fly in. Train hard. We get it. CB247\'s FIFO-friendly freeze means your membership works around your roster.',instructions:'30–45 second Reel. Open with a hook: \'Working FIFO? Your gym should work around you.\' Show the freeze feature on the app or website. Voiceover tone: direct, no-nonsense, WA working-class. End with CTA: \'Freeze. Resume. No questions asked.\' Hashtags: #fifo #fifoperth #gymperth #chasingbetter247',kw:'fifo gym perth',dueDate:'+1'},
-  {id:'p3',day:2,platform:'blog',type:'SEO Blog Post',title:'Blog — Best Gym Malaga',assignee:'John',assigneeRole:'SEO Specialist',caption:'Targeting "best gym Malaga" — 320 searches/month. H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247". Full outline and keyword map ready.',instructions:'Target keyword: "best gym malaga" (320/mo, KD 18). Secondary: "gym malaga perth", "cheap gym malaga". Word count: 1,200–1,500. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities → H2: Pricing Comparison → H2: Member Reviews → H2: FAQ → CTA. Internal links: homepage, Malaga page, pricing. Mark adds draft to WordPress as pending.\n\n📄 Full Brief: https://cb247agent.github.io/cb_claude/briefs/p3.html',kw:'best gym malaga',dueDate:'+2'},
+  {id:'p3',day:2,platform:'blog',type:'SEO Blog Post',title:'Blog — Best Gym Malaga',assignee:'John',assigneeRole:'SEO Specialist',caption:'Targeting "best gym Malaga" — 320 searches/month. H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247". Full outline and keyword map ready.',instructions:'Target keyword: "best gym malaga" (320/mo, KD 18). Secondary: "gym malaga perth", "cheap gym malaga". Word count: 1,200–1,500. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities → H2: Pricing Comparison → H2: Member Reviews → H2: FAQ → CTA. Internal links: homepage, Malaga page, pricing. Mark adds draft to WordPress as pending.\n\n📄 Draft blog (John / Jane / Ange): https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html',kw:'best gym malaga',dueDate:'+2',draftLink:'https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html'},
   {id:'p4',day:2,platform:'instagram',type:'Instagram Post',title:'Instagram — Kids Hub',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this.',instructions:'Static post or short Reel (15s). Show the Kids Hub space — colourful, safe, supervised. Caption hook: "No babysitter? No problem." Tag 3 local parent pages. Best time: Wednesday 9–11am. Hashtags: #kidshub #gymperth #malagatribe #chasingbetter247',kw:'kids gym malaga',dueDate:'+2'},
   {id:'p5',day:4,platform:'tiktok',type:'TikTok Video',title:'TikTok — Ice Bath Reaction',assignee:'Ivan',assigneeRole:'Video Creator',caption:'First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247',instructions:'Reaction-style video. Film a member (with permission) doing their first ice bath — show genuine reaction. Ideal length: 20–30 seconds. Hook in first 2s: "Would you do this for $11.95/week?" Trending audio: check TikTok trending for Perth fitness. Tag @chasingbetter247. Raw, authentic > over-produced.',kw:'ice bath gym perth',dueDate:'+4'},
   {id:'p6',day:5,platform:'gbp',type:'GBP Post',title:'GBP Post — Reformer Pilates',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.',instructions:'Post to both GBP profiles. Use a class photo or studio shot. Emphasise "24/7 access" — key differentiator vs Revo. Include class booking CTA. Target: "reformer pilates perth", "pilates malaga". Post Friday morning to capture weekend bookings.',kw:'reformer pilates perth',dueDate:'+5'},
@@ -1428,8 +1455,19 @@ window.openPlannerModal = (id) => {
   notesWrap.style.display = (apprData.status==='adjustment'||apprData.status==='rejected') ? 'block' : 'none';
 
   // Brief link — points to docs/briefs/[id].html
-  const baseUrl = window.location.href.replace(/\/[^/]*$/, '');
+  const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
   $('modal-brief-link').href = `${baseUrl}/briefs/${id}.html`;
+
+  // Draft link — show prominent button if item has a draftLink
+  const draftLinkEl = document.getElementById('modal-draft-link-wrap');
+  if(draftLinkEl) {
+    if(item.draftLink) {
+      draftLinkEl.style.display = 'block';
+      draftLinkEl.querySelector('a').href = item.draftLink;
+    } else {
+      draftLinkEl.style.display = 'none';
+    }
+  }
 
   $('planner-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
