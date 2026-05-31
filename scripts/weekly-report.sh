@@ -35,7 +35,7 @@ run_agent() {
     local prompt="$2"
     local out="$3"
     log "  → Running $name..."
-    if "$CLAUDE" --model minimax/minimax-m2.7 \
+    if "$CLAUDE" \
         --allowedTools "Read,Write,Bash,Glob,Grep" \
         --print \
         --output-format text \
