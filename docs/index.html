@@ -6,349 +6,325 @@
 <title>ChasingBetter Group — Marketing OS</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" crossorigin="anonymous"></script>
 <style>
-/* ── Reset ────────────────────────────────────────── */
+/* ── Reset ───────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --teal:#3FA69A;--teal-dark:#2d7a70;--teal-light:#e8f5f4;
-  --bg:#F0F2F5;--card:#fff;--sidebar:#1a1a2e;--sidebar-hover:#2a2a3e;
-  --text:#1a1a2e;--muted:#6b7280;--border:#e5e7eb;
-  --red:#ef4444;--green:#22c55e;--amber:#f59e0b;--blue:#3b82f6;--purple:#8b5cf6;
-  --radius:10px;--shadow:0 1px 4px rgba(0,0,0,.08),0 2px 12px rgba(0,0,0,.04);
-  --gap:16px;--sidebar-w:240px;
+  --teal:#3FA69A;--teal-dim:#2d7a70;--teal-mist:#f0f7f6;
+  --bg:#f4f4f4;--card:#ffffff;
+  --sidebar:#0d0d0d;--sidebar-hover:#1c1c1c;
+  --text:#0d0d0d;--text-2:#3a3a3a;--muted:#888;--muted-2:#bbb;
+  --border:#e6e6e6;--border-strong:#ccc;
+  --radius:6px;--shadow:0 1px 2px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04);
+  --gap:20px;--sidebar-w:220px;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 a{color:var(--teal);text-decoration:none}
-button{cursor:pointer;border:none;background:none;font-family:inherit}
+a:hover{text-decoration:underline}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit}
+code{font-family:'SF Mono',Menlo,monospace;font-size:.85em;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px}
 
-/* ── Layout ───────────────────────────────────────── */
+/* ── Layout ──────────────────────────────────────── */
 .app{display:flex;min-height:100vh}
 .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto}
 .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:0;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.content{padding:24px;flex:1}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;position:sticky;top:0;z-index:50}
+.content{padding:28px;flex:1;max-width:1400px}
 
-/* ── Sidebar ──────────────────────────────────────── */
-.sidebar-brand{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
-.sidebar-brand .logo{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px}
-.sidebar-brand .logo span{color:#7ee8e0}
-.sidebar-brand .sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}
+/* ── Sidebar ─────────────────────────────────────── */
+.sidebar-brand{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sidebar-brand .logo{font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em}
+.sidebar-brand .logo span{color:var(--teal)}
+.sidebar-brand .sub{font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;letter-spacing:.03em;text-transform:uppercase}
+.sidebar-section{padding:14px 0 2px}
+.sidebar-section-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.25);padding:0 18px 6px}
+.sidebar-item{display:flex;align-items:center;padding:8px 18px;color:rgba(255,255,255,.5);font-size:12.5px;font-weight:500;cursor:pointer;border-left:2px solid transparent;transition:color .12s,background .12s}
+.sidebar-item:hover{color:rgba(255,255,255,.9);background:var(--sidebar-hover)}
+.sidebar-item.active{color:#fff;border-left-color:var(--teal);background:rgba(63,166,154,.1)}
+.sidebar-item .badge{margin-left:auto;background:var(--teal);color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;line-height:1.6}
+.sidebar-item .badge.neutral{background:rgba(255,255,255,.15);color:rgba(255,255,255,.6)}
+.sidebar-footer{margin-top:auto;padding:14px 18px;font-size:10px;color:rgba(255,255,255,.22);border-top:1px solid rgba(255,255,255,.06);line-height:1.7}
 
-.sidebar-section{padding:12px 0 4px}
-.sidebar-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.3);padding:0 16px 6px}
-.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:rgba(255,255,255,.65);font-size:13px;font-weight:500;cursor:pointer;border-radius:0;transition:all .15s;border-left:3px solid transparent;position:relative}
-.sidebar-item:hover{background:var(--sidebar-hover);color:#fff}
-.sidebar-item.active{background:rgba(63,166,154,.15);color:#7ee8e0;border-left-color:#3FA69A}
-.sidebar-item .icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
-.sidebar-item .badge{margin-left:auto;background:var(--red);color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px}
-.sidebar-item .badge.green{background:var(--green)}
-.sidebar-item .badge.amber{background:var(--amber);color:var(--text)}
-.sidebar-footer{margin-top:auto;padding:12px 16px;font-size:11px;color:rgba(255,255,255,.3);border-top:1px solid rgba(255,255,255,.08)}
-
-/* ── Business nav (topbar) ────────────────────────── */
-.biz-nav{display:flex;align-items:center;gap:0;height:100%}
-.biz-tab{padding:0 20px;height:100%;display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap}
-.biz-tab:hover{color:var(--text)}
+/* ── Topbar ──────────────────────────────────────── */
+.biz-nav{display:flex;align-items:center;height:100%;gap:0}
+.biz-tab{padding:0 18px;height:100%;display:flex;align-items:center;font-size:12.5px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;transition:color .12s;white-space:nowrap}
+.biz-tab:hover{color:var(--text-2)}
 .biz-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
-.biz-tab.coming-soon{opacity:.45;cursor:default;font-size:12px}
-.biz-tab.coming-soon::after{content:'Soon';background:var(--border);color:var(--muted);font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;margin-left:6px}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.biz-tab.coming-soon{opacity:.4;cursor:default}
+.biz-tab.coming-soon::after{content:'soon';font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:var(--border);color:var(--muted);padding:1px 5px;border-radius:3px;margin-left:5px}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .refresh-badge{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block}
-.status-dot.warn{background:var(--amber)}
-.status-dot.error{background:var(--red)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;flex-shrink:0}
+.status-dot.warn{background:var(--muted)}
+.status-dot.error{background:var(--text-2)}
 
-/* ── Page sections ────────────────────────────────── */
+/* ── Pages ───────────────────────────────────────── */
 .page{display:none}
 .page.active{display:block}
+.page-header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.page-header h1{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.page-header p{color:var(--muted);font-size:12.5px;margin-top:5px}
+.page-footer{text-align:center;font-size:11px;color:var(--muted-2);padding:32px 0 16px;border-top:1px solid var(--border);margin-top:16px}
 
-/* ── Page header ──────────────────────────────────── */
-.page-header{margin-bottom:24px}
-.page-header h1{font-size:22px;font-weight:800;letter-spacing:-.3px}
-.page-header p{color:var(--muted);font-size:13px;margin-top:4px}
-
-/* ── KPI grid ─────────────────────────────────────── */
+/* ── KPI grid ────────────────────────────────────── */
 .kpi-grid{display:grid;gap:var(--gap);margin-bottom:var(--gap)}
 .kpi-grid.cols-4{grid-template-columns:repeat(4,1fr)}
 .kpi-grid.cols-3{grid-template-columns:repeat(3,1fr)}
 .kpi-grid.cols-2{grid-template-columns:repeat(2,1fr)}
-.kpi-card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);border-left:4px solid var(--teal)}
-.kpi-card.red{border-left-color:var(--red)}
-.kpi-card.green{border-left-color:var(--green)}
-.kpi-card.amber{border-left-color:var(--amber)}
-.kpi-card.blue{border-left-color:var(--blue)}
-.kpi-card.purple{border-left-color:var(--purple)}
-.kpi-icon{font-size:18px;margin-bottom:8px;display:block}
-.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
-.kpi-value{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1}
-.kpi-change{font-size:11px;font-weight:600;margin-top:5px}
-.kpi-change.up{color:var(--green)}
-.kpi-change.down{color:var(--red)}
+.kpi-card{background:var(--card);border-radius:var(--radius);padding:20px 22px;border:1px solid var(--border);border-top:2px solid var(--teal)}
+.kpi-card.secondary{border-top-color:var(--border-strong)}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px}
+.kpi-value{font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.04em;line-height:1}
+.kpi-change{font-size:11px;font-weight:600;margin-top:6px;display:flex;align-items:center;gap:3px}
+.kpi-change.up{color:var(--teal)}
+.kpi-change.down{color:var(--text-2)}
 .kpi-change.flat{color:var(--muted)}
-.kpi-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:3px}
 
-/* ── Cards ────────────────────────────────────────── */
+/* ── Cards ───────────────────────────────────────── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)}
 .mb{margin-bottom:var(--gap)}
-.card{background:var(--card);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
-.card-h{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:6px}
-.card-period{font-size:11px;color:var(--muted);font-weight:400;margin-left:auto}
+.card{background:var(--card);border-radius:var(--radius);padding:20px 24px;border:1px solid var(--border)}
+.card-h{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.card-period{font-size:11px;color:var(--muted-2);font-weight:400}
 
-/* ── Stat rows ────────────────────────────────────── */
-.stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+/* ── Stat rows ───────────────────────────────────── */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
 .stat-row:last-child{border-bottom:none}
 .stat-label{color:var(--muted)}
-.stat-val{font-weight:600}
-.stat-val.good{color:var(--green)}
-.stat-val.bad{color:var(--red)}
-.stat-val.warn{color:var(--amber)}
+.stat-val{font-weight:600;color:var(--text)}
+.stat-val.good{color:var(--teal)}
+.stat-val.bad{color:var(--text-2)}
+.stat-val.warn{color:var(--muted)}
 
-/* ── Section title ────────────────────────────────── */
-.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+/* ── Section title ───────────────────────────────── */
+.section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px}
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* ── Insight box ──────────────────────────────────── */
-.insight{border-radius:var(--radius);padding:14px 16px;margin-bottom:var(--gap);font-size:13px;line-height:1.6}
-.insight.green{background:#f0fdf4;border-left:4px solid var(--green)}
-.insight.red{background:#fef2f2;border-left:4px solid var(--red)}
-.insight.amber{background:#fffbeb;border-left:4px solid var(--amber)}
-.insight.blue{background:#eff6ff;border-left:4px solid var(--blue)}
-.insight.teal{background:var(--teal-light);border-left:4px solid var(--teal)}
-.insight-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;opacity:.7}
+/* ── Insight / alert box ─────────────────────────── */
+.insight{border-radius:var(--radius);padding:14px 16px;margin-bottom:var(--gap);font-size:12.5px;line-height:1.6;border:1px solid var(--border);background:var(--card)}
+.insight.teal{background:var(--teal-mist);border-color:rgba(63,166,154,.25);border-left:3px solid var(--teal)}
+.insight.neutral{background:#f9f9f9;border-left:3px solid var(--border-strong)}
+.insight.warn{background:#fafafa;border-left:3px solid var(--muted-2)}
+.insight-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
 
-/* ── Tables ───────────────────────────────────────── */
+/* ── Tables ──────────────────────────────────────── */
 table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{text-align:left;padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap}
-tbody td{padding:7px 10px;border-bottom:1px solid var(--border)}
+thead th{text-align:left;padding:8px 12px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border-strong);background:#fafafa;white-space:nowrap}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover{background:#f9fafb}
-.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover td{background:#fafafa}
+.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
 .rank{color:var(--muted);font-size:11px;width:24px}
 
-/* ── Position badges ──────────────────────────────── */
-.pos-badge{display:inline-block;border-radius:12px;padding:1px 7px;font-weight:700;font-size:11px}
-.pos-1-3{background:#dcfce7;color:#16a34a}
-.pos-4-10{background:#dbeafe;color:#1d4ed8}
-.pos-11-20{background:#fef9c3;color:#854d0e}
-.pos-deep{background:#fee2e2;color:#991b1b}
-.pos-none{color:#999}
-.wow-up{color:#16a34a;font-weight:700}
-.wow-down{color:#dc2626;font-weight:700}
-.wow-new{color:#7c3aed;font-size:10px;font-weight:700}
+/* ── Position badges ─────────────────────────────── */
+.pos-badge{display:inline-block;border-radius:3px;padding:1px 6px;font-weight:600;font-size:11px;font-variant-numeric:tabular-nums}
+.pos-1-3{background:var(--teal-mist);color:var(--teal-dim)}
+.pos-4-10{background:#f0f0f0;color:var(--text-2)}
+.pos-11-20{background:#f0f0f0;color:var(--muted)}
+.pos-deep{background:#f0f0f0;color:var(--muted-2)}
+.pos-none{color:var(--muted-2)}
+.wow-up{color:var(--teal);font-weight:700}
+.wow-down{color:var(--text-2);font-weight:600}
+.wow-new{color:var(--teal);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 
-/* ── Progress bar ─────────────────────────────────── */
+/* ── Progress bar ────────────────────────────────── */
 .progress-wrap{margin:8px 0 4px}
-.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
-.progress-track{background:var(--border);border-radius:99px;height:6px;overflow:hidden}
-.progress-fill{background:var(--teal);height:100%;border-radius:99px}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px}
+.progress-track{background:var(--border);border-radius:99px;height:4px;overflow:hidden}
+.progress-fill{background:var(--teal);height:100%;border-radius:99px;transition:width .4s ease}
 
-/* ── Chart ────────────────────────────────────────── */
+/* ── Chart ───────────────────────────────────────── */
 .chart-wrap{position:relative;height:180px}
 
-/* ── Recommendation cards ─────────────────────────── */
-.rec-board{display:flex;flex-direction:column;gap:12px}
-.rec-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;display:flex;gap:14px;align-items:flex-start}
-.rec-card.done{opacity:.6}
-.rec-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+/* ── Recommendation cards ────────────────────────── */
+.rec-board{display:flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.rec-card{background:var(--card);padding:16px 20px;display:flex;gap:16px;align-items:flex-start;border-bottom:1px solid var(--border);transition:background .1s}
+.rec-card:last-child{border-bottom:none}
+.rec-card:hover{background:#fafafa}
+.rec-card.done{opacity:.5}
 .rec-body{flex:1}
 .rec-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
-.rec-tag{border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
-.tag-seo{background:#dbeafe;color:#1e40af}
-.tag-ads{background:#fef9c3;color:#854d0e}
-.tag-gbp{background:#dcfce7;color:#166534}
-.tag-meta{background:#f3e8ff;color:#6b21a8}
-.tag-content{background:#ffe4e6;color:#9f1239}
-.tag-web{background:#f0fdf4;color:#166534}
-.rec-title{font-size:14px;font-weight:700;margin-bottom:4px}
-.rec-why{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+.rec-tag{border-radius:3px;padding:2px 7px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:#f0f0f0;color:var(--text-2)}
+.rec-tag.t-seo{background:var(--teal-mist);color:var(--teal-dim)}
+.rec-tag.t-content{background:#f0f0f0;color:var(--text-2)}
+.rec-tag.t-web{background:#f0f0f0;color:var(--text-2)}
+.rec-tag.t-ads{background:#f0f0f0;color:var(--text-2)}
+.rec-title{font-size:13.5px;font-weight:700;margin-bottom:5px;color:var(--text)}
+.rec-why{font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:12px}
 .rec-footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.rec-impact{font-size:12px;font-weight:700;color:var(--green)}
+.rec-impact{font-size:11.5px;font-weight:700;color:var(--teal)}
 .rec-owner{font-size:11px;color:var(--muted)}
-.rec-status-btn{border:none;border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
-.status-new{background:#dbeafe;color:#1e40af}
-.status-accepted{background:#fef9c3;color:#854d0e}
-.status-inprogress{background:#fed7aa;color:#9a3412}
-.status-done{background:#dcfce7;color:#166534}
-.status-skipped{background:#f3f4f6;color:#6b7280}
-.rec-outcome-input{flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;font-family:inherit;min-width:180px}
+.rec-status-btn{border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:10.5px;font-weight:600;cursor:pointer;transition:all .1s;color:var(--text-2);background:var(--card)}
+.rec-status-btn:hover{border-color:var(--teal);color:var(--teal)}
+.status-new{border-color:var(--teal);color:var(--teal)}
+.status-accepted{background:#f0f0f0;color:var(--text-2)}
+.status-inprogress{background:var(--teal-mist);border-color:var(--teal);color:var(--teal-dim)}
+.status-done{background:var(--sidebar);color:#fff;border-color:var(--sidebar)}
+.status-skipped{background:#f0f0f0;color:var(--muted-2)}
+.rec-outcome-input{flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 10px;font-size:12px;font-family:inherit;min-width:180px}
 .rec-outcome-input:focus{outline:none;border-color:var(--teal)}
 
-/* ── Kanban (content review) ──────────────────────── */
-.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;align-items:start}
-.kanban-col{background:#f8f9fa;border-radius:var(--radius);padding:12px}
-.kanban-col-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
-.kanban-col-header .count{background:var(--border);border-radius:99px;padding:1px 7px;font-size:10px}
-.content-card{background:var(--card);border-radius:8px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer;border-left:3px solid var(--border);transition:box-shadow .15s}
-.content-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.content-card .platform-tag{font-size:10px;font-weight:700;border-radius:4px;padding:2px 7px;display:inline-block;margin-bottom:6px}
-.platform-gbp{background:#dcfce7;color:#166534}
-.platform-instagram{background:#fce7f3;color:#9d174d}
-.platform-tiktok{background:#1a1a2e;color:#fff}
-.platform-blog{background:#dbeafe;color:#1e40af}
-.platform-email{background:#fef9c3;color:#854d0e}
-.platform-meta{background:#ede9fe;color:#5b21b6}
-.content-card .cc-title{font-size:12px;font-weight:700;margin-bottom:4px}
-.content-card .cc-preview{font-size:11px;color:var(--muted);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.content-card .cc-footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:10px;color:var(--muted)}
-.content-card .cc-assignee{font-weight:600}
+/* ── Kanban ──────────────────────────────────────── */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:start}
+.kanban-col{background:#f9f9f9;border-radius:var(--radius);border:1px solid var(--border);padding:14px}
+.kanban-col-header{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.kanban-col-header .count{background:var(--card);border:1px solid var(--border);border-radius:99px;padding:1px 7px;font-size:10px;font-weight:600;color:var(--text-2)}
+.content-card{background:var(--card);border-radius:4px;padding:12px 14px;margin-bottom:8px;cursor:pointer;border:1px solid var(--border);transition:border-color .1s}
+.content-card:hover{border-color:var(--teal)}
+.content-card .platform-tag{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:2px;padding:2px 6px;display:inline-block;margin-bottom:7px;background:#f0f0f0;color:var(--text-2)}
+.platform-gbp{background:var(--teal-mist);color:var(--teal-dim)}
+.platform-instagram,.platform-tiktok,.platform-meta{background:#f0f0f0;color:var(--text-2)}
+.platform-blog{background:var(--sidebar);color:rgba(255,255,255,.8)}
+.platform-email{background:#f0f0f0;color:var(--text-2)}
+.content-card .cc-title{font-size:12px;font-weight:700;margin-bottom:5px;color:var(--text)}
+.content-card .cc-preview{font-size:11px;color:var(--muted);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.content-card .cc-footer{display:flex;justify-content:space-between;align-items:center;margin-top:9px;font-size:10.5px;color:var(--muted)}
+.content-card .cc-assignee{font-weight:600;color:var(--text-2)}
 
-/* ── Website manager ──────────────────────────────── */
+/* ── Website / task list ─────────────────────────── */
 .task-list{list-style:none}
-.task-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.task-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12.5px}
 .task-item:last-child{border-bottom:none}
-.priority-pill{border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
-.p-critical{background:#fee2e2;color:#991b1b}
-.p-high{background:#fef9c3;color:#854d0e}
-.p-medium{background:#dbeafe;color:#1e40af}
-.p-low{background:#f3f4f6;color:#6b7280}
+.priority-pill{border-radius:3px;padding:2px 7px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;margin-top:1px;background:#f0f0f0;color:var(--text-2)}
+.p-critical{background:var(--sidebar);color:#fff}
+.p-high{background:var(--teal-mist);color:var(--teal-dim)}
+.p-medium{background:#f0f0f0;color:var(--text-2)}
+.p-low{background:#f9f9f9;color:var(--muted)}
 
-/* ── Stars ────────────────────────────────────────── */
-.stars{color:#f59e0b}
+/* ── Stars ───────────────────────────────────────── */
+.stars{color:var(--teal)}
 
-/* ── Tags / chips ─────────────────────────────────── */
-.chip{display:inline-block;background:var(--teal-light);color:var(--teal-dark);border-radius:99px;padding:3px 10px;font-size:11px;font-weight:600;margin:2px}
+/* ── Chips ───────────────────────────────────────── */
+.chip{display:inline-block;background:var(--teal-mist);color:var(--teal-dim);border-radius:3px;padding:2px 8px;font-size:11px;font-weight:600;margin:2px}
 
-/* ── Footer ───────────────────────────────────────── */
-.page-footer{text-align:center;font-size:11px;color:var(--muted);padding:24px;border-top:1px solid var(--border);margin-top:8px}
+/* ── Divider ─────────────────────────────────────── */
+.divider{border:none;border-top:1px solid var(--border);margin:var(--gap) 0}
 
-/* ── Planner Modal ────────────────────────────────── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:20px}
+/* ── Planner Modal ───────────────────────────────── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
-.modal-box{background:var(--card);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.2);width:100%;max-width:640px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column}
-.modal-head{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--card);z-index:2}
+.modal-box{background:var(--card);border-radius:8px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.15);width:100%;max-width:620px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column}
+.modal-head{padding:18px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--card);z-index:2}
 .modal-head-left{flex:1}
-.modal-title{font-size:16px;font-weight:700;margin:6px 0 0}
-.modal-close{border:none;background:none;font-size:18px;cursor:pointer;color:var(--muted);padding:4px 6px;border-radius:6px;flex-shrink:0}
-.modal-close:hover{background:var(--border);color:var(--text)}
-.modal-meta{display:flex;flex-wrap:wrap;gap:8px;padding:14px 22px;background:#f8f9fa;border-bottom:1px solid var(--border)}
-.modal-meta .chip{font-size:11px;padding:4px 12px}
+.modal-title{font-size:15px;font-weight:700;margin:6px 0 0;color:var(--text)}
+.modal-close{font-size:16px;cursor:pointer;color:var(--muted);padding:4px 7px;border-radius:4px;border:1px solid transparent}
+.modal-close:hover{background:var(--bg);border-color:var(--border)}
+.modal-meta{display:flex;flex-wrap:wrap;gap:6px;padding:12px 22px;background:#f9f9f9;border-bottom:1px solid var(--border)}
 .modal-body{padding:18px 22px;display:flex;flex-direction:column;gap:16px}
-.modal-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
-.modal-instructions{font-size:13px;line-height:1.8;color:var(--text);background:#f8f9fa;border-radius:8px;padding:14px 16px;border-left:3px solid var(--teal)}
-.modal-caption{font-size:13px;line-height:1.7;color:var(--text);background:#f0fdf4;border-radius:8px;padding:14px 16px;font-style:italic;border-left:3px solid #86efac}
-.modal-approval{background:#fffbeb;border-radius:8px;padding:14px 16px;border:1px solid #fde68a}
+.modal-section-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px}
+.modal-instructions{font-size:12.5px;line-height:1.8;color:var(--text);background:#f9f9f9;border-radius:4px;padding:14px 16px;border-left:2px solid var(--teal)}
+.modal-caption{font-size:12.5px;line-height:1.7;color:var(--text-2);background:#f9f9f9;border-radius:4px;padding:14px 16px;font-style:italic;border-left:2px solid var(--border-strong)}
+.modal-approval{background:#f9f9f9;border-radius:4px;padding:14px 16px;border:1px solid var(--border)}
 .approval-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.appr-pill{border:2px solid var(--border);border-radius:99px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;background:var(--card)}
-.appr-pill:hover{border-color:var(--teal)}
-.appr-pill.sel-approved{background:#dcfce7;border-color:#16a34a;color:#166534}
-.appr-pill.sel-adjustment{background:#fef9c3;border-color:#d97706;color:#92400e}
-.appr-pill.sel-rejected{background:#fee2e2;border-color:#dc2626;color:#991b1b}
-.modal-notes{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;font-family:inherit;resize:vertical;min-height:60px}
+.appr-pill{border:1px solid var(--border);border-radius:4px;padding:5px 14px;font-size:11px;font-weight:600;cursor:pointer;transition:all .1s;background:var(--card);color:var(--text-2)}
+.appr-pill:hover{border-color:var(--teal);color:var(--teal)}
+.appr-pill.sel-approved{background:var(--teal);border-color:var(--teal);color:#fff}
+.appr-pill.sel-adjustment{background:var(--teal-mist);border-color:var(--teal);color:var(--teal-dim)}
+.appr-pill.sel-rejected{background:var(--sidebar);border-color:var(--sidebar);color:#fff}
+.modal-notes{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 12px;font-size:12px;font-family:inherit;resize:vertical;min-height:60px}
 .modal-notes:focus{outline:none;border-color:var(--teal)}
 .modal-foot{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-top:1px solid var(--border);background:var(--card);position:sticky;bottom:0;gap:10px;flex-wrap:wrap}
-.modal-foot .btn-teal{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer}
-.modal-foot .btn-teal:hover{background:var(--teal-dark)}
-.modal-foot .btn-ghost{background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)}
-.modal-foot .btn-ghost:hover{border-color:var(--teal);color:var(--teal)}
-.brief-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--teal);text-decoration:none;border:1px solid var(--teal);border-radius:99px;padding:5px 14px}
-.brief-link:hover{background:var(--teal-light)}
+.modal-foot .btn-teal{background:var(--teal);color:#fff;border:none;border-radius:4px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer}
+.modal-foot .btn-teal:hover{background:var(--teal-dim)}
+.modal-foot .btn-ghost{background:none;border:1px solid var(--border);border-radius:4px;padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted)}
+.modal-foot .btn-ghost:hover{border-color:var(--text-2);color:var(--text)}
+.brief-link{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--teal);text-decoration:none;border:1px solid var(--teal);border-radius:4px;padding:5px 12px}
+.brief-link:hover{background:var(--teal-mist);text-decoration:none}
 .modal-status-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.status-cycle-btn{border:none;background:var(--teal-light);color:var(--teal-dark);border-radius:99px;padding:4px 14px;font-size:11px;font-weight:700;cursor:pointer}
-.status-cycle-btn:hover{background:var(--teal);color:#fff}
+.status-cycle-btn{border:1px solid var(--border);background:var(--card);color:var(--text-2);border-radius:4px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer}
+.status-cycle-btn:hover{border-color:var(--teal);color:var(--teal)}
 
-/* ── Responsive ───────────────────────────────────── */
-@media(max-width:1100px){.kpi-grid.cols-4{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid.cols-4,.kpi-grid.cols-3,.grid-2,.grid-3{grid-template-columns:1fr}.kanban{grid-template-columns:1fr 1fr}}
-
-/* ── Action Tracker ───────────────────────────────── */
-.tracker-pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-.tracker-stage{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
-.tracker-stage-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.tracker-stage-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.tracker-stage-count{background:var(--border);border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--muted)}
-.tracker-card{background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:8px;border-left:3px solid var(--border);cursor:pointer;transition:all .15s}
-.tracker-card:hover{background:#f0f2f5;border-left-color:var(--teal)}
-.tracker-card.decision-approved{border-left-color:var(--green)}
-.tracker-card.decision-adjusted{border-left-color:var(--amber)}
-.tracker-card.decision-rejected{border-left-color:var(--red);opacity:.6}
-.tracker-card.status-completed{border-left-color:var(--teal);background:#f0fdf4}
-.tracker-card-title{font-size:12px;font-weight:600;line-height:1.4;margin-bottom:6px}
-.tracker-card-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.tracker-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700}
-.tag-seo{background:rgba(63,166,154,.1);color:var(--teal)}
-.tag-content{background:rgba(59,130,246,.1);color:var(--blue)}
-.tag-paid-ads{background:rgba(239,68,68,.1);color:var(--red)}
-.tag-website{background:rgba(139,92,246,.1);color:var(--purple)}
-.tag-operations{background:rgba(245,158,11,.1);color:var(--amber)}
-.tag-social{background:rgba(236,72,153,.1);color:#ec4899}
-.p1-dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px}
-.p2-dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-right:4px}
-.p3-dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px}
-.tracker-detail-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;display:none}
+/* ── Action Tracker ──────────────────────────────── */
+.tracker-pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.tracker-stage{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.tracker-stage-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.tracker-stage-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tracker-stage-count{font-size:11px;font-weight:700;color:var(--text);background:#f0f0f0;border-radius:3px;padding:1px 7px}
+.tracker-card{background:#f9f9f9;border-radius:4px;padding:12px;margin-bottom:6px;border-left:2px solid var(--border);cursor:pointer;transition:all .1s;border:1px solid var(--border);border-left-width:2px}
+.tracker-card:hover{border-color:var(--teal);background:var(--card)}
+.tracker-card.decision-approved{border-left-color:var(--teal)}
+.tracker-card.decision-adjusted{border-left-color:var(--muted)}
+.tracker-card.decision-rejected{border-left-color:var(--muted-2);opacity:.55}
+.tracker-card.status-completed{border-left-color:var(--teal);background:var(--teal-mist)}
+.tracker-card-title{font-size:12px;font-weight:600;line-height:1.45;margin-bottom:7px;color:var(--text)}
+.tracker-card-meta{font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tracker-tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#f0f0f0;color:var(--text-2)}
+.tracker-tag.tag-seo{background:var(--teal-mist);color:var(--teal-dim)}
+.tag-content,.tag-paid-ads,.tag-website,.tag-operations,.tag-social{background:#f0f0f0;color:var(--text-2)}
+.p1-dot::before{content:'P1';font-size:8.5px;font-weight:700;background:var(--sidebar);color:#fff;border-radius:2px;padding:0 4px;margin-right:4px}
+.p2-dot::before{content:'P2';font-size:8.5px;font-weight:700;background:#f0f0f0;color:var(--text-2);border-radius:2px;padding:0 4px;margin-right:4px}
+.p3-dot::before{content:'P3';font-size:8.5px;font-weight:700;background:#f0f0f0;color:var(--muted);border-radius:2px;padding:0 4px;margin-right:4px}
+.tracker-detail-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;display:none}
 .tracker-detail-panel.open{display:block}
-.outcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-.outcome-cell{background:#f8f9fa;border-radius:8px;padding:12px}
-.outcome-cell .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px}
-.outcome-cell .val{font-size:1.1rem;font-weight:700}
-.verdict-worked{color:var(--green)}
-.verdict-partial{color:var(--amber)}
-.verdict-no_impact{color:var(--muted)}
-.verdict-negative{color:var(--red)}
-.meeting-log{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.outcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.outcome-cell{background:#f9f9f9;border-radius:4px;padding:12px;border:1px solid var(--border)}
+.outcome-cell .label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
+.outcome-cell .val{font-size:14px;font-weight:700;color:var(--text)}
+.verdict-worked{color:var(--teal)}
+.verdict-partial,.verdict-no_impact,.verdict-negative{color:var(--muted)}
+.meeting-log{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px}
 .meeting-log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.meeting-log-date{font-weight:700;font-size:13px}
+.meeting-log-date{font-weight:700;font-size:13px;color:var(--text)}
 .meeting-log-pills{display:flex;gap:6px}
-.meet-pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px}
-.meet-approved{background:rgba(34,197,94,.1);color:var(--green)}
-.meet-adjusted{background:rgba(245,158,11,.1);color:var(--amber)}
-.meet-rejected{background:rgba(239,68,68,.1);color:var(--red)}
+.meet-pill{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:3px;background:#f0f0f0;color:var(--text-2)}
+.meet-approved{background:var(--teal-mist);color:var(--teal-dim)}
+.meet-adjusted,.meet-rejected{background:#f0f0f0;color:var(--muted)}
 
-/* ── README / How It Works ─────────────────────────────── */
-.readme-section{margin-bottom:36px}
-.readme-section h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-/* Weekly loop diagram */
-.loop-diagram{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-bottom:8px}
-.loop-node{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px}
-.loop-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.loop-label{font-size:11px;font-weight:700;text-align:center;line-height:1.3;color:var(--text)}
+/* ── README ──────────────────────────────────────── */
+.readme-section{margin-bottom:40px}
+.readme-section h2{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.loop-diagram{display:flex;align-items:flex-start;gap:0;flex-wrap:wrap;padding:8px 0}
+.loop-node{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:100px;padding:0 4px}
+.loop-icon{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--card)}
+.loop-icon-inner{width:12px;height:12px;border-radius:50%;background:var(--teal)}
+.loop-icon.active-node{border-color:var(--teal);background:var(--teal-mist)}
+.loop-label{font-size:11px;font-weight:700;text-align:center;line-height:1.35;color:var(--text)}
 .loop-sub{font-size:10px;color:var(--muted);text-align:center;line-height:1.3}
-.loop-arrow{font-size:18px;color:var(--border);margin:0 4px;flex-shrink:0;margin-top:-18px}
-/* Agent pipeline */
-.agent-pipeline{display:grid;grid-template-columns:1fr;gap:0}
-.agent-phase{margin-bottom:20px}
-.agent-phase-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.loop-arrow{font-size:14px;color:var(--muted-2);margin:0 2px;flex-shrink:0;margin-top:14px}
+.agent-phase{margin-bottom:22px}
+.agent-phase-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .agent-phase-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.agent-row{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
-.agent-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;flex:1;min-width:140px;position:relative;transition:all .15s}
-.agent-box:hover{border-color:var(--teal);box-shadow:0 0 0 3px rgba(63,166,154,.08)}
-.agent-box .agent-num{position:absolute;top:-8px;left:12px;background:var(--sidebar);color:#7ee8e0;font-size:9px;font-weight:700;padding:1px 7px;border-radius:99px}
-.agent-box .agent-name{font-size:12px;font-weight:700;margin-bottom:4px;padding-top:2px}
-.agent-box .agent-desc{font-size:11px;color:var(--muted);line-height:1.4}
-.agent-box .agent-out{font-size:10px;color:var(--teal);margin-top:6px;font-weight:600}
-.agent-box .agent-reads{font-size:10px;color:var(--muted);margin-top:3px}
-.agent-connector{display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--border);padding:0 2px;flex-shrink:0;align-self:center}
-/* Flow arrows between phases */
-.phase-arrow{text-align:center;font-size:20px;color:var(--teal);margin:4px 0 16px;opacity:.6}
-/* Team workflow */
-.team-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
-.team-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
-.team-card .tc-name{font-size:12px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:6px}
-.team-card .tc-role{font-size:10px;color:var(--muted);margin-bottom:8px}
-.team-card .tc-tasks{font-size:11px;color:var(--text);line-height:1.6}
+.agent-row{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.agent-box{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px 16px;flex:1;min-width:140px;position:relative;transition:border-color .1s}
+.agent-box:hover{border-color:var(--teal)}
+.agent-box.primary-agent{border-color:var(--teal);border-width:1.5px}
+.agent-box .agent-num{display:inline-block;background:var(--sidebar);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:2px;margin-bottom:8px;letter-spacing:.04em}
+.agent-box .agent-name{font-size:12.5px;font-weight:700;margin-bottom:5px;color:var(--text)}
+.agent-box .agent-desc{font-size:11px;color:var(--muted);line-height:1.45}
+.agent-box .agent-out{font-size:10px;color:var(--teal);margin-top:8px;font-weight:600}
+.agent-box .agent-reads{font-size:10px;color:var(--muted-2);margin-top:3px}
+.agent-connector{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted-2);padding:0 2px;flex-shrink:0;align-self:center}
+.phase-arrow{text-align:center;font-size:12px;color:var(--muted);margin:2px 0 18px;letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+.team-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px}
+.team-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-top:2px solid var(--border-strong)}
+.team-card.lead{border-top-color:var(--teal)}
+.team-card .tc-name{font-size:12.5px;font-weight:700;margin-bottom:2px;color:var(--text)}
+.team-card .tc-role{font-size:10px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.team-card .tc-tasks{font-size:11.5px;color:var(--text-2);line-height:1.65}
 .team-card .tc-tasks li{list-style:none;padding-left:14px;position:relative}
-.team-card .tc-tasks li::before{content:'→';position:absolute;left:0;color:var(--teal);font-size:10px}
-/* Data flow */
-.data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-.data-source{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
-.data-source .ds-icon{font-size:22px;margin-bottom:6px}
-.data-source .ds-name{font-size:11px;font-weight:700;margin-bottom:2px}
-.data-source .ds-file{font-size:9px;color:var(--muted);font-family:monospace}
-/* Skill triggers */
+.team-card .tc-tasks li::before{content:'–';position:absolute;left:0;color:var(--teal)}
+.data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.data-source{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.data-source .ds-icon{width:32px;height:32px;border-radius:50%;background:var(--teal-mist);border:1px solid rgba(63,166,154,.2);margin:0 auto 8px;display:flex;align-items:center;justify-content:center}
+.data-source .ds-dot{width:10px;height:10px;border-radius:50%;background:var(--teal)}
+.data-source .ds-name{font-size:11px;font-weight:700;margin-bottom:3px;color:var(--text)}
+.data-source .ds-file{font-size:9.5px;color:var(--muted);font-family:'SF Mono',Menlo,monospace}
 .skill-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.skill-row{display:flex;align-items:flex-start;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.skill-trigger{font-size:11px;font-weight:600;color:var(--teal);min-width:120px}
+.skill-row{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:10px 14px}
+.skill-trigger{font-size:11px;font-weight:600;color:var(--teal);min-width:130px;flex-shrink:0}
 .skill-skill{font-size:11px;color:var(--muted)}
-/* Legend */
-.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
-.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-@media(max-width:900px){.agent-row{flex-direction:column}.loop-diagram{gap:4px}.skill-grid{grid-template-columns:1fr}}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;padding-top:12px;border-top:1px solid var(--border)}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+@media(max-width:1100px){.kpi-grid.cols-4{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:repeat(3,1fr)}.tracker-pipeline{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid.cols-4,.kpi-grid.cols-3,.grid-2,.grid-3{grid-template-columns:1fr}.kanban{grid-template-columns:1fr 1fr}.skill-grid{grid-template-columns:1fr}.tracker-pipeline{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "31 May 2026, 22:49",
+  "generated": "31 May 2026, 23:14",
   "refresh_ts": "2026-05-31T08:03:07.570435Z",
   "status": {
     "ga4": "live",
@@ -950,61 +926,43 @@ window.DASHBOARD_DATA = {
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Overview</div>
-    <div class="sidebar-item active" data-page="overview" onclick="nav(this)">
-      <span class="icon">📊</span> Dashboard
-    </div>
+    <div class="sidebar-item active" data-page="overview" onclick="nav(this)">Dashboard</div>
   </div>
 
   <div class="sidebar-section">
-    <div class="sidebar-section-label">Channel Performance</div>
-    <div class="sidebar-item" data-page="seo" onclick="nav(this)">
-      <span class="icon">🔍</span> SEO &amp; Organic
-    </div>
-    <div class="sidebar-item" data-page="google-ads" onclick="nav(this)">
-      <span class="icon">🎯</span> Google Ads
-    </div>
-    <div class="sidebar-item" data-page="meta-ads" onclick="nav(this)">
-      <span class="icon">📱</span> Meta Ads
-    </div>
-    <div class="sidebar-item" data-page="gbp" onclick="nav(this)">
-      <span class="icon">📍</span> Google Business
-    </div>
+    <div class="sidebar-section-label">Performance</div>
+    <div class="sidebar-item" data-page="seo" onclick="nav(this)">SEO &amp; Organic</div>
+    <div class="sidebar-item" data-page="google-ads" onclick="nav(this)">Google Ads</div>
+    <div class="sidebar-item" data-page="meta-ads" onclick="nav(this)">Meta Ads</div>
+    <div class="sidebar-item" data-page="gbp" onclick="nav(this)">Google Business</div>
   </div>
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Content</div>
-    <div class="sidebar-item" data-page="content-planner" onclick="nav(this)">
-      <span class="icon">📅</span> Content Planner
-    </div>
+    <div class="sidebar-item" data-page="content-planner" onclick="nav(this)">Content Planner</div>
     <div class="sidebar-item" data-page="content-review" onclick="nav(this)">
-      <span class="icon">✅</span> Content Review
-      <span class="badge" id="review-badge">0</span>
+      Content Review
+      <span class="badge neutral" id="review-badge">0</span>
     </div>
   </div>
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Operations</div>
-    <div class="sidebar-item" data-page="website-manager" onclick="nav(this)">
-      <span class="icon">🌐</span> Website Manager
-    </div>
+    <div class="sidebar-item" data-page="website-manager" onclick="nav(this)">Website Manager</div>
     <div class="sidebar-item" data-page="recommendations" onclick="nav(this)">
-      <span class="icon">💡</span> Recommendations
-      <span class="badge amber" id="rec-badge">0</span>
+      Recommendations
+      <span class="badge neutral" id="rec-badge">0</span>
     </div>
     <div class="sidebar-item" data-page="action-tracker" onclick="nav(this)">
-      <span class="icon">📌</span> Action Tracker
-      <span class="badge amber" id="tracker-badge">0</span>
+      Action Tracker
+      <span class="badge neutral" id="tracker-badge">0</span>
     </div>
-    <div class="sidebar-item" data-page="meeting-minutes" onclick="window.open('meeting-minutes.html','_blank')">
-      <span class="icon">📋</span> Meeting Minutes
-    </div>
+    <div class="sidebar-item" onclick="window.open('meeting-minutes.html','_blank')">Meeting Minutes</div>
   </div>
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Help</div>
-    <div class="sidebar-item" data-page="readme" onclick="nav(this)">
-      <span class="icon">📖</span> How It Works
-    </div>
+    <div class="sidebar-item" data-page="readme" onclick="nav(this)">How It Works</div>
   </div>
 
   <div class="sidebar-footer">
@@ -1046,22 +1004,22 @@ window.DASHBOARD_DATA = {
       <div class="kpi-grid cols-3 mb" id="overview-kpis"></div>
 
       <!-- GA4 + GSC -->
-      <div class="section-title">📊 Web Performance</div>
+      <div class="section-title">Web Performance</div>
       <div class="grid-2 mb" id="overview-web"></div>
 
       <!-- Channel snapshot -->
-      <div class="section-title">📡 Channel Snapshot</div>
+      <div class="section-title">Channel Snapshot</div>
       <div class="grid-2 mb" id="overview-channels"></div>
 
       <!-- Top pages -->
-      <div class="section-title">📄 Top Pages</div>
+      <div class="section-title">Top Pages</div>
       <div class="card mb" id="overview-pages"></div>
     </div>
 
     <!-- ══ PAGE: SEO ═════════════════════════════════════════════════ -->
     <div class="page" id="page-seo">
       <div class="page-header">
-        <h1>🔍 SEO &amp; Organic Search</h1>
+        <h1>SEO &amp; Organic Search</h1>
         <p>Primary growth driver — growing organic to reduce Google Ads spend</p>
       </div>
       <div id="seo-content"></div>
@@ -1070,7 +1028,7 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: GOOGLE ADS ══════════════════════════════════════════ -->
     <div class="page" id="page-google-ads">
       <div class="page-header">
-        <h1>🎯 Google Ads</h1>
+        <h1>Google Ads</h1>
         <p>Reduce paid spend as organic coverage grows</p>
       </div>
       <div id="gads-content"></div>
@@ -1079,7 +1037,7 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: META ADS ════════════════════════════════════════════ -->
     <div class="page" id="page-meta-ads">
       <div class="page-header">
-        <h1>📱 Meta Ads</h1>
+        <h1>Meta Ads</h1>
         <p>Facebook &amp; Instagram paid social</p>
       </div>
       <div id="meta-content"></div>
@@ -1088,7 +1046,7 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: GBP ═════════════════════════════════════════════════ -->
     <div class="page" id="page-gbp">
       <div class="page-header">
-        <h1>📍 Google Business Profile</h1>
+        <h1>Google Business Profile</h1>
         <p>Local search visibility — Malaga &amp; Ellenbrook</p>
       </div>
       <div id="gbp-content"></div>
@@ -1097,7 +1055,7 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: CONTENT PLANNER ════════════════════════════════════ -->
     <div class="page" id="page-content-planner">
       <div class="page-header">
-        <h1>📅 Content Planner</h1>
+        <h1>Content Planner</h1>
         <p>2-week content calendar — all channels</p>
       </div>
       <div id="planner-content"></div>
@@ -1106,8 +1064,8 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: CONTENT REVIEW ═════════════════════════════════════ -->
     <div class="page" id="page-content-review">
       <div class="page-header">
-        <h1>✅ Content Review</h1>
-        <p>Approval flow: Agent generates → Tia reviews → Jane QC → Joanne posts</p>
+        <h1>Content Review</h1>
+        <p>Approval flow — Agent generates — Tia reviews — Jane QC — Joanne posts</p>
       </div>
       <div id="review-content"></div>
     </div>
@@ -1115,7 +1073,7 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: WEBSITE MANAGER ════════════════════════════════════ -->
     <div class="page" id="page-website-manager">
       <div class="page-header">
-        <h1>🌐 Website Manager</h1>
+        <h1>Website Manager</h1>
         <p>Technical SEO health, page performance, dev tasks</p>
       </div>
       <div id="web-content"></div>
@@ -1124,8 +1082,8 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: RECOMMENDATIONS ════════════════════════════════════ -->
     <div class="page" id="page-recommendations">
       <div class="page-header">
-        <h1>💡 Recommendation Tracker</h1>
-        <p>AI-generated actions — track from idea to outcome</p>
+        <h1>Recommendations</h1>
+        <p>Weekly AI-generated actions — review and assign</p>
       </div>
       <div id="rec-content"></div>
     </div>
@@ -1133,7 +1091,7 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: README ═════════════════════════════════════════════ -->
     <div class="page" id="page-readme">
       <div class="page-header">
-        <h1>📖 How It Works</h1>
+        <h1>How It Works</h1>
         <p>System architecture, agent pipeline, and weekly workflow</p>
       </div>
       <div id="readme-content"></div>
@@ -1142,8 +1100,8 @@ window.DASHBOARD_DATA = {
     <!-- ══ PAGE: ACTION TRACKER ════════════════════════════════════ -->
     <div class="page" id="page-action-tracker">
       <div class="page-header">
-        <h1>📌 Action Tracker</h1>
-        <p>Recommendations → Decisions → Execution → Outcomes</p>
+        <h1>Action Tracker</h1>
+        <p>Recommendations — Decisions — Execution — Outcomes</p>
       </div>
       <div id="tracker-content"></div>
     </div>
@@ -1166,32 +1124,32 @@ window.DASHBOARD_DATA = {
     <div class="modal-meta" id="modal-meta"></div>
     <div class="modal-body">
       <div>
-        <div class="modal-section-label">📋 Instructions for Assignee</div>
+        <div class="modal-section-label">Instructions for Assignee</div>
         <div class="modal-instructions" id="modal-instructions"></div>
       </div>
       <div>
-        <div class="modal-section-label">✍️ Suggested Caption / Copy</div>
+        <div class="modal-section-label">Suggested Caption / Copy</div>
         <div class="modal-caption" id="modal-caption"></div>
       </div>
       <div id="modal-kw-block"></div>
       <div>
-        <div class="modal-section-label">📌 Status</div>
+        <div class="modal-section-label">Status</div>
         <div class="modal-status-row">
           <span id="modal-status-pill"></span>
           <button class="status-cycle-btn" id="modal-cycle-btn" onclick="cycleFromModal()">Cycle Status →</button>
         </div>
       </div>
-      <div id="modal-draft-link-wrap" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px 16px">
-        <div class="modal-section-label" style="color:#166534;margin-bottom:8px">📄 Draft Content — Ready for Review</div>
-        <a href="#" target="_blank" class="brief-link" style="background:#3FA69A;color:#fff;border-color:#3FA69A;font-size:12px">📖 Open Draft → Read &amp; Review</a>
-        <div style="font-size:11px;color:#6b7280;margin-top:8px">Share this link with John (SEO), Jane (QC), and Ange for review</div>
+      <div id="modal-draft-link-wrap" style="display:none;background:var(--teal-mist);border:1px solid rgba(63,166,154,.25);border-radius:4px;padding:14px 16px">
+        <div class="modal-section-label" style="margin-bottom:8px">Draft — Ready for Review</div>
+        <a href="#" target="_blank" class="brief-link" style="background:var(--teal);color:#fff;border-color:var(--teal)">Open Draft</a>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">Share with John (SEO), Jane (QC), and Ange for review</div>
       </div>
       <div class="modal-approval">
-        <div class="modal-section-label" style="color:#92400e;margin-bottom:10px">📝 Tia's Approval</div>
+        <div class="modal-section-label" style="margin-bottom:10px">Approval Decision</div>
         <div class="approval-btns">
-          <button class="appr-pill" id="apill-approved" onclick="setModalApproval('approved')">✅ Approved</button>
-          <button class="appr-pill" id="apill-adjustment" onclick="setModalApproval('adjustment')">🔄 Needs Adjustment</button>
-          <button class="appr-pill" id="apill-rejected" onclick="setModalApproval('rejected')">❌ Rejected</button>
+          <button class="appr-pill" id="apill-approved" onclick="setModalApproval('approved')">Approved</button>
+          <button class="appr-pill" id="apill-adjustment" onclick="setModalApproval('adjustment')">Needs Adjustment</button>
+          <button class="appr-pill" id="apill-rejected" onclick="setModalApproval('rejected')">Rejected</button>
         </div>
         <div id="modal-notes-wrap" style="display:none">
           <div class="modal-section-label" style="margin-bottom:4px">Notes / Adjustment Instructions</div>
@@ -1200,10 +1158,10 @@ window.DASHBOARD_DATA = {
       </div>
     </div>
     <div class="modal-foot">
-      <a class="brief-link" id="modal-brief-link" href="#" target="_blank">📄 View Full Brief</a>
+      <a class="brief-link" id="modal-brief-link" href="#" target="_blank">View Brief</a>
       <div style="display:flex;gap:8px">
         <button class="btn-ghost" onclick="closePlannerModal()">Close</button>
-        <button class="btn-teal" onclick="saveModalAndClose()">💾 Save & Close</button>
+        <button class="btn-teal" onclick="saveModalAndClose()">Save</button>
       </div>
     </div>
   </div>
@@ -1246,14 +1204,14 @@ const stars = r => {
 };
 const kpiCard = (icon,label,value,change,sub,colorClass='') => `
   <div class="kpi-card ${colorClass}">
-    <span class="kpi-icon">${icon}</span>
     <div class="kpi-label">${label}</div>
     <div class="kpi-value">${value}</div>
     ${change!==null?`<div class="kpi-change ${chgClass(change)}">${arrow(change)} ${fmtChg(change)} vs prior week</div>`:''}
     ${sub?`<div class="kpi-sub">${sub}</div>`:''}
   </div>`;
+const insightTypeMap = {'green':'teal','red':'warn','amber':'warn','blue':'neutral','teal':'teal'};
 const insight = (type,label,text) => `
-  <div class="insight ${type}">
+  <div class="insight ${insightTypeMap[type]||'neutral'}">
     <div class="insight-label">${label}</div>
     ${text}
   </div>`;
@@ -1281,11 +1239,11 @@ function renderOverview() {
 
   // KPI cards
   $('overview-kpis').innerHTML =
-    kpiCard('📊','Weekly Sessions',fmt(g.sessions,'n'),g.ses_chg,`Prior: ${fmt(g.p_sessions,'n')}`) +
-    kpiCard('🎯','Conversions',fmt(g.convs,'n'),g.conv_chg,`Rate: ${fmt(g.conv_rate,'%')}`) +
-    kpiCard('🔍','SEO Health',s.health_score+'/100',null,`${s.tk_summary.top_3_count||0} top-3 · DR ${s.domain_rating||'–'}`, s.health_score>=70?'green':s.health_score>=40?'amber':'red') +
-    kpiCard('🌱','Organic Value',fmt(s.organic_value,'$'),s.ov_chg,`${fmt(s.organic_traffic,'n')} organic visits/wk`,'green') +
-    kpiCard('💰','Ad Spend',fmt(ads.spend,'$2'),ads.spend_chg,`${fmt(ads.convs,'n')} conversions`) +
+    kpiCard('','Weekly Sessions',fmt(g.sessions,'n'),g.ses_chg,`Prior: ${fmt(g.p_sessions,'n')}`) +
+    kpiCard('','Conversions',fmt(g.convs,'n'),g.conv_chg,`Rate: ${fmt(g.conv_rate,'%')}`) +
+    kpiCard('','SEO Health',s.health_score+'/100',null,`${s.tk_summary.top_3_count||0} top-3 · DR ${s.domain_rating||'–'}`, s.health_score>=70?'green':s.health_score>=40?'amber':'red') +
+    kpiCard('🌱','Organic Value',fmt(s.organic_value,'$'),s.ov_chg,`${fmt(s.organic_traffic,'n')} organic visits/wk`,'') +
+    kpiCard('','Ad Spend',fmt(ads.spend,'$2'),ads.spend_chg,`${fmt(ads.convs,'n')} conversions`) +
     kpiCard('📏','Blended CPA',fmt(ads.cpa,'$2'),null,`Mal: ${fmt(ads.malaga.cpa,'$2')} · Ell: ${fmt(ads.ellenbrook.cpa,'$2')}`,ads.cpa>50?'red':'green');
 
   // Web cards
@@ -1318,7 +1276,7 @@ function renderOverview() {
   const gbp = D.gbp, mal = gbp.malaga, ell = gbp.ellenbrook;
   $('overview-channels').innerHTML = `
     <div class="card">
-      <div class="card-h">📍 Google Business Profile</div>
+      <div class="card-h">Google Business Profile</div>
       <div class="stat-row"><span class="stat-label">Malaga Rating</span><span class="stat-val">${stars(mal.rating)}</span></div>
       <div class="stat-row"><span class="stat-label">Malaga Reviews</span><span class="stat-val">${fmt(mal.reviews,'n')}</span></div>
       <div class="stat-row"><span class="stat-label">Ellenbrook Rating</span><span class="stat-val">${stars(ell.rating)}</span></div>
@@ -1336,7 +1294,7 @@ function renderOverview() {
 
   // Top pages
   $('overview-pages').innerHTML = `
-    <div class="card-h">📄 Top Pages by Traffic</div>
+    <div class="card-h">Top Pages by Traffic</div>
     <table><thead><tr><th>#</th><th>Page</th><th class="num">Views</th><th class="num">Sessions</th></tr></thead><tbody>
       ${g.top_pages.map((p,i)=>`<tr><td class="rank">#${i+1}</td><td style="font-family:monospace;font-size:11px;color:var(--teal)">${p.path}</td><td class="num">${fmt(p.views,'n')}</td><td class="num">${fmt(p.sessions,'n')}</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No data</td></tr>'}
     </tbody></table>`;
@@ -1359,9 +1317,9 @@ function renderSEO() {
   let html = `
     <div class="kpi-grid cols-4 mb">
       ${kpiCard('🏆','SEO Health Score',s.health_score+'/100',null,s.health_score>=70?'🟢 Strong':s.health_score>=40?'🟡 Building':'🔴 Needs work')}
-      ${kpiCard('🌱','Organic Value',fmt(s.organic_value,'$'),s.ov_chg,`${fmt(s.organic_traffic,'n')} visits/wk`,'green')}
-      ${kpiCard('🔗','Domain Rating',s.domain_rating||'–',null,'Authority score 0–100')}
-      ${kpiCard('📍','Page 1 Keywords',s.tk_summary.top_10_count||0,null,`${s.tk_summary.top_3_count||0} top-3 · ${s.tk_summary.not_ranking||0} not ranking`)}
+      ${kpiCard('🌱','Organic Value',fmt(s.organic_value,'$'),s.ov_chg,`${fmt(s.organic_traffic,'n')} visits/wk`,'')}
+      ${kpiCard('','Domain Rating',s.domain_rating||'–',null,'Authority score 0–100')}
+      ${kpiCard('','Page 1 Keywords',s.tk_summary.top_10_count||0,null,`${s.tk_summary.top_3_count||0} top-3 · ${s.tk_summary.not_ranking||0} not ranking`)}
     </div>`;
 
   // Key analysis
@@ -1373,17 +1331,17 @@ function renderSEO() {
     <div class="grid-3 mb">
       ${insight('green','↑ Biggest Gains This Week', upKws)}
       ${insight('red','↓ Biggest Drops', dnKws)}
-      ${insight('blue','🎯 Top Keyword Gap', topGap?`Revo ranks for <b>${topGap}</b> — CB247 not ranking. Publish a page targeting this keyword.`:'Run pull_ahrefs.py to see keyword gaps')}
+      ${insight('teal','Top Keyword Gap', topGap?`Revo ranks for <b>${topGap}</b> — CB247 not ranking. Publish a page targeting this keyword.`:'Run pull_ahrefs.py to see keyword gaps')}
     </div>`;
 
   // Recommendation
-  html += insight('teal','💡 This Week\'s SEO Recommendation',
+  html += insight('teal','This Week\'s SEO Recommendation',
     `<b>Priority 1:</b> Fix any keywords in positions #4–10 with simple on-page changes (H1, meta description, internal links). These are your fastest wins.<br>
      <b>Priority 2:</b> Publish content targeting your top keyword gap vs Revo Fitness.<br>
      <b>Priority 3:</b> Reclaim ${s.broken_backlinks.length} broken backlinks — contact linking sites to update URLs.`);
 
   // Keyword tracker table
-  html += sectionTitle('📋 20 Priority Keywords — Ranking Tracker');
+  html += sectionTitle('20 Priority Keywords — Ranking Tracker');
   html += `<div class="card mb"><table>
     <thead><tr><th>Keyword</th><th class="num">Position</th><th class="num">WoW</th><th class="num">Volume</th><th>Status</th></tr></thead><tbody>
     ${s.keywords.map(kw=>`<tr>
@@ -1396,7 +1354,7 @@ function renderSEO() {
     </tbody></table></div>`;
 
   // Keyword gap
-  html += sectionTitle('🎯 Keyword Gap — vs Competitors');
+  html += sectionTitle('Keyword Gap — vs Competitors');
   html += `<div class="grid-2 mb">
     <div class="card">
       <div class="card-h">vs Revo Fitness</div>
@@ -1413,7 +1371,7 @@ function renderSEO() {
   </div>`;
 
   // Backlinks
-  html += sectionTitle('🔗 Backlink Health');
+  html += sectionTitle('Backlink Health');
   html += `<div class="grid-2 mb">
     <div class="card">
       <div class="card-h">Broken Backlinks — Reclaim Opportunities</div>
@@ -1437,27 +1395,27 @@ function renderGAds() {
   const ads = D.google_ads, mal = ads.malaga, ell = ads.ellenbrook, seo = D.seo;
 
   let html = `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('💰','Total Spend',fmt(ads.spend,'$2'),ads.spend_chg,`${fmt(ads.convs,'n')} conversions`)}
+    ${kpiCard('','Total Spend',fmt(ads.spend,'$2'),ads.spend_chg,`${fmt(ads.convs,'n')} conversions`)}
     ${kpiCard('📏','Blended CPA',fmt(ads.cpa,'$2'),null,'Target: $50',ads.cpa>50?'red':'green')}
     ${kpiCard('🟢','Malaga CPA',fmt(mal.cpa,'$2'),null,`${fmt(mal.conv,'n')} conv · ${fmt(mal.spend,'$2')} spend`,mal.cpa>50?'red':'green')}
-    ${kpiCard('🔵','Ellenbrook CPA',fmt(ell.cpa,'$2'),null,`${fmt(ell.conv,'n')} conv · ${fmt(ell.spend,'$2')} spend`,ell.cpa>50?'red':'green')}
+    ${kpiCard('','Ellenbrook CPA',fmt(ell.cpa,'$2'),null,`${fmt(ell.conv,'n')} conv · ${fmt(ell.spend,'$2')} spend`,ell.cpa>50?'red':'green')}
   </div>`;
 
   // Key analysis
   html += `<div class="grid-3 mb">
-    ${insight('green','✅ Organic Coverage Growing', `Organic value is ${fmt(seo.organic_value,'$')}/wk — equivalent ad spend being replaced by SEO.`)}
-    ${insight('amber','💡 Pause Recommendation', `Review keywords where CB247 now ranks #1–3 organically — those ad campaigns can be paused to save budget.`)}
-    ${insight('blue','📈 Trend', `${fmtChg(ads.spend_chg)} spend vs prior week. Monitor CPA trend — target is under $50.`)}
+    ${insight('teal','Organic Coverage Growing', `Organic value is ${fmt(seo.organic_value,'$')}/wk — equivalent ad spend being replaced by SEO.`)}
+    ${insight('teal','Pause Recommendation', `Review keywords where CB247 now ranks #1–3 organically — those ad campaigns can be paused to save budget.`)}
+    ${insight('neutral','Trend', `${fmtChg(ads.spend_chg)} spend vs prior week. Monitor CPA trend — target is under $50.`)}
   </div>`;
 
   // Recommendation
-  html += insight('teal','💡 This Week\'s Google Ads Recommendation',
+  html += insight('teal','This Week\'s Google Ads Recommendation',
     `<b>1. Audit keyword coverage:</b> Check which of your 20 target keywords now rank organically #1–3. Pause those ad groups.<br>
      <b>2. Reallocate budget:</b> Move saved spend to keywords with no organic coverage yet.<br>
      <b>3. Ellenbrook focus:</b> If CPA is higher in Ellenbrook, check if ad copy matches local intent.`);
 
   // 3-week trend
-  html += sectionTitle('📅 3-Week Spend Trend');
+  html += sectionTitle('3-Week Spend Trend');
   html += `<div class="grid-2 mb">
     <div class="card">
       <div class="card-h">Spend &amp; CPA Trend</div>
@@ -1491,27 +1449,27 @@ function renderMeta() {
 
   html += `<div class="grid-2 mb">
     <div class="card">
-      <div class="card-h">📊 Competitor Ad Themes (from FB Ads Library)</div>
+      <div class="card-h">Competitor Ad Themes</div>
       ${intel.fb_ads_themes.length?
         intel.fb_ads_themes.map(t=>`<div class="stat-row"><span class="stat-label">${t.theme}</span><span class="stat-val">${t.count} competitors using this</span></div>`).join('')
         :'<p style="color:var(--muted);font-size:13px">Run pull_apify.py to load competitor ad intelligence.</p>'}
     </div>
     <div class="card">
-      <div class="card-h">🎯 CB247 Advantages Competitors Aren't Using</div>
+      <div class="card-h">CB247 Advantages Competitors Don't Use</div>
       ${intel.fb_ads_gaps.length?
-        intel.fb_ads_gaps.map(g=>`<div class="stat-row"><span class="stat-label">${g.cb247_advantage}</span><span class="stat-val" style="color:var(--green)">🎯 Own this</span></div><div style="font-size:11px;color:var(--muted);padding:0 0 6px">${g.message}</div>`).join('')
+        intel.fb_ads_gaps.map(g=>`<div class="stat-row"><span class="stat-label">${g.cb247_advantage}</span><span class="stat-val good">Opportunity</span></div><div style="font-size:11px;color:var(--muted);padding:0 0 6px">${g.message}</div>`).join('')
         :'<p style="color:var(--muted);font-size:13px">Run pull_apify.py to load competitor intelligence.</p>'}
     </div>
   </div>`;
 
-  html += insight('teal','💡 Meta Ads Recommendation — When Reinstated',
+  html += insight('teal','Meta Ads Priority — When Reinstated',
     `<b>Audience 1 (FIFO):</b> Target WA postcodes near FIFO hubs. Interest: fly-in fly-out, mining, construction. Key message: "Pause your membership anytime. Train hard when you're home."<br>
      <b>Audience 2 (Malaga Families):</b> Parents 28–45, Malaga/Hamersley/Dianella. Key message: "Kids Hub free while you train."<br>
      <b>Audience 3 (Health Newcomers):</b> 18–35 not currently gym members. Key message: "$11.95/week. No lock-in. Try your first week."<br>
      <b>Creative:</b> Lead with Sauna + Ice Bath content — highest engagement in current fitness trends.`);
 
   html += `<div class="card mb">
-    <div class="card-h">📋 Reinstatement Checklist</div>
+    <div class="card-h">Reinstatement Checklist</div>
     <ul class="task-list">
       <li class="task-item"><span class="priority-pill p-critical">Critical</span>Submit identity verification documents to Meta</li>
       <li class="task-item"><span class="priority-pill p-critical">Critical</span>Review ad copy compliance — remove any claims Meta flagged</li>
@@ -1532,15 +1490,15 @@ function renderGBP() {
 
   let html = `<div class="kpi-grid cols-4 mb">
     ${kpiCard('🟢','Malaga Rating',stars(mal.rating),null,`${fmt(mal.reviews,'n')} reviews`)}
-    ${kpiCard('🔵','Ellenbrook Rating',stars(ell.rating),null,`${fmt(ell.reviews,'n')} reviews`)}
-    ${kpiCard('📍','Local Pack Rate',packRate+'%',null,`Appearing in 3-pack`)}
+    ${kpiCard('','Ellenbrook Rating',stars(ell.rating),null,`${fmt(ell.reviews,'n')} reviews`)}
+    ${kpiCard('','Local Pack Rate',packRate+'%',null,`Appearing in 3-pack`)}
     ${kpiCard('📸','Photos Malaga',fmt(mal.photos,'n'),null,'Target: 100 photos')}
   </div>`;
 
   html += `<div class="grid-3 mb">
-    ${insight('green','✅ Key Analysis', `CB247 appearing in local pack for ${packRate}% of tracked keywords: ${packKws}`)}
+    ${insight('teal','Local Pack Analysis', `CB247 appearing in local pack for ${packRate}% of tracked keywords: ${packKws}`)}
     ${insight('amber','⚠️ Gap to Close', `Malaga has ${mal.photos||0} photos vs 100 target. Photos directly impact local pack ranking.`)}
-    ${insight('teal','💡 Recommendation', `<b>This week:</b> Upload 10 photos to each location (sauna, ice bath, Kids Hub, gym floor). Add a GBP post every Tuesday.`)}
+    ${insight('teal','Recommendation', `<b>This week:</b> Upload 10 photos to each location (sauna, ice bath, Kids Hub, gym floor). Add a GBP post every Tuesday.`)}
   </div>`;
 
   // Location detail
@@ -1564,7 +1522,7 @@ function renderGBP() {
     </div>`;
   };
 
-  html += sectionTitle('📍 Location Details');
+  html += sectionTitle('Location Details');
   html += `<div class="grid-2 mb">${locCard('Malaga',mal,'green',530)}${locCard('Ellenbrook',ell,'blue',280)}</div>`;
 
   // Competitor comparison
@@ -1575,7 +1533,7 @@ function renderGBP() {
     </tbody></table></div>`;
 
   // GBP tasks
-  html += sectionTitle('✅ GBP Action Plan');
+  html += sectionTitle('GBP Action Plan');
   html += `<div class="card mb"><ul class="task-list">
     <li class="task-item"><span class="priority-pill p-critical">Critical</span>Print QR code review cards — place at both reception desks</li>
     <li class="task-item"><span class="priority-pill p-critical">Critical</span>Brief front desk on verbal review ask script after every membership sign-up</li>
@@ -1594,7 +1552,7 @@ function renderGBP() {
 const PLANNER_ITEMS = [
   {id:'p1',day:0,platform:'gbp',type:'GBP Post',title:'GBP Post — Sauna & Ice Bath',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.',instructions:'Post to both Malaga and Ellenbrook GBP profiles. Use a high-quality photo of the sauna or ice bath area. Best posting time: Tuesday 7–9am or Saturday 8am. Include the $11.95 price point and \'no lock-in\' in the first sentence for SEO. Tag location: Malaga.',kw:'sauna gym perth',dueDate:'+0'},
   {id:'p2',day:1,platform:'instagram',type:'Instagram Reel',title:'Reel — FIFO Lifestyle',assignee:'Agust',assigneeRole:'Video Creator',caption:'Fly in. Train hard. We get it. CB247\'s FIFO-friendly freeze means your membership works around your roster.',instructions:'30–45 second Reel. Open with a hook: \'Working FIFO? Your gym should work around you.\' Show the freeze feature on the app or website. Voiceover tone: direct, no-nonsense, WA working-class. End with CTA: \'Freeze. Resume. No questions asked.\' Hashtags: #fifo #fifoperth #gymperth #chasingbetter247',kw:'fifo gym perth',dueDate:'+1'},
-  {id:'p3',day:2,platform:'blog',type:'SEO Blog Post',title:'Blog — Best Gym Malaga',assignee:'John',assigneeRole:'SEO Specialist',caption:'Targeting "best gym Malaga" — 320 searches/month. H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247". Full outline and keyword map ready.',instructions:'Target keyword: "best gym malaga" (320/mo, KD 18). Secondary: "gym malaga perth", "cheap gym malaga". Word count: 1,200–1,500. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities → H2: Pricing Comparison → H2: Member Reviews → H2: FAQ → CTA. Internal links: homepage, Malaga page, pricing. Mark adds draft to WordPress as pending.\n\n📄 Draft blog (John / Jane / Ange): https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html',kw:'best gym malaga',dueDate:'+2',draftLink:'https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html'},
+  {id:'p3',day:2,platform:'blog',type:'SEO Blog Post',title:'Blog — Best Gym Malaga',assignee:'John',assigneeRole:'SEO Specialist',caption:'Targeting "best gym Malaga" — 320 searches/month. H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247". Full outline and keyword map ready.',instructions:'Target keyword: "best gym malaga" (320/mo, KD 18). Secondary: "gym malaga perth", "cheap gym malaga". Word count: 1,200–1,500. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities → H2: Pricing Comparison → H2: Member Reviews → H2: FAQ → CTA. Internal links: homepage, Malaga page, pricing. Mark adds draft to WordPress as pending.\n\nDraft for review: https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html',kw:'best gym malaga',dueDate:'+2',draftLink:'https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html'},
   {id:'p4',day:2,platform:'instagram',type:'Instagram Post',title:'Instagram — Kids Hub',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this.',instructions:'Static post or short Reel (15s). Show the Kids Hub space — colourful, safe, supervised. Caption hook: "No babysitter? No problem." Tag 3 local parent pages. Best time: Wednesday 9–11am. Hashtags: #kidshub #gymperth #malagatribe #chasingbetter247',kw:'kids gym malaga',dueDate:'+2'},
   {id:'p5',day:4,platform:'tiktok',type:'TikTok Video',title:'TikTok — Ice Bath Reaction',assignee:'Ivan',assigneeRole:'Video Creator',caption:'First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247',instructions:'Reaction-style video. Film a member (with permission) doing their first ice bath — show genuine reaction. Ideal length: 20–30 seconds. Hook in first 2s: "Would you do this for $11.95/week?" Trending audio: check TikTok trending for Perth fitness. Tag @chasingbetter247. Raw, authentic > over-produced.',kw:'ice bath gym perth',dueDate:'+4'},
   {id:'p6',day:5,platform:'gbp',type:'GBP Post',title:'GBP Post — Reformer Pilates',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.',instructions:'Post to both GBP profiles. Use a class photo or studio shot. Emphasise "24/7 access" — key differentiator vs Revo. Include class booking CTA. Target: "reformer pilates perth", "pilates malaga". Post Friday morning to capture weekend bookings.',kw:'reformer pilates perth',dueDate:'+5'},
@@ -1632,16 +1590,16 @@ window.openPlannerModal = (id) => {
   const roleColors = {'SEO Specialist':'#dbeafe','Video Creator':'#fce7f3','Social Media Manager':'#dcfce7','Content & Email Manager':'#fef9c3','Web Developer':'#ede9fe'};
   const rc = roleColors[item.assigneeRole]||'#f3f4f6';
   $('modal-meta').innerHTML = `
-    <span class="chip" style="background:${rc};color:#1a1a2e">👤 ${item.assignee} <span style="font-size:10px;opacity:.7">· ${item.assigneeRole}</span></span>
-    <span class="chip" style="background:#f3f4f6;color:#374151">📅 Due: Day ${item.dueDate}</span>
-    ${item.kw ? '<span class="chip" style="background:#dbeafe;color:#1e40af">🎯 ' + item.kw + '</span>' : ''}
+    <span class="chip">${item.assignee} <span style="font-size:10px;opacity:.7">· ${item.assigneeRole}</span></span>
+    <span class="chip" style="background:#f0f0f0;color:var(--text-2)">Due Day ${item.dueDate}</span>
+    ${item.kw ? '<span class="chip">'+item.kw+'</span>' : ''}
   `;
 
   $('modal-instructions').textContent = item.instructions;
   $('modal-caption').textContent = item.caption;
 
   $('modal-kw-block').innerHTML = item.kw
-    ? `<div><div class="modal-section-label">🎯 Target Keyword</div><span class="chip" style="background:#dbeafe;color:#1e40af;font-size:12px">${item.kw}</span></div>`
+    ? `<div><div class="modal-section-label">Target Keyword</div><span class="chip" style="font-size:12px">${item.kw}</span></div>`
     : '';
 
   // Status pill
@@ -1736,9 +1694,9 @@ function renderPlanner() {
 
   const approvalIcon = (id) => {
     const a = (approval[id]||{}).status;
-    if(a==='approved') return '<span style="float:right;font-size:10px">✅</span>';
-    if(a==='adjustment') return '<span style="float:right;font-size:10px">🔄</span>';
-    if(a==='rejected') return '<span style="float:right;font-size:10px">❌</span>';
+    if(a==='approved') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block"></span>';
+    if(a==='adjustment') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block"></span>';
+    if(a==='rejected') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--text-2);display:inline-block"></span>';
     return '';
   };
 
@@ -1786,7 +1744,7 @@ function renderPlanner() {
     ${sectionTitle('Week 1 — Days 1–7')}${week(0)}
     ${sectionTitle('Week 2 — Days 8–14')}${week(7)}
     <div class="card">
-      <div class="card-h">📋 All Content Items</div>
+      <div class="card-h">All Content Items</div>
       <table><thead><tr><th>Day</th><th>Platform</th><th>Title</th><th>Assignee</th><th>Role</th><th>Status</th><th>Approval</th><th>Brief</th></tr></thead><tbody>`;
 
   const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
@@ -1795,7 +1753,7 @@ function renderPlanner() {
     const sc = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
     const day = calDays[item.day];
     const apprData = approval[item.id]||{};
-    const apprLabel = apprData.status==='approved'?'✅ Approved':apprData.status==='adjustment'?'🔄 Adjustment':apprData.status==='rejected'?'❌ Rejected':'—';
+    const apprLabel = apprData.status==='approved'?'Approved':apprData.status==='adjustment'?'Adjustment':apprData.status==='rejected'?'Rejected':'—';
     html += '<tr>' +
       '<td style="font-size:11px">'+(day?day.label:'–')+'</td>' +
       '<td><span class="platform-tag platform-'+item.platform+'">'+item.platform+'</span></td>' +
@@ -1856,7 +1814,7 @@ function renderContentReview() {
       <span class="platform-tag platform-${item.platform}">${item.platform.toUpperCase()}</span>
       <div class="cc-title">${item.title}</div>
       <div class="cc-preview">${item.preview}</div>
-      ${item.keyword?`<div style="margin-top:6px"><span class="chip" style="font-size:9px">🔍 ${item.keyword}</span></div>`:''}
+      ${item.keyword?`<div style="margin-top:6px"><span class="chip" style="font-size:9px">${item.keyword}</span></div>`:''}
       <div class="cc-footer">
         <span class="cc-assignee">→ ${item.assignee}</span>
         <div style="display:flex;gap:4px">
@@ -1897,8 +1855,8 @@ function renderContentReview() {
 function renderWebsite() {
   const seo = D.seo;
   let html = `<div class="kpi-grid cols-3 mb">
-    ${kpiCard('🔗','Broken Backlinks',seo.broken_backlinks.length,null,'Pages to fix or redirect','red')}
-    ${kpiCard('📤','Lost Backlinks',seo.lost_backlinks.length,null,'Last 30 days — outreach needed','amber')}
+    ${kpiCard('','Broken Backlinks',seo.broken_backlinks.length,null,'Pages to fix or redirect','secondary')}
+    ${kpiCard('📤','Lost Backlinks',seo.lost_backlinks.length,null,'Last 30 days — outreach needed','secondary')}
     ${kpiCard('🏥','Domain Rating',seo.domain_rating||'–',null,'Ahrefs authority 0–100')}
   </div>`;
 
@@ -1916,7 +1874,7 @@ function renderWebsite() {
     <li class="task-item"><span class="priority-pill p-low">Low</span>Audit internal linking — ensure all service pages link to location pages</li>
   </ul></div>`;
 
-  html += sectionTitle('🔗 Broken Backlinks — Fix These Pages');
+  html += sectionTitle('Broken Backlinks — Fix These Pages');
   html += `<div class="card mb"><table>
     <thead><tr><th>Linking Site</th><th>Broken URL on Our Site</th><th class="num">DR</th><th>Fix</th></tr></thead><tbody>
     ${seo.broken_backlinks.slice(0,8).map(b=>`<tr>
@@ -1927,7 +1885,7 @@ function renderWebsite() {
     </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No broken backlinks — great! Run pull_ahrefs.py to check.</td></tr>'}
     </tbody></table></div>`;
 
-  html += insight('teal','💡 Website Manager Recommendation',
+  html += insight('teal','Website Manager Priority',
     `<b>This week for Mark:</b><br>
      1. Add LocalBusiness schema to both location pages (Malaga + Ellenbrook) — direct local pack ranking impact.<br>
      2. Create /ellenbrook page — saves ~$386/week in Google Ads. Use the SEO brief content template.<br>
@@ -1950,13 +1908,13 @@ function renderRecommendations() {
   // Recommendations generated by the AI OS (in production these come from state/ files)
   const RECS = [
     {id:'r1',channel:'seo',icon:'🔍',title:'Publish content for "reformer pilates malaga"',why:'Revo Fitness ranks #4 for this keyword (210 searches/month). CB247 has the service but no ranking page. Estimated: +$85/week organic value.',owner:'John + Shauna',impact:'+$85/wk organic',week:'Week of 2 Jun 2026'},
-    {id:'r2',channel:'ads',icon:'💰',title:'Pause Google Ads for keywords ranking organically #1–3',why:'Once CB247 ranks #1 organically for a keyword, running an ad on the same keyword wastes budget — users will click the organic result. Audit and pause overlapping campaigns.',owner:'Tia',impact:'Est. $200–400/wk saving',week:'Week of 2 Jun 2026'},
-    {id:'r3',channel:'gbp',icon:'📍',title:'Upload 10 photos per location this week',why:'Photo count directly impacts local pack ranking. Malaga has fewer photos than competitor benchmark. Each photo batch improves listing completeness score.',owner:'Joanne',impact:'Local pack ranking ↑',week:'Week of 2 Jun 2026'},
-    {id:'r4',channel:'seo',icon:'🔗',title:'Reclaim broken backlinks — contact 3 top-DR linking sites',why:'Sites linking to broken CB247 pages are already willing to link to you. Emailing to update the URL is the fastest DR improvement possible.',owner:'John',impact:'DR increase',week:'Week of 2 Jun 2026'},
-    {id:'r5',channel:'web',icon:'🌐',title:'Create /ellenbrook dedicated landing page',why:'Ellenbrook Google Ads spend ~$386/week. A dedicated landing page targeting "gym ellenbrook perth" would allow those ads to be paused.',owner:'Mark + John',impact:'Est. $386/wk saving',week:'Week of 2 Jun 2026'},
+    {id:'r2',channel:'ads',icon:'',title:'Pause Google Ads for keywords ranking organically #1–3',why:'Once CB247 ranks #1 organically for a keyword, running an ad on the same keyword wastes budget — users will click the organic result. Audit and pause overlapping campaigns.',owner:'Tia',impact:'Est. $200–400/wk saving',week:'Week of 2 Jun 2026'},
+    {id:'r3',channel:'gbp',icon:'',title:'Upload 10 photos per location this week',why:'Photo count directly impacts local pack ranking. Malaga has fewer photos than competitor benchmark. Each photo batch improves listing completeness score.',owner:'Joanne',impact:'Local pack ranking ↑',week:'Week of 2 Jun 2026'},
+    {id:'r4',channel:'seo',icon:'',title:'Reclaim broken backlinks — contact 3 top-DR linking sites',why:'Sites linking to broken CB247 pages are already willing to link to you. Emailing to update the URL is the fastest DR improvement possible.',owner:'John',impact:'DR increase',week:'Week of 2 Jun 2026'},
+    {id:'r5',channel:'web',icon:'',title:'Create /ellenbrook dedicated landing page',why:'Ellenbrook Google Ads spend ~$386/week. A dedicated landing page targeting "gym ellenbrook perth" would allow those ads to be paused.',owner:'Mark + John',impact:'Est. $386/wk saving',week:'Week of 2 Jun 2026'},
     {id:'r6',channel:'gbp',icon:'⭐',title:'Print QR code review cards — both locations',why:'Review velocity is a top GBP ranking signal. Front desk verbal asks + QR code cards proven to increase review rate by 3–5x.',owner:'Tia + Front Desk',impact:'Reviews ↑ → local pack ↑',week:'Week of 2 Jun 2026'},
-    {id:'r7',channel:'content',icon:'📱',title:'Lead this week\'s Reels with ice bath / sauna content',why:'Google Trends Perth shows "cold plunge" and "sauna" rising. CB247 has this facility — competitors don\'t heavily feature it. First-mover advantage on social.',owner:'Agust + Ivan',impact:'Engagement ↑',week:'Week of 2 Jun 2026'},
-    {id:'r8',channel:'seo',icon:'🎯',title:'Fix H1 tags on top 5 pages',why:'Multiple high-traffic pages missing or duplicating H1 tags. This is a basic on-page SEO issue costing ranking positions.',owner:'Mark',impact:'Rankings ↑ on affected pages',week:'Week of 2 Jun 2026'},
+    {id:'r7',channel:'content',icon:'',title:'Lead this week\'s Reels with ice bath / sauna content',why:'Google Trends Perth shows "cold plunge" and "sauna" rising. CB247 has this facility — competitors don\'t heavily feature it. First-mover advantage on social.',owner:'Agust + Ivan',impact:'Engagement ↑',week:'Week of 2 Jun 2026'},
+    {id:'r8',channel:'seo',icon:'',title:'Fix H1 tags on top 5 pages',why:'Multiple high-traffic pages missing or duplicating H1 tags. This is a basic on-page SEO issue costing ranking positions.',owner:'Mark',impact:'Rankings ↑ on affected pages',week:'Week of 2 Jun 2026'},
   ];
 
   const cycleStatus = (id) => {
@@ -1978,7 +1936,7 @@ function renderRecommendations() {
   window.cycleRecStatus = cycleStatus;
   window.saveRecOutcome = saveOutcome;
 
-  const tagClass = {seo:'tag-seo',ads:'tag-ads',gbp:'tag-gbp',meta:'tag-meta',content:'tag-content',web:'tag-web'};
+  const tagClass = {seo:'t-seo',ads:'',gbp:'t-seo',meta:'',content:'',web:''};
   const tagLabel = {seo:'SEO',ads:'Google Ads',gbp:'GBP',meta:'Meta Ads',content:'Content',web:'Website'};
 
   // Filter UI
@@ -2016,7 +1974,7 @@ function renderRecommendations() {
         const outcome= outcomes[rec.id]||'';
         return `<div class="rec-card-wrap" data-id="${rec.id}">
           <div class="rec-card ${status==='done'?'done':''}" style="border-left:4px solid ${status==='done'?'var(--green)':status==='skipped'?'var(--border)':'var(--teal)'}">
-            <div class="rec-icon">${rec.icon}</div>
+            
             <div class="rec-body">
               <div class="rec-tags">
                 <span class="rec-tag ${tagClass[rec.channel]||'tag-seo'}">${tagLabel[rec.channel]||rec.channel}</span>
@@ -2073,47 +2031,47 @@ function renderReadme() {
 
   <!-- ══ SECTION 1: WEEKLY LOOP ══════════════════════════════════════════════ -->
   <div class="readme-section">
-    <h2>🔄 The Weekly Loop</h2>
+    <h2>The Weekly Loop</h2>
     <div class="card" style="padding:28px">
       <div class="loop-diagram">
         <div class="loop-node">
-          <div class="loop-icon" style="background:rgba(63,166,154,.12);border:2px solid var(--teal)">⏰</div>
+          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div><!--⏰</div>
           <div class="loop-label">Monday 10am</div>
           <div class="loop-sub">Auto-run<br>triggers</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:rgba(59,130,246,.1);border:2px solid var(--blue)">🤖</div>
+          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div><!--</div>
           <div class="loop-label">9 AI Agents</div>
           <div class="loop-sub">Run in sequence<br>~40 min</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:rgba(139,92,246,.1);border:2px solid var(--purple)">📊</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
           <div class="loop-label">Report + Dashboard</div>
           <div class="loop-sub">Generated &amp;<br>deployed live</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:rgba(245,158,11,.1);border:2px solid var(--amber)">📧</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
           <div class="loop-label">Tia Gets Email</div>
           <div class="loop-sub">Report +<br>dashboard link</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:rgba(239,68,68,.1);border:2px solid var(--red)">📋</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
           <div class="loop-label">Team Meeting</div>
           <div class="loop-sub">Review &amp; decide<br>on actions</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:rgba(34,197,94,.1);border:2px solid var(--green)">✅</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
           <div class="loop-label">Decisions Recorded</div>
           <div class="loop-sub">Meeting minutes<br>imported</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:rgba(63,166,154,.12);border:2px solid var(--teal)">🚀</div>
+          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div><!--🚀</div>
           <div class="loop-label">Team Executes</div>
           <div class="loop-sub">Tracker follows<br>outcomes</div>
         </div>
@@ -2129,29 +2087,29 @@ function renderReadme() {
 
   <!-- ══ SECTION 2: AGENT PIPELINE ══════════════════════════════════════════ -->
   <div class="readme-section">
-    <h2>🤖 Agent Pipeline — How the 9 Agents Work Together</h2>
+    <h2>Agent Pipeline — How the 9 Agents Work Together</h2>
     <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Each agent reads the outputs of agents before it. They run in sequence — each one builds on the last.</p>
 
     <div class="card" style="padding:20px">
 
       <!-- Phase 1: Data Pull -->
       <div class="agent-phase">
-        <div class="agent-phase-label" style="color:var(--blue)">⬇ Phase 1 — Data Pull (automated scripts)</div>
+        <div class="agent-phase-label">Phase 1 — Data Pull (automated scripts)</div>
         <div class="agent-row">
-          <div class="agent-box" style="border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04)">
-            <div class="agent-name">📡 pull_all.py</div>
+          <div class="agent-box">
+            <div class="agent-name">pull_all.py</div>
             <div class="agent-desc">GA4 · GSC · Google Ads · Meta Ads</div>
             <div class="agent-out">→ ga4-data.json, gsc-data.json, ads-data.json</div>
           </div>
           <div class="agent-connector">+</div>
-          <div class="agent-box" style="border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04)">
-            <div class="agent-name">🔍 pull_ahrefs.py</div>
+          <div class="agent-box">
+            <div class="agent-name">pull_ahrefs.py</div>
             <div class="agent-desc">Rankings · backlinks · organic value · keyword gaps</div>
             <div class="agent-out">→ ahrefs-data.json</div>
           </div>
           <div class="agent-connector">+</div>
-          <div class="agent-box" style="border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04)">
-            <div class="agent-name">🕸 pull_apify.py</div>
+          <div class="agent-box">
+            <div class="agent-name">pull_apify.py</div>
             <div class="agent-desc">SERP scrape · Maps · Reddit · Trends · FB Ads intel</div>
             <div class="agent-out">→ apify-data.json, social-trends.json</div>
           </div>
@@ -2162,25 +2120,25 @@ function renderReadme() {
 
       <!-- Phase 2: Research layer -->
       <div class="agent-phase">
-        <div class="agent-phase-label" style="color:var(--purple)">🧠 Phase 2 — Research Layer (Agents 1–3 run in parallel)</div>
+        <div class="agent-phase-label">Phase 2 — Research Layer (Agents 1–3 run in parallel)</div>
         <div class="agent-row">
-          <div class="agent-box" style="border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.04)">
+          <div class="agent-box">
             <div class="agent-num">01</div>
-            <div class="agent-name">🔬 Research Agent</div>
+            <div class="agent-name">Research Agent</div>
             <div class="agent-desc">Perth market signals · trending fitness topics · competitor ad intel · Reddit pain points</div>
             <div class="agent-reads">Reads: apify · reddit · trends · fb-ads</div>
             <div class="agent-out">→ weekly-research.md</div>
           </div>
-          <div class="agent-box" style="border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.04)">
+          <div class="agent-box">
             <div class="agent-num">02</div>
-            <div class="agent-name">👥 Audience Intel</div>
+            <div class="agent-name">Audience Intel</div>
             <div class="agent-desc">ICP pulse check · who's converting this week · exact language to use in copy · tone recommendation</div>
             <div class="agent-reads">Reads: ga4 · reddit · research output</div>
             <div class="agent-out">→ audience-weekly.md</div>
           </div>
-          <div class="agent-box" style="border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.04)">
+          <div class="agent-box">
             <div class="agent-num">03</div>
-            <div class="agent-name">📱 Content Intel</div>
+            <div class="agent-name">Content Intel</div>
             <div class="agent-desc">Viral hooks this week · best-performing formats · trending audio · competitor content gaps</div>
             <div class="agent-reads">Reads: social-trends · fb-ads · research + audience outputs</div>
             <div class="agent-out">→ content-intel.md</div>
@@ -2192,25 +2150,25 @@ function renderReadme() {
 
       <!-- Phase 3: Analysis layer -->
       <div class="agent-phase">
-        <div class="agent-phase-label" style="color:var(--amber)">📊 Phase 3 — Analysis Layer (Agents 4–6)</div>
+        <div class="agent-phase-label">Phase 3 — Analysis Layer (Agents 4–6)</div>
         <div class="agent-row">
-          <div class="agent-box" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04)">
+          <div class="agent-box">
             <div class="agent-num">04</div>
-            <div class="agent-name">📈 Performance</div>
+            <div class="agent-name">Performance</div>
             <div class="agent-desc">Full KPI dashboard · organic vs paid ratio · organic value $ · Google Ads offset recommendations</div>
             <div class="agent-reads">Reads: ga4 · gsc · google-ads · ahrefs · apify</div>
             <div class="agent-out">→ performance-week.md</div>
           </div>
-          <div class="agent-box" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04)">
+          <div class="agent-box">
             <div class="agent-num">05</div>
-            <div class="agent-name">🔍 SEO Agent</div>
+            <div class="agent-name">SEO Agent</div>
             <div class="agent-desc">20 keyword rankings · quick wins · keyword gaps · 2 content briefs · backlinks · local pack · ads to pause</div>
             <div class="agent-reads">Reads: ahrefs · gsc · apify · performance output</div>
             <div class="agent-out">→ weekly-seo-brief.md</div>
           </div>
-          <div class="agent-box" style="border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04)">
+          <div class="agent-box">
             <div class="agent-num">06</div>
-            <div class="agent-name">🕵️ Competitor Spy</div>
+            <div class="agent-name">Competitor Spy</div>
             <div class="agent-desc">What Revo &amp; Anytime changed this week · GBP battle table · keyword threats · ad intel · counter-move</div>
             <div class="agent-reads">Reads: ahrefs · apify · fb-ads · research output</div>
             <div class="agent-out">→ competitor-weekly.md</div>
@@ -2222,18 +2180,18 @@ function renderReadme() {
 
       <!-- Phase 4: Action layer -->
       <div class="agent-phase">
-        <div class="agent-phase-label" style="color:var(--red)">⚡ Phase 4 — Action Layer (Agents 7–8)</div>
+        <div class="agent-phase-label">Phase 4 — Action Layer (Agents 7–8)</div>
         <div class="agent-row">
-          <div class="agent-box" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04)">
+          <div class="agent-box">
             <div class="agent-num">07</div>
-            <div class="agent-name">💰 Paid Ads</div>
+            <div class="agent-name">Paid Ads</div>
             <div class="agent-desc">Which Google Ads to pause (now covered by SEO) · budget reductions · Meta audience targeting · creative briefs · cumulative savings tracker</div>
             <div class="agent-reads">Reads: google-ads · ahrefs · seo brief · audience output</div>
             <div class="agent-out">→ paid-ads-weekly.md</div>
           </div>
-          <div class="agent-box" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.04)">
+          <div class="agent-box">
             <div class="agent-num">08</div>
-            <div class="agent-name">✍️ Content Agent</div>
+            <div class="agent-name">Content Agent</div>
             <div class="agent-desc">Full week of content: 4 GBP posts · 2 blog drafts · 5 social posts · 2 Reel scripts · 5 review templates · 3 Meta ad variations</div>
             <div class="agent-reads">Reads: seo brief · content intel · audience · competitor outputs</div>
             <div class="agent-out">→ weekly-content.md</div>
@@ -2245,11 +2203,11 @@ function renderReadme() {
 
       <!-- Phase 5: Synthesis -->
       <div class="agent-phase">
-        <div class="agent-phase-label" style="color:var(--teal)">🎯 Phase 5 — Synthesis (Agent 9)</div>
+        <div class="agent-phase-label">Phase 5 — Synthesis (Agent 9)</div>
         <div class="agent-row">
-          <div class="agent-box" style="border-color:var(--teal);background:rgba(63,166,154,.06);border-width:2px">
+          <div class="agent-box primary-agent">
             <div class="agent-num" style="background:var(--teal);color:#fff">09</div>
-            <div class="agent-name">🧭 Strategist</div>
+            <div class="agent-name">Strategist</div>
             <div class="agent-desc">Reads ALL 8 agent outputs. Produces the single executive strategy document Tia reviews: weekly scorecard · top 5 priorities · decisions needed · one-line brief per team member</div>
             <div class="agent-reads">Reads: ALL 8 agent outputs</div>
             <div class="agent-out">→ weekly-strategy.md → this dashboard</div>
@@ -2265,55 +2223,55 @@ function renderReadme() {
 
   <!-- ══ SECTION 3: DATA SOURCES ════════════════════════════════════════════ -->
   <div class="readme-section">
-    <h2>📡 Data Sources</h2>
+    <h2>Data Sources</h2>
     <div class="data-grid">
       <div class="data-source">
-        <div class="ds-icon">📊</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Google Analytics 4</div>
         <div class="ds-file">ga4-data.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">🔍</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Search Console</div>
         <div class="ds-file">gsc-data.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">🎯</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Google Ads</div>
         <div class="ds-file">ads-data.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">📱</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Meta Ads</div>
         <div class="ds-file">ads-data.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">🔗</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Ahrefs</div>
         <div class="ds-file">ahrefs-data.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">🕸</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Apify (SERP + Maps)</div>
         <div class="ds-file">apify-data.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">📍</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Google Business</div>
         <div class="ds-file">apify-data.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">📣</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Social Trends</div>
         <div class="ds-file">social-trends.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">🗣</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Reddit Intel</div>
         <div class="ds-file">reddit-intel.json</div>
       </div>
       <div class="data-source">
-        <div class="ds-icon">📈</div>
+        <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Google Trends</div>
         <div class="ds-file">google-trends.json</div>
       </div>
@@ -2323,10 +2281,10 @@ function renderReadme() {
 
   <!-- ══ SECTION 4: TEAM WORKFLOW ════════════════════════════════════════════ -->
   <div class="readme-section">
-    <h2>👥 Who Does What — Team Workflow</h2>
+    <h2>Who Does What — Team Workflow</h2>
     <div class="team-flow">
-      <div class="team-card" style="border-top:3px solid var(--teal)">
-        <div class="tc-name">👩‍💼 Tia</div>
+      <div class="team-card lead">
+        <div class="tc-name">Tia</div>
         <div class="tc-role">Director</div>
         <ul class="tc-tasks">
           <li>Reviews Monday email + dashboard</li>
@@ -2335,8 +2293,8 @@ function renderReadme() {
           <li>Releases team emails after approval</li>
         </ul>
       </div>
-      <div class="team-card" style="border-top:3px solid var(--purple)">
-        <div class="tc-name">📊 Ange</div>
+      <div class="team-card">
+        <div class="tc-name">Ange</div>
         <div class="tc-role">Marketing Manager</div>
         <ul class="tc-tasks">
           <li>Strategic priorities this week</li>
@@ -2345,8 +2303,8 @@ function renderReadme() {
           <li>Reports outcomes back to tracker</li>
         </ul>
       </div>
-      <div class="team-card" style="border-top:3px solid var(--blue)">
-        <div class="tc-name">🔍 John</div>
+      <div class="team-card">
+        <div class="tc-name">John</div>
         <div class="tc-role">SEO Specialist</div>
         <ul class="tc-tasks">
           <li>Receives SEO brief from agent</li>
@@ -2355,8 +2313,8 @@ function renderReadme() {
           <li>Tracks ranking improvements</li>
         </ul>
       </div>
-      <div class="team-card" style="border-top:3px solid var(--green)">
-        <div class="tc-name">✅ Jane</div>
+      <div class="team-card">
+        <div class="tc-name">Jane</div>
         <div class="tc-role">QC Manager</div>
         <ul class="tc-tasks">
           <li>Reviews all content before publish</li>
@@ -2365,8 +2323,8 @@ function renderReadme() {
           <li>Releases to Joanne for scheduling</li>
         </ul>
       </div>
-      <div class="team-card" style="border-top:3px solid var(--red)">
-        <div class="tc-name">🌐 Mark</div>
+      <div class="team-card">
+        <div class="tc-name">Mark</div>
         <div class="tc-role">Web Developer</div>
         <ul class="tc-tasks">
           <li>Executes technical SEO fixes</li>
@@ -2375,8 +2333,8 @@ function renderReadme() {
           <li>Title tag + meta optimisation</li>
         </ul>
       </div>
-      <div class="team-card" style="border-top:3px solid var(--amber)">
-        <div class="tc-name">📅 Joanne</div>
+      <div class="team-card">
+        <div class="tc-name">Joanne</div>
         <div class="tc-role">Social Media Manager</div>
         <ul class="tc-tasks">
           <li>Schedules approved posts</li>
@@ -2385,8 +2343,8 @@ function renderReadme() {
           <li>Manages content calendar</li>
         </ul>
       </div>
-      <div class="team-card" style="border-top:3px solid #ec4899">
-        <div class="tc-name">✍️ Shauna</div>
+      <div class="team-card">
+        <div class="tc-name">Shauna</div>
         <div class="tc-role">Content & Email</div>
         <ul class="tc-tasks">
           <li>Writes blog drafts from SEO brief</li>
@@ -2395,8 +2353,8 @@ function renderReadme() {
           <li>Member spotlight stories</li>
         </ul>
       </div>
-      <div class="team-card" style="border-top:3px solid var(--muted)">
-        <div class="tc-name">🎬 Agust + Ivan</div>
+      <div class="team-card">
+        <div class="tc-name">Agust + Ivan</div>
         <div class="tc-role">Video Creators</div>
         <ul class="tc-tasks">
           <li>Produce Reels from agent scripts</li>
@@ -2410,41 +2368,41 @@ function renderReadme() {
 
   <!-- ══ SECTION 5: APPROVAL FLOW ════════════════════════════════════════════ -->
   <div class="readme-section">
-    <h2>✅ Content Approval Flow</h2>
+    <h2>Content Approval Flow</h2>
     <div class="card" style="padding:20px">
       <div class="loop-diagram" style="align-items:flex-start;gap:0;flex-wrap:wrap">
         <div class="loop-node" style="min-width:100px">
-          <div class="loop-icon" style="background:rgba(139,92,246,.1);border:2px solid var(--purple)">🤖</div>
+          <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">AI Generates</div>
           <div class="loop-sub">Agent writes<br>content brief</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
-          <div class="loop-icon" style="background:rgba(63,166,154,.1);border:2px solid var(--teal)">👩‍💼</div>
+          <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">Tia Approves</div>
           <div class="loop-sub">Approve /<br>adjust / reject</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
-          <div class="loop-icon" style="background:rgba(59,130,246,.1);border:2px solid var(--blue)">✍️</div>
+          <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">Team Creates</div>
           <div class="loop-sub">Shauna / John /<br>Agust writes</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
-          <div class="loop-icon" style="background:rgba(34,197,94,.1);border:2px solid var(--green)">✅</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
           <div class="loop-label">Jane Reviews</div>
           <div class="loop-sub">QC pass /<br>request edits</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
-          <div class="loop-icon" style="background:rgba(245,158,11,.1);border:2px solid var(--amber)">📅</div>
+          <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">Joanne Schedules</div>
           <div class="loop-sub">Posts to GBP /<br>Instagram / TikTok</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
-          <div class="loop-icon" style="background:rgba(239,68,68,.1);border:2px solid var(--red)">📊</div>
+          <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">Track Outcome</div>
           <div class="loop-sub">Performance<br>assessed +2 weeks</div>
         </div>
@@ -2454,7 +2412,7 @@ function renderReadme() {
 
   <!-- ══ SECTION 6: SKILL TRIGGERS ══════════════════════════════════════════ -->
   <div class="readme-section">
-    <h2>⚡ Skill Triggers — Say These to Activate</h2>
+    <h2>Skill Triggers — Say These to Activate</h2>
     <div class="skill-grid">
       <div class="skill-row"><span class="skill-trigger">"write email"</span><span class="skill-skill">→ Email funnel builder (4-email + 2-SMS sequence)</span></div>
       <div class="skill-row"><span class="skill-trigger">"content waterfall"</span><span class="skill-skill">→ Repurpose 1 piece into 14 assets</span></div>
@@ -2472,7 +2430,7 @@ function renderReadme() {
 
   <!-- ══ SECTION 7: QUICK REFERENCE ════════════════════════════════════════ -->
   <div class="readme-section">
-    <h2>🛠 Quick Reference — Common Commands</h2>
+    <h2>Quick Reference — Common Commands</h2>
     <div class="card" style="padding:0;overflow:hidden">
       <table>
         <thead><tr><th>Command</th><th>What it does</th><th>When to run</th></tr></thead>
@@ -2516,7 +2474,7 @@ function renderTracker() {
   const card = a => {
     const decClass = a.decision!=='pending' ? `decision-${a.decision}` : '';
     const statClass = `status-${a.status||'pending'}`;
-    const decIcon = {approved:'✅',adjusted:'🔄',rejected:'❌',pending:'⏸'}[a.decision]||'⏸';
+    const decIcon = {approved:'Approved',adjusted:'Adjusted',rejected:'Rejected',pending:'Pending'}[a.decision]||'Pending';
     return `<div class="tracker-card ${decClass} ${statClass}" onclick="openTrackerDetail('${a.id}')">
       <div class="tracker-card-title"><span class="${prioClass(a.priority||'P2')}"></span>${(a.recommendation||'').substring(0,72)}${a.recommendation?.length>72?'…':''}</div>
       <div class="tracker-card-meta">
@@ -2582,8 +2540,8 @@ function renderTracker() {
 
   // All actions table
   const tableRows = actions.map(a=>{
-    const decIcon = {approved:'✅',adjusted:'🔄',rejected:'❌',pending:'⏸'}[a.decision]||'⏸';
-    const statIcon = {in_progress:'🔵',completed:'✅',cancelled:'⛔',pending:'⚪'}[a.status]||'⚪';
+    const decIcon = {approved:'Approved',adjusted:'Adjusted',rejected:'Rejected',pending:'Pending'}[a.decision]||'Pending';
+    const statIcon = {in_progress:'In Progress',completed:'Done',cancelled:'Cancelled',pending:'Pending'}[a.status]||'Pending';
     return `<tr>
       <td style="font-weight:600">${a.id}</td>
       <td>${catTag(a.category||'ops')}</td>
@@ -2630,8 +2588,8 @@ function openTrackerDetail(id) {
   const inner = $('tracker-detail-inner');
   if (!panel || !inner) return;
 
-  const decIcon = {approved:'✅ Approved',adjusted:'🔄 Needs Adjustment',rejected:'❌ Rejected',pending:'⏸ Pending Decision'}[a.decision]||'⏸ Pending';
-  const statIcon = {in_progress:'🔵 In Progress',completed:'✅ Completed',cancelled:'⛔ Cancelled',pending:'⚪ Pending'}[a.status]||'⚪';
+  const decIcon = {approved:'Approved',adjusted:'Needs Adjustment',rejected:'Rejected',pending:'Pending'}[a.decision]||'Pending';
+  const statIcon = {in_progress:'In Progress',completed:'Completed',cancelled:'Cancelled',pending:'Pending'}[a.status]||'Pending';
 
   let impactHTML = '';
   if (a.projected_impact && Object.keys(a.projected_impact).length) {
