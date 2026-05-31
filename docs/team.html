@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CB247 — Team Action Tracker</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --teal: #3FA69A; --teal-dark: #2d8a7e; --teal-light: #e8f5f4;
+  --bg: #F0F2F5; --card: #fff; --text: #1a1a2e; --muted: #6b7280;
+  --border: #e5e7eb; --red: #ef4444; --green: #22c55e;
+  --amber: #f59e0b; --yellow: #eab308; --blue: #3b82f6;
+  --purple: #8b5cf6; --pink: #ec4899;
+  --radius: 10px; --shadow: 0 1px 4px rgba(0,0,0,0.08); --gap: 16px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+
+/* NAV */
+nav { background: linear-gradient(135deg, #1a1a2e 0%, var(--teal-dark) 100%); border-radius: var(--radius); padding: 14px 24px; margin-bottom: var(--gap); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+nav h1 { color: #fff; font-size: 18px; font-weight: 700; }
+nav h1 span { color: #7ee8e0; }
+.nav-links { display: flex; gap: 8px; }
+.nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; }
+.nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.15); color: #fff; }
+
+/* STATS */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); margin-bottom: var(--gap); }
+.stat-card { background: var(--card); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); text-align: center; border-top: 3px solid var(--teal); }
+.stat-num { font-size: 32px; font-weight: 800; line-height: 1; }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+/* FILTERS */
+.filters { background: var(--card); border-radius: var(--radius); padding: 14px 20px; margin-bottom: var(--gap); box-shadow: var(--shadow); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.filters label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.filters select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text); background: var(--bg); cursor: pointer; }
+.filter-group { display: flex; align-items: center; gap: 6px; }
+.btn-reset { margin-left: auto; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); font-size: 12px; cursor: pointer; color: var(--muted); }
+.btn-reset:hover { background: var(--bg); }
+
+/* SECTION */
+.section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.section { margin-bottom: 24px; }
+
+/* TASK CARD */
+.task-card {
+  background: var(--card); border-radius: var(--radius); padding: 14px 18px;
+  box-shadow: var(--shadow); margin-bottom: 8px;
+  display: flex; align-items: flex-start; gap: 14px;
+  border-left: 4px solid var(--border);
+  transition: opacity 0.2s, transform 0.1s;
+}
+.task-card.done { opacity: 0.45; }
+.task-card.done .task-title { text-decoration: line-through; color: var(--muted); }
+.task-card.p-critical { border-left-color: var(--red); }
+.task-card.p-high     { border-left-color: var(--amber); }
+.task-card.p-medium   { border-left-color: var(--yellow); }
+.task-card.p-low      { border-left-color: var(--blue); }
+
+/* CHECKBOX */
+.task-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all 0.2s; }
+.task-check:hover { border-color: var(--teal); background: var(--teal-light); }
+.task-check.checked { background: var(--green); border-color: var(--green); }
+.task-check.checked::after { content: '✓'; color: #fff; font-size: 12px; font-weight: 700; }
+
+.task-body { flex: 1; }
+.task-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.task-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+.badge-cat-SEO        { background: #dcfce7; color: #16a34a; }
+.badge-cat-GBP        { background: #d1fae5; color: #059669; }
+.badge-cat-Google\ Ads { background: #dbeafe; color: #1d4ed8; }
+.badge-cat-Content    { background: #ede9fe; color: #7c3aed; }
+.badge-cat-Technical  { background: #f3f4f6; color: #374151; }
+.badge-cat-Meta\ Ads  { background: #fce7f3; color: #be185d; }
+.badge-p-Critical { background: #fee2e2; color: #dc2626; }
+.badge-p-High     { background: #fef3c7; color: #d97706; }
+.badge-p-Medium   { background: #fefce8; color: #ca8a04; }
+.badge-p-Low      { background: #dbeafe; color: #2563eb; }
+.badge-assign { background: #f3f4f6; color: #374151; }
+
+.task-actions { display: flex; gap: 8px; align-items: center; margin-top: 0; }
+.task-note { font-size: 12px; color: var(--muted); margin-top: 6px; font-style: italic; }
+
+/* PROGRESS BAR */
+.progress-section { background: var(--card); border-radius: var(--radius); padding: 16px 20px; margin-bottom: var(--gap); box-shadow: var(--shadow); }
+.progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 12px; }
+.progress-row:last-child { margin-bottom: 0; }
+.progress-label { width: 140px; flex-shrink: 0; color: var(--muted); }
+.progress-track { flex: 1; background: var(--border); border-radius: 99px; height: 8px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 99px; background: var(--teal); transition: width 0.5s; }
+.progress-pct { width: 36px; text-align: right; font-weight: 700; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+
+/* Footer */
+footer { text-align: center; font-size: 11px; color: var(--muted); padding: 20px 0 8px; }
+
+@media (max-width: 700px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .filters { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- NAV -->
+<nav>
+  <h1>ChasingBetter<span>247</span></h1>
+  <div class="nav-links">
+    <a href="index.html">📊 Dashboard</a>
+    <a href="team.html" class="active">✅ Actions</a>
+    <a href="planner.html">📅 Planner</a>
+  </div>
+</nav>
+
+<!-- STATS -->
+<div class="stats" id="statsRow"></div>
+
+<!-- PROGRESS BY CATEGORY -->
+<div class="progress-section" id="progressSection"></div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="filter-group"><label>Priority</label>
+    <select id="filterPriority" onchange="render()">
+      <option value="">All</option>
+      <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+    </select>
+  </div>
+  <div class="filter-group"><label>Category</label>
+    <select id="filterCategory" onchange="render()">
+      <option value="">All</option>
+      <option>GBP</option><option>SEO</option><option>Google Ads</option>
+      <option>Content</option><option>Technical</option><option>Meta Ads</option>
+    </select>
+  </div>
+  <div class="filter-group"><label>Assigned To</label>
+    <select id="filterAssign" onchange="render()">
+      <option value="">All</option>
+      <option>Tia (Owner)</option><option>Front Desk</option>
+      <option>Content Creator</option><option>SEO Specialist</option>
+      <option>Google Ads Manager</option><option>Developer</option>
+    </select>
+  </div>
+  <div class="filter-group"><label>Status</label>
+    <select id="filterStatus" onchange="render()">
+      <option value="">All</option>
+      <option value="todo">To Do</option><option value="done">Done</option>
+    </select>
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">Reset filters</button>
+</div>
+
+<!-- TASK LIST -->
+<div id="taskList"></div>
+
+<footer>CB247 Marketing Agent · Progress saves in your browser · <a href="index.html" style="color:var(--teal)">← Back to Dashboard</a></footer>
+
+</div>
+
+<script>
+const TASKS = [
+  // GBP — Critical
+  { id:'gbp1', cat:'GBP', priority:'Critical', title:'Print QR code review cards (A5) — place at Malaga + Ellenbrook reception', assign:'Front Desk', note:'Link to QR code generator: qr-code-generator.com → paste your Google review URL' },
+  { id:'gbp2', cat:'GBP', priority:'Critical', title:'Brief front desk on verbal review ask script', assign:'Tia (Owner)', note:'Script: "Quick favour — if you enjoyed today, a Google review takes 30 seconds and really helps us. I can send you the link now?"' },
+  // GBP — High
+  { id:'gbp3', cat:'GBP', priority:'High', title:'Rewrite GBP business descriptions with local keywords (both locations)', assign:'Content Creator', note:'See outputs/strategy/gbp-visibility-strategy-2026-05-31.md for keyword-optimised copy' },
+  { id:'gbp4', cat:'GBP', priority:'High', title:'Seed GBP Q&A with 6 pre-answered questions', assign:'Content Creator', note:'Include: hours, Kids Hub, FIFO Freeze, price, sauna, cancellation' },
+  { id:'gbp5', cat:'GBP', priority:'High', title:'Audit + complete all GBP Services/Products listings', assign:'Tia (Owner)', note:'Add: 24/7 Access, Sauna, Ice Bath, Pilates, Kids Hub, FIFO Freeze, PT, No Lock-In' },
+  { id:'gbp6', cat:'GBP', priority:'High', title:'Upload 10 priority photos per location (sauna, ice bath, Kids Hub)', assign:'Front Desk', note:'Rename files before upload: cb247-malaga-sauna-perth.jpg (not IMG_xxxx.jpg)' },
+  // GBP — Medium
+  { id:'gbp7', cat:'GBP', priority:'Medium', title:'Begin weekly GBP posts every Tuesday', assign:'Content Creator', note:'W1: value, W2: sauna/ice bath, W3: challenge, W4: promo' },
+  { id:'gbp8', cat:'GBP', priority:'Medium', title:'Set up WhatsApp follow-up template for new members (24hr)', assign:'Tia (Owner)', note:'' },
+  // SEO — Critical
+  { id:'seo1', cat:'SEO', priority:'Critical', title:'Submit disavow file to Google Search Console (37 toxic domains)', assign:'SEO Specialist', note:'File: outputs/seo/disavow-2026-05-30.txt → search.google.com/search-console/disavow-links' },
+  { id:'seo2', cat:'SEO', priority:'Critical', title:'Add H1 tags to 29 pages', assign:'Developer', note:'File: outputs/seo/h1-recommendations-2026-05-30.md — exact H1 text per page listed' },
+  // SEO — High
+  { id:'seo3', cat:'SEO', priority:'High', title:'Add LocalBusiness + FAQ schema markup (40 pages)', assign:'Developer', note:'File: outputs/seo/schema-local-business-2026-05-30.md — copy JSON-LD blocks into <head>' },
+  { id:'seo4', cat:'SEO', priority:'Medium', title:'Build backlinks: True Local AU, Yellow Pages AU, Yelp AU', assign:'SEO Specialist', note:'' },
+  // Technical — Critical
+  { id:'tech1', cat:'Technical', priority:'Critical', title:'Fix 3 broken pages — add 301 redirects', assign:'Developer', note:'File: outputs/seo/redirect-map-2026-05-30.md — 10 minute task' },
+  // Content — High
+  { id:'con1', cat:'Content', priority:'High', title:'Create /ellenbrook landing page (page does not exist)', assign:'Content Creator', note:'File: outputs/seo/page-ellenbrook-2026-05-30.md — saves ~$386/week in ads once ranked' },
+  { id:'con2', cat:'Content', priority:'High', title:'Expand /massage page (1,300 searches/month at position #16)', assign:'Content Creator', note:'File: outputs/seo/page-massage-2026-05-30.md' },
+  // Content — Medium
+  { id:'con3', cat:'Content', priority:'Medium', title:'Expand /resources/fifo-members page', assign:'Content Creator', note:'File: outputs/seo/page-fifo-2026-05-30.md' },
+  { id:'con4', cat:'Content', priority:'Medium', title:'Expand /kids-hub page + fix short title tag', assign:'Content Creator', note:'File: outputs/seo/page-kids-hub-2026-05-30.md' },
+  { id:'con5', cat:'Content', priority:'Medium', title:"Publish blog: 'Best Gym in Malaga'", assign:'Content Creator', note:'File: outputs/seo/blog-best-gym-malaga-2026-05-30.md — targets $137/wk ad keyword' },
+  // Google Ads
+  { id:'ads1', cat:'Google Ads', priority:'High', title:'Review Malaga vs Ellenbrook CPA — shift budget to better performer', assign:'Google Ads Manager', note:'Malaga CPA vs Ellenbrook CPA — check weekly in Google Ads dashboard' },
+  { id:'ads2', cat:'Google Ads', priority:'Low', title:"Pause 'Malaga Gym' campaign when organic ranking reaches #1–3", assign:'Google Ads Manager', note:'Monitor via GSC — check weekly' },
+];
+
+const PRIORITY_ORDER = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+
+// Load state from localStorage
+function getState() {
+  try { return JSON.parse(localStorage.getItem('cb247_tasks') || '{}'); } catch { return {}; }
+}
+function saveState(state) {
+  localStorage.setItem('cb247_tasks', JSON.stringify(state));
+}
+function toggleTask(id) {
+  const state = getState();
+  state[id] = !state[id];
+  saveState(state);
+  render();
+}
+
+function resetFilters() {
+  document.getElementById('filterPriority').value = '';
+  document.getElementById('filterCategory').value = '';
+  document.getElementById('filterAssign').value = '';
+  document.getElementById('filterStatus').value = '';
+  render();
+}
+
+function filteredTasks() {
+  const state    = getState();
+  const priority = document.getElementById('filterPriority').value;
+  const category = document.getElementById('filterCategory').value;
+  const assign   = document.getElementById('filterAssign').value;
+  const status   = document.getElementById('filterStatus').value;
+  return TASKS.filter(t => {
+    if (priority && t.priority !== priority) return false;
+    if (category && t.cat !== category) return false;
+    if (assign && t.assign !== assign) return false;
+    if (status === 'done' && !state[t.id]) return false;
+    if (status === 'todo' && state[t.id]) return false;
+    return true;
+  });
+}
+
+function render() {
+  const state = getState();
+  const tasks = filteredTasks();
+  const total = TASKS.length;
+  const done  = TASKS.filter(t => state[t.id]).length;
+  const critical = TASKS.filter(t => t.priority === 'Critical' && !state[t.id]).length;
+  const high = TASKS.filter(t => t.priority === 'High' && !state[t.id]).length;
+
+  // Stats
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card" style="border-top-color:var(--teal)">
+      <div class="stat-num" style="color:var(--teal)">${done}/${total}</div>
+      <div class="stat-label">Tasks Complete</div>
+    </div>
+    <div class="stat-card" style="border-top-color:var(--red)">
+      <div class="stat-num" style="color:var(--red)">${critical}</div>
+      <div class="stat-label">Critical Remaining</div>
+    </div>
+    <div class="stat-card" style="border-top-color:var(--amber)">
+      <div class="stat-num" style="color:var(--amber)">${high}</div>
+      <div class="stat-label">High Priority Left</div>
+    </div>
+    <div class="stat-card" style="border-top-color:var(--green)">
+      <div class="stat-num" style="color:var(--green)">${Math.round(done/total*100)}%</div>
+      <div class="stat-label">Overall Progress</div>
+    </div>
+  `;
+
+  // Progress by category
+  const cats = ['GBP','SEO','Content','Technical','Google Ads'];
+  const catColors = { GBP:'#22c55e', SEO:'#3FA69A', Content:'#8b5cf6', Technical:'#6b7280', 'Google Ads':'#3b82f6' };
+  let prog = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:12px;">Progress by Category</div>';
+  cats.forEach(c => {
+    const catTasks = TASKS.filter(t => t.cat === c);
+    const catDone  = catTasks.filter(t => state[t.id]).length;
+    const pct = catTasks.length ? Math.round(catDone / catTasks.length * 100) : 0;
+    prog += `<div class="progress-row">
+      <div class="progress-label">${c}</div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${catColors[c]||'var(--teal)'}"></div></div>
+      <div class="progress-pct" style="color:${catColors[c]||'var(--teal)'}">${pct}%</div>
+      <div style="color:var(--muted);font-size:11px;width:50px">${catDone}/${catTasks.length}</div>
+    </div>`;
+  });
+  document.getElementById('progressSection').innerHTML = prog;
+
+  // Group by priority
+  const grouped = { Critical: [], High: [], Medium: [], Low: [] };
+  tasks.sort((a,b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
+       .forEach(t => (grouped[t.priority] || []).push(t));
+
+  const priorityConfig = {
+    Critical: { color: 'var(--red)',   icon: '🔴' },
+    High:     { color: 'var(--amber)', icon: '🟠' },
+    Medium:   { color: 'var(--yellow)','icon': '🟡' },
+    Low:      { color: 'var(--blue)',  icon: '🔵' },
+  };
+
+  let html = '';
+  Object.entries(grouped).forEach(([p, list]) => {
+    if (!list.length) return;
+    const cfg = priorityConfig[p];
+    html += `<div class="section">
+      <div class="section-title">${cfg.icon} ${p} Priority — ${list.filter(t=>!state[t.id]).length} remaining</div>`;
+    list.forEach(t => {
+      const isDone = !!state[t.id];
+      html += `
+      <div class="task-card p-${p.toLowerCase()} ${isDone ? 'done' : ''}">
+        <div class="task-check ${isDone ? 'checked' : ''}" onclick="toggleTask('${t.id}')"></div>
+        <div class="task-body">
+          <div class="task-title">${t.title}</div>
+          <div class="task-meta">
+            <span class="badge badge-cat-${t.cat}">${t.cat}</span>
+            <span class="badge badge-p-${t.priority}">${t.priority}</span>
+            <span class="badge badge-assign">👤 ${t.assign}</span>
+          </div>
+          ${t.note ? `<div class="task-note">💡 ${t.note}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  if (!tasks.length) {
+    html = '<div class="empty">No tasks match your filters.</div>';
+  }
+
+  document.getElementById('taskList').innerHTML = html;
+}
+
+render();
+</script>
+</body>
+</html>
