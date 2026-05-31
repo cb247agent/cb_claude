@@ -249,12 +249,55 @@ tbody tr:hover{background:#f9fafb}
 /* ── Responsive ───────────────────────────────────── */
 @media(max-width:1100px){.kpi-grid.cols-4{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid.cols-4,.kpi-grid.cols-3,.grid-2,.grid-3{grid-template-columns:1fr}.kanban{grid-template-columns:1fr 1fr}}
+
+/* ── Action Tracker ───────────────────────────────── */
+.tracker-pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.tracker-stage{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.tracker-stage-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.tracker-stage-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.tracker-stage-count{background:var(--border);border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--muted)}
+.tracker-card{background:#f8f9fa;border-radius:8px;padding:12px;margin-bottom:8px;border-left:3px solid var(--border);cursor:pointer;transition:all .15s}
+.tracker-card:hover{background:#f0f2f5;border-left-color:var(--teal)}
+.tracker-card.decision-approved{border-left-color:var(--green)}
+.tracker-card.decision-adjusted{border-left-color:var(--amber)}
+.tracker-card.decision-rejected{border-left-color:var(--red);opacity:.6}
+.tracker-card.status-completed{border-left-color:var(--teal);background:#f0fdf4}
+.tracker-card-title{font-size:12px;font-weight:600;line-height:1.4;margin-bottom:6px}
+.tracker-card-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tracker-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700}
+.tag-seo{background:rgba(63,166,154,.1);color:var(--teal)}
+.tag-content{background:rgba(59,130,246,.1);color:var(--blue)}
+.tag-paid-ads{background:rgba(239,68,68,.1);color:var(--red)}
+.tag-website{background:rgba(139,92,246,.1);color:var(--purple)}
+.tag-operations{background:rgba(245,158,11,.1);color:var(--amber)}
+.tag-social{background:rgba(236,72,153,.1);color:#ec4899}
+.p1-dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px}
+.p2-dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-right:4px}
+.p3-dot::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px}
+.tracker-detail-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;display:none}
+.tracker-detail-panel.open{display:block}
+.outcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.outcome-cell{background:#f8f9fa;border-radius:8px;padding:12px}
+.outcome-cell .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px}
+.outcome-cell .val{font-size:1.1rem;font-weight:700}
+.verdict-worked{color:var(--green)}
+.verdict-partial{color:var(--amber)}
+.verdict-no_impact{color:var(--muted)}
+.verdict-negative{color:var(--red)}
+.meeting-log{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.meeting-log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.meeting-log-date{font-weight:700;font-size:13px}
+.meeting-log-pills{display:flex;gap:6px}
+.meet-pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px}
+.meet-approved{background:rgba(34,197,94,.1);color:var(--green)}
+.meet-adjusted{background:rgba(245,158,11,.1);color:var(--amber)}
+.meet-rejected{background:rgba(239,68,68,.1);color:var(--red)}
 </style>
 </head>
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "31 May 2026, 21:34",
+  "generated": "31 May 2026, 22:40",
   "refresh_ts": "2026-05-31T08:03:07.570435Z",
   "status": {
     "ga4": "live",
@@ -714,6 +757,133 @@ window.DASHBOARD_DATA = {
         "count": 15
       }
     ]
+  },
+  "tracker": {
+    "actions": [
+      {
+        "id": "ACT-001",
+        "week": "2026-06-02",
+        "source": "seo-agent",
+        "recommendation": "Fix title tag: add '24/7 Gym Malaga WA' to homepage/Malaga page <title>",
+        "category": "seo",
+        "owner": "Mark",
+        "ownerRole": "Web Developer",
+        "priority": "P1",
+        "context": "Ryderwear outranks CB247 for '24/7 gym malaga' purely because their title tag says '24/7 Gym in Malaga WA | Ryderwear Gym'. CB247's current title: 'ChasingBetter247 | Health & Fitness Club'. 30-minute fix, high impact.",
+        "decision": "pending",
+        "decision_date": null,
+        "decision_notes": "",
+        "adjusted_brief": "",
+        "status": "pending",
+        "due_date": "2026-06-06",
+        "started_date": null,
+        "completed_date": null,
+        "execution_notes": "",
+        "review_date": "2026-06-16",
+        "outcome_assessed": false,
+        "kpis": [
+          "gsc_position",
+          "gsc_clicks",
+          "gsc_impressions"
+        ],
+        "projected_impact": {
+          "gsc_position": {
+            "keyword": "24/7 gym malaga",
+            "from": 6,
+            "to": 3
+          },
+          "gsc_clicks": {
+            "from": 5,
+            "to": 20
+          }
+        },
+        "actual_impact": {},
+        "outcome_notes": "",
+        "outcome_verdict": null
+      },
+      {
+        "id": "ACT-002",
+        "week": "2026-06-02",
+        "source": "seo-agent",
+        "recommendation": "Build dedicated /kids-hub-malaga/ landing page targeting 'kids gym malaga'",
+        "category": "seo",
+        "owner": "John",
+        "ownerRole": "SEO Specialist",
+        "priority": "P1",
+        "context": "CB247 already ranks #2 for 'kids gym malaga'. No gym competitor present \u2014 only Gymbaroo (kids activity centre). A dedicated page targeting this keyword is an easy #1 win. Est. 150\u2013200 searches/mo.",
+        "decision": "pending",
+        "decision_date": null,
+        "decision_notes": "",
+        "adjusted_brief": "",
+        "status": "pending",
+        "due_date": "2026-06-13",
+        "started_date": null,
+        "completed_date": null,
+        "execution_notes": "",
+        "review_date": "2026-06-27",
+        "outcome_assessed": false,
+        "kpis": [
+          "gsc_position",
+          "gsc_clicks"
+        ],
+        "projected_impact": {
+          "gsc_position": {
+            "keyword": "kids gym malaga",
+            "from": 2,
+            "to": 1
+          },
+          "gsc_clicks": {
+            "from": 0,
+            "to": 30
+          }
+        },
+        "actual_impact": {},
+        "outcome_notes": "",
+        "outcome_verdict": null
+      },
+      {
+        "id": "ACT-003",
+        "week": "2026-06-02",
+        "source": "seo-agent",
+        "recommendation": "Build /recovery/ page targeting sauna malaga, ice bath malaga, bath house malaga",
+        "category": "seo",
+        "owner": "John",
+        "ownerRole": "SEO Specialist",
+        "priority": "P1",
+        "context": "Zero impressions for sauna/ice bath/bath house malaga keywords. CB247 has all three facilities. No competitor owns these keywords. Uncontested opportunity.",
+        "decision": "pending",
+        "decision_date": null,
+        "decision_notes": "",
+        "adjusted_brief": "",
+        "status": "pending",
+        "due_date": "2026-06-20",
+        "started_date": null,
+        "completed_date": null,
+        "execution_notes": "",
+        "review_date": "2026-07-04",
+        "outcome_assessed": false,
+        "kpis": [
+          "gsc_position",
+          "gsc_impressions"
+        ],
+        "projected_impact": {
+          "gsc_position": {
+            "keyword": "sauna malaga",
+            "from": 0,
+            "to": 5
+          },
+          "gsc_impressions": {
+            "from": 0,
+            "to": 200
+          }
+        },
+        "actual_impact": {},
+        "outcome_notes": "",
+        "outcome_verdict": null
+      }
+    ],
+    "meeting_minutes": [],
+    "last_updated": "2026-05-31"
   }
 };
 </script>
@@ -769,6 +939,13 @@ window.DASHBOARD_DATA = {
     <div class="sidebar-item" data-page="recommendations" onclick="nav(this)">
       <span class="icon">💡</span> Recommendations
       <span class="badge amber" id="rec-badge">0</span>
+    </div>
+    <div class="sidebar-item" data-page="action-tracker" onclick="nav(this)">
+      <span class="icon">📌</span> Action Tracker
+      <span class="badge amber" id="tracker-badge">0</span>
+    </div>
+    <div class="sidebar-item" data-page="meeting-minutes" onclick="window.open('meeting-minutes.html','_blank')">
+      <span class="icon">📋</span> Meeting Minutes
     </div>
   </div>
 
@@ -893,6 +1070,15 @@ window.DASHBOARD_DATA = {
         <p>AI-generated actions — track from idea to outcome</p>
       </div>
       <div id="rec-content"></div>
+    </div>
+
+    <!-- ══ PAGE: ACTION TRACKER ════════════════════════════════════ -->
+    <div class="page" id="page-action-tracker">
+      <div class="page-header">
+        <h1>📌 Action Tracker</h1>
+        <p>Recommendations → Decisions → Execution → Outcomes</p>
+      </div>
+      <div id="tracker-content"></div>
     </div>
 
     <div class="page-footer" id="page-footer"></div>
@@ -1811,6 +1997,190 @@ function renderStatus() {
   $('page-footer').innerHTML = `CB247 Marketing OS &nbsp;·&nbsp; Generated: ${D.generated} &nbsp;·&nbsp; <a href="https://cb247agent.github.io/cb_claude/">cb247agent.github.io/cb_claude</a>`;
 }
 
+// ── Render: Action Tracker ────────────────────────────────────────────────────
+function renderTracker() {
+  const container = $('tracker-content');
+  if (!container) return;
+
+  const actions = (D.tracker && D.tracker.actions) || [];
+  const minutes = (D.tracker && D.tracker.meeting_minutes) || [];
+
+  const catTag = c => {
+    const map = {seo:'tag-seo',content:'tag-content','paid-ads':'tag-paid-ads',website:'tag-website',operations:'tag-operations',social:'tag-social'};
+    return `<span class="tracker-tag ${map[c]||'tag-operations'}">${c}</span>`;
+  };
+  const prioClass = p => p==='P1'?'p1-dot':p==='P2'?'p2-dot':'p3-dot';
+
+  // Pipeline stages
+  const stages = [
+    { key:'recommended', label:'Recommended',     color:'var(--muted)',  filter: a => a.decision==='pending' },
+    { key:'decided',     label:'Decision Made',   color:'var(--blue)',   filter: a => ['approved','adjusted','rejected'].includes(a.decision) && a.status==='pending' },
+    { key:'execution',   label:'In Execution',    color:'var(--amber)',  filter: a => a.status==='in_progress' },
+    { key:'outcome',     label:'Outcome Review',  color:'var(--green)',  filter: a => a.status==='completed' || a.outcome_assessed },
+  ];
+
+  const card = a => {
+    const decClass = a.decision!=='pending' ? `decision-${a.decision}` : '';
+    const statClass = `status-${a.status||'pending'}`;
+    const decIcon = {approved:'✅',adjusted:'🔄',rejected:'❌',pending:'⏸'}[a.decision]||'⏸';
+    return `<div class="tracker-card ${decClass} ${statClass}" onclick="openTrackerDetail('${a.id}')">
+      <div class="tracker-card-title"><span class="${prioClass(a.priority||'P2')}"></span>${(a.recommendation||'').substring(0,72)}${a.recommendation?.length>72?'…':''}</div>
+      <div class="tracker-card-meta">
+        ${catTag(a.category||'operations')}
+        <span>${a.owner||''}</span>
+        ${a.due_date?`<span>Due ${a.due_date}</span>`:''}
+        <span>${decIcon} ${a.decision||'pending'}</span>
+      </div>
+    </div>`;
+  };
+
+  const pipelineHTML = `<div class="tracker-pipeline">${stages.map(s=>{
+    const items = actions.filter(s.filter);
+    return `<div class="tracker-stage">
+      <div class="tracker-stage-header">
+        <span class="tracker-stage-label" style="color:${s.color}">${s.label}</span>
+        <span class="tracker-stage-count">${items.length}</span>
+      </div>
+      ${items.length ? items.map(card).join('') : '<div style="font-size:11px;color:var(--muted);padding:8px 0">None</div>'}
+    </div>`;
+  }).join('')}</div>`;
+
+  // KPI summary
+  const total = actions.length;
+  const approved = actions.filter(a=>a.decision==='approved').length;
+  const inProgress = actions.filter(a=>a.status==='in_progress').length;
+  const completed = actions.filter(a=>a.status==='completed').length;
+  const pending = actions.filter(a=>a.decision==='pending').length;
+
+  const kpiHTML = `<div class="kpi-grid cols-4" style="margin-bottom:20px">
+    <div class="kpi-card"><div class="kpi-label">Total Actions</div><div class="kpi-value">${total}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Approved</div><div class="kpi-value" style="color:var(--green)">${approved}</div></div>
+    <div class="kpi-card"><div class="kpi-label">In Progress</div><div class="kpi-value" style="color:var(--amber)">${inProgress}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Completed</div><div class="kpi-value" style="color:var(--teal)">${completed}</div></div>
+  </div>`;
+
+  // Detail panel placeholder
+  const detailHTML = `<div class="tracker-detail-panel" id="tracker-detail-panel">
+    <div id="tracker-detail-inner"></div>
+  </div>`;
+
+  // Meeting minutes log
+  const minutesHTML = minutes.length ? `
+    <div class="section-title" style="margin-top:24px">📋 Meeting History</div>
+    ${minutes.slice().reverse().map(m=>{
+      const d = m.decisions_summary||{};
+      return `<div class="meeting-log">
+        <div class="meeting-log-header">
+          <span class="meeting-log-date">📅 ${m.date}</span>
+          <div class="meeting-log-pills">
+            ${d.approved?`<span class="meet-pill meet-approved">${d.approved} approved</span>`:''}
+            ${d.adjusted?`<span class="meet-pill meet-adjusted">${d.adjusted} adjusted</span>`:''}
+            ${d.rejected?`<span class="meet-pill meet-rejected">${d.rejected} rejected</span>`:''}
+          </div>
+        </div>
+        ${m.narrative?`<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px">${m.narrative}</div>`:''}
+        ${m.attendees?.length?`<div style="font-size:11px;color:var(--muted)">👥 ${m.attendees.join(', ')}</div>`:''}
+        ${m.active_promos?.length?`<div style="font-size:11px;color:var(--teal);margin-top:4px">🎯 ${m.active_promos.join(' · ')}</div>`:''}
+        ${m.promo_details?`<div style="font-size:11px;color:var(--text);margin-top:4px;font-style:italic">${m.promo_details}</div>`:''}
+      </div>`;
+    }).join('')}
+  ` : `<div style="color:var(--muted);font-size:12px;padding:16px 0">No meeting minutes recorded yet. After your Monday meeting, open <a href="meeting-minutes.html" target="_blank">meeting-minutes.html</a>, record decisions, download JSON, drop in state/, then run: <code>python scripts/import-meeting-minutes.py</code></div>`;
+
+  // All actions table
+  const tableRows = actions.map(a=>{
+    const decIcon = {approved:'✅',adjusted:'🔄',rejected:'❌',pending:'⏸'}[a.decision]||'⏸';
+    const statIcon = {in_progress:'🔵',completed:'✅',cancelled:'⛔',pending:'⚪'}[a.status]||'⚪';
+    return `<tr>
+      <td style="font-weight:600">${a.id}</td>
+      <td>${catTag(a.category||'ops')}</td>
+      <td style="max-width:300px">${(a.recommendation||'').substring(0,60)}${a.recommendation?.length>60?'…':''}</td>
+      <td>${a.owner||'—'}</td>
+      <td>${decIcon} ${a.decision||'pending'}</td>
+      <td>${statIcon} ${a.status||'pending'}</td>
+      <td>${a.due_date||'—'}</td>
+      <td>${a.review_date||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const tableHTML = `<div class="section-title" style="margin-top:24px">All Actions</div>
+    <div class="card" style="overflow-x:auto;margin-bottom:20px">
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Category</th><th>Recommendation</th><th>Owner</th>
+          <th>Decision</th><th>Status</th><th>Due</th><th>Review</th>
+        </tr></thead>
+        <tbody>${tableRows||'<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:20px">No actions yet. Run the Monday report and import meeting minutes.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+
+  const meetingCTA = `<div style="background:rgba(63,166,154,.08);border:1px solid rgba(63,166,154,.2);border-radius:var(--radius);padding:16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:3px">📋 After your Monday meeting</div>
+      <div style="font-size:12px;color:var(--muted)">Record decisions → download JSON → drop in state/ → run import script</div>
+    </div>
+    <a href="meeting-minutes.html" target="_blank" style="background:var(--teal);color:#fff;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap">Open Meeting Minutes →</a>
+  </div>`;
+
+  container.innerHTML = kpiHTML + meetingCTA + detailHTML + pipelineHTML + tableHTML + minutesHTML;
+
+  // Badge
+  if($('tracker-badge')) $('tracker-badge').textContent = pending||'';
+}
+
+function openTrackerDetail(id) {
+  const actions = (D.tracker && D.tracker.actions) || [];
+  const a = actions.find(x=>x.id===id);
+  if (!a) return;
+
+  const panel = $('tracker-detail-panel');
+  const inner = $('tracker-detail-inner');
+  if (!panel || !inner) return;
+
+  const decIcon = {approved:'✅ Approved',adjusted:'🔄 Needs Adjustment',rejected:'❌ Rejected',pending:'⏸ Pending Decision'}[a.decision]||'⏸ Pending';
+  const statIcon = {in_progress:'🔵 In Progress',completed:'✅ Completed',cancelled:'⛔ Cancelled',pending:'⚪ Pending'}[a.status]||'⚪';
+
+  let impactHTML = '';
+  if (a.projected_impact && Object.keys(a.projected_impact).length) {
+    const rows = Object.entries(a.projected_impact).map(([k,v])=>{
+      const actual = a.actual_impact && a.actual_impact[k];
+      return `<tr><td>${k}</td><td>${v.from||'—'} → ${v.to||'—'}</td>
+        <td>${actual ? (actual.actual||'—') : '<span style="color:var(--muted)">TBD</span>'}</td></tr>`;
+    }).join('');
+    impactHTML = `<div class="section-title" style="margin-top:16px">Impact Tracking</div>
+      <table><thead><tr><th>KPI</th><th>Projected</th><th>Actual</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  inner.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">${a.id} · ${a.category||''} · ${a.priority||''}</div>
+        <div style="font-size:15px;font-weight:700;line-height:1.4">${a.recommendation||''}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">${a.context||''}</div>
+      </div>
+      <button onclick="closeTrackerDetail()" style="font-size:18px;color:var(--muted);padding:4px 8px;flex-shrink:0;margin-left:12px">✕</button>
+    </div>
+    <div class="outcome-grid">
+      <div class="outcome-cell"><div class="label">Owner</div><div class="val" style="font-size:13px">${a.owner||'—'} <span style="font-size:11px;font-weight:400;color:var(--muted)">${a.ownerRole||''}</span></div></div>
+      <div class="outcome-cell"><div class="label">Decision</div><div class="val" style="font-size:13px">${decIcon}</div></div>
+      <div class="outcome-cell"><div class="label">Status</div><div class="val" style="font-size:13px">${statIcon}</div></div>
+      <div class="outcome-cell"><div class="label">Due Date</div><div class="val" style="font-size:13px">${a.due_date||'—'}</div></div>
+    </div>
+    ${a.adjusted_brief?`<div style="margin-top:12px;background:#fffbeb;border-left:3px solid var(--amber);padding:10px 12px;border-radius:4px;font-size:12px"><strong>Adjustment:</strong> ${a.adjusted_brief}</div>`:''}
+    ${a.decision_notes?`<div style="margin-top:8px;font-size:12px;color:var(--muted)"><strong>Notes:</strong> ${a.decision_notes}</div>`:''}
+    ${impactHTML}
+    ${a.outcome_verdict?`<div style="margin-top:12px;font-size:13px;font-weight:700" class="verdict-${a.outcome_verdict}">Outcome: ${a.outcome_verdict.replace('_',' ')}</div>`:''}
+    ${a.outcome_notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px">${a.outcome_notes}</div>`:''}
+  `;
+
+  panel.classList.add('open');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeTrackerDetail() {
+  const panel = $('tracker-detail-panel');
+  if (panel) panel.classList.remove('open');
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   renderStatus();
@@ -1823,6 +2193,7 @@ function init() {
   renderContentReview();
   renderWebsite();
   renderRecommendations();
+  renderTracker();
 
   // Restore last active page
   const lastPage = localStorage.getItem('cb247-active-page')||'overview';
