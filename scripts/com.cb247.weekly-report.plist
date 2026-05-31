@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.cb247.weekly-report</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/scripts/weekly-report.sh</string>
+    </array>
+
+    <!-- Monday 10:00 AM Perth time (AWST UTC+8, no daylight saving) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/weekly-report.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/weekly-report.err</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/tiachasingbetter</string>
+    </dict>
+
+    <!-- Keep alive if it crashes; do NOT retry if it exits normally -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+</dict>
+</plist>

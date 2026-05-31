@@ -377,6 +377,18 @@ log "Phase 2 complete — all 9 agents run."
 log ""
 log "─── PHASE 3: GENERATING OUTPUTS ───"
 
+log "Step 3pre — Auto-importing pending meeting minutes..."
+LATEST_MINUTES=$(ls -t "$BASE_DIR/state/meeting-minutes-"*.json 2>/dev/null | head -1)
+if [ -n "$LATEST_MINUTES" ]; then
+    MINUTES_DATE=$(basename "$LATEST_MINUTES" | sed 's/meeting-minutes-//;s/.json//')
+    log "  Found meeting minutes: $MINUTES_DATE"
+    "$PYTHON" "$BASE_DIR/scripts/import-meeting-minutes.py" "$LATEST_MINUTES" >> "$LOG" 2>&1 \
+        && log "  ✅ Meeting minutes imported" \
+        || log "  ⚠️  Meeting minutes import had issues"
+else
+    log "  No pending meeting minutes found — skipping"
+fi
+
 log "Step 3a — Generating HTML weekly report..."
 "$PYTHON" "$BASE_DIR/scripts/bake-weekly-report.py" >> "$LOG" 2>&1 \
     || fail "bake-weekly-report.py had issues"
