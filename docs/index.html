@@ -324,7 +324,7 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "31 May 2026, 23:19",
+  "generated": "31 May 2026, 23:51",
   "refresh_ts": "2026-05-31T08:03:07.570435Z",
   "status": {
     "ga4": "live",
@@ -2099,19 +2099,16 @@ function renderReadme() {
           <div class="agent-box">
             <div class="agent-name">pull_all.py</div>
             <div class="agent-desc">GA4 · GSC · Google Ads · Meta Ads</div>
-            <div class="agent-out">→ ga4-data.json, gsc-data.json, ads-data.json</div>
           </div>
           <div class="agent-connector">+</div>
           <div class="agent-box">
             <div class="agent-name">pull_ahrefs.py</div>
             <div class="agent-desc">Rankings · backlinks · organic value · keyword gaps</div>
-            <div class="agent-out">→ ahrefs-data.json</div>
           </div>
           <div class="agent-connector">+</div>
           <div class="agent-box">
             <div class="agent-name">pull_apify.py</div>
             <div class="agent-desc">SERP scrape · Maps · Reddit · Trends · FB Ads intel</div>
-            <div class="agent-out">→ apify-data.json, social-trends.json</div>
           </div>
         </div>
       </div>
@@ -2125,22 +2122,22 @@ function renderReadme() {
           <div class="agent-box">
             <div class="agent-num">01</div>
             <div class="agent-name">Research Agent</div>
-            <div class="agent-desc">Perth market signals · trending fitness topics · competitor ad intel · Reddit pain points</div>
-            <div class="agent-reads">Reads: apify · reddit · trends · fb-ads</div>
+            <div class="agent-desc">Perth market signals · trending fitness topics · competitor ad intel · Reddit pain points · seasonal alert (active campaign + upcoming events)</div>
+            <div class="agent-reads">Reads: platform data · seasonal-calendar.md</div>
             <div class="agent-out">→ weekly-research.md</div>
           </div>
           <div class="agent-box">
             <div class="agent-num">02</div>
             <div class="agent-name">Audience Intel</div>
             <div class="agent-desc">ICP pulse check · who's converting this week · exact language to use in copy · tone recommendation</div>
-            <div class="agent-reads">Reads: ga4 · reddit · research output</div>
+            <div class="agent-reads">Reads: GA4 · Reddit · research output</div>
             <div class="agent-out">→ audience-weekly.md</div>
           </div>
           <div class="agent-box">
             <div class="agent-num">03</div>
             <div class="agent-name">Content Intel</div>
             <div class="agent-desc">Viral hooks this week · best-performing formats · trending audio · competitor content gaps</div>
-            <div class="agent-reads">Reads: social-trends · fb-ads · research + audience outputs</div>
+            <div class="agent-reads">Reads: social trends · FB ads · research + audience outputs</div>
             <div class="agent-out">→ content-intel.md</div>
           </div>
         </div>
@@ -2156,21 +2153,21 @@ function renderReadme() {
             <div class="agent-num">04</div>
             <div class="agent-name">Performance</div>
             <div class="agent-desc">Full KPI dashboard · organic vs paid ratio · organic value $ · Google Ads offset recommendations</div>
-            <div class="agent-reads">Reads: ga4 · gsc · google-ads · ahrefs · apify</div>
+            <div class="agent-reads">Reads: GA4 · GSC · Google Ads · Ahrefs · Apify</div>
             <div class="agent-out">→ performance-week.md</div>
           </div>
           <div class="agent-box">
             <div class="agent-num">05</div>
             <div class="agent-name">SEO Agent</div>
             <div class="agent-desc">20 keyword rankings · quick wins · keyword gaps · 2 content briefs · backlinks · local pack · ads to pause</div>
-            <div class="agent-reads">Reads: ahrefs · gsc · apify · performance output</div>
+            <div class="agent-reads">Reads: Ahrefs · GSC · Apify · performance output</div>
             <div class="agent-out">→ weekly-seo-brief.md</div>
           </div>
           <div class="agent-box">
             <div class="agent-num">06</div>
             <div class="agent-name">Competitor Spy</div>
             <div class="agent-desc">What Revo &amp; Anytime changed this week · GBP battle table · keyword threats · ad intel · counter-move</div>
-            <div class="agent-reads">Reads: ahrefs · apify · fb-ads · research output</div>
+            <div class="agent-reads">Reads: Ahrefs · Apify · FB Ads · research output</div>
             <div class="agent-out">→ competitor-weekly.md</div>
           </div>
         </div>
@@ -2186,14 +2183,14 @@ function renderReadme() {
             <div class="agent-num">07</div>
             <div class="agent-name">Paid Ads</div>
             <div class="agent-desc">Which Google Ads to pause (now covered by SEO) · budget reductions · Meta audience targeting · creative briefs · cumulative savings tracker</div>
-            <div class="agent-reads">Reads: google-ads · ahrefs · seo brief · audience output</div>
+            <div class="agent-reads">Reads: Google Ads · Ahrefs · seo-brief.md · audience-weekly.md · seasonal-calendar.md · psychology-triggers.md</div>
             <div class="agent-out">→ paid-ads-weekly.md</div>
           </div>
           <div class="agent-box">
             <div class="agent-num">08</div>
             <div class="agent-name">Content Agent</div>
-            <div class="agent-desc">Full week of content: 4 GBP posts · 2 blog drafts · 5 social posts · 2 Reel scripts · 5 review templates · 3 Meta ad variations</div>
-            <div class="agent-reads">Reads: seo brief · content intel · audience · competitor outputs</div>
+            <div class="agent-desc">Full week of content: 4 GBP posts · 2 blog drafts · 5 social posts · 2 Reel scripts · 5 review templates · 3 Meta ad variations — seasonally aware, psychology-trigger enforced</div>
+            <div class="agent-reads">Reads: seo-brief.md · content-intel.md · audience-weekly.md · competitor-weekly.md · seasonal-calendar.md · psychology-triggers.md · brand-voice.md</div>
             <div class="agent-out">→ weekly-content.md</div>
           </div>
         </div>
@@ -2208,8 +2205,8 @@ function renderReadme() {
           <div class="agent-box primary-agent">
             <div class="agent-num" style="background:var(--teal);color:#fff">09</div>
             <div class="agent-name">Strategist</div>
-            <div class="agent-desc">Reads ALL 8 agent outputs. Produces the single executive strategy document Tia reviews: weekly scorecard · top 5 priorities · decisions needed · one-line brief per team member</div>
-            <div class="agent-reads">Reads: ALL 8 agent outputs</div>
+            <div class="agent-desc">Reads ALL 8 agent outputs. Produces the single executive strategy document Tia reviews: seasonal status · weekly scorecard · top 5 priorities · decisions needed · one-line brief per team member</div>
+            <div class="agent-reads">Reads: ALL 8 agent outputs · seasonal-calendar.md</div>
             <div class="agent-out">→ weekly-strategy.md → this dashboard</div>
           </div>
         </div>
@@ -2228,55 +2225,45 @@ function renderReadme() {
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Google Analytics 4</div>
-        <div class="ds-file">ga4-data.json</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Search Console</div>
-        <div class="ds-file">gsc-data.json</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Google Ads</div>
-        <div class="ds-file">ads-data.json</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Meta Ads</div>
-        <div class="ds-file">ads-data.json</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Ahrefs</div>
-        <div class="ds-file">ahrefs-data.json</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
-        <div class="ds-name">Apify (SERP + Maps)</div>
-        <div class="ds-file">apify-data.json</div>
+        <div class="ds-name">Apify — SERP + Maps</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
-        <div class="ds-name">Google Business</div>
-        <div class="ds-file">apify-data.json</div>
+        <div class="ds-name">Google Business Profile</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Social Trends</div>
-        <div class="ds-file">social-trends.json</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Reddit Intel</div>
-        <div class="ds-file">reddit-intel.json</div>
       </div>
       <div class="data-source">
         <div class="ds-icon"><div class="ds-dot"></div></div>
         <div class="ds-name">Google Trends</div>
-        <div class="ds-file">google-trends.json</div>
       </div>
     </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:12px">All data lands in <code>state/*.json</code>. The Monday pipeline refreshes everything automatically. To refresh manually: <code>python3 scripts/pull_all.py</code></p>
+    <p style="font-size:11px;color:var(--muted);margin-top:12px">All data sources are refreshed automatically every Monday before the agent pipeline runs. To refresh manually: <code>python3 scripts/pull_all.py</code></p>
   </div>
 
   <!-- ══ SECTION 4: TEAM WORKFLOW ════════════════════════════════════════════ -->
@@ -2428,24 +2415,6 @@ function renderReadme() {
     <p style="font-size:11px;color:var(--muted);margin-top:10px">Type these phrases in Claude to activate the matching skill. Full list in <code>skills/manifest.json</code></p>
   </div>
 
-  <!-- ══ SECTION 7: QUICK REFERENCE ════════════════════════════════════════ -->
-  <div class="readme-section">
-    <h2>Quick Reference — Common Commands</h2>
-    <div class="card" style="padding:0;overflow:hidden">
-      <table>
-        <thead><tr><th>Command</th><th>What it does</th><th>When to run</th></tr></thead>
-        <tbody>
-          <tr><td><code>python3 scripts/pull_all.py</code></td><td>Refresh GA4, GSC, Google Ads, Meta</td><td>Before any report</td></tr>
-          <tr><td><code>python3 scripts/bake-public-dashboard.py</code></td><td>Rebuild the dashboard HTML</td><td>After data changes</td></tr>
-          <tr><td><code>bash scripts/deploy-dashboard.sh</code></td><td>Push dashboard to GitHub Pages</td><td>After rebuild</td></tr>
-          <tr><td><code>bash scripts/weekly-report.sh</code></td><td>Full Monday pipeline (manual trigger)</td><td>If auto-run missed</td></tr>
-          <tr><td><code>python3 scripts/import-meeting-minutes.py</code></td><td>Import meeting decisions into tracker</td><td>After Monday meeting</td></tr>
-          <tr><td><code>python3 scripts/send_weekly_report.py</code></td><td>Re-send Tia's report email</td><td>If email missed</td></tr>
-          <tr><td><code>python3 scripts/send_team_emails.py --approve</code></td><td>Release all team emails after Tia approves</td><td>After Tia approves</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
   `;
 }
 
