@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CB247 Marketing Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+/* ── Reset & Base ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --teal:       #3FA69A;
+  --teal-dark:  #2d8a7e;
+  --teal-light: #e8f5f4;
+  --bg:         #F0F2F5;
+  --card:       #ffffff;
+  --text:       #1a1a2e;
+  --muted:      #6b7280;
+  --border:     #e5e7eb;
+  --red:        #ef4444;
+  --green:      #22c55e;
+  --amber:      #f59e0b;
+  --radius:     10px;
+  --shadow:     0 1px 4px rgba(0,0,0,0.08), 0 2px 12px rgba(0,0,0,0.04);
+  --gap:        16px;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+a { color: var(--teal); text-decoration: none; }
+
+/* ── Layout ────────────────────────────────────────────────────── */
+.wrap { max-width: 1400px; margin: 0 auto; padding: 16px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+.mb { margin-bottom: var(--gap); }
+.section-title {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--muted); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+header {
+  background: linear-gradient(135deg, #1a1a2e 0%, var(--teal-dark) 100%);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: var(--gap);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+header h1 {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.3px;
+}
+header h1 span {
+  color: #7ee8e0;
+}
+.header-meta {
+  text-align: right; font-size: 12px; opacity: 0.8; line-height: 1.8;
+}
+.header-badge {
+  display: inline-block; background: rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 2px 10px; font-size: 11px; margin-top: 4px;
+}
+
+/* ── Status bar ───────────────────────────────────────────────── */
+.status-bar {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  margin-bottom: var(--gap);
+  display: flex; gap: 24px; flex-wrap: wrap;
+  box-shadow: var(--shadow);
+  font-size: 12px;
+}
+.status-item { display: flex; align-items: center; gap: 6px; }
+.status-label { color: var(--muted); }
+
+/* ── KPI Cards ────────────────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); margin-bottom: var(--gap); }
+.kpi-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--teal);
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  width: 60px; height: 60px;
+  background: var(--teal-light);
+  border-radius: 50%;
+  transform: translate(20px, -20px);
+}
+.kpi-icon {
+  font-size: 20px; margin-bottom: 10px; display: block;
+}
+.kpi-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--muted); margin-bottom: 4px;
+}
+.kpi-value {
+  font-size: 30px; font-weight: 800; color: var(--text);
+  letter-spacing: -1px; line-height: 1;
+}
+.kpi-change {
+  font-size: 12px; font-weight: 600; margin-top: 6px;
+  display: flex; align-items: center; gap: 3px;
+}
+.kpi-change.up   { color: var(--green); }
+.kpi-change.down { color: var(--red); }
+.kpi-change.flat { color: var(--muted); }
+.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.kpi-alert { border-left-color: var(--red); }
+.kpi-good  { border-left-color: var(--green); }
+
+/* ── Cards ────────────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+}
+.card h3 {
+  font-size: 14px; font-weight: 700; margin-bottom: 14px;
+  color: var(--text); display: flex; align-items: center; gap: 6px;
+}
+.card-period {
+  font-size: 11px; color: var(--muted); font-weight: 400; margin-left: auto;
+}
+
+/* ── Stat rows ───────────────────────────────────────────────── */
+.stat-row {
+  display: flex; justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-label { color: var(--muted); }
+.stat-value { font-weight: 600; color: var(--text); }
+.stat-value.good { color: var(--green); }
+.stat-value.warn { color: var(--amber); }
+.stat-value.bad  { color: var(--red); }
+
+/* ── Location cards ──────────────────────────────────────────── */
+.loc-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+}
+.loc-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.loc-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-green { background: #22c55e; }
+.dot-blue  { background: #3b82f6; }
+.loc-name { font-weight: 700; font-size: 15px; }
+.cpa-badge {
+  margin-left: auto;
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+}
+.cpa-ok  { background: #dcfce7; color: #16a34a; }
+.cpa-hi  { background: #fee2e2; color: #dc2626; }
+
+/* ── Progress bars ───────────────────────────────────────────── */
+.progress-wrap { margin: 10px 0 4px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--muted); margin-bottom: 4px;
+}
+.progress-track {
+  background: var(--border); border-radius: 99px;
+  height: 6px; overflow: hidden;
+}
+.progress-fill {
+  background: var(--teal); height: 100%; border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+/* ── Stars ───────────────────────────────────────────────────── */
+.stars { color: #f59e0b; letter-spacing: 1px; }
+
+/* ── Charts ──────────────────────────────────────────────────── */
+.chart-wrap { position: relative; height: 180px; }
+
+/* ── Tables ──────────────────────────────────────────────────── */
+table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
+thead th {
+  text-align: left; padding: 7px 10px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.4px; color: var(--muted);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 7px 10px; border-bottom: 1px solid var(--border);
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #f9fafb; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.rank { color: var(--muted); font-size: 11px; width: 28px; }
+.page-path { font-family: monospace; font-size: 11px; color: var(--teal); }
+.query-text { max-width: 200px; }
+.cpa-high { color: var(--red); font-weight: 700; }
+.cpa-ok   { color: var(--green); }
+
+/* ── Action checklist ────────────────────────────────────────── */
+.actions-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--gap); margin-bottom: var(--gap);
+}
+.action-group { background: var(--card); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+.action-group h4 {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.action-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+  font-size: 12px; line-height: 1.4;
+}
+.action-item:last-child { border-bottom: none; }
+.action-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 4px;
+}
+.dot-red    { background: var(--red); }
+.dot-amber  { background: var(--amber); }
+.dot-yellow { background: #eab308; }
+
+/* ── Footer ──────────────────────────────────────────────────── */
+footer {
+  text-align: center; font-size: 11px; color: var(--muted);
+  padding: 24px 0 12px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-4   { grid-template-columns: repeat(2, 1fr); }
+  .actions-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .kpi-grid, .grid-2, .grid-3, .grid-4, .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<header>
+  <div>
+    <h1>ChasingBetter<span>247</span> — Marketing Dashboard</h1>
+    <div style="font-size:12px;opacity:0.7;margin-top:4px;">
+      📍 Malaga + Ellenbrook &nbsp;·&nbsp; Perth, WA &nbsp;·&nbsp; $11.95/week, no lock-in
+    </div>
+  </div>
+  <div class="header-meta">
+    <div>Updated: <strong>31 May 2026, 06:48 UTC</strong></div>
+    <div>Data refresh: 2026-05-30T07:33:45.322127Z</div>
+    <span class="header-badge">Auto-updates every Monday</span>
+  </div>
+</header>
+
+<!-- ── DATA STATUS ────────────────────────────────────────────── -->
+<div class="status-bar">
+  <div class="status-item"><span class="status-label">GA4:</span> <strong>✅ Live</strong></div>
+  <div class="status-item"><span class="status-label">Search Console:</span> <strong>✅ Live</strong></div>
+  <div class="status-item"><span class="status-label">Google Ads:</span> <strong>✅ Live</strong></div>
+  <div class="status-item"><span class="status-label">GBP / Maps:</span> <strong>✅ Live</strong></div>
+  <div class="status-item"><span class="status-label">Meta Ads:</span> <strong>✅ Live</strong></div>
+  <div style="margin-left:auto;font-size:11px;color:var(--muted);">
+    Run <code>python scripts/pull_all.py</code> to refresh data
+  </div>
+</div>
+
+<!-- ── KPI ROW ────────────────────────────────────────────────── -->
+<div class="kpi-grid mb">
+  <div class="kpi-card">
+    <span class="kpi-icon">📊</span>
+    <div class="kpi-label">Weekly Sessions</div>
+    <div class="kpi-value">3,055</div>
+    <div class="kpi-change down">
+      ↓ -27.3% vs prior week
+    </div>
+    <div class="kpi-sub">Prior: 4,201</div>
+  </div>
+
+  <div class="kpi-card ">
+    <span class="kpi-icon">🎯</span>
+    <div class="kpi-label">Conversions</div>
+    <div class="kpi-value">486</div>
+    <div class="kpi-change down">
+      ↓ -9.5% vs prior week
+    </div>
+    <div class="kpi-sub">Conv. rate: 15.9% (prior 12.8%)</div>
+  </div>
+
+  <div class="kpi-card">
+    <span class="kpi-icon">💰</span>
+    <div class="kpi-label">Google Ads Spend</div>
+    <div class="kpi-value">$558</div>
+    <div class="kpi-change down">
+      ↓ -8.9% vs prior week
+    </div>
+    <div class="kpi-sub">28 conversions · 278 clicks</div>
+  </div>
+
+  <div class="kpi-card kpi-good">
+    <span class="kpi-icon">✅</span>
+    <div class="kpi-label">Blended CPA</div>
+    <div class="kpi-value">$19.92</div>
+    <div class="kpi-change up">
+      ✅ Within target
+    </div>
+    <div class="kpi-sub">Mal: $35.14 · Ell: $12.71</div>
+  </div>
+</div>
+
+<!-- ── GA4 + GSC ──────────────────────────────────────────────── -->
+<div class="section-title">📊 Web Traffic · 2026-05-23 → 2026-05-30</div>
+<div class="grid-2 mb">
+  <div class="card">
+    <h3>Google Analytics 4 <span class="card-period">2026-05-23 → 2026-05-30</span></h3>
+    <div class="stat-row"><span class="stat-label">Sessions</span><span class="stat-value">3,055 (-27.3%)</span></div>
+    <div class="stat-row"><span class="stat-label">Users</span><span class="stat-value">2,435</span></div>
+    <div class="stat-row"><span class="stat-label">New Users</span><span class="stat-value">2,109</span></div>
+    <div class="stat-row"><span class="stat-label">Conversions</span><span class="stat-value">486 (-9.5%)</span></div>
+    <div class="stat-row"><span class="stat-label">Conv. Rate</span><span class="stat-value">15.9%</span></div>
+    <div class="stat-row"><span class="stat-label">Mobile Share</span><span class="stat-value warn">87%</span></div>
+    <div style="margin-top:14px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">TRAFFIC BY CHANNEL</div>
+      <div class="chart-wrap"><canvas id="channelChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Google Search Console <span class="card-period">2026-05-02 → 2026-05-30</span></h3>
+    <div class="stat-row"><span class="stat-label">Organic Clicks</span><span class="stat-value">1,735</span></div>
+    <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-value">6,934</span></div>
+    <div class="stat-row"><span class="stat-label">Avg. CTR</span><span class="stat-value">25.02%</span></div>
+    <div class="stat-row"><span class="stat-label">Avg. Position</span><span class="stat-value">#1.5</span></div>
+    <div style="margin-top:14px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">TOP QUERIES</div>
+      <table>
+        <thead><tr><th></th><th>Query</th><th class="num">Clicks</th><th class="num">Impr</th><th class="num">CTR</th><th class="num">Pos</th></tr></thead>
+        <tbody>
+        <tr>
+          <td class="rank">#1</td>
+          <td class="query-text">chasing better malaga</td>
+          <td class="num">567</td>
+          <td class="num">1,683</td>
+          <td class="num">33.7%</td>
+          <td class="num">#1.1</td>
+        </tr>
+        <tr>
+          <td class="rank">#2</td>
+          <td class="query-text">chasing better ellenbrook</td>
+          <td class="num">425</td>
+          <td class="num">848</td>
+          <td class="num">50.1%</td>
+          <td class="num">#1.1</td>
+        </tr>
+        <tr>
+          <td class="rank">#3</td>
+          <td class="query-text">chasing better</td>
+          <td class="num">393</td>
+          <td class="num">1,435</td>
+          <td class="num">27.4%</td>
+          <td class="num">#1.4</td>
+        </tr>
+        <tr>
+          <td class="rank">#4</td>
+          <td class="query-text">chasing better cancel membership</td>
+          <td class="num">29</td>
+          <td class="num">42</td>
+          <td class="num">69.0%</td>
+          <td class="num">#1.0</td>
+        </tr>
+        <tr>
+          <td class="rank">#5</td>
+          <td class="query-text">chasing better gym</td>
+          <td class="num">25</td>
+          <td class="num">105</td>
+          <td class="num">23.8%</td>
+          <td class="num">#2.0</td>
+        </tr>
+        <tr>
+          <td class="rank">#6</td>
+          <td class="query-text">chasingbetter</td>
+          <td class="num">23</td>
+          <td class="num">141</td>
+          <td class="num">16.3%</td>
+          <td class="num">#2.3</td>
+        </tr>
+        <tr>
+          <td class="rank">#7</td>
+          <td class="query-text">chasingbetter247</td>
+          <td class="num">16</td>
+          <td class="num">85</td>
+          <td class="num">18.8%</td>
+          <td class="num">#2.9</td>
+        </tr>
+        <tr>
+          <td class="rank">#8</td>
+          <td class="query-text">chasing better 247</td>
+          <td class="num">14</td>
+          <td class="num">41</td>
+          <td class="num">34.2%</td>
+          <td class="num">#1.3</td>
+        </tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOP PAGES ──────────────────────────────────────────────── -->
+<div class="section-title">📄 Top Pages</div>
+<div class="card mb">
+  <table>
+    <thead><tr><th></th><th>Page</th><th class="num">Views</th><th class="num">Sessions</th></tr></thead>
+    <tbody>
+        <tr>
+          <td class="rank">#1</td>
+          <td class="page-path">/</td>
+          <td class="num">4,781</td>
+          <td class="num">2,240</td>
+        </tr>
+        <tr>
+          <td class="rank">#2</td>
+          <td class="page-path">/reformer-pilates</td>
+          <td class="num">596</td>
+          <td class="num">304</td>
+        </tr>
+        <tr>
+          <td class="rank">#3</td>
+          <td class="page-path">/contact</td>
+          <td class="num">461</td>
+          <td class="num">241</td>
+        </tr>
+        <tr>
+          <td class="rank">#4</td>
+          <td class="page-path">/group-fitness-timetable</td>
+          <td class="num">396</td>
+          <td class="num">181</td>
+        </tr>
+        <tr>
+          <td class="rank">#5</td>
+          <td class="page-path">/thank-you</td>
+          <td class="num">324</td>
+          <td class="num">173</td>
+        </tr>
+        <tr>
+          <td class="rank">#6</td>
+          <td class="page-path">/personal-training</td>
+          <td class="num">244</td>
+          <td class="num">109</td>
+        </tr>
+        <tr>
+          <td class="rank">#7</td>
+          <td class="page-path">/resources/post-workout-recovery</td>
+          <td class="num">240</td>
+          <td class="num">126</td>
+        </tr>
+        <tr>
+          <td class="rank">#8</td>
+          <td class="page-path">/kids-hub</td>
+          <td class="num">207</td>
+          <td class="num">73</td>
+        </tr>
+        <tr>
+          <td class="rank">#9</td>
+          <td class="page-path">/neon21</td>
+          <td class="num">202</td>
+          <td class="num">82</td>
+        </tr>
+        <tr>
+          <td class="rank">#10</td>
+          <td class="page-path">/faqs</td>
+          <td class="num">187</td>
+          <td class="num">85</td>
+        </tr></tbody>
+  </table>
+</div>
+
+<!-- ── GOOGLE ADS ─────────────────────────────────────────────── -->
+<div class="section-title">📈 Google Ads — Paid Search</div>
+<div class="grid-2 mb">
+  <div class="loc-card">
+    <div class="loc-header">
+      <span class="loc-dot dot-green"></span>
+      <span class="loc-name">🟢 Malaga</span>
+      <span class="cpa-badge cpa-ok">CPA $35.14 ✅</span>
+    </div>
+    <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-value">$316.24 <small style="color:var(--muted)">prior $316.58</small></span></div>
+    <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-value">163 · CTR 9.13%</span></div>
+    <div class="stat-row"><span class="stat-label">Conversions</span><span class="stat-value">9</span></div>
+    <div class="stat-row"><span class="stat-label">CPA</span>
+      <span class="stat-value good">$35.14</span>
+    </div>
+  </div>
+
+  <div class="loc-card">
+    <div class="loc-header">
+      <span class="loc-dot dot-blue"></span>
+      <span class="loc-name">🔵 Ellenbrook</span>
+      <span class="cpa-badge cpa-ok">CPA $12.71 ✅</span>
+    </div>
+    <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-value">$241.44 <small style="color:var(--muted)">prior $295.64</small></span></div>
+    <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-value">115 · CTR 11.72%</span></div>
+    <div class="stat-row"><span class="stat-label">Conversions</span><span class="stat-value">19</span></div>
+    <div class="stat-row"><span class="stat-label">CPA</span>
+      <span class="stat-value good">$12.71</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3-week trend + campaigns -->
+<div class="grid-2 mb">
+  <div class="card">
+    <h3>📅 3-Week Spend Trend</h3>
+    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>Campaign Breakdown</h3>
+    <table>
+      <thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">Conv</th><th class="num">CPA</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Gym Geo</td>
+          <td class="num">$276.12</td>
+          <td class="num">163</td>
+          <td class="num">23</td>
+          <td class="num cpa-ok">$12.01</td>
+        </tr>
+        <tr>
+          <td>Malaga Gym</td>
+          <td class="num">$153.17</td>
+          <td class="num">66</td>
+          <td class="num">2</td>
+          <td class="num cpa-high">$76.58</td>
+        </tr>
+        <tr>
+          <td>Ellenbrook Gym</td>
+          <td class="num">$128.39</td>
+          <td class="num">49</td>
+          <td class="num">3</td>
+          <td class="num cpa-ok">$42.80</td>
+        </tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── GBP ────────────────────────────────────────────────────── -->
+<div class="section-title">📍 Google Business Profile — Local Visibility</div>
+<div class="grid-2 mb">
+  <div class="loc-card">
+    <div class="loc-header">
+      <span class="loc-dot dot-green"></span>
+      <span class="loc-name">🟢 Malaga GBP</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Rating</span>
+      <span class="stat-value">
+        <span class="stars">★★★★★</span>
+        4.6
+      </span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Reviews: 469 / 530 target</span><span>88%</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:88%"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Photos: 65 / 100 target</span><span>65%</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:65%"></div></div>
+    </div>
+    <div class="stat-row" style="margin-top:8px;"><span class="stat-label">Profile</span><span class="stat-value">100% complete</span></div>
+  </div>
+
+  <div class="loc-card">
+    <div class="loc-header">
+      <span class="loc-dot dot-blue"></span>
+      <span class="loc-name">🔵 Ellenbrook GBP</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Rating</span>
+      <span class="stat-value">
+        <span class="stars">★★★★★</span>
+        4.7
+      </span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Reviews: 226 / 280 target</span><span>81%</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:81%"></div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Photos: 68 / 100 target</span><span>68%</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:68%"></div></div>
+    </div>
+    <div class="stat-row" style="margin-top:8px;"><span class="stat-label">Profile</span><span class="stat-value">100% complete</span></div>
+  </div>
+</div>
+
+<!-- Competitor table -->
+
+
+<!-- ── KEY ACTIONS ────────────────────────────────────────────── -->
+<div class="section-title">⚡ Key Actions This Week</div>
+<div class="actions-grid">
+  <div class="action-group">
+    <h4 style="color:var(--red);">🔴 Critical — Do Now</h4>
+    <div class="action-item"><span class="action-dot dot-red"></span><span>Print QR code review cards — place at Malaga + Ellenbrook reception</span></div>
+    <div class="action-item"><span class="action-dot dot-red"></span><span>Brief front desk on verbal review ask script</span></div>
+    <div class="action-item"><span class="action-dot dot-red"></span><span>Submit disavow file to Google Search Console (37 toxic domains)</span></div>
+    <div class="action-item"><span class="action-dot dot-red"></span><span>Fix 3 broken pages — add 301 redirects</span></div>
+    <div class="action-item"><span class="action-dot dot-red"></span><span>Add H1 tags to 29 pages (dev task)</span></div>
+  </div>
+  <div class="action-group">
+    <h4 style="color:var(--amber);">🟠 High — This Week</h4>
+    <div class="action-item"><span class="action-dot dot-amber"></span><span>Rewrite GBP descriptions with local keywords (both locations)</span></div>
+    <div class="action-item"><span class="action-dot dot-amber"></span><span>Seed GBP Q&amp;A with 6 pre-answered questions</span></div>
+    <div class="action-item"><span class="action-dot dot-amber"></span><span>Audit + complete all GBP Services/Products listings</span></div>
+    <div class="action-item"><span class="action-dot dot-amber"></span><span>Add LocalBusiness schema markup (40 pages)</span></div>
+    <div class="action-item"><span class="action-dot dot-amber"></span><span>Create /ellenbrook landing page — saves ~$386/week in ads</span></div>
+  </div>
+  <div class="action-group">
+    <h4 style="color:#ca8a04;">🟡 Medium — This Month</h4>
+    <div class="action-item"><span class="action-dot dot-yellow"></span><span>Begin weekly GBP posts every Tuesday (4-week rotation)</span></div>
+    <div class="action-item"><span class="action-dot dot-yellow"></span><span>Upload 10 priority photos per location (sauna, ice bath, Kids Hub)</span></div>
+    <div class="action-item"><span class="action-dot dot-yellow"></span><span>Publish blog: 'Best Gym in Malaga' (targets $137/wk ad keyword)</span></div>
+    <div class="action-item"><span class="action-dot dot-yellow"></span><span>Expand /massage page — 1,300 searches/month at position #16</span></div>
+    <div class="action-item"><span class="action-dot dot-yellow"></span><span>Submit NAP listings to AU directories (True Local, Yelp, etc.)</span></div>
+  </div>
+</div>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────── -->
+<footer>
+  CB247 Marketing Agent — Auto-updated every Monday &nbsp;·&nbsp;
+  Contact: <a href="mailto:tia@chasingbetter.com.au">tia@chasingbetter.com.au</a> &nbsp;·&nbsp;
+  Generated: 31 May 2026, 06:48 UTC
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+// ── Channel chart ────────────────────────────────────────────────
+const srcLabels = ["Organic Search", "Paid Social", "Direct", "Cross-network", "Paid Search", "Organic Social"];
+const srcVals   = [948, 795, 519, 483, 245, 105];
+const srcPcts   = [31.0, 26.0, 17.0, 15.8, 8.0, 3.4];
+const TEAL = '#3FA69A';
+
+if (document.getElementById('channelChart') && srcLabels.length) {
+  new Chart(document.getElementById('channelChart'), {
+    type: 'bar',
+    data: {
+      labels: srcLabels,
+      datasets: [{
+        label: 'Sessions',
+        data: srcVals,
+        backgroundColor: [
+          '#3FA69A','#2d8a7e','#5bbdb5','#7dccc6','#a0dbd8','#c3ecea'
+        ],
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.x.toLocaleString()} sessions (${srcPcts[ctx.dataIndex]}%)`
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// ── 3-week trend chart ───────────────────────────────────────────
+const trendLabels = ["04May26-10May26", "11May26-17May26", "18May26-24May26"];
+const trendSpend  = [609.92, 612.22, 557.68];
+const trendCpa    = [32.1, 43.73, 19.92];
+
+if (document.getElementById('trendChart') && trendLabels.length) {
+  new Chart(document.getElementById('trendChart'), {
+    type: 'bar',
+    data: {
+      labels: trendLabels,
+      datasets: [
+        {
+          label: 'Spend ($)',
+          data: trendSpend,
+          backgroundColor: '#3FA69A',
+          borderRadius: 4,
+          yAxisID: 'y',
+        },
+        {
+          label: 'CPA ($)',
+          data: trendCpa,
+          type: 'line',
+          borderColor: '#ef4444',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#ef4444',
+          tension: 0.3,
+          yAxisID: 'y2',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 16, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x:  { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y:  { beginAtZero: true, position: 'left',  ticks: { callback: v => '$' + v, font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+        y2: { beginAtZero: true, position: 'right', ticks: { callback: v => '$' + v, font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
