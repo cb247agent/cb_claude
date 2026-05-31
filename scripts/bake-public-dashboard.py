@@ -241,6 +241,240 @@ def build_data():
     }
 
 
+CONTENT_ITEMS = [
+    {
+        "id": "p1", "day": 0, "platform": "gbp", "type": "GBP Post",
+        "title": "GBP Post — Sauna & Ice Bath",
+        "assignee": "Joanne", "assigneeRole": "Social Media Manager",
+        "caption": "Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.",
+        "instructions": "Post to both Malaga and Ellenbrook GBP profiles. Use a high-quality photo of the sauna or ice bath area. Best posting time: Tuesday 7–9am or Saturday 8am. Include the $11.95 price point and 'no lock-in' in the first sentence for SEO. Tag location: Malaga.",
+        "kw": "sauna gym perth", "dueDate": "+0",
+    },
+    {
+        "id": "p2", "day": 1, "platform": "instagram", "type": "Instagram Reel",
+        "title": "Reel — FIFO Lifestyle",
+        "assignee": "Agust", "assigneeRole": "Video Creator",
+        "caption": "Fly in. Train hard. We get it. CB247's FIFO-friendly freeze means your membership works around your roster.",
+        "instructions": "30–45 second Reel. Open with a hook: 'Working FIFO? Your gym should work around you.' Show the freeze feature on the app or website. Voiceover tone: direct, no-nonsense, WA working-class. End with CTA: 'Freeze. Resume. No questions asked.' Hashtags: #fifo #fifoperth #gymperth #chasingbetter247",
+        "kw": "fifo gym perth", "dueDate": "+1",
+    },
+    {
+        "id": "p3", "day": 2, "platform": "blog", "type": "SEO Blog Post",
+        "title": "Blog — Best Gym Malaga",
+        "assignee": "John", "assigneeRole": "SEO Specialist",
+        "caption": "Targeting 'best gym Malaga' — 320 searches/month. H1: 'The Best Gym in Malaga? Here's Why 8,000 Members Chose CB247'. Full outline and keyword map ready.",
+        "instructions": "Target keyword: 'best gym malaga' (320/mo, KD 18). Secondary: 'gym malaga perth', 'cheap gym malaga'. Word count: 1,200–1,500 words. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities (list all: 24/7, Kids Hub, Sauna, Ice Bath, Reformer Pilates, Neon21) → H2: Pricing Comparison (CB247 vs Revo vs Anytime) → H2: Member Reviews → H2: FAQ → CTA: 'Join from $11.95/week'. Internal links: homepage, Malaga page, pricing page. Mark adds draft to WordPress as pending.",
+        "kw": "best gym malaga", "dueDate": "+2",
+    },
+    {
+        "id": "p4", "day": 2, "platform": "instagram", "type": "Instagram Post",
+        "title": "Instagram — Kids Hub",
+        "assignee": "Shauna", "assigneeRole": "Content & Email Manager",
+        "caption": "Train while the kids play. Our Kids Hub means no more 'I can't go to the gym today.' Tag a parent who needs this.",
+        "instructions": "Static post or short Reel (15s). Show the Kids Hub space — colourful, safe, supervised. Caption hook: 'No babysitter? No problem.' Tag format: tag 3 local parent pages. Best time: Wednesday 9–11am (school drop-off window). Hashtags: #kidshub #gymperth #malagatribe #chasingbetter247",
+        "kw": "kids gym malaga", "dueDate": "+2",
+    },
+    {
+        "id": "p5", "day": 4, "platform": "tiktok", "type": "TikTok Video",
+        "title": "TikTok — Ice Bath Reaction",
+        "assignee": "Ivan", "assigneeRole": "Video Creator",
+        "caption": "First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247",
+        "instructions": "Reaction-style video. Film a member (with permission) doing their first ice bath — show genuine reaction. Ideal length: 20–30 seconds. Hook in first 2s: 'Would you do this for $11.95/week?' Trending audio: check TikTok trending for Perth fitness content this week. Tag @chasingbetter247. Do NOT over-produce — raw, authentic works better on TikTok.",
+        "kw": "ice bath gym perth", "dueDate": "+4",
+    },
+    {
+        "id": "p6", "day": 5, "platform": "gbp", "type": "GBP Post",
+        "title": "GBP Post — Reformer Pilates",
+        "assignee": "Joanne", "assigneeRole": "Social Media Manager",
+        "caption": "24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.",
+        "instructions": "Post to both GBP profiles. Use a class photo or studio shot. Emphasise '24/7 access' — this is a key differentiator vs Revo. Include class booking CTA. Target local pack keywords: 'reformer pilates perth', 'pilates malaga'. Post Friday morning to capture weekend bookings.",
+        "kw": "reformer pilates perth", "dueDate": "+5",
+    },
+    {
+        "id": "p7", "day": 7, "platform": "instagram", "type": "Instagram Reel",
+        "title": "Reel — Gym Tour",
+        "assignee": "Agust", "assigneeRole": "Video Creator",
+        "caption": "Never been to CB247? Here's what $11.95/week gets you. 👀 #gymtour #chasingbetter247",
+        "instructions": "60-second gym walkthrough Reel. Script: open with '$11.95 a week — here's what that actually gets you'. Walk through in order: 24/7 weights floor → Reformer Pilates studio → CrossFit/functional area → Sauna → Ice Bath → Neon21 → Kids Hub. Voiceover with on-screen text. End card: website URL + $11.95/week. Post on Sunday evening for Monday motivation traffic.",
+        "kw": "gym malaga perth", "dueDate": "+7",
+    },
+    {
+        "id": "p8", "day": 8, "platform": "email", "type": "Email Newsletter",
+        "title": "Weekly Email Newsletter",
+        "assignee": "Shauna", "assigneeRole": "Content & Email Manager",
+        "caption": "Member spotlight + this week's class timetable + sauna booking tip",
+        "instructions": "Subject line options (A/B test): A: 'This week at CB247 🏋️' / B: 'Your sauna booking tip + class times'. Structure: 1) Member spotlight (150 words, real story) → 2) This week's class timetable → 3) Sauna tip (e.g. 'Book Mon/Wed 6–7am — least busy') → 4) One referral nudge ('Bring a friend, 2 weeks free'). Send via Mailchimp. List segment: active members. Send time: Monday 6am.",
+        "kw": "", "dueDate": "+8",
+    },
+    {
+        "id": "p9", "day": 9, "platform": "blog", "type": "SEO Blog Post",
+        "title": "Blog — FIFO Gym Membership Perth",
+        "assignee": "Shauna", "assigneeRole": "Content & Email Manager",
+        "caption": "Targeting 'fifo gym perth' — 210 searches/month. FIFO freeze angle.",
+        "instructions": "Target keyword: 'fifo gym perth' (210/mo). Secondary: 'fifo gym membership', 'gym freeze perth'. Word count: 1,000–1,200 words. Angle: empathy-first — FIFO lifestyle is tough, gym should make it easier. Structure: H1: 'FIFO Gym Membership in Perth: Train Hard When You're Home' → H2: The FIFO Challenge → H2: What is a Gym Freeze? → H2: CB247 FIFO Freeze — How It Works → H2: Why CB247 is Perth's FIFO-Friendly Gym → FAQ → CTA. Tone: direct, no fluff, WA working-class voice. Shauna drafts, John reviews SEO, Mark publishes.",
+        "kw": "fifo gym membership perth", "dueDate": "+9",
+    },
+    {
+        "id": "p10", "day": 10, "platform": "tiktok", "type": "TikTok Video",
+        "title": "TikTok — Neon21 Tanning",
+        "assignee": "Ivan", "assigneeRole": "Video Creator",
+        "caption": "You didn't know we had THIS at a $11.95/week gym 👀 #neon21 #gymsecrets",
+        "instructions": "Surprise-reveal style video. Hook: 'Things at CB247 people don't know about — Part 1'. Feature: Neon21 tanning. Short (15–20s). Use trending 'surprise' audio. Build curiosity — do NOT show the feature in the thumbnail. On-screen text: 'Gym + tanning = $11.95/week??' End CTA: 'Follow for Part 2'. This format drives follows for series.",
+        "kw": "", "dueDate": "+10",
+    },
+    {
+        "id": "p11", "day": 11, "platform": "gbp", "type": "GBP Post",
+        "title": "GBP Post — Ellenbrook Special",
+        "assignee": "Joanne", "assigneeRole": "Social Media Manager",
+        "caption": "Ellenbrook locals — your neighbourhood gym is here. 24/7 access, no lock-in, $11.95/week.",
+        "instructions": "Post ONLY to Ellenbrook GBP profile (not Malaga). Hyperlocal focus — use 'Ellenbrook' 2–3 times in the post. Photo: Ellenbrook location exterior or interior. Geo-tagged post. Mention Swan Valley proximity if relevant. Local keywords: 'gym ellenbrook perth'. Post Thursday morning.",
+        "kw": "gym ellenbrook perth", "dueDate": "+11",
+    },
+    {
+        "id": "p12", "day": 13, "platform": "instagram", "type": "Instagram Post",
+        "title": "Community Post — Member Story",
+        "assignee": "Shauna", "assigneeRole": "Content & Email Manager",
+        "caption": "Member story: how CB247 helped [member] hit their goal. Real stories, real results.",
+        "instructions": "Ask reception to nominate a member who has hit a milestone this month. Get written consent + photo. Format: carousel post (3–5 slides). Slide 1: Bold quote from member. Slides 2–3: Journey story in short paragraphs. Slide 4: Their goal and result. Slide 5: CTA — 'Start your story. $11.95/week, no lock-in.' Tag the member (if they consent). This type of post gets highest saves + shares.",
+        "kw": "", "dueDate": "+13",
+    },
+]
+
+
+def generate_briefs(content_items):
+    """Generate individual HTML brief pages for each content item in docs/briefs/."""
+    briefs_dir = DOCS_DIR / "briefs"
+    briefs_dir.mkdir(parents=True, exist_ok=True)
+
+    role_colors = {
+        "SEO Specialist": "#dbeafe",
+        "Video Creator": "#fce7f3",
+        "Social Media Manager": "#dcfce7",
+        "Content & Email Manager": "#fef9c3",
+        "Web Developer": "#ede9fe",
+        "QC Manager": "#fee2e2",
+    }
+    platform_colors = {
+        "gbp": ("#dcfce7", "#166534"),
+        "instagram": ("#fce7f3", "#9d174d"),
+        "tiktok": ("#1a1a2e", "#fff"),
+        "blog": ("#dbeafe", "#1e40af"),
+        "email": ("#fef9c3", "#854d0e"),
+        "meta": ("#ede9fe", "#5b21b6"),
+        "tiktok": ("#e0f2fe", "#0369a1"),
+    }
+
+    for item in content_items:
+        plat = item["platform"]
+        pc = platform_colors.get(plat, ("#f3f4f6", "#374151"))
+        rc = role_colors.get(item.get("assigneeRole", ""), "#f0fdf4")
+        due_text = f"Day +{item['dueDate'].replace('+','')}" if item.get("dueDate") else "TBD"
+        kw_block = (f'<div class="section"><div class="label">🎯 Target Keyword</div>'
+                    f'<div class="kw">{item["kw"]}</div></div>') if item.get("kw") else ""
+
+        brief_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{item["title"]} — CB247 Content Brief</title>
+<style>
+  *{{box-sizing:border-box;margin:0;padding:0}}
+  body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;padding:24px}}
+  .brief-card{{max-width:740px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,.08);overflow:hidden}}
+  .brief-header{{background:#1a1a2e;padding:24px 28px;color:#fff}}
+  .brief-header .logo{{font-size:13px;color:#3FA69A;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}}
+  .brief-header h1{{font-size:20px;font-weight:700;line-height:1.3}}
+  .meta-row{{display:flex;gap:10px;flex-wrap:wrap;padding:16px 28px;background:#f8f9fa;border-bottom:1px solid #e5e7eb}}
+  .meta-chip{{border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700}}
+  .section{{padding:18px 28px;border-bottom:1px solid #f0f2f5}}
+  .section:last-child{{border-bottom:none}}
+  .label{{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:8px}}
+  .instructions{{font-size:13px;line-height:1.8;color:#374151;white-space:pre-wrap}}
+  .caption-box{{background:#f0fdf4;border-left:3px solid #3FA69A;border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;line-height:1.7;color:#1a1a2e;font-style:italic}}
+  .kw{{display:inline-block;background:#dbeafe;color:#1e40af;border-radius:99px;padding:4px 14px;font-size:12px;font-weight:700}}
+  .approval-section{{background:#fffbeb;padding:18px 28px}}
+  .approval-section .label{{color:#92400e}}
+  .approval-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}}
+  .appr-btn{{border:2px solid #e5e7eb;border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s;font-size:12px;font-weight:700}}
+  .appr-btn:hover{{border-color:#3FA69A;background:#f0fdf4}}
+  .appr-btn.selected-approved{{border-color:#16a34a;background:#dcfce7;color:#166534}}
+  .appr-btn.selected-adjustment{{border-color:#d97706;background:#fef9c3;color:#92400e}}
+  .appr-btn.selected-rejected{{border-color:#dc2626;background:#fee2e2;color:#991b1b}}
+  .notes-area{{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:80px}}
+  .notes-area:focus{{outline:none;border-color:#3FA69A}}
+  .save-btn{{background:#3FA69A;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px}}
+  .save-btn:hover{{background:#2d7a70}}
+  .saved-notice{{display:none;color:#16a34a;font-size:12px;font-weight:600;margin-top:8px}}
+  .footer{{text-align:center;padding:16px;font-size:11px;color:#9ca3af}}
+  @media print{{body{{background:#fff}}.brief-card{{box-shadow:none}}.approval-section{{display:none}}}}
+</style>
+</head>
+<body>
+<div class="brief-card">
+  <div class="brief-header">
+    <div class="logo">ChasingBetter247 — Content Brief</div>
+    <h1>{item["title"]}</h1>
+  </div>
+  <div class="meta-row">
+    <span class="meta-chip" style="background:{pc[0]};color:{pc[1]}">{plat.upper()} · {item["type"]}</span>
+    <span class="meta-chip" style="background:{rc};color:#1a1a2e">👤 {item["assignee"]} — {item.get("assigneeRole","")}</span>
+    <span class="meta-chip" style="background:#f3f4f6;color:#374151">📅 Due: {due_text}</span>
+  </div>
+  <div class="section">
+    <div class="label">📋 Instructions for {item["assignee"]}</div>
+    <div class="instructions">{item["instructions"]}</div>
+  </div>
+  <div class="section">
+    <div class="label">✍️ Suggested Caption / Copy</div>
+    <div class="caption-box">{item["caption"]}</div>
+  </div>
+  {kw_block}
+  <div class="approval-section">
+    <div class="label">📝 Tia's Review — {item["id"].upper()}</div>
+    <div class="approval-grid">
+      <div class="appr-btn" id="btn-approved" onclick="setApproval('approved')">✅ Approved<br><span style="font-size:10px;font-weight:400">Ready to go</span></div>
+      <div class="appr-btn" id="btn-adjustment" onclick="setApproval('adjustment')">🔄 Needs Adjustment<br><span style="font-size:10px;font-weight:400">Review notes below</span></div>
+      <div class="appr-btn" id="btn-rejected" onclick="setApproval('rejected')">❌ Rejected<br><span style="font-size:10px;font-weight:400">Do not proceed</span></div>
+    </div>
+    <div class="label" style="margin-bottom:6px">Notes / Adjustments</div>
+    <textarea class="notes-area" id="approval-notes" placeholder="Add adjustment notes or feedback here..."></textarea>
+    <br>
+    <button class="save-btn" onclick="saveApproval()">💾 Save Review</button>
+    <div class="saved-notice" id="saved-notice">✅ Saved locally</div>
+  </div>
+  <div class="footer">CB247 Marketing OS · Content Brief · Generated {datetime.now().strftime("%d %b %Y")}</div>
+</div>
+<script>
+const KEY = 'cb247-brief-{item["id"]}';
+function load() {{
+  const s = JSON.parse(localStorage.getItem(KEY)||'{{}}');
+  if(s.status) setApproval(s.status, false);
+  if(s.notes) document.getElementById('approval-notes').value = s.notes;
+}}
+function setApproval(val, save=true) {{
+  ['approved','adjustment','rejected'].forEach(v => {{
+    const btn = document.getElementById('btn-'+v);
+    btn.className = 'appr-btn' + (v===val ? ' selected-'+v : '');
+  }});
+  if(save) {{ const s = JSON.parse(localStorage.getItem(KEY)||'{{}}'); s.status=val; localStorage.setItem(KEY,JSON.stringify(s)); }}
+}}
+function saveApproval() {{
+  const s = JSON.parse(localStorage.getItem(KEY)||'{{}}');
+  s.notes = document.getElementById('approval-notes').value;
+  localStorage.setItem(KEY, JSON.stringify(s));
+  const n = document.getElementById('saved-notice');
+  n.style.display='block'; setTimeout(()=>n.style.display='none',2500);
+}}
+load();
+</script>
+</body>
+</html>"""
+        (briefs_dir / f"{item['id']}.html").write_text(brief_html, encoding="utf-8")
+
+    print(f"✅ Content briefs generated → {briefs_dir} ({len(content_items)} files)")
+
+
 def build():
     data = build_data()
     data_json = json.dumps(data, indent=2)
@@ -248,6 +482,8 @@ def build():
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     OUT_FILE.write_text(HTML_TEMPLATE.replace("__DASHBOARD_DATA__", data_json), encoding="utf-8")
     print(f"✅ Dashboard generated → {OUT_FILE}")
+
+    generate_briefs(CONTENT_ITEMS)
     return OUT_FILE
 
 
@@ -467,6 +703,41 @@ tbody tr:hover{background:#f9fafb}
 /* ── Footer ───────────────────────────────────────── */
 .page-footer{text-align:center;font-size:11px;color:var(--muted);padding:24px;border-top:1px solid var(--border);margin-top:8px}
 
+/* ── Planner Modal ────────────────────────────────── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--card);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.2);width:100%;max-width:640px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column}
+.modal-head{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--card);z-index:2}
+.modal-head-left{flex:1}
+.modal-title{font-size:16px;font-weight:700;margin:6px 0 0}
+.modal-close{border:none;background:none;font-size:18px;cursor:pointer;color:var(--muted);padding:4px 6px;border-radius:6px;flex-shrink:0}
+.modal-close:hover{background:var(--border);color:var(--text)}
+.modal-meta{display:flex;flex-wrap:wrap;gap:8px;padding:14px 22px;background:#f8f9fa;border-bottom:1px solid var(--border)}
+.modal-meta .chip{font-size:11px;padding:4px 12px}
+.modal-body{padding:18px 22px;display:flex;flex-direction:column;gap:16px}
+.modal-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+.modal-instructions{font-size:13px;line-height:1.8;color:var(--text);background:#f8f9fa;border-radius:8px;padding:14px 16px;border-left:3px solid var(--teal)}
+.modal-caption{font-size:13px;line-height:1.7;color:var(--text);background:#f0fdf4;border-radius:8px;padding:14px 16px;font-style:italic;border-left:3px solid #86efac}
+.modal-approval{background:#fffbeb;border-radius:8px;padding:14px 16px;border:1px solid #fde68a}
+.approval-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.appr-pill{border:2px solid var(--border);border-radius:99px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;background:var(--card)}
+.appr-pill:hover{border-color:var(--teal)}
+.appr-pill.sel-approved{background:#dcfce7;border-color:#16a34a;color:#166534}
+.appr-pill.sel-adjustment{background:#fef9c3;border-color:#d97706;color:#92400e}
+.appr-pill.sel-rejected{background:#fee2e2;border-color:#dc2626;color:#991b1b}
+.modal-notes{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;font-family:inherit;resize:vertical;min-height:60px}
+.modal-notes:focus{outline:none;border-color:var(--teal)}
+.modal-foot{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-top:1px solid var(--border);background:var(--card);position:sticky;bottom:0;gap:10px;flex-wrap:wrap}
+.modal-foot .btn-teal{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer}
+.modal-foot .btn-teal:hover{background:var(--teal-dark)}
+.modal-foot .btn-ghost{background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted)}
+.modal-foot .btn-ghost:hover{border-color:var(--teal);color:var(--teal)}
+.brief-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--teal);text-decoration:none;border:1px solid var(--teal);border-radius:99px;padding:5px 14px}
+.brief-link:hover{background:var(--teal-light)}
+.modal-status-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.status-cycle-btn{border:none;background:var(--teal-light);color:var(--teal-dark);border-radius:99px;padding:4px 14px;font-size:11px;font-weight:700;cursor:pointer}
+.status-cycle-btn:hover{background:var(--teal);color:#fff}
+
 /* ── Responsive ───────────────────────────────────── */
 @media(max-width:1100px){.kpi-grid.cols-4{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid.cols-4,.kpi-grid.cols-3,.grid-2,.grid-3{grid-template-columns:1fr}.kanban{grid-template-columns:1fr 1fr}}
@@ -658,6 +929,57 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /app -->
+
+<!-- ══ CONTENT PLANNER MODAL ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="planner-modal" onclick="if(event.target===this)closePlannerModal()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <span id="modal-platform-tag"></span>
+        <div class="modal-title" id="modal-title"></div>
+      </div>
+      <button class="modal-close" onclick="closePlannerModal()">✕</button>
+    </div>
+    <div class="modal-meta" id="modal-meta"></div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-section-label">📋 Instructions for Assignee</div>
+        <div class="modal-instructions" id="modal-instructions"></div>
+      </div>
+      <div>
+        <div class="modal-section-label">✍️ Suggested Caption / Copy</div>
+        <div class="modal-caption" id="modal-caption"></div>
+      </div>
+      <div id="modal-kw-block"></div>
+      <div>
+        <div class="modal-section-label">📌 Status</div>
+        <div class="modal-status-row">
+          <span id="modal-status-pill"></span>
+          <button class="status-cycle-btn" id="modal-cycle-btn" onclick="cycleFromModal()">Cycle Status →</button>
+        </div>
+      </div>
+      <div class="modal-approval">
+        <div class="modal-section-label" style="color:#92400e;margin-bottom:10px">📝 Tia's Approval</div>
+        <div class="approval-btns">
+          <button class="appr-pill" id="apill-approved" onclick="setModalApproval('approved')">✅ Approved</button>
+          <button class="appr-pill" id="apill-adjustment" onclick="setModalApproval('adjustment')">🔄 Needs Adjustment</button>
+          <button class="appr-pill" id="apill-rejected" onclick="setModalApproval('rejected')">❌ Rejected</button>
+        </div>
+        <div id="modal-notes-wrap" style="display:none">
+          <div class="modal-section-label" style="margin-bottom:4px">Notes / Adjustment Instructions</div>
+          <textarea class="modal-notes" id="modal-notes" placeholder="Describe adjustments needed..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <a class="brief-link" id="modal-brief-link" href="#" target="_blank">📄 View Full Brief</a>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" onclick="closePlannerModal()">Close</button>
+        <button class="btn-teal" onclick="saveModalAndClose()">💾 Save & Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -1040,89 +1362,214 @@ function renderGBP() {
 }
 
 // ── Render: Content Planner ───────────────────────────────────────────────────
+// ── Content Planner Items ─────────────────────────────────────────────────────
+const PLANNER_ITEMS = [
+  {id:'p1',day:0,platform:'gbp',type:'GBP Post',title:'GBP Post — Sauna & Ice Bath',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.',instructions:'Post to both Malaga and Ellenbrook GBP profiles. Use a high-quality photo of the sauna or ice bath area. Best posting time: Tuesday 7–9am or Saturday 8am. Include the $11.95 price point and \'no lock-in\' in the first sentence for SEO. Tag location: Malaga.',kw:'sauna gym perth',dueDate:'+0'},
+  {id:'p2',day:1,platform:'instagram',type:'Instagram Reel',title:'Reel — FIFO Lifestyle',assignee:'Agust',assigneeRole:'Video Creator',caption:'Fly in. Train hard. We get it. CB247\'s FIFO-friendly freeze means your membership works around your roster.',instructions:'30–45 second Reel. Open with a hook: \'Working FIFO? Your gym should work around you.\' Show the freeze feature on the app or website. Voiceover tone: direct, no-nonsense, WA working-class. End with CTA: \'Freeze. Resume. No questions asked.\' Hashtags: #fifo #fifoperth #gymperth #chasingbetter247',kw:'fifo gym perth',dueDate:'+1'},
+  {id:'p3',day:2,platform:'blog',type:'SEO Blog Post',title:'Blog — Best Gym Malaga',assignee:'John',assigneeRole:'SEO Specialist',caption:'Targeting "best gym Malaga" — 320 searches/month. H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247". Full outline and keyword map ready.',instructions:'Target keyword: "best gym malaga" (320/mo, KD 18). Secondary: "gym malaga perth", "cheap gym malaga". Word count: 1,200–1,500. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities → H2: Pricing Comparison → H2: Member Reviews → H2: FAQ → CTA. Internal links: homepage, Malaga page, pricing. Mark adds draft to WordPress as pending.',kw:'best gym malaga',dueDate:'+2'},
+  {id:'p4',day:2,platform:'instagram',type:'Instagram Post',title:'Instagram — Kids Hub',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this.',instructions:'Static post or short Reel (15s). Show the Kids Hub space — colourful, safe, supervised. Caption hook: "No babysitter? No problem." Tag 3 local parent pages. Best time: Wednesday 9–11am. Hashtags: #kidshub #gymperth #malagatribe #chasingbetter247',kw:'kids gym malaga',dueDate:'+2'},
+  {id:'p5',day:4,platform:'tiktok',type:'TikTok Video',title:'TikTok — Ice Bath Reaction',assignee:'Ivan',assigneeRole:'Video Creator',caption:'First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247',instructions:'Reaction-style video. Film a member (with permission) doing their first ice bath — show genuine reaction. Ideal length: 20–30 seconds. Hook in first 2s: "Would you do this for $11.95/week?" Trending audio: check TikTok trending for Perth fitness. Tag @chasingbetter247. Raw, authentic > over-produced.',kw:'ice bath gym perth',dueDate:'+4'},
+  {id:'p6',day:5,platform:'gbp',type:'GBP Post',title:'GBP Post — Reformer Pilates',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.',instructions:'Post to both GBP profiles. Use a class photo or studio shot. Emphasise "24/7 access" — key differentiator vs Revo. Include class booking CTA. Target: "reformer pilates perth", "pilates malaga". Post Friday morning to capture weekend bookings.',kw:'reformer pilates perth',dueDate:'+5'},
+  {id:'p7',day:7,platform:'instagram',type:'Instagram Reel',title:'Reel — Gym Tour',assignee:'Agust',assigneeRole:'Video Creator',caption:'Never been to CB247? Here\'s what $11.95/week gets you. 👀 #gymtour #chasingbetter247',instructions:'60-second gym walkthrough Reel. Script: "$11.95 a week — here\'s what that actually gets you." Walk through: 24/7 weights → Reformer Pilates → CrossFit → Sauna → Ice Bath → Neon21 → Kids Hub. Voiceover with on-screen text. End card: website URL + price. Post Sunday evening for Monday motivation.',kw:'gym malaga perth',dueDate:'+7'},
+  {id:'p8',day:8,platform:'email',type:'Email Newsletter',title:'Weekly Email Newsletter',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Member spotlight + this week\'s class timetable + sauna booking tip',instructions:'Subject A/B test: A: "This week at CB247 🏋️" / B: "Your sauna booking tip + class times". Structure: 1) Member spotlight (150 words) → 2) Class timetable → 3) Sauna tip → 4) Referral nudge ("Bring a friend, 2 weeks free"). Send via Mailchimp. List: active members. Send time: Monday 6am.',kw:'',dueDate:'+8'},
+  {id:'p9',day:9,platform:'blog',type:'SEO Blog Post',title:'Blog — FIFO Gym Membership Perth',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Targeting "fifo gym perth" — 210 searches/month. FIFO freeze angle.',instructions:'Target: "fifo gym perth" (210/mo). Secondary: "fifo gym membership", "gym freeze perth". Word count: 1,000–1,200. Angle: empathy-first — FIFO lifestyle is tough, gym should make it easier. Structure: H1: "FIFO Gym Membership in Perth" → H2: The FIFO Challenge → H2: What is a Gym Freeze? → H2: CB247 FIFO Freeze → FAQ → CTA. Tone: direct, WA working-class. Shauna drafts → John reviews SEO → Mark publishes.',kw:'fifo gym membership perth',dueDate:'+9'},
+  {id:'p10',day:10,platform:'tiktok',type:'TikTok Video',title:'TikTok — Neon21 Tanning',assignee:'Ivan',assigneeRole:'Video Creator',caption:'You didn\'t know we had THIS at a $11.95/week gym 👀 #neon21 #gymsecrets',instructions:'Surprise-reveal style. Hook: "Things at CB247 people don\'t know about — Part 1". Feature: Neon21 tanning. Length: 15–20s. On-screen text: "Gym + tanning = $11.95/week??" Build curiosity — don\'t show feature in thumbnail. End: "Follow for Part 2" — drives follows for series.',kw:'',dueDate:'+10'},
+  {id:'p11',day:11,platform:'gbp',type:'GBP Post',title:'GBP Post — Ellenbrook Special',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'Ellenbrook locals — your neighbourhood gym is here. 24/7 access, no lock-in, $11.95/week.',instructions:'Post ONLY to Ellenbrook GBP (not Malaga). Hyperlocal — use "Ellenbrook" 2–3 times. Photo: Ellenbrook location exterior or interior. Geo-tagged. Local keywords: "gym ellenbrook perth". Post Thursday morning.',kw:'gym ellenbrook perth',dueDate:'+11'},
+  {id:'p12',day:13,platform:'instagram',type:'Instagram Post',title:'Community Post — Member Story',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Member story: how CB247 helped [member] hit their goal. Real stories, real results.',instructions:'Ask reception to nominate a member who hit a milestone this month. Get written consent + photo. Format: carousel (3–5 slides). Slide 1: Bold quote. Slides 2–3: Journey story. Slide 4: Goal and result. Slide 5: CTA — "Start your story. $11.95/week, no lock-in." Tag the member if they consent. This format gets highest saves + shares.',kw:'',dueDate:'+13'},
+];
+
+const PLANNER_STATUS_KEY = 'cb247-planner-status';
+const PLANNER_APPROVAL_KEY = 'cb247-planner-approval';
+const PLANNER_STATUSES = ['Idea','Scheduled','Published'];
+const PLANNER_STATUS_COLORS = {Idea:'#dbeafe',Scheduled:'#fef9c3',Published:'#dcfce7'};
+
+// ── Planner Modal ─────────────────────────────────────────────────────────────
+let _modalItemId = null;
+
+window.openPlannerModal = (id) => {
+  const item = PLANNER_ITEMS.find(x=>x.id===id);
+  if(!item) return;
+  _modalItemId = id;
+
+  const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
+  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
+  const status = saved[id]||'Idea';
+  const apprData = approval[id]||{};
+
+  // Platform tag
+  $('modal-platform-tag').innerHTML = `<span class="platform-tag platform-${item.platform}" style="font-size:10px">${item.platform.toUpperCase()} · ${item.type}</span>`;
+  $('modal-title').textContent = item.title;
+
+  // Role color map
+  const roleColors = {'SEO Specialist':'#dbeafe','Video Creator':'#fce7f3','Social Media Manager':'#dcfce7','Content & Email Manager':'#fef9c3','Web Developer':'#ede9fe'};
+  const rc = roleColors[item.assigneeRole]||'#f3f4f6';
+  $('modal-meta').innerHTML = `
+    <span class="chip" style="background:${rc};color:#1a1a2e">👤 ${item.assignee} <span style="font-size:10px;opacity:.7">· ${item.assigneeRole}</span></span>
+    <span class="chip" style="background:#f3f4f6;color:#374151">📅 Due: Day ${item.dueDate}</span>
+    ${item.kw ? '<span class="chip" style="background:#dbeafe;color:#1e40af">🎯 ' + item.kw + '</span>' : ''}
+  `;
+
+  $('modal-instructions').textContent = item.instructions;
+  $('modal-caption').textContent = item.caption;
+
+  $('modal-kw-block').innerHTML = item.kw
+    ? `<div><div class="modal-section-label">🎯 Target Keyword</div><span class="chip" style="background:#dbeafe;color:#1e40af;font-size:12px">${item.kw}</span></div>`
+    : '';
+
+  // Status pill
+  const sc = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
+  $('modal-status-pill').innerHTML = `<span style="background:${sc};border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700">${status}</span>`;
+
+  // Approval state
+  _refreshApprovalPills(apprData.status||null);
+  const notesWrap = $('modal-notes-wrap');
+  const notes = $('modal-notes');
+  notes.value = apprData.notes||'';
+  notesWrap.style.display = (apprData.status==='adjustment'||apprData.status==='rejected') ? 'block' : 'none';
+
+  // Brief link — points to docs/briefs/[id].html
+  const baseUrl = window.location.href.replace(/\/[^/]*$/, '');
+  $('modal-brief-link').href = `${baseUrl}/briefs/${id}.html`;
+
+  $('planner-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closePlannerModal = () => {
+  $('planner-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  _modalItemId = null;
+};
+
+window.saveModalAndClose = () => {
+  if(!_modalItemId) { closePlannerModal(); return; }
+  // Save approval
+  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
+  const current = approval[_modalItemId]||{};
+  approval[_modalItemId] = {...current, notes: $('modal-notes').value};
+  localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(approval));
+  closePlannerModal();
+  renderPlanner();
+};
+
+window.setModalApproval = (val) => {
+  if(!_modalItemId) return;
+  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
+  approval[_modalItemId] = {...(approval[_modalItemId]||{}), status: val};
+  localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(approval));
+  _refreshApprovalPills(val);
+  $('modal-notes-wrap').style.display = (val==='adjustment'||val==='rejected') ? 'block' : 'none';
+};
+
+function _refreshApprovalPills(val) {
+  ['approved','adjustment','rejected'].forEach(v => {
+    const el = $('apill-'+v);
+    if(!el) return;
+    el.className = 'appr-pill' + (v===val ? ' sel-'+v : '');
+  });
+}
+
+window.cycleFromModal = () => {
+  if(!_modalItemId) return;
+  const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
+  const curr = saved[_modalItemId]||'Idea';
+  const next = PLANNER_STATUSES[(PLANNER_STATUSES.indexOf(curr)+1)%PLANNER_STATUSES.length];
+  saved[_modalItemId] = next;
+  localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+  // Update pill in modal
+  const sc = PLANNER_STATUS_COLORS[next]||'#f3f4f6';
+  $('modal-status-pill').innerHTML = `<span style="background:${sc};border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700">${next}</span>`;
+  renderPlanner();
+};
+
 function renderPlanner() {
   const today = new Date();
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // Generate 14 days from today
   const calDays = Array.from({length:14},(_,i)=>{
     const d = new Date(today); d.setDate(d.getDate()+i);
     return {date:d, label:days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]};
   });
 
-  // Sample content items (in real use these come from agent output)
-  const CONTENT_ITEMS = [
-    {id:'p1',day:0,platform:'gbp',title:'GBP Post — Sauna & Ice Bath',caption:'Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.',kw:'sauna gym perth',assignee:'Joanne'},
-    {id:'p2',day:1,platform:'instagram',title:'Reel — FIFO Lifestyle',caption:'Fly in. Train hard. We get it. CB247\'s FIFO-friendly freeze means your membership works around your roster.',kw:'fifo gym perth',assignee:'Agust'},
-    {id:'p3',day:2,platform:'blog',title:'Blog — Best Gym Malaga',caption:'Targeting "best gym Malaga" — 320 searches/month. Full outline ready for John.',kw:'best gym malaga',assignee:'John'},
-    {id:'p4',day:2,platform:'instagram',title:'Instagram — Kids Hub',caption:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this.',kw:'kids gym malaga',assignee:'Shauna'},
-    {id:'p5',day:4,platform:'tiktok',title:'TikTok — Ice Bath Reaction',caption:'First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247',kw:'ice bath gym perth',assignee:'Ivan'},
-    {id:'p6',day:5,platform:'gbp',title:'GBP Post — Reformer Pilates',caption:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.',kw:'reformer pilates perth',assignee:'Joanne'},
-    {id:'p7',day:7,platform:'instagram',title:'Reel — Gym Tour',caption:'Never been to CB247? Here\'s what $11.95/week gets you. 👀 #gymtour #chasingbetter247',kw:'gym malaga perth',assignee:'Agust'},
-    {id:'p8',day:8,platform:'email',title:'Weekly Email Newsletter',caption:'Member spotlight + this week\'s class timetable + sauna booking tip',kw:'',assignee:'Shauna'},
-    {id:'p9',day:9,platform:'blog',title:'Blog — FIFO Gym Membership Perth',caption:'Targeting "fifo gym perth" — 210 searches/month. FIFO freeze angle.',kw:'fifo gym membership perth',assignee:'Shauna'},
-    {id:'p10',day:10,platform:'tiktok',title:'TikTok — Neon21 Tanning',caption:'You didn\'t know we had THIS at a $11.95/week gym 👀 #neon21 #gymsecrets',kw:'',assignee:'Ivan'},
-    {id:'p11',day:11,platform:'gbp',title:'GBP Post — Ellenbrook Special',caption:'Ellenbrook locals — your neighbourhood gym is here. 24/7 access, no lock-in, $11.95/week.',kw:'gym ellenbrook perth',assignee:'Joanne'},
-    {id:'p12',day:13,platform:'instagram',title:'Community Post — Member Story',caption:'Member story: how CB247 helped [member] hit their goal. Real stories, real results.',kw:'',assignee:'Shauna'},
-  ];
+  const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
+  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
 
-  const statusKey = 'cb247-planner-status';
-  const saved = JSON.parse(localStorage.getItem(statusKey)||'{}');
-  const STATUSES = ['Idea','Scheduled','Published'];
-  const STATUS_COLORS = {Idea:'#dbeafe',Scheduled:'#fef9c3',Published:'#dcfce7'};
+  const approvalIcon = (id) => {
+    const a = (approval[id]||{}).status;
+    if(a==='approved') return '<span style="float:right;font-size:10px">✅</span>';
+    if(a==='adjustment') return '<span style="float:right;font-size:10px">🔄</span>';
+    if(a==='rejected') return '<span style="float:right;font-size:10px">❌</span>';
+    return '';
+  };
 
   const week = (startDay) => {
     const weekDays = calDays.slice(startDay, startDay+7);
-    return `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px">
-      ${weekDays.map((day,i)=>{
+    return '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px">' +
+      weekDays.map((day,i)=>{
         const globalDay = startDay+i;
-        const items = CONTENT_ITEMS.filter(c=>c.day===globalDay);
+        const items = PLANNER_ITEMS.filter(c=>c.day===globalDay);
         const isToday = i===0&&startDay===0;
-        return `<div style="background:${isToday?'#f0fffe':'#fff'};border-radius:8px;border:1px solid ${isToday?'var(--teal)':'var(--border)'};padding:10px;min-height:120px">
-          <div style="font-size:11px;font-weight:700;color:${isToday?'var(--teal)':'var(--muted)'};margin-bottom:6px">${day.label}${isToday?' <span style="background:var(--teal);color:#fff;border-radius:99px;padding:1px 6px;font-size:9px">TODAY</span>':''}</div>
-          ${items.map(item=>{
+        const borderCol = isToday?'var(--teal)':'var(--border)';
+        const bgCol = isToday?'#f0fffe':'#fff';
+        const todayBadge = isToday?' <span style="background:var(--teal);color:#fff;border-radius:99px;padding:1px 6px;font-size:9px">TODAY</span>':'';
+        return '<div style="background:'+bgCol+';border-radius:8px;border:1px solid '+borderCol+';padding:10px;min-height:120px">' +
+          '<div style="font-size:11px;font-weight:700;color:'+(isToday?'var(--teal)':'var(--muted)')+';margin-bottom:6px">'+day.label+todayBadge+'</div>' +
+          items.map(item=>{
             const status = saved[item.id]||'Idea';
-            const bg = STATUS_COLORS[status]||'#f3f4f6';
-            return `<div style="background:${bg};border-radius:6px;padding:6px 8px;margin-bottom:4px;cursor:pointer;font-size:11px" onclick="cyclePlannerStatus('${item.id}')">
-              <span class="platform-tag platform-${item.platform}" style="font-size:9px">${item.platform.toUpperCase()}</span>
-              <div style="font-weight:600;margin:2px 0;line-height:1.3">${item.title}</div>
-              <div style="color:var(--muted);font-size:10px">${item.assignee}</div>
-              <div style="font-size:9px;margin-top:2px;font-weight:700;color:#666">${status}</div>
-            </div>`;
-          }).join('')}
-        </div>`;
-      }).join('')}
-    </div>`;
+            const bg = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
+            return '<div style="background:'+bg+';border-radius:6px;padding:6px 8px;margin-bottom:4px;cursor:pointer;font-size:11px;border:1px solid transparent" ' +
+              'onclick="openPlannerModal(\''+item.id+'\')" ' +
+              'onmouseenter="this.style.borderColor=\'var(--teal)\'" ' +
+              'onmouseleave="this.style.borderColor=\'transparent\'">' +
+              '<span class="platform-tag platform-'+item.platform+'" style="font-size:9px">'+item.platform.toUpperCase()+'</span>' +
+              approvalIcon(item.id) +
+              '<div style="font-weight:600;margin:2px 0;line-height:1.3">'+item.title+'</div>' +
+              '<div style="color:var(--muted);font-size:10px">'+item.assignee+' · <span style="opacity:.7">'+item.assigneeRole+'</span></div>' +
+              '<div style="font-size:9px;margin-top:2px;font-weight:700;color:#666">'+status+'</div>' +
+              '</div>';
+          }).join('') +
+        '</div>';
+      }).join('') +
+    '</div>';
   };
 
-  window.cyclePlannerStatus = (id) => {
-    const saved2 = JSON.parse(localStorage.getItem(statusKey)||'{}');
-    const curr = saved2[id]||'Idea';
-    const next = STATUSES[(STATUSES.indexOf(curr)+1)%STATUSES.length];
-    saved2[id] = next;
-    localStorage.setItem(statusKey, JSON.stringify(saved2));
-    renderPlanner();
-  };
+  // Summary row
+  const totalItems = PLANNER_ITEMS.length;
+  const approvedCount = PLANNER_ITEMS.filter(i=>(approval[i.id]||{}).status==='approved').length;
+  const pendingCount = PLANNER_ITEMS.filter(i=>!(approval[i.id]||{}).status).length;
 
   let html = `
     <div class="insight blue mb">
-      <div class="insight-label">How to use</div>
-      Click any content card to cycle status: Idea → Scheduled → Published. Status saves automatically.
+      <div class="insight-label">Content Planner</div>
+      ${totalItems} items this fortnight · <strong>${approvedCount} approved</strong> · <strong>${pendingCount} awaiting review</strong> — Click any card to view full brief, assign, approve, or update status.
     </div>
     ${sectionTitle('Week 1 — Days 1–7')}${week(0)}
     ${sectionTitle('Week 2 — Days 8–14')}${week(7)}
     <div class="card">
       <div class="card-h">📋 All Content Items</div>
-      <table><thead><tr><th>Day</th><th>Platform</th><th>Title</th><th>Assignee</th><th>Keyword</th><th>Status</th></tr></thead><tbody>
-      ${CONTENT_ITEMS.map(item=>{
-        const status = saved[item.id]||'Idea';
-        const day = calDays[item.day];
-        return `<tr><td style="font-size:11px">${day?day.label:'–'}</td><td><span class="platform-tag platform-${item.platform}">${item.platform}</span></td><td style="font-weight:600">${item.title}</td><td>${item.assignee}</td><td style="font-size:11px;color:var(--muted)">${item.kw||'–'}</td><td><span style="background:${STATUS_COLORS[status]};border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">${status}</span></td></tr>`;
-      }).join('')}
-      </tbody></table>
-    </div>`;
+      <table><thead><tr><th>Day</th><th>Platform</th><th>Title</th><th>Assignee</th><th>Role</th><th>Status</th><th>Approval</th><th>Brief</th></tr></thead><tbody>`;
 
+  const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
+  PLANNER_ITEMS.forEach(item=>{
+    const status = saved[item.id]||'Idea';
+    const sc = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
+    const day = calDays[item.day];
+    const apprData = approval[item.id]||{};
+    const apprLabel = apprData.status==='approved'?'✅ Approved':apprData.status==='adjustment'?'🔄 Adjustment':apprData.status==='rejected'?'❌ Rejected':'—';
+    html += '<tr>' +
+      '<td style="font-size:11px">'+(day?day.label:'–')+'</td>' +
+      '<td><span class="platform-tag platform-'+item.platform+'">'+item.platform+'</span></td>' +
+      '<td style="font-weight:600;cursor:pointer;color:var(--teal)" onclick="openPlannerModal(\''+item.id+'\')">'+item.title+'</td>' +
+      '<td>'+item.assignee+'</td>' +
+      '<td style="font-size:11px;color:var(--muted)">'+item.assigneeRole+'</td>' +
+      '<td><span style="background:'+sc+';border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">'+status+'</span></td>' +
+      '<td style="font-size:11px">'+apprLabel+'</td>' +
+      '<td><a href="'+baseUrl+'/briefs/'+item.id+'.html" target="_blank" style="font-size:11px;color:var(--teal);font-weight:600">View →</a></td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table></div>';
   $('planner-content').innerHTML = html;
 }
 
