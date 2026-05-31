@@ -324,7 +324,7 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "31 May 2026, 23:14",
+  "generated": "31 May 2026, 23:19",
   "refresh_ts": "2026-05-31T08:03:07.570435Z",
   "status": {
     "ga4": "live",
@@ -2035,43 +2035,43 @@ function renderReadme() {
     <div class="card" style="padding:28px">
       <div class="loop-diagram">
         <div class="loop-node">
-          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div><!--⏰</div>
+          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">Monday 10am</div>
           <div class="loop-sub">Auto-run<br>triggers</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div><!--</div>
+          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">9 AI Agents</div>
           <div class="loop-sub">Run in sequence<br>~40 min</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
           <div class="loop-label">Report + Dashboard</div>
           <div class="loop-sub">Generated &amp;<br>deployed live</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
           <div class="loop-label">Tia Gets Email</div>
           <div class="loop-sub">Report +<br>dashboard link</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
           <div class="loop-label">Team Meeting</div>
           <div class="loop-sub">Review &amp; decide<br>on actions</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
           <div class="loop-label">Decisions Recorded</div>
           <div class="loop-sub">Meeting minutes<br>imported</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node">
-          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div><!--🚀</div>
+          <div class="loop-icon" style="border-color:var(--teal);background:var(--teal-mist)"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">Team Executes</div>
           <div class="loop-sub">Tracker follows<br>outcomes</div>
         </div>
@@ -2079,8 +2079,8 @@ function renderReadme() {
       </div>
       <div class="legend" style="margin-top:20px">
         <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Automated (no human)</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Tia reviews &amp; approves</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Team executes</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Tia reviews &amp; approves</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--text-2)"></div>Team executes</div>
       </div>
     </div>
   </div>
@@ -2390,7 +2390,7 @@ function renderReadme() {
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
-          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div><!--</div>
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
           <div class="loop-label">Jane Reviews</div>
           <div class="loop-sub">QC pass /<br>request edits</div>
         </div>
@@ -2466,9 +2466,9 @@ function renderTracker() {
   // Pipeline stages
   const stages = [
     { key:'recommended', label:'Recommended',     color:'var(--muted)',  filter: a => a.decision==='pending' },
-    { key:'decided',     label:'Decision Made',   color:'var(--blue)',   filter: a => ['approved','adjusted','rejected'].includes(a.decision) && a.status==='pending' },
-    { key:'execution',   label:'In Execution',    color:'var(--amber)',  filter: a => a.status==='in_progress' },
-    { key:'outcome',     label:'Outcome Review',  color:'var(--green)',  filter: a => a.status==='completed' || a.outcome_assessed },
+    { key:'decided',     label:'Decision Made',   color:'var(--text-2)',   filter: a => ['approved','adjusted','rejected'].includes(a.decision) && a.status==='pending' },
+    { key:'execution',   label:'In Execution',    color:'var(--teal)',  filter: a => a.status==='in_progress' },
+    { key:'outcome',     label:'Outcome Review',  color:'var(--muted)',  filter: a => a.status==='completed' || a.outcome_assessed },
   ];
 
   const card = a => {
