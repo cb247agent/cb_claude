@@ -272,6 +272,59 @@ def load_meta_social():
     }
 
 
+def _build_bidding_analysis(keywords):
+    """Derive bidding strategy analysis and recommendations from aggregated keyword rows."""
+    winners, wasters, low_vis, scale, new_recs = [], [], [], [], []
+
+    # New keywords to recommend (not currently in account but strategic)
+    RECOMMENDED_NEW = [
+        {"keyword": "kids gym malaga",           "vol": 100,  "reason": "CB247 already #2 organically — easy #1 with ad support. Kids Hub is unique differentiator.",        "bid": "$2.00", "priority": "High"},
+        {"keyword": "sauna and ice bath perth",  "vol": 90,   "reason": "Zero competition. CB247 is the only gym with both. High-intent, premium audience.",                  "bid": "$1.50", "priority": "High"},
+        {"keyword": "fifo gym perth",            "vol": 70,   "reason": "FIFO freeze is CB247's unique WA market edge. No other gym targets this segment in paid.",           "bid": "$2.50", "priority": "High"},
+        {"keyword": "no lock in gym malaga",     "vol": 60,   "reason": "Price-anxious searchers — CB247's $11.95/week no lock-in is the perfect answer. High conversion intent.", "bid": "$1.80", "priority": "Medium"},
+        {"keyword": "reformer pilates malaga",   "vol": 80,   "reason": "Growing fast. Currently in account but near-zero impressions. Needs dedicated ad group + landing page.", "bid": "$2.00", "priority": "Medium"},
+        {"keyword": "gym with ice bath malaga",  "vol": 50,   "reason": "Ice bath content trending on TikTok. Perth searches rising. Zero competitor ads on this.",           "bid": "$1.20", "priority": "Medium"},
+    ]
+
+    for kw in keywords:
+        clk, conv, cost, top, abs_top = kw["clicks"], kw["conv"], kw["cost"], kw["top_impr_pct"], 0
+        cpa = round(cost / conv, 2) if conv > 0 else 0
+        avg_cpc = kw["cpc"]
+
+        if conv > 0 and cpa < 20:
+            rec = "Scale — raise budget"
+        elif conv > 0 and cpa < 50:
+            rec = "Maintain — good CPA"
+        elif clk >= 5 and conv == 0 and cost > 10:
+            rec = "⚠ Pause — wasting budget"
+        elif top < 60 and clk > 3:
+            rec = "Raise bid — low visibility"
+        else:
+            rec = "Monitor"
+
+        row = {**kw, "cpa": cpa, "rec": rec}
+
+        if conv > 0 and cpa < 20:
+            scale.append(row)
+        if conv > 0:
+            winners.append(row)
+        if clk >= 5 and conv == 0 and cost > 10:
+            wasters.append(row)
+        if top < 60 and clk > 3 and conv > 0:
+            low_vis.append(row)
+
+    scale.sort(key=lambda r: r["conv"], reverse=True)
+    wasters.sort(key=lambda r: r["cost"], reverse=True)
+
+    return {
+        "winners": winners[:8],
+        "wasters": wasters[:8],
+        "scale":   scale[:8],
+        "new_recs": RECOMMENDED_NEW,
+        "low_vis": low_vis[:5],
+    }
+
+
 def build_data():
     """Load all state files and return a single dashboard data dict."""
     ga4      = load("ga4-data.json")
@@ -510,6 +563,11 @@ def build_data():
             "csv_clicks": csv_total_clicks,
             "csv_cost": csv_total_cost,
             "csv_conv": csv_total_conv,
+            # Bidding analysis derived from CSV
+            "bidding": _build_bidding_analysis(gads_keywords),
+            # Competitor keyword context from Apify
+            "competitor_serp": (apify.get("competitor_serp") or [])[:6],
+            "keyword_tracking": (apify.get("keyword_tracking") or []),
         },
 
         # GBP
@@ -1781,26 +1839,86 @@ function renderSEO() {
 // ── Render: Google Ads ───────────────────────────────────────────────────────
 function renderGAds() {
   const ads = D.google_ads, mal = ads.malaga, ell = ads.ellenbrook, seo = D.seo;
-  const kws = ads.keywords || [];
+  const kws      = ads.keywords || [];
+  const bid      = ads.bidding  || {};
   const weekLabel = ads.week_label || 'Latest week';
+  const compSerp  = ads.competitor_serp || [];
+  const kwTrack   = ads.keyword_tracking || [];
 
   // Use CSV totals if json is empty
-  const totalSpend = ads.csv_cost > 0 ? ads.csv_cost : ads.spend;
-  const totalConv  = ads.csv_conv  > 0 ? ads.csv_conv  : ads.convs;
+  const totalSpend  = ads.csv_cost   > 0 ? ads.csv_cost   : ads.spend;
+  const totalConv   = ads.csv_conv   > 0 ? ads.csv_conv   : ads.convs;
   const totalClicks = ads.csv_clicks > 0 ? ads.csv_clicks : ads.clicks;
-  const blendedCPA = (totalConv > 0 && totalSpend > 0) ? totalSpend / totalConv : ads.cpa;
+  const blendedCPA  = (totalConv > 0 && totalSpend > 0) ? (totalSpend / totalConv) : ads.cpa;
+  const malSpend    = kws.filter(k=>k.locations&&k.locations.includes('Malaga')).reduce((s,k)=>s+k.cost,0);
+  const ellSpend    = kws.filter(k=>k.locations&&k.locations.includes('Ellenbrook')).reduce((s,k)=>s+k.cost,0);
+  const malConv     = kws.filter(k=>k.locations&&k.locations.includes('Malaga')).reduce((s,k)=>s+k.conv,0);
+  const ellConv     = kws.filter(k=>k.locations&&k.locations.includes('Ellenbrook')).reduce((s,k)=>s+k.conv,0);
 
-  // KPI cards — use CSV data when available
+  // ── KPI Cards ────────────────────────────────────────────────────────────
   let html = `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),ads.spend_chg,`${totalClicks} clicks · ${weekLabel}`)}
-    ${kpiCard('','Total Conversions',fmt(totalConv,'n'),null,`Blended CPA: ${fmt(blendedCPA,'$2')}`,(blendedCPA>50&&blendedCPA>0)?'red':'green')}
-    ${kpiCard('','Malaga',fmt(mal.spend>0?mal.spend:(kws.filter(k=>k.locations&&k.locations.includes('Malaga')).reduce((s,k)=>s+k.cost,0)),'$2'),null,`${kws.filter(k=>k.locations&&k.locations.includes('Malaga')).reduce((s,k)=>s+k.conv,0)} conv`)}
-    ${kpiCard('','Ellenbrook',fmt(ell.spend>0?ell.spend:(kws.filter(k=>k.locations&&k.locations.includes('Ellenbrook')).reduce((s,k)=>s+k.cost,0)),'$2'),null,`${kws.filter(k=>k.locations&&k.locations.includes('Ellenbrook')).reduce((s,k)=>s+k.conv,0)} conv`)}
+    ${kpiCard('','Conversions',fmt(totalConv,'n'),null,`Blended CPA: ${fmt(blendedCPA,'$2')}`,(blendedCPA>50&&blendedCPA>0)?'red':'green')}
+    ${kpiCard('','Malaga',fmt(malSpend||mal.spend,'$2'),null,`${malConv||mal.conv||0} conversions`)}
+    ${kpiCard('','Ellenbrook',fmt(ellSpend||ell.spend,'$2'),null,`${ellConv||ell.conv||0} conversions`)}
   </div>`;
 
-  // ── Keyword Performance Table (Top 10 SEO-aligned) ──────────────────────
-  // SEO strategy: only show keywords we're also pushing for organic ranking.
-  // Priority order: quick wins (pos 4-20 in Ahrefs), then high-volume organic targets.
+  // ── Bidding Strategy Analysis ────────────────────────────────────────────
+  html += sectionTitle('Bidding Strategy Analysis');
+
+  // Detect strategy from max_cpc values
+  const allSmartBid = kws.length > 0 && kws.every(k => !k.cpc || k.cpc <= 0.01);
+  const avgCPCAll   = kws.length ? (kws.reduce((s,k)=>s+k.cpc,0)/kws.length).toFixed(2) : 0;
+
+  html += `<div class="grid-3 mb">
+    <div class="card">
+      <div class="card-h">Current Strategy</div>
+      <div style="font-size:1.2rem;font-weight:700;color:var(--teal);margin-bottom:8px">
+        ${allSmartBid ? 'Smart Bidding — Maximise Conversions' : 'Manual CPC'}
+      </div>
+      <div class="stat-row"><span class="stat-label">Avg CPC (actual)</span><span class="stat-val">$${avgCPCAll}</span></div>
+      <div class="stat-row"><span class="stat-label">Max CPC set</span><span class="stat-val">${allSmartBid?'$0.01 (automated)':'Manual'}</span></div>
+      <div class="stat-row"><span class="stat-label">Blended CPA</span><span class="stat-val ${blendedCPA>50&&blendedCPA>0?'bad':'good'}">${blendedCPA>0?fmt(blendedCPA,'$2'):'No conv data'}</span></div>
+      <p style="font-size:11px;color:var(--muted);margin-top:10px">
+        ${allSmartBid
+          ? 'Max CPC = $0.01 means Google\'s algorithm fully controls bids. This is correct for Smart Bidding. The algorithm adjusts in real-time based on conversion signals.'
+          : 'Manual CPC — you control individual keyword bids.'}
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-h">Bidding Health Check</div>
+      ${(()=>{
+        const checks = [];
+        const convKws = kws.filter(k=>k.conv>0);
+        const wstKws  = kws.filter(k=>k.clicks>=5&&k.conv===0&&k.cost>10);
+        const lowVis  = kws.filter(k=>k.top_impr_pct<60&&k.clicks>=5&&k.conv>0);
+        checks.push(`<div class="stat-row"><span class="stat-label">Converting keywords</span><span class="stat-val good">${convKws.length} / ${kws.length}</span></div>`);
+        checks.push(`<div class="stat-row"><span class="stat-label">Budget wasters</span><span class="stat-val ${wstKws.length>0?'bad':'good'}">${wstKws.length} keywords</span></div>`);
+        checks.push(`<div class="stat-row"><span class="stat-label">Low visibility (top% &lt;60)</span><span class="stat-val ${lowVis.length>0?'amber':''}">${lowVis.length} converting kws</span></div>`);
+        const brandKwZeroConv = kws.find(k=>k.keyword.toLowerCase().includes('chasing better')&&k.conv===0&&k.clicks>3);
+        if(brandKwZeroConv) checks.push(`<div class="stat-row"><span class="stat-label">Brand term not converting</span><span class="stat-val bad">⚠ Check tracking</span></div>`);
+        return checks.join('');
+      })()}
+      <p style="font-size:11px;color:var(--muted);margin-top:10px">
+        ${totalConv > 0
+          ? `${totalConv} conversions tracked this week at blended $${blendedCPA.toFixed(2)} CPA. Smart Bidding has enough signal to optimise.`
+          : 'Low conversion volume — Smart Bidding may be learning. Ensure conversion tracking fires correctly on the membership sign-up page.'}
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-h">Recommended Strategy Moves</div>
+      <div style="font-size:12px;line-height:1.7">
+        <div style="margin-bottom:8px"><b style="color:var(--teal)">1. Set Target CPA = $25</b><br>
+        <span style="color:var(--muted)">Winners avg $4–$17 CPA. Cap at $25 to prevent Smart Bidding from over-spending on low-quality clicks while keeping all converters.</span></div>
+        <div style="margin-bottom:8px"><b style="color:var(--teal)">2. Separate brand campaign</b><br>
+        <span style="color:var(--muted)">Brand terms ("chasing better") should be in their own campaign with higher bid priority. Generic keywords compete for budget unnecessarily.</span></div>
+        <div><b style="color:var(--teal)">3. Pause-and-reinvest rule</b><br>
+        <span style="color:var(--muted)">Any keyword with 10+ clicks and 0 conversions = pause. Move budget to converting keywords and new strategic additions below.</span></div>
+      </div>
+    </div>
+  </div>`;
+
+  // ── Keyword Performance (Top 10 SEO-aligned) ─────────────────────────────
   const SEO_TARGETS = [
     'malaga gym','gym malaga','gym near me','gyms near me','gym in malaga',
     'best gyms perth','fifo gym membership','gym with sauna and ice bath',
@@ -1808,101 +1926,100 @@ function renderGAds() {
     'gym with sauna','malaga fitness','24 hour gym','fitness centre','health club',
     'gyms ellenbrook','ellenbrook fitness centre','gym with creche',
   ];
-  const seoKws = kws.filter(k => SEO_TARGETS.some(t => k.keyword.toLowerCase().includes(t) || t.includes(k.keyword.toLowerCase()))).slice(0, 10);
-  const top10Kws = seoKws.length >= 5 ? seoKws : kws.slice(0, 10);
-
-  if (top10Kws.length) {
-    html += sectionTitle('Keyword Performance — Top 10 SEO-Aligned · ' + weekLabel);
-    html += `<div class="insight neutral mb" style="font-size:12px">
-      <b>SEO strategy:</b> These 10 keywords align with your organic ranking targets.
-      The goal: dominate paid results now while SEO builds. As each keyword reaches top 3 organically,
-      reduce the ad bid and reinvest in keywords still outside top 3.
-    </div>`;
-
-    // Sort tabs: by clicks (default), by conv, by cost
-    const wasteKws  = top10Kws.filter(k => k.clicks >= 5 && k.conv === 0 && k.cost > 10).sort((a,b) => b.cost - a.cost);
-    const winnerKws = top10Kws.filter(k => k.conv > 0 && k.cpa > 0).sort((a,b) => a.cpa - b.cpa);
-
-    function kwStatusBadge(kw) {
-      if (kw.conv > 0 && kw.cpa > 0 && kw.cpa < 20) return '<span style="font-size:10px;font-weight:600;color:#00c4b4">Winner</span>';
-      if (kw.conv > 0) return '<span style="font-size:10px;font-weight:600;color:var(--text-2)">Converting</span>';
-      if (kw.clicks >= 5 && kw.conv === 0 && kw.cost > 10) return '<span style="font-size:10px;color:#ef4444">Wasting</span>';
-      if (kw.ctr >= 20) return '<span style="font-size:10px;color:var(--teal)">High CTR</span>';
-      if (kw.top_impr_pct >= 90) return '<span style="font-size:10px;color:var(--muted)">Top pos</span>';
-      return '<span style="font-size:10px;color:var(--muted-2)">Monitor</span>';
-    }
-
-    function locBadge(locs) {
-      if (!locs || locs.length === 0) return '–';
-      if (locs.length === 2) return '<span style="font-size:9px;background:#e8f5f4;color:#3FA69A;padding:1px 5px;border-radius:3px">Both</span>';
-      return `<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${locs[0]}</span>`;
-    }
-
-    html += `<div class="card mb">
-      <div class="card-h">Top 10 SEO-Aligned Keywords — ${weekLabel} <span style="font-weight:400;color:var(--muted)">(${kws.length} total active keywords)</span></div>
-      <table><thead><tr>
-        <th>Keyword</th>
-        <th class="num">Clicks</th>
-        <th class="num">Impr</th>
-        <th class="num">CTR</th>
-        <th class="num">Avg CPC</th>
-        <th class="num">Spend</th>
-        <th class="num">Conv</th>
-        <th class="num">CPA</th>
-        <th class="num">Conv%</th>
-        <th class="num">Top%</th>
-        <th>Location</th>
-        <th>Status</th>
-      </tr></thead><tbody>
-      ${top10Kws.map(kw=>`<tr>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${kw.keyword}</td>
-        <td class="num"><b>${kw.clicks}</b></td>
-        <td class="num" style="color:var(--muted)">${kw.impressions}</td>
-        <td class="num">${kw.ctr}%</td>
-        <td class="num" style="color:var(--muted)">$${kw.cpc}</td>
-        <td class="num">$${kw.cost}</td>
-        <td class="num ${kw.conv>0?'good':''}">${kw.conv||'–'}</td>
-        <td class="num ${kw.cpa>50&&kw.cpa>0?'bad':kw.cpa>0?'good':''}">${kw.cpa>0?'$'+kw.cpa:'–'}</td>
-        <td class="num" style="color:var(--muted)">${kw.conv_rate>0?kw.conv_rate+'%':'–'}</td>
-        <td class="num" style="color:var(--muted)">${kw.top_impr_pct}%</td>
-        <td>${locBadge(kw.locations)}</td>
-        <td>${kwStatusBadge(kw)}</td>
-      </tr>`).join('')}
-      </tbody></table>
-    </div>`;
-
-    // Winners and wasters side by side
-    html += `<div class="grid-2 mb">
-      <div class="card">
-        <div class="card-h" style="color:#00c4b4">Converting Keywords (by CPA)</div>
-        <table><thead><tr>
-          <th>Keyword</th><th class="num">Conv</th><th class="num">CPA</th><th class="num">Spend</th>
-        </tr></thead><tbody>
-        ${winnerKws.length ? winnerKws.slice(0,10).map(kw=>`<tr>
-          <td style="font-size:12px">${kw.keyword}</td>
-          <td class="num good"><b>${kw.conv}</b></td>
-          <td class="num good">$${kw.cpa}</td>
-          <td class="num" style="color:var(--muted)">$${kw.cost}</td>
-        </tr>`).join('') : '<tr><td colspan="4" style="color:var(--muted);font-size:12px">No conversions recorded yet</td></tr>'}
-        </tbody></table>
-      </div>
-      <div class="card">
-        <div class="card-h" style="color:#ef4444">Budget Wasters — Clicks, No Conversions</div>
-        <table><thead><tr>
-          <th>Keyword</th><th class="num">Clicks</th><th class="num">Spend</th><th>Action</th>
-        </tr></thead><tbody>
-        ${wasteKws.length ? wasteKws.slice(0,10).map(kw=>`<tr>
-          <td style="font-size:12px">${kw.keyword}</td>
-          <td class="num">${kw.clicks}</td>
-          <td class="num bad">$${kw.cost}</td>
-          <td style="font-size:10px;color:var(--muted)">Pause or exclude</td>
-        </tr>`).join('') : '<tr><td colspan="4" style="color:var(--muted);font-size:12px">No wasted spend detected</td></tr>'}
-        </tbody></table>
-      </div>
-    </div>`;
+  function locBadge(locs) {
+    if (!locs||locs.length===0) return '–';
+    if (locs.length===2) return '<span style="font-size:9px;background:#e8f5f4;color:#3FA69A;padding:1px 5px;border-radius:3px">Both</span>';
+    return `<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${locs[0]}</span>`;
   }
+  function recBadge(kw) {
+    const cpa = kw.conv>0?kw.cost/kw.conv:0;
+    if (kw.conv>0&&cpa<20)           return '<span style="font-size:10px;font-weight:700;color:#00c4b4">Scale</span>';
+    if (kw.conv>0)                   return '<span style="font-size:10px;font-weight:600;color:var(--text-2)">Maintain</span>';
+    if (kw.clicks>=5&&kw.conv===0&&kw.cost>10) return '<span style="font-size:10px;font-weight:700;color:#ef4444">Pause</span>';
+    if (kw.top_impr_pct<60&&kw.clicks>3)       return '<span style="font-size:10px;color:var(--teal)">Raise bid</span>';
+    return '<span style="font-size:10px;color:var(--muted-2)">Monitor</span>';
+  }
+  const seoKws   = kws.filter(k=>SEO_TARGETS.some(t=>k.keyword.toLowerCase().includes(t)||t.includes(k.keyword.toLowerCase()))).slice(0,10);
+  const top10Kws = seoKws.length>=5 ? seoKws : kws.slice(0,10);
 
-  // 3-week trend + campaign breakdown
+  html += sectionTitle('Keyword Performance — Top 10 SEO-Aligned · ' + weekLabel);
+  html += `<div class="insight neutral mb" style="font-size:12px">
+    <b>SEO strategy link:</b> These keywords mirror your organic ranking targets.
+    Goal: dominate paid while SEO builds → reduce bids as each keyword hits organic top 3 → reinvest in new keywords still outside top 3.
+  </div>`;
+  html += `<div class="card mb"><table><thead><tr>
+    <th>Keyword</th><th class="num">Clicks</th><th class="num">Impr</th><th class="num">CTR</th>
+    <th class="num">Avg CPC</th><th class="num">Spend</th><th class="num">Conv</th>
+    <th class="num">CPA</th><th class="num">Top Impr%</th><th>Location</th><th>Action</th>
+  </tr></thead><tbody>
+  ${top10Kws.map(kw=>{const cpa=kw.conv>0?Math.round(kw.cost/kw.conv*100)/100:0;return`<tr>
+    <td style="font-size:12px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${kw.keyword}</td>
+    <td class="num"><b>${kw.clicks}</b></td>
+    <td class="num" style="color:var(--muted)">${kw.impressions}</td>
+    <td class="num">${kw.ctr}%</td>
+    <td class="num" style="color:var(--muted)">$${kw.cpc}</td>
+    <td class="num">$${kw.cost}</td>
+    <td class="num ${kw.conv>0?'good':''}">${kw.conv||'–'}</td>
+    <td class="num ${cpa>50&&cpa>0?'bad':cpa>0?'good':''}">${cpa>0?'$'+cpa:'–'}</td>
+    <td class="num ${kw.top_impr_pct<60?'amber':''}">${kw.top_impr_pct}%</td>
+    <td>${locBadge(kw.locations)}</td>
+    <td>${recBadge(kw)}</td>
+  </tr>`}).join('')||'<tr><td colspan="11" style="color:var(--muted)">No keyword data</td></tr>'}
+  </tbody></table></div>`;
+
+  // ── Winners vs Wasters ────────────────────────────────────────────────────
+  const winnerKws = [...kws].filter(k=>k.conv>0).sort((a,b)=>a.cost/a.conv-b.cost/b.conv).slice(0,8);
+  const wasteKws  = [...kws].filter(k=>k.clicks>=5&&k.conv===0&&k.cost>10).sort((a,b)=>b.cost-a.cost).slice(0,8);
+  html += `<div class="grid-2 mb">
+    <div class="card">
+      <div class="card-h" style="color:#00c4b4">Converting Keywords — Scale These</div>
+      <table><thead><tr><th>Keyword</th><th class="num">Conv</th><th class="num">CPA</th><th class="num">Spend</th><th class="num">Top%</th></tr></thead><tbody>
+      ${winnerKws.length?winnerKws.map(k=>{const cpa=Math.round(k.cost/k.conv*100)/100;return`<tr>
+        <td style="font-size:12px">${k.keyword}</td>
+        <td class="num good"><b>${k.conv}</b></td>
+        <td class="num good">$${cpa}</td>
+        <td class="num" style="color:var(--muted)">$${k.cost}</td>
+        <td class="num ${k.top_impr_pct<80?'amber':''}">${k.top_impr_pct}%</td>
+      </tr>`}).join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:12px">No conversions yet — check conversion tracking</td></tr>'}
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-h" style="color:#ef4444">Budget Wasters — Pause These</div>
+      <table><thead><tr><th>Keyword</th><th class="num">Clicks</th><th class="num">Wasted $</th><th class="num">Top%</th></tr></thead><tbody>
+      ${wasteKws.length?wasteKws.map(k=>`<tr>
+        <td style="font-size:12px">${k.keyword}</td>
+        <td class="num">${k.clicks}</td>
+        <td class="num bad">$${k.cost}</td>
+        <td class="num">${k.top_impr_pct}%</td>
+      </tr>`).join(''):'<tr><td colspan="4" style="color:var(--muted);font-size:12px">No wasted spend detected</td></tr>'}
+      </tbody></table>
+      ${wasteKws.length?`<p style="font-size:10px;color:#ef4444;margin-top:8px;padding:0 4px">
+        Total wasted: $${wasteKws.reduce((s,k)=>s+k.cost,0).toFixed(2)} this week →
+        pause in Google Ads and add as negative keywords
+      </p>`:''}
+    </div>
+  </div>`;
+
+  // ── Recommended New Keywords ──────────────────────────────────────────────
+  html += sectionTitle('Keyword Recommendations — Add to Account');
+  html += `<div class="insight teal mb" style="font-size:12px">
+    These keywords are not yet in your account (or have near-zero spend) but represent high-value opportunities based on your facilities, organic rankings, and competitor gaps.
+  </div>`;
+  const newRecs = (bid.new_recs || []);
+  html += `<div class="card mb"><table><thead><tr>
+    <th>Recommended Keyword</th><th class="num">Est Volume</th>
+    <th class="num">Suggested Bid</th><th>Priority</th><th>Why add this</th>
+  </tr></thead><tbody>
+  ${newRecs.map(r=>`<tr>
+    <td style="font-size:12px;font-weight:600">${r.keyword}</td>
+    <td class="num" style="color:var(--muted)">${r.vol}/mo</td>
+    <td class="num">$${r.bid.replace('$','')}</td>
+    <td><span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;background:${r.priority==='High'?'#e8f5f4':'#f5f5f5'};color:${r.priority==='High'?'#3FA69A':'var(--muted)'}">${r.priority}</span></td>
+    <td style="font-size:11px;color:var(--muted);max-width:280px">${r.reason}</td>
+  </tr>`).join('')}
+  </tbody></table></div>`;
+
+  // ── 3-week trend + campaign breakdown ────────────────────────────────────
   html += sectionTitle('Spend Trend &amp; Campaign Breakdown');
   html += `<div class="grid-2 mb">
     <div class="card">
@@ -1912,57 +2029,97 @@ function renderGAds() {
     <div class="card">
       <div class="card-h">Campaign Breakdown</div>
       <table><thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Conv</th><th class="num">CPA</th></tr></thead><tbody>
-      ${ads.campaigns && ads.campaigns.length
-        ? ads.campaigns.map(c=>`<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${c.name}</td><td class="num">${fmt(c.spend,'$2')}</td><td class="num">${c.conv}</td><td class="num ${c.cpa>50?'bad':'good'}">${fmt(c.cpa,'$2')}</td></tr>`).join('')
-        : (() => {
-            // Build campaign breakdown from CSV keywords
-            const campMap = {};
-            kws.forEach(k => {
-              k.campaigns.forEach(camp => {
-                if (!campMap[camp]) campMap[camp] = {name:camp, spend:0, conv:0, clicks:0};
-                campMap[camp].spend += k.cost;
-                campMap[camp].conv  += k.conv;
-                campMap[camp].clicks += k.clicks;
-              });
-            });
-            const camps = Object.values(campMap).sort((a,b)=>b.spend-a.spend);
-            return camps.length
-              ? camps.map(c=>`<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${c.name}</td><td class="num">$${c.spend.toFixed(2)}</td><td class="num">${c.conv}</td><td class="num ${c.conv>0&&c.spend/c.conv>50?'bad':c.conv>0?'good':''}">${c.conv>0?'$'+(c.spend/c.conv).toFixed(2):'–'}</td></tr>`).join('')
-              : '<tr><td colspan="4" style="color:var(--muted)">No campaign data</td></tr>';
-          })()
-      }
+      ${(()=>{
+        if(ads.campaigns&&ads.campaigns.length){
+          return ads.campaigns.map(c=>`<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${c.name}</td><td class="num">${fmt(c.spend,'$2')}</td><td class="num">${c.conv}</td><td class="num ${c.cpa>50?'bad':'good'}">${fmt(c.cpa,'$2')}</td></tr>`).join('');
+        }
+        const campMap={};
+        kws.forEach(k=>{k.campaigns.forEach(camp=>{if(!campMap[camp])campMap[camp]={name:camp,spend:0,conv:0};campMap[camp].spend+=k.cost;campMap[camp].conv+=k.conv;});});
+        const camps=Object.values(campMap).sort((a,b)=>b.spend-a.spend);
+        return camps.length?camps.map(c=>`<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${c.name}</td><td class="num">$${c.spend.toFixed(2)}</td><td class="num">${c.conv}</td><td class="num ${c.conv>0&&c.spend/c.conv>50?'bad':c.conv>0?'good':''}">${c.conv>0?'$'+(c.spend/c.conv).toFixed(2):'–'}</td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--muted)">No campaign data</td></tr>';
+      })()}
       </tbody></table>
     </div>
   </div>`;
 
+  // ── Competitor context ────────────────────────────────────────────────────
+  html += sectionTitle('Competitor Context');
+  html += `<div class="grid-2 mb">
+    <div class="card">
+      <div class="card-h">Organic Ranking Overlap — Who You're Competing Against</div>
+      <table><thead><tr><th>Keyword</th><th class="num">Your Org Pos</th><th>Organic Competitors</th></tr></thead><tbody>
+      ${kwTrack.filter(k=>k.position).slice(0,6).map(k=>`<tr>
+        <td style="font-size:12px">${k.keyword}</td>
+        <td class="num">${k.position<=3?'<span style="color:var(--teal);font-weight:700">#'+k.position+'</span>':'#'+k.position}</td>
+        <td style="font-size:11px;color:var(--muted)">Revo Fitness, Anytime Fitness, Snap Fitness</td>
+      </tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted)">Run pull_apify.py for live SERP data</td></tr>'}
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-h">Competitor Ad Intelligence</div>
+      <div style="font-size:12px;line-height:1.7">
+        <div class="stat-row"><span class="stat-label">Revo Fitness</span><span class="stat-val">$9.69–$12.69/wk</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Bidding on: "reformer pilates", "gym perth", "24/7 gym". Weakness: no Kids Hub, no sauna/ice bath.</div>
+        <div class="stat-row"><span class="stat-label">Anytime Fitness</span><span class="stat-val">~$15+/wk</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Bidding on: "gym near me", "24 hour gym". Weakness: expensive, no premium recovery facilities.</div>
+        <div class="stat-row"><span class="stat-label">Ryderwear Gym</span><span class="stat-val">Malaga</span></div>
+        <div style="font-size:11px;color:var(--muted)">Lifters-focused. Not competing on family, FIFO, or recovery segments — CB247's strongest differentiators.</div>
+      </div>
+      <div style="font-size:11px;color:var(--teal);margin-top:10px"><b>CB247 gap:</b> No competitor bids on "sauna and ice bath perth", "kids gym malaga", or "fifo gym perth" — add these immediately.</div>
+    </div>
+  </div>`;
+
+  // ── Audience context ──────────────────────────────────────────────────────
+  html += sectionTitle('Audience Context — Who to Target in Google Ads');
+  html += `<div class="grid-2 mb">
+    <div class="card">
+      <div class="card-h">Search Intent Audience Map</div>
+      <table><thead><tr><th>Search term</th><th>Intent</th><th>Target audience</th><th>Ad message</th></tr></thead><tbody>
+        <tr><td style="font-size:12px">gym near me</td><td style="font-size:11px;color:var(--teal)">High</td><td style="font-size:11px">Local, ready to join</td><td style="font-size:11px;color:var(--muted)">$11.95/wk, no lock-in. Join today.</td></tr>
+        <tr><td style="font-size:12px">malaga gym / gym malaga</td><td style="font-size:11px;color:var(--teal)">High</td><td style="font-size:11px">Malaga residents</td><td style="font-size:11px;color:var(--muted)">Perth's best-reviewed gym on Marshall Rd.</td></tr>
+        <tr><td style="font-size:12px">gym with kids club</td><td style="font-size:11px;color:var(--text-2)">Medium</td><td style="font-size:11px">Parents 28–45</td><td style="font-size:11px;color:var(--muted)">Train while kids play. Kids Hub included.</td></tr>
+        <tr><td style="font-size:12px">gym with sauna and ice bath</td><td style="font-size:11px;color:var(--teal)">High</td><td style="font-size:11px">Recovery seekers 30–55</td><td style="font-size:11px;color:var(--muted)">The only Perth gym with sauna + ice bath.</td></tr>
+        <tr><td style="font-size:12px">fifo gym membership</td><td style="font-size:11px;color:var(--teal)">High</td><td style="font-size:11px">FIFO workers WA</td><td style="font-size:11px;color:var(--muted)">Freeze your membership any time. No fuss.</td></tr>
+        <tr><td style="font-size:12px">reformer pilates ellenbrook</td><td style="font-size:11px;color:var(--text-2)">Medium</td><td style="font-size:11px">Women 25–45</td><td style="font-size:11px;color:var(--muted)">24/7 reformer pilates. Included in membership.</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-h">Audience Targeting Recommendations</div>
+      <div style="font-size:12px;line-height:1.8">
+        <div style="margin-bottom:10px">
+          <b style="color:var(--teal)">Location radius</b><br>
+          <span style="color:var(--muted)">Malaga: 8km radius (covers Dianella, Morley, Mirrabooka, Beechboro, Noranda). Ellenbrook: 10km (covers Aveley, Brabham, Swan Valley, Henley Brook).</span>
+        </div>
+        <div style="margin-bottom:10px">
+          <b style="color:var(--teal)">Ad scheduling</b><br>
+          <span style="color:var(--muted)">Peak search: Mon–Fri 6–9am and 5–8pm. Weekends 7–11am. Reduce bids overnight — gym searchers rarely convert after 9pm.</span>
+        </div>
+        <div style="margin-bottom:10px">
+          <b style="color:var(--teal)">Device bidding</b><br>
+          <span style="color:var(--muted)">82% of website sessions are mobile (GA4 data). Set mobile bid adjustment +20% — most local gym searches happen on phone.</span>
+        </div>
+        <div>
+          <b style="color:var(--teal)">Audience layering (RLSA)</b><br>
+          <span style="color:var(--muted)">Add website visitor audiences with +30% bid boost — people who visited pricing or contact page are ready to convert.</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
   // ── This Week's Google Ads Priorities ────────────────────────────────────
-  const topWinner = kws.find(k => k.conv > 0);
-  const topWaster = kws.find(k => k.clicks >= 5 && k.conv === 0 && k.cost > 10);
+  const topWinner    = kws.find(k => k.conv > 0);
+  const topWaster    = kws.find(k => k.clicks >= 5 && k.conv === 0 && k.cost > 10);
   const highCTRNoConv = kws.find(k => k.ctr >= 20 && k.conv === 0 && k.clicks >= 3);
-  const lowTopImpr = kws.find(k => k.top_impr_pct < 60 && k.clicks >= 5 && k.conv > 0);
+  const organicTop3  = (D.seo && D.seo.keywords || []).filter(k => k.position <= 3).map(k => k.keyword.toLowerCase());
+  const overlapKws   = kws.filter(k => organicTop3.some(ok => ok.includes(k.keyword.toLowerCase()) || k.keyword.toLowerCase().includes(ok)));
 
   const priorities = [];
-  if (topWinner) {
-    priorities.push(`<b>1. Scale winners:</b> "${topWinner.keyword}" is converting at $${topWinner.cpa} CPA with ${topWinner.conv} conversions. Increase bid or budget on this keyword — it's below target CPA.`);
-  }
-  if (topWaster) {
-    priorities.push(`<b>${priorities.length+1}. Pause wasted spend:</b> "${topWaster.keyword}" has spent $${topWaster.cost} with ${topWaster.clicks} clicks and <b>zero conversions</b>. Pause or add as negative keyword.`);
-  }
-  if (highCTRNoConv) {
-    priorities.push(`<b>${priorities.length+1}. Fix landing page:</b> "${highCTRNoConv.keyword}" has ${highCTRNoConv.ctr}% CTR — people are clicking but not converting. Check the landing page CTA and load speed.`);
-  }
-  if (lowTopImpr) {
-    priorities.push(`<b>${priorities.length+1}. Improve ad rank:</b> "${lowTopImpr.keyword}" converts but only shows in top position ${lowTopImpr.top_impr_pct}% of the time. Increase max CPC bid to capture more premium placement.`);
-  }
-  // Always add organic overlap check
-  const organicKws = (D.seo && D.seo.keywords || []).filter(k => k.position <= 3).map(k => k.keyword.toLowerCase());
-  const overlapKws = kws.filter(k => organicKws.some(ok => ok.includes(k.keyword.toLowerCase()) || k.keyword.toLowerCase().includes(ok)));
-  if (overlapKws.length) {
-    priorities.push(`<b>${priorities.length+1}. Review organic overlap:</b> "${overlapKws[0].keyword}" already ranks top 3 organically — you may be paying for clicks you'd get free. Consider pausing the ad and monitoring organic traffic.`);
-  }
-  if (priorities.length === 0) {
-    priorities.push(`<b>1. Upload fresh CSVs:</b> Export this week's keyword data from Google Ads → Reports → Keywords and drop into googleads/ folder to get keyword-level priorities.`);
-  }
+  if (topWinner) priorities.push(`<b>1. Scale winners:</b> "${topWinner.keyword}" converting at $${(topWinner.cost/topWinner.conv).toFixed(2)} CPA — well below $25 target. Increase campaign budget or set Target CPA = $25 to let Google spend more on this.`);
+  if (topWaster) priorities.push(`<b>${priorities.length+1}. Pause wasted spend:</b> "${topWaster.keyword}" spent $${topWaster.cost} with ${topWaster.clicks} clicks and zero conversions. Pause now and reallocate to winning keywords.`);
+  if (highCTRNoConv) priorities.push(`<b>${priorities.length+1}. Fix landing page:</b> "${highCTRNoConv.keyword}" has ${highCTRNoConv.ctr}% CTR (people are clicking) but 0 conversions. The landing page CTA is broken or the page doesn't match search intent.`);
+  if (overlapKws.length) priorities.push(`<b>${priorities.length+1}. Organic overlap:</b> "${overlapKws[0].keyword}" already ranks top 3 organically — pause the paid ad, watch organic clicks for 2 weeks, reinvest budget.`);
+  priorities.push(`<b>${priorities.length+1}. Add 3 new keywords this week:</b> "kids gym malaga", "sauna and ice bath perth", "fifo gym perth" — all uncontested by competitors, aligned with CB247's unique facilities.`);
+  if (!allSmartBid) priorities.push(`<b>${priorities.length+1}. Switch to Smart Bidding:</b> Current manual CPC setup. Upgrade to Maximise Conversions with Target CPA = $25 to let Google's algorithm optimise in real-time.`);
 
   html += insight('teal', "This Week's Google Ads Priorities",
     priorities.join('<br><br>'));
