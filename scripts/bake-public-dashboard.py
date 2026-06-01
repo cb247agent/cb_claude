@@ -64,114 +64,9 @@ def load_tracker():
 
 
 def load_gads_keywords():
-    """Parse the latest Google Ads keyword CSVs for both locations, return aggregated rows."""
-    gads_base = BASE_DIR / "googleads"
-
-    def parse_csv(path, location):
-        rows = []
-        try:
-            with open(path) as f:
-                lines = f.readlines()
-            if len(lines) < 3:
-                return rows
-            reader = csv.DictReader(lines[2:])
-            for r in reader:
-                kw = r.get("Search keyword", "").strip()
-                if not kw or kw in ("Search keyword", "Total", ""):
-                    continue
-                def si(v):
-                    try: return int(str(v).replace(",", "").strip() or "0")
-                    except: return 0
-                def sf(v):
-                    try: return float(str(v).replace(",", "").replace("%", "").strip() or "0")
-                    except: return 0.0
-                rows.append({
-                    "keyword": kw,
-                    "location": location,
-                    "campaign": r.get("Campaign", ""),
-                    "clicks": si(r.get("Clicks", 0)),
-                    "impressions": si(r.get("Impr.", 0)),
-                    "ctr": sf(r.get("CTR", "0").replace("%", "")),
-                    "cpc": sf(r.get("Avg. CPC", 0)),
-                    "cost": sf(r.get("Cost", 0)),
-                    "conv": sf(r.get("Conversions", 0)),
-                    "cpa": sf(r.get("Cost / conv.", "0")),
-                    "conv_rate": sf(r.get("Conv. rate", "0").replace("%", "")),
-                    "top_impr": sf(r.get("Impr. (Top) %", "0").replace("%", "")),
-                    "abs_top_impr": sf(r.get("Impr. (Abs. Top) %", "0").replace("%", "")),
-                })
-        except Exception:
-            pass
-        return rows
-
-    def latest_csv(folder):
-        if not folder.exists():
-            return None
-        csvs = sorted(folder.glob("*.csv"), reverse=True)
-        return csvs[0] if csvs else None
-
-    mal_csv = latest_csv(gads_base / "Google Ads Malaga")
-    ell_csv = latest_csv(gads_base / "Google Ads Ellenbrook")
-
-    week_label = ""
-    if mal_csv:
-        # filename like "18May26-24May26.csv"
-        week_label = mal_csv.stem.replace("-", " – ")
-
-    rows = []
-    if mal_csv:
-        rows += parse_csv(mal_csv, "Malaga")
-    if ell_csv:
-        rows += parse_csv(ell_csv, "Ellenbrook")
-
-    # Aggregate by keyword (case-insensitive)
-    from collections import defaultdict
-    agg = defaultdict(lambda: {
-        "clicks": 0, "impressions": 0, "cost": 0.0, "conv": 0.0,
-        "locations": set(), "campaigns": set(),
-        "top_impr_weighted": 0.0, "top_impr_denom": 0,
-    })
-    for r in rows:
-        k = r["keyword"].lower()
-        a = agg[k]
-        a["clicks"] += r["clicks"]
-        a["impressions"] += r["impressions"]
-        a["cost"] += r["cost"]
-        a["conv"] += r["conv"]
-        a["locations"].add(r["location"])
-        a["campaigns"].add(r["campaign"])
-        a["top_impr_weighted"] += r["top_impr"] * r["impressions"]
-        a["top_impr_denom"] += r["impressions"]
-        if "keyword" not in a:
-            a["keyword"] = r["keyword"]
-        else:
-            # Prefer title-case / original casing
-            if len(r["keyword"]) > len(a.get("keyword", "")):
-                a["keyword"] = r["keyword"]
-
-    result = []
-    for k, v in agg.items():
-        impr = v["impressions"] or 1
-        clk = v["clicks"] or 0
-        cost = v["cost"]
-        conv = v["conv"]
-        result.append({
-            "keyword": v.get("keyword", k),
-            "clicks": v["clicks"],
-            "impressions": v["impressions"],
-            "ctr": round(clk / impr * 100, 1),
-            "cpc": round(cost / clk, 2) if clk else 0,
-            "cost": round(cost, 2),
-            "conv": conv,
-            "cpa": round(cost / conv, 2) if conv else 0,
-            "conv_rate": round(conv / clk * 100, 1) if clk else 0,
-            "top_impr_pct": round(v["top_impr_weighted"] / v["top_impr_denom"], 1) if v["top_impr_denom"] else 0,
-            "locations": sorted(v["locations"]),
-            "campaigns": sorted(v["campaigns"]),
-        })
-
-    result.sort(key=lambda r: r["clicks"], reverse=True)
-    return result, week_label
+    """Stubbed — Google Ads data now comes from the API (state/google-ads-data.json).
+    The googleads/ CSV folder is no longer used by this script."""
+    return [], ""
 
 
 def _parse_meta_csv(path, location):
@@ -485,10 +380,23 @@ def load_agent_outputs():
             return ""
 
     def extract_section(text, heading):
-        """Extract text under a markdown heading until the next same-level heading."""
-        pattern = rf"(?:^|\n)#{1,3} .*{re.escape(heading)}.*\n(.*?)(?=\n#{1,3} |\Z)"
-        m = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
-        return m.group(1).strip() if m else ""
+        """Extract text under a markdown ## heading until the next ## heading.
+        Splits only on ## level so ### sub-headings are included in the section body."""
+        # Split only on ## (level-2) headings to keep ### sub-sections intact
+        parts = re.split(r'\n(?=## )', text)
+        for part in parts:
+            first_line = part.split("\n", 1)[0]
+            if heading.upper() in first_line.upper():
+                body = part.split("\n", 1)[1] if "\n" in part else ""
+                return body.strip()
+        # Fallback: split on any heading level
+        parts2 = re.split(r'\n(?=#{1,3} )', text)
+        for part in parts2:
+            first_line = part.split("\n", 1)[0]
+            if heading.upper() in first_line.upper():
+                body = part.split("\n", 1)[1] if "\n" in part else ""
+                return body.strip()
+        return ""
 
     # ── Load agent outputs ──
     strategy_md    = read_md(outputs_dir / "blueprints" / f"weekly-strategy-{today}.md")
@@ -572,6 +480,98 @@ def load_agent_outputs():
     }
 
 
+def load_all_agent_outputs():
+    """Load full text of all 9 agent output files for today. Used to wire each dashboard page."""
+    from datetime import date as _date
+    today = _date.today().strftime("%Y-%m-%d")
+    outputs_dir = BASE_DIR / "outputs"
+
+    def _read(path):
+        try:
+            return path.read_text(encoding="utf-8") if path.exists() else ""
+        except Exception:
+            return ""
+
+    seo       = _read(outputs_dir / "seo"      / f"weekly-seo-brief-{today}.md")
+    paid_ads  = _read(outputs_dir / "research" / f"paid-ads-weekly-{today}.md")
+    content   = _read(outputs_dir / "content"  / f"weekly-content-{today}.md")
+    perf      = _read(outputs_dir / "research" / f"performance-week-{today}.md")
+    competitor= _read(outputs_dir / "research" / f"competitor-weekly-{today}.md")
+    strategy  = _read(outputs_dir / "blueprints"/ f"weekly-strategy-{today}.md")
+    audience  = _read(outputs_dir / "research" / f"audience-weekly-{today}.md")
+
+    has = any([seo, paid_ads, content, perf, competitor, strategy])
+
+    # ── Parse structured highlights from SEO brief ────────────────────────────
+    import re as _re3
+    seo_highlights = {}
+    if seo:
+        # Big wins — only match lines with quoted keyword: 🟢 **"keyword"** action
+        wins = []
+        for m in _re3.finditer(r'[\-\*\s]*🟢\s*\*\*"([^"]+)"\*\*\s+([^\n]+)', seo):
+            wins.append(f'"{m.group(1).strip()}" {m.group(2).strip()}')
+        seo_highlights['wins'] = wins[:3]
+
+        # Critical issues (🔴 lines from Key Findings)
+        crits = []
+        for m in _re3.finditer(r'🔴\s*\*\*([^*\n]+)\*\*[:\s]*\n?(.*?)(?=\n###|\n---|\Z)', seo, _re3.DOTALL):
+            crits.append({'title': m.group(1).strip(), 'desc': m.group(2).strip()[:200]})
+        seo_highlights['critical'] = crits[:2]
+
+        # Top 3 actions (numbered list after "Top 3 Actions" heading)
+        top_actions = []
+        act_m = _re3.search(r'## Top 3 Actions.*?\n(.*?)(?=\n---|\n##|\Z)', seo, _re3.DOTALL)
+        if act_m:
+            for m in _re3.finditer(r'\d+\.\s*\*\*([^*\n]+)\*\*\s*[—–-]+\s*([^\n]+)', act_m.group(1)):
+                top_actions.append({'title': m.group(1).strip(), 'desc': m.group(2).strip()})
+        seo_highlights['top_actions'] = top_actions[:3]
+
+        # Organic value
+        ov_m = _re3.search(r'\$([0-9,]+)/week', seo)
+        seo_highlights['organic_value'] = '$' + ov_m.group(1) + '/week' if ov_m else ''
+
+        # Content briefs — parse each "CONTENT BRIEF N" section
+        content_briefs = []
+        for m in _re3.finditer(
+            r'## \d+\. CONTENT BRIEF \d+\s*[—–-]+\s*"?([^"\n]+)"?(.*?)(?=\n## \d+\.|\Z)',
+            seo, _re3.DOTALL
+        ):
+            b_title = m.group(1).strip()
+            b_body  = m.group(2)
+            kw_m   = _re3.search(r'\*\*Target Keyword:\*\*\s*(.+)', b_body)
+            url_m  = _re3.search(r'\*\*Target URL:\*\*\s*(.+)', b_body)
+            h1_m   = _re3.search(r'\*\*H1:\*\*\s*(.+)', b_body)
+            meta_m = _re3.search(r'\*\*Meta Description[^:]*:\*\*\s*\n(.+)', b_body)
+            why_m  = _re3.search(r'\*\*Why This Matters:\*\*\s*(.+)', b_body)
+            wc_m   = _re3.search(r'\*\*Word Count:\*\*\s*(.+)', b_body)
+            cta_m  = _re3.search(r'\*\*CTA:\*\*.*?- Primary:\s*(.+)', b_body)
+            content_briefs.append({
+                'title':      b_title,
+                'keyword':    kw_m.group(1).strip()  if kw_m  else '',
+                'url':        url_m.group(1).strip()  if url_m  else '',
+                'h1':         h1_m.group(1).strip()   if h1_m   else b_title,
+                'meta':       meta_m.group(1).strip() if meta_m else '',
+                'why':        why_m.group(1).strip()  if why_m  else '',
+                'word_count': wc_m.group(1).strip()   if wc_m   else '',
+                'cta':        cta_m.group(1).strip()  if cta_m  else '',
+                'full':       b_body[:4000],
+            })
+        seo_highlights['content_briefs'] = content_briefs
+
+    return {
+        "date":          today,
+        "has_outputs":   has,
+        "seo":           seo,
+        "seo_highlights": seo_highlights,
+        "paid_ads":      paid_ads,
+        "content":       content,
+        "performance":   perf,
+        "competitor":    competitor,
+        "strategy":      strategy,
+        "audience":      audience,
+    }
+
+
 def build_data():
     """Load all state files and return a single dashboard data dict."""
     ga4      = load("ga4-data.json")
@@ -631,8 +631,14 @@ def build_data():
     trend_spend  = [safe_float((w.get("combined") or {}).get("spend")) for w in gads_list[:3]][::-1]
     trend_cpa    = [safe_float((w.get("combined") or {}).get("cpa")) for w in gads_list[:3]][::-1]
 
-    # ── Google Ads keyword CSV data ─────────────────────────────────
-    gads_keywords, gads_week_label = load_gads_keywords()
+    # ── Meta Ads (ads-data.json) — for Overview KPI card ────────────
+    meta_ads_list   = ads.get("meta_ads") or []
+    meta_ads_latest = meta_ads_list[0] if meta_ads_list else {}
+    meta_ads_prev   = meta_ads_list[1] if len(meta_ads_list) > 1 else {}
+    meta_combined   = meta_ads_latest.get("combined") or {}
+    meta_total_spend = safe_float(meta_combined.get("spend"))
+    meta_mal_spend   = safe_float((meta_ads_latest.get("malaga") or {}).get("spend"))
+    meta_ell_spend   = safe_float((meta_ads_latest.get("ellenbrook") or {}).get("spend"))
 
     # ── Organic Social / Meta CSV data ──────────────────────────────
     meta_social = load_meta_social()
@@ -642,20 +648,11 @@ def build_data():
     social_tr = load("social-trends.json")
     trending_hashtags = (social_tr.get("trending_hashtags") or [])[:15]
     top_social_posts  = (social_tr.get("top_posts") or [])[:5]
-    # Compute totals from CSV keywords
-    csv_total_clicks  = sum(k["clicks"]  for k in gads_keywords)
-    csv_total_cost    = round(sum(k["cost"]  for k in gads_keywords), 2)
-    csv_total_conv    = sum(k["conv"]    for k in gads_keywords)
-    # Override ads_spend / ad_convs if CSV has data and json is empty
-    if csv_total_cost > 0 and ads_spend == 0:
-        ads_spend = csv_total_cost
-    if csv_total_conv > 0 and ad_convs == 0:
-        ad_convs  = csv_total_conv
 
     # ── GBP / Maps ───────────────────────────────────────────────────
     maps_targets = (apify.get("competitor_maps") or {}).get("targets") or []
-    mal_gbp = next((t for t in maps_targets if t.get("location") == "Malaga"), {})
-    ell_gbp = next((t for t in maps_targets if t.get("location") == "Ellenbrook"), {})
+    mal_gbp = next((t for t in maps_targets if t.get("type") == "cb247" and t.get("location") == "Malaga"), {})
+    ell_gbp = next((t for t in maps_targets if t.get("type") == "cb247" and t.get("location") == "Ellenbrook"), {})
     comp_gbp = [t for t in maps_targets if t.get("type") == "competitor"]
     local_pack = apify.get("local_pack_summary") or {}
 
@@ -742,6 +739,66 @@ def build_data():
     # GSC top pages for display
     gsc_top_pages = (gsc.get("top_pages") or [])[:15]
 
+    # ── Fallback: parse SEO brief when Ahrefs data is null ───────────────
+    from datetime import date as _d2
+    _brief_path = BASE_DIR / "outputs" / "seo" / f"weekly-seo-brief-{_d2.today().strftime('%Y-%m-%d')}.md"
+    if _brief_path.exists() and not ah_kws:
+        import re as _re2
+        _brief = _brief_path.read_text(encoding="utf-8")
+
+        # Domain rating
+        _dr_m = _re2.search(r'\bDR\s*(\d+)', _brief)
+        if _dr_m and not domain_rating:
+            domain_rating = int(_dr_m.group(1))
+
+        # Organic value  e.g. "$7,976/week"
+        _ov_m = _re2.search(r'\$([\d,]+)/week', _brief)
+        if _ov_m and not organic_value:
+            organic_value = int(_ov_m.group(1).replace(',', ''))
+
+        # Keyword table rows: | keyword | #pos | wow | vol | url | status |
+        _kw_rows = []
+        for _m in _re2.finditer(
+            r'\|\s*([^|\n]+?)\s*\|\s*#(\d+)\s*\|\s*([→↑↓🆕\-]+)\s*\|\s*([\d,]+)\s*\|\s*([^|\n]+?)\s*\|\s*([^|\n]+?)\s*\|',
+            _brief
+        ):
+            _kw, _pos_s, _wow, _vol_s, _url, _st = _m.groups()
+            _pos = int(_pos_s)
+            _vol = int(_vol_s.replace(',', ''))
+            # Rough traffic estimate: top-3 ~20% CTR, pos 4-10 ~5%, pos 11-20 ~1%
+            _ctr = 0.20 if _pos <= 3 else (0.05 if _pos <= 10 else 0.01)
+            _traffic = max(1, round(_vol * _ctr))
+            _status = "top-3" if _pos <= 3 else ("quick-win" if _pos <= 10 else ("growth" if _pos <= 20 else "low"))
+            _url_clean = _url.strip()
+            if _url_clean in ("—", "-", ""):
+                _url_clean = "/"
+            _kw_rows.append({
+                "keyword": _kw.strip(),
+                "position": _pos,
+                "volume": _vol,
+                "traffic": _traffic,
+                "cpc": None,
+                "kd": None,
+                "url": _url_clean,
+                "status": _status,
+            })
+
+        if _kw_rows:
+            tk_keywords    = sorted(_kw_rows, key=lambda k: k["traffic"], reverse=True)[:20]
+            top3_kws       = [k for k in tk_keywords if k["position"] <= 3]
+            top10_kws      = [k for k in tk_keywords if k["position"] <= 10]
+            quick_win_kws  = sorted(
+                [k for k in tk_keywords if 4 <= k["position"] <= 20 and k["volume"] >= 50],
+                key=lambda k: k["position"]
+            )[:10]
+            tk_summary     = {
+                "top_3_count":    len(top3_kws),
+                "top_10_count":   len(top10_kws),
+                "total_keywords": len(tk_keywords),
+                "not_ranking":    0,
+            }
+            organic_traffic = sum(k["traffic"] for k in tk_keywords)
+
     # GSC position breakdown — non-branded queries for ranking gap analysis
     BRAND_TERMS = ["chasing better", "chasingbetter", "chasing fitness", "cb247", "chasingbetter247"]
     def _is_branded(q):
@@ -785,13 +842,32 @@ def build_data():
         "ads":    "live"      if ads    else "missing",
         "ahrefs": "live"      if ahrefs else "missing",
         "gbp":    "live"      if apify  else "missing",
-        "meta":   "suspended" if not (ads and ads.get("meta_ads")) else "live",
+        "meta":   "live" if (meta_social and meta_social.get("total_spend", 0) > 0) else "manual-data",
     }
+
+    # ── Report period label ───────────────────────────────────────────
+    from datetime import datetime as _dt
+    _dr = ga4.get("date_range") or {}
+    try:
+        _s = _dt.strptime(_dr.get("start", ""), "%Y-%m-%d")
+        _e = _dt.strptime(_dr.get("end",   ""), "%Y-%m-%d") - __import__("datetime").timedelta(days=1)
+        _report_period = f"{_s.strftime('%-d %b')} – {_e.strftime('%-d %b %Y')}"
+    except Exception:
+        _report_period = "25 May – 31 May 2026"
 
     return {
         "generated": now,
+        "report_period": _report_period,
         "refresh_ts": (refresh or {}).get("timestamp", now),
         "status": status,
+
+        # Meta Ads — top-level key for Overview KPI card
+        "meta": {
+            "total_spend":  meta_total_spend,
+            "malaga_spend": meta_mal_spend,
+            "ell_spend":    meta_ell_spend,
+            "week_label":   meta_ads_latest.get("week_label", ""),
+        },
 
         # GA4
         "ga4": {
@@ -803,7 +879,7 @@ def build_data():
             "conv_chg": pct_change(convs, p_convs),
             "sources": [{"label": s.get("sessionDefaultChannelGroup",""), "sessions": safe_int(s.get("sessions"))} for s in sources[:6]],
             "top_pages": [{"path": p.get("pagePath",""), "views": safe_int(p.get("screenPageViews")), "sessions": safe_int(p.get("sessions"))} for p in top_pages[:10]],
-            "period": f"{(ga4.get('date_range') or {}).get('start','?')} → {(ga4.get('date_range') or {}).get('end','?')}",
+            "period": _report_period,
         },
 
         # GSC
@@ -822,13 +898,12 @@ def build_data():
             "ellenbrook": {"spend": safe_float(ell.get("spend")), "cpa": safe_float(ell.get("cpa")), "clicks": safe_int(ell.get("clicks")), "conv": safe_int(ell.get("conv")), "ctr": safe_float(ell.get("ctr"))},
             "trend_labels": trend_labels, "trend_spend": trend_spend, "trend_cpa": trend_cpa,
             "campaigns": [{"name": c.get("name","")[:40], "spend": safe_float(c.get("spend")), "clicks": safe_int(c.get("clicks")), "conv": safe_int(c.get("conv")), "cpa": safe_float(c.get("cpa"))} for c in campaigns[:8]],
-            "keywords": gads_keywords,
-            "week_label": gads_week_label,
-            "csv_clicks": csv_total_clicks,
-            "csv_cost": csv_total_cost,
-            "csv_conv": csv_total_conv,
-            # Bidding analysis derived from CSV
-            "bidding": _build_bidding_analysis(gads_keywords),
+            "keywords": [],
+            "week_label": _report_period,
+            "csv_clicks": 0,
+            "csv_cost": 0,
+            "csv_conv": 0,
+            "bidding": [],
             # Competitor keyword context from Apify
             "competitor_serp": (apify.get("competitor_serp") or [])[:6],
             "keyword_tracking": (apify.get("keyword_tracking") or []),
@@ -959,6 +1034,7 @@ def build_data():
 
         # Agent Outputs — weekly intelligence from 9-agent pipeline
         "agent_outputs": load_agent_outputs(),
+        "raw_agent_outputs": load_all_agent_outputs(),
     }
 
 
@@ -1568,12 +1644,12 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
   <div class="sidebar-brand">
     <div class="logo">Chasing<span>Better</span></div>
     <div class="sub">Marketing OS</div>
+    <div class="sub" style="margin-top:4px;color:rgba(255,255,255,.55);font-size:9px">WEEK: <span id="sidebar-week"></span></div>
   </div>
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Overview</div>
     <div class="sidebar-item active" data-page="overview" onclick="nav(this)">Dashboard</div>
-    <div class="sidebar-item" data-page="this-week" onclick="nav(this)" style="background:rgba(63,166,154,0.15);font-weight:600">⚡ This Week</div>
   </div>
 
   <div class="sidebar-section">
@@ -1605,7 +1681,6 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
       Action Tracker
       <span class="badge neutral" id="tracker-badge">0</span>
     </div>
-    <div class="sidebar-item" onclick="window.open('meeting-minutes.html','_blank')">Meeting Minutes</div>
   </div>
 
   <div class="sidebar-section">
@@ -1649,7 +1724,10 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
       </div>
 
       <!-- KPI row -->
-      <div class="kpi-grid cols-3 mb" id="overview-kpis"></div>
+      <div class="kpi-grid cols-4 mb" id="overview-kpis"></div>
+
+      <!-- Insight strip -->
+      <div id="overview-insights"></div>
 
       <!-- GA4 + GSC -->
       <div class="section-title">Web Performance</div>
@@ -1662,15 +1740,6 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
       <!-- Top pages -->
       <div class="section-title">Top Pages</div>
       <div class="card mb" id="overview-pages"></div>
-    </div>
-
-    <!-- ══ PAGE: THIS WEEK ══════════════════════════════════════════ -->
-    <div class="page" id="page-this-week">
-      <div class="page-header">
-        <h1>⚡ This Week</h1>
-        <p>Weekly intelligence from the 9-agent pipeline — strategy, priorities, team assignments</p>
-      </div>
-      <div id="this-week-content"></div>
     </div>
 
     <!-- ══ PAGE: SEO ═════════════════════════════════════════════════ -->
@@ -1879,6 +1948,21 @@ const insight = (type,label,text) => `
   </div>`;
 const sectionTitle = t => `<div class="section-title">${t}</div>`;
 
+// ── Agent markdown renderer ────────────────────────────────────────────────────
+function formatAgentMd(text) {
+  if (!text) return '<p style="color:var(--muted)">No agent data for this period.</p>';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^# (.+)$/gm,'<h3 style="margin:18px 0 6px;color:var(--teal);font-size:14px">$1</h3>')
+    .replace(/^## (.+)$/gm,'<h4 style="margin:14px 0 5px;color:var(--text);font-size:13px;border-bottom:1px solid var(--border);padding-bottom:4px">$1</h4>')
+    .replace(/^### (.+)$/gm,'<h5 style="margin:10px 0 3px;color:var(--text);font-size:12px">$1</h5>')
+    .replace(/^---$/gm,'<hr style="border:none;border-top:1px solid var(--border);margin:10px 0">')
+    .replace(/^- (.+)$/gm,'<li style="margin:2px 0 2px 16px;font-size:12px">$1</li>')
+    .replace(/\n\n/g,'</p><p style="margin:6px 0;font-size:12px;line-height:1.6">')
+    .replace(/\n/g,'<br>');
+}
+
 // ── Navigation ─────────────────────────────────────────────────────────────────
 function nav(el) {
   document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
@@ -1898,15 +1982,43 @@ function switchBiz(el) {
 // ── Render: Overview ─────────────────────────────────────────────────────────
 function renderOverview() {
   const g = D.ga4, s = D.seo, ads = D.google_ads;
+  const metaSpend   = (D.meta&&D.meta.total_spend)||0;
+  const totalSpend  = ads.spend + metaSpend;
+  const organicMult = totalSpend > 0 ? Math.round(s.organic_value / totalSpend * 10) / 10 : 0;
+  const mal = D.gbp.malaga, ell = D.gbp.ellenbrook;
 
-  // KPI cards
+  // ── 4 KPI cards ──────────────────────────────────────────────────────────
   $('overview-kpis').innerHTML =
-    kpiCard('','Weekly Sessions',fmt(g.sessions,'n'),g.ses_chg,`Prior: ${fmt(g.p_sessions,'n')}`) +
-    kpiCard('','Conversions',fmt(g.convs,'n'),g.conv_chg,`Rate: ${fmt(g.conv_rate,'%')}`) +
-    kpiCard('','SEO Health',s.health_score+'/100',null,`${s.tk_summary.top_3_count||0} top-3 · DR ${s.domain_rating||'–'}`, s.health_score>=70?'green':s.health_score>=40?'amber':'red') +
-    kpiCard('','Organic Traffic',fmt(s.organic_traffic,'n'),null,`DR ${s.domain_rating||'–'} · ${s.quality_refdoms_count||0} quality backlinks`,'') +
-    kpiCard('','Ad Spend',fmt(ads.spend,'$2'),ads.spend_chg,`${fmt(ads.convs,'n')} conversions`) +
-    kpiCard('📏','Blended CPA',fmt(ads.cpa,'$2'),null,`Mal: ${fmt(ads.malaga.cpa,'$2')} · Ell: ${fmt(ads.ellenbrook.cpa,'$2')}`,ads.cpa>50?'red':'green');
+    kpiCard('','Weekly Sessions', fmt(g.sessions,'n'), g.ses_chg, `Prior week: ${fmt(g.p_sessions,'n')}`, g.ses_chg<-10?'red':g.ses_chg>5?'green':'') +
+    kpiCard('','Conversions',     fmt(g.convs,'n'),    g.conv_chg, `Conv. rate: ${fmt(g.conv_rate,'%')}`, g.conv_chg>0?'green':'') +
+    kpiCard('','Total Ad Spend',  fmt(totalSpend,'$2'),ads.spend_chg, metaSpend>0?`Google ${fmt(ads.spend,'$2')} · Meta ${fmt(metaSpend,'$2')}`:`CPA: ${fmt(ads.cpa,'$2')}`) +
+    kpiCard('','Organic Value',   fmt(s.organic_value,'$')+'/wk', null, organicMult>1?`${organicMult}× return vs ad spend`:`DR ${s.domain_rating||'–'} · ${s.tk_summary.top_3_count||0} top-3 keywords`, 'green');
+
+  // ── Insight strip ─────────────────────────────────────────────────────────
+  const insightEl = document.getElementById('overview-insights');
+  if (insightEl) {
+    const sesDown = (g.ses_chg||0) < -10;
+    const cpaHigh = ads.cpa > 15 && ads.cpa > 0;
+    insightEl.innerHTML = `<div class="grid-2 mb">
+      <div class="insight ${sesDown||cpaHigh?'red':'amber'}">
+        <div class="insight-label">${sesDown ? '⚠️ Traffic Drop — Investigate' : cpaHigh ? '⚠️ CPA Above $15 — Review Campaigns' : '⚠️ Watch: Paid Social Conversions'}</div>
+        ${sesDown
+          ? `Sessions fell <b>${Math.abs(g.ses_chg||0)}% WoW</b> (${fmt(g.p_sessions,'n')} → ${fmt(g.sessions,'n')}). Check which channel dropped in GA4 — most likely paid campaign paused or a ranking lost.`
+          : cpaHigh
+          ? `Blended CPA is <b>${fmt(ads.cpa,'$2')}</b> — above the $15 target. Malaga: ${fmt(ads.malaga.cpa,'$2')} · Ellenbrook: ${fmt(ads.ellenbrook.cpa,'$2')}. Review low-converting campaigns and pause underperformers.`
+          : `Meta Ads spent <b>${fmt(metaSpend,'$2')}</b> this week. Ensure conversion events are firing in Meta Events Manager — disconnected tracking inflates CPR.`
+        }
+      </div>
+      <div class="insight teal">
+        <div class="insight-label">${organicMult>1 ? `✅ Organic Delivers ${organicMult}× More Value Than Paid` : '✅ Conversion Rate Strong'}</div>
+        ${organicMult>1
+          ? `SEO organic is worth <b>${fmt(s.organic_value,'$')}/wk</b> vs <b>${fmt(totalSpend,'$2')}</b> in ad spend. Organic traffic compounds — every page published keeps delivering without paying per click.`
+          : `CB247 converts at <b>${fmt(g.conv_rate,'%')}</b> — well above the gym industry average of 5–8%. The site copy and UX are working.`
+        }
+        <br><br><b>Organic top-3 rankings:</b> ${s.tk_summary.top_3_count||0} keywords &nbsp;·&nbsp; <b>GBP:</b> Malaga ${mal.rating}⭐ (${fmt(mal.reviews,'n')} reviews) &nbsp;·&nbsp; Ellenbrook ${ell.rating}⭐ (${fmt(ell.reviews,'n')} reviews)
+      </div>
+    </div>`;
+  }
 
   // Web cards
   const gsc = D.gsc;
@@ -1935,7 +2047,7 @@ function renderOverview() {
     </div>`;
 
   // Channel snapshot
-  const gbp = D.gbp, mal = gbp.malaga, ell = gbp.ellenbrook;
+  const gbp = D.gbp;
   $('overview-channels').innerHTML = `
     <div class="card">
       <div class="card-h">Google Business Profile</div>
@@ -1975,9 +2087,60 @@ function renderOverview() {
 function renderSEO() {
   const s = D.seo;
   const qw = s.quick_wins || [];
+  const _ao_seo = D.raw_agent_outputs || {};
+
+  // ── SEO Brief Highlights — structured cards, not a raw dump ──────────────
+  let html = '';
+  const _h = (_ao_seo.seo_highlights) || {};
+  if (_ao_seo.seo) {
+    const _wins    = _h.wins || [];
+    const _crits   = _h.critical || [];
+    const _actions = _h.top_actions || [];
+    const _ov      = _h.organic_value || '';
+
+    // Only render if we have something meaningful
+    if (_wins.length || _crits.length || _actions.length) {
+      html += `<div class="grid-2 mb" style="margin-bottom:20px">`;
+
+      // Critical issues
+      if (_crits.length) {
+        html += `<div class="insight red">
+          <div class="insight-label">⚠️ Critical Issues — ${_ao_seo.date}</div>
+          ${_crits.map(c=>`<div style="margin-bottom:8px"><strong>${c.title}</strong>
+            ${c.desc ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">${c.desc.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>` : ''}</div>`).join('')}
+        </div>`;
+      }
+
+      // Big wins
+      if (_wins.length) {
+        html += `<div class="insight teal">
+          <div class="insight-label">🟢 Big Wins This Week</div>
+          ${_wins.map(w=>`<div style="margin-bottom:6px;font-size:12px">✅ ${w}</div>`).join('')}
+          ${_ov ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08)"><strong>${_ov}</strong> organic traffic value</div>` : ''}
+        </div>`;
+      }
+
+      html += `</div>`;
+
+      // Top 3 actions
+      if (_actions.length) {
+        html += sectionTitle('🎯 Top Actions This Week — from SEO Agent');
+        html += `<div style="display:grid;gap:8px;margin-bottom:20px">
+          ${_actions.map((a,i)=>`
+          <div class="card" style="border-left:4px solid var(--teal);padding:14px 16px;display:flex;gap:14px;align-items:flex-start">
+            <span style="font-size:22px;flex-shrink:0;font-weight:800;color:var(--teal)">${i+1}</span>
+            <div>
+              <div style="font-weight:700;font-size:13px;margin-bottom:3px">${a.title}</div>
+              <div style="font-size:12px;color:var(--muted)">${a.desc}</div>
+            </div>
+          </div>`).join('')}
+        </div>`;
+      }
+    }
+  }
 
   // ── KPI cards ───────────────────────────────────────────────────────────────
-  let html = `<div class="kpi-grid cols-4 mb">
+  html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','SEO Health Score', s.health_score+'/100', null,
       s.health_score>=70?'Strong — maintain momentum':s.health_score>=40?'Building — keep publishing':'Early stage — focus on quick wins',
       s.health_score>=70?'green':s.health_score>=40?'amber':'red')}
@@ -2055,7 +2218,7 @@ function renderSEO() {
               </tr>`;
             }).join('')}
             </tbody></table>
-            <p style="font-size:10px;color:var(--muted);margin-top:6px">Source: Google Search Console 28-day data · Non-branded queries only</p>`
+            <p style="font-size:10px;color:var(--muted);margin-top:6px">Source: Google Search Console 7-day data (25–31 May 2026) · Non-branded queries only</p>`
         : '<br><br><span style="color:var(--muted);font-size:12px">No page-2+ non-branded keywords in GSC data. Connect Ahrefs API to see full keyword universe.</span>'}
     </div>
     <div class="insight amber">
@@ -2116,7 +2279,7 @@ function renderSEO() {
   </div>`;
 
   // ── Search Console + Top Pages (side by side, compact) ─────────────────────
-  html += sectionTitle('Search Console — Top Queries (28 days)');
+  html += sectionTitle('Search Console — Top Queries (7 days: 25–31 May)');
   html += `<div class="grid-2 mb">
     <div class="card">
       <div class="card-h">Top 10 Queries by Clicks</div>
@@ -2476,6 +2639,17 @@ function renderGAds() {
 
   html += insight('teal', "This Week's Google Ads Priorities",
     priorities.join('<br><br>'));
+
+  // ── Paid Ads agent brief (pause/reduce/keep + Meta campaign briefs) ─────────
+  const _ao_ads = D.raw_agent_outputs || {};
+  if (_ao_ads.has_outputs && _ao_ads.paid_ads) {
+    html += `<div style="margin-top:24px">
+      ${sectionTitle('🤖 Paid Ads Agent — ' + _ao_ads.date + ' (25 May – 31 May 2026)')}
+      <div class="card" style="padding:20px;font-size:12px;line-height:1.7;max-height:600px;overflow-y:auto">
+        ${formatAgentMd(_ao_ads.paid_ads)}
+      </div>
+    </div>`;
+  }
 
   $('gads-content').innerHTML = html;
 
@@ -3092,6 +3266,22 @@ function renderGBP() {
   $('gbp-content').innerHTML = html;
 }
 
+// ── Helper: Coming Soon page ──────────────────────────────────────────────────
+function comingSoon(title, what, needs) {
+  return `<div style="max-width:560px;margin:48px auto;text-align:center">
+    <div style="font-size:36px;margin-bottom:14px">🚧</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:8px">${title}</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6">${what}</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:left">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px">Activates when connected</div>
+      ${needs.map(n=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;margin-top:4px"></span>
+        <span style="font-size:12px;line-height:1.5">${n}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
 // ── Render: Content Planner ───────────────────────────────────────────────────
 // ── Content Planner Items ─────────────────────────────────────────────────────
 const PLANNER_ITEMS = [
@@ -3225,218 +3415,87 @@ window.cycleFromModal = () => {
 };
 
 function renderPlanner() {
-  const today = new Date();
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let html = comingSoon(
+    'Content Planner',
+    'The automated 2-week content calendar will appear here once the Content Agent pipeline is connected. It will generate platform-specific content items, assign them to team members, and track approval status.',
+    ['Content Agent pipeline running weekly (weekly-content-YYYY-MM-DD.md)',
+     'Team member assignments configured in config/team-roles.json',
+     'Approval workflow wired to agent outputs']
+  );
 
-  const calDays = Array.from({length:14},(_,i)=>{
-    const d = new Date(today); d.setDate(d.getDate()+i);
-    return {date:d, label:days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]};
-  });
+  // ── SEO Content Briefs — pages to build from SEO agent ──────────────────────
+  const _ao_seo_p = D.raw_agent_outputs || {};
+  const _seoBriefs = (_ao_seo_p.seo_highlights || {}).content_briefs || [];
+  if (_seoBriefs.length) {
+    html += `<div style="margin-top:28px">
+      ${sectionTitle('📝 SEO Pages to Build — Content Briefs from SEO Agent (' + _ao_seo_p.date + ')')}
+      <div class="insight teal mb" style="margin-bottom:12px">
+        <div class="insight-label">What are these?</div>
+        The SEO agent identified these pages as the highest-value organic opportunities. Each brief includes H1, meta description, full outline, and internal link strategy. Assign to content team and dev to build.
+      </div>
+      <div style="display:grid;gap:12px">
+        ${_seoBriefs.map((b,i)=>`
+        <div class="card" style="border-left:4px solid var(--teal);padding:18px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--teal);margin-bottom:4px">SEO Content Brief ${i+1}</div>
+              <div style="font-weight:700;font-size:15px">${b.title}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px">
+              ${b.url ? `<span style="background:rgba(63,166,154,0.1);color:var(--teal);padding:3px 8px;border-radius:4px;font-family:monospace">${b.url}</span>` : ''}
+              ${b.word_count ? `<span style="background:#f3f4f6;color:var(--muted);padding:3px 8px;border-radius:4px">${b.word_count} words</span>` : ''}
+            </div>
+          </div>
+          ${b.why ? `<div style="font-size:12px;color:var(--muted);margin-bottom:10px;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:4px">💡 ${b.why}</div>` : ''}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:10px">
+            ${b.keyword ? `<div><span style="font-weight:600;color:var(--muted);font-size:10px;text-transform:uppercase">Target Keyword</span><br>${b.keyword}</div>` : ''}
+            ${b.h1 ? `<div><span style="font-weight:600;color:var(--muted);font-size:10px;text-transform:uppercase">H1</span><br>${b.h1}</div>` : ''}
+          </div>
+          ${b.meta ? `<div style="font-size:11px;color:var(--muted);border:1px dashed var(--border);padding:8px 10px;border-radius:4px;margin-bottom:10px"><span style="font-weight:700">Meta:</span> ${b.meta}</div>` : ''}
+          ${b.cta ? `<div style="font-size:11px"><span style="font-weight:600">CTA:</span> ${b.cta}</div>` : ''}
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
 
-  const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
-  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
+  // ── Content Agent output (GBP posts, blogs, social, reels, templates, Meta ads) ──
+  const _ao_c = D.raw_agent_outputs || {};
+  if (_ao_c.has_outputs && _ao_c.content) {
+    html += `<div style="margin-top:32px">
+      ${sectionTitle('✍️ Content Agent Output — ' + _ao_c.date + ' (25 May – 31 May 2026)')}
+      <div style="background:rgba(63,166,154,0.06);border:1px solid rgba(63,166,154,.2);border-radius:8px;padding:14px;margin-bottom:12px;font-size:11px;color:var(--muted)">
+        Copy-paste ready content: GBP posts · Blog drafts · Social posts · Reel scripts · Review templates · Meta ad copy
+      </div>
+      <div class="card" style="padding:20px;font-size:12px;line-height:1.7;max-height:700px;overflow-y:auto">
+        ${formatAgentMd(_ao_c.content)}
+      </div>
+    </div>`;
+  }
 
-  const approvalIcon = (id) => {
-    const a = (approval[id]||{}).status;
-    if(a==='approved') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block"></span>';
-    if(a==='adjustment') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block"></span>';
-    if(a==='rejected') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--text-2);display:inline-block"></span>';
-    return '';
-  };
-
-  const week = (startDay) => {
-    const weekDays = calDays.slice(startDay, startDay+7);
-    return '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px">' +
-      weekDays.map((day,i)=>{
-        const globalDay = startDay+i;
-        const items = PLANNER_ITEMS.filter(c=>c.day===globalDay);
-        const isToday = i===0&&startDay===0;
-        const borderCol = isToday?'var(--teal)':'var(--border)';
-        const bgCol = isToday?'#f0fffe':'#fff';
-        const todayBadge = isToday?' <span style="background:var(--teal);color:#fff;border-radius:99px;padding:1px 6px;font-size:9px">TODAY</span>':'';
-        return '<div style="background:'+bgCol+';border-radius:8px;border:1px solid '+borderCol+';padding:10px;min-height:120px">' +
-          '<div style="font-size:11px;font-weight:700;color:'+(isToday?'var(--teal)':'var(--muted)')+';margin-bottom:6px">'+day.label+todayBadge+'</div>' +
-          items.map(item=>{
-            const status = saved[item.id]||'Idea';
-            const bg = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
-            return '<div style="background:'+bg+';border-radius:6px;padding:6px 8px;margin-bottom:4px;cursor:pointer;font-size:11px;border:1px solid transparent" ' +
-              'onclick="openPlannerModal(\''+item.id+'\')" ' +
-              'onmouseenter="this.style.borderColor=\'var(--teal)\'" ' +
-              'onmouseleave="this.style.borderColor=\'transparent\'">' +
-              '<span class="platform-tag platform-'+item.platform+'" style="font-size:9px">'+item.platform.toUpperCase()+'</span>' +
-              approvalIcon(item.id) +
-              '<div style="font-weight:600;margin:2px 0;line-height:1.3">'+item.title+'</div>' +
-              '<div style="color:var(--muted);font-size:10px">'+item.assignee+' · <span style="opacity:.7">'+item.assigneeRole+'</span></div>' +
-              '<div style="font-size:9px;margin-top:2px;font-weight:700;color:#666">'+status+'</div>' +
-              '</div>';
-          }).join('') +
-        '</div>';
-      }).join('') +
-    '</div>';
-  };
-
-  // Summary row
-  const totalItems = PLANNER_ITEMS.length;
-  const approvedCount = PLANNER_ITEMS.filter(i=>(approval[i.id]||{}).status==='approved').length;
-  const pendingCount = PLANNER_ITEMS.filter(i=>!(approval[i.id]||{}).status).length;
-
-  let html = `
-    <div class="insight blue mb">
-      <div class="insight-label">Content Planner</div>
-      ${totalItems} items this fortnight · <strong>${approvedCount} approved</strong> · <strong>${pendingCount} awaiting review</strong> — Click any card to view full brief, assign, approve, or update status.
-    </div>
-    ${sectionTitle('Week 1 — Days 1–7')}${week(0)}
-    ${sectionTitle('Week 2 — Days 8–14')}${week(7)}
-    <div class="card">
-      <div class="card-h">All Content Items</div>
-      <table><thead><tr><th>Day</th><th>Platform</th><th>Title</th><th>Assignee</th><th>Role</th><th>Status</th><th>Approval</th><th>Brief</th></tr></thead><tbody>`;
-
-  const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
-  PLANNER_ITEMS.forEach(item=>{
-    const status = saved[item.id]||'Idea';
-    const sc = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
-    const day = calDays[item.day];
-    const apprData = approval[item.id]||{};
-    const apprLabel = apprData.status==='approved'?'Approved':apprData.status==='adjustment'?'Adjustment':apprData.status==='rejected'?'Rejected':'—';
-    html += '<tr>' +
-      '<td style="font-size:11px">'+(day?day.label:'–')+'</td>' +
-      '<td><span class="platform-tag platform-'+item.platform+'">'+item.platform+'</span></td>' +
-      '<td style="font-weight:600;cursor:pointer;color:var(--teal)" onclick="openPlannerModal(\''+item.id+'\')">'+item.title+'</td>' +
-      '<td>'+item.assignee+'</td>' +
-      '<td style="font-size:11px;color:var(--muted)">'+item.assigneeRole+'</td>' +
-      '<td><span style="background:'+sc+';border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">'+status+'</span></td>' +
-      '<td style="font-size:11px">'+apprLabel+'</td>' +
-      '<td><a href="'+baseUrl+'/briefs/'+item.id+'.html" target="_blank" style="font-size:11px;color:var(--teal);font-weight:600">View →</a></td>' +
-      '</tr>';
-  });
-
-  html += '</tbody></table></div>';
   $('planner-content').innerHTML = html;
 }
 
-// ── Render: Content Review (Kanban) ──────────────────────────────────────────
+// ── Render: Content Review ────────────────────────────────────────────────────
 function renderContentReview() {
-  const REVIEW_KEY = 'cb247-content-review';
-  const saved = JSON.parse(localStorage.getItem(REVIEW_KEY)||'{}');
-
-  const CONTENT_QUEUE = [
-    {id:'cr1',platform:'gbp',title:'GBP Post — Sauna & Ice Bath',preview:'Recovery is part of training. Our Sauna + Ice Bath combo gives your body the reset it needs...',assignee:'Joanne',keyword:'sauna gym perth',channel:'GBP'},
-    {id:'cr2',platform:'instagram',title:'Reel — FIFO Lifestyle',preview:'Fly in. Train hard. We get it. CB247\'s FIFO-friendly freeze means your membership works around your roster...',assignee:'Agust',keyword:'fifo gym perth',channel:'Instagram'},
-    {id:'cr3',platform:'blog',title:'Blog — Best Gym Malaga',preview:'Targeting "best gym Malaga" (320 searches/month). H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247"...',assignee:'John',keyword:'best gym malaga',channel:'Blog'},
-    {id:'cr4',platform:'instagram',title:'Kids Hub Instagram Post',preview:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this...',assignee:'Shauna',keyword:'kids gym malaga',channel:'Instagram'},
-    {id:'cr5',platform:'tiktok',title:'TikTok — Ice Bath Reaction',preview:'First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247...',assignee:'Ivan',keyword:'ice bath gym perth',channel:'TikTok'},
-    {id:'cr6',platform:'meta',title:'Meta Ad — FIFO Audience',preview:'Headline: Train hard when you\'re home. Body: CB247 FIFO-friendly freeze. Pause anytime. $11.95/week...',assignee:'Jane',keyword:'',channel:'Meta Ads'},
-    {id:'cr7',platform:'gbp',title:'GBP Post — Reformer Pilates',preview:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook...',assignee:'Joanne',keyword:'reformer pilates perth',channel:'GBP'},
-    {id:'cr8',platform:'email',title:'Weekly Email Newsletter',preview:'Member spotlight + this week\'s class timetable + sauna booking tip for VIP members...',assignee:'Shauna',keyword:'',channel:'Email'},
-  ];
-
-  const COLS = [
-    {key:'generated', label:'Generated', desc:'AI output — Tia to review', color:'#6b7280'},
-    {key:'tia-approved', label:'Tia Approved', desc:'Sent to Jane for QC', color:'#3b82f6'},
-    {key:'jane-approved', label:'Jane Approved', desc:'Ready for Joanne', color:'#f59e0b'},
-    {key:'scheduled', label:'Scheduled', desc:'Joanne has this', color:'#8b5cf6'},
-    {key:'published', label:'Published', desc:'Live!', color:'#22c55e'},
-  ];
-
-  const moveCard = (id, col) => {
-    const s = JSON.parse(localStorage.getItem(REVIEW_KEY)||'{}');
-    s[id] = col;
-    localStorage.setItem(REVIEW_KEY, JSON.stringify(s));
-    // Update review badge
-    const pending = CONTENT_QUEUE.filter(c=>(s[c.id]||'generated')==='generated').length;
-    if($('review-badge')) $('review-badge').textContent = pending;
-    renderContentReview();
-  };
-  window.moveReviewCard = moveCard;
-
-  const cardHtml = (item) => {
-    const status = saved[item.id]||'generated';
-    const colIdx = COLS.findIndex(c=>c.key===status);
-    const prevCol = colIdx>0?COLS[colIdx-1].key:null;
-    const nextCol = colIdx<COLS.length-1?COLS[colIdx+1].key:null;
-    return `<div class="content-card" style="border-left-color:${COLS[colIdx].color}">
-      <span class="platform-tag platform-${item.platform}">${item.platform.toUpperCase()}</span>
-      <div class="cc-title">${item.title}</div>
-      <div class="cc-preview">${item.preview}</div>
-      ${item.keyword?`<div style="margin-top:6px"><span class="chip" style="font-size:9px">${item.keyword}</span></div>`:''}
-      <div class="cc-footer">
-        <span class="cc-assignee">→ ${item.assignee}</span>
-        <div style="display:flex;gap:4px">
-          ${prevCol?`<button onclick="moveReviewCard('${item.id}','${prevCol}')" style="background:#f3f4f6;border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer">← Back</button>`:''}
-          ${nextCol?`<button onclick="moveReviewCard('${item.id}','${nextCol}')" style="background:var(--teal);color:#fff;border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer;border:none">Approve →</button>`:''}
-        </div>
-      </div>
-    </div>`;
-  };
-
-  const pending = CONTENT_QUEUE.filter(c=>(saved[c.id]||'generated')==='generated').length;
-  if($('review-badge')) $('review-badge').textContent = pending;
-
-  let html = `
-    <div class="insight blue mb">
-      <div class="insight-label">Approval Flow</div>
-      <b>Tia</b> reviews Generated → approves to Jane &nbsp;·&nbsp; <b>Jane</b> QCs → approves to Joanne &nbsp;·&nbsp; <b>Joanne</b> schedules → marks Published.
-      Status saves in your browser automatically.
-    </div>
-    <div class="kanban">
-      ${COLS.map(col=>{
-        const items = CONTENT_QUEUE.filter(c=>(saved[c.id]||'generated')===col.key);
-        return `<div class="kanban-col">
-          <div class="kanban-col-header" style="color:${col.color}">
-            ${col.label} <span class="count">${items.length}</span>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${col.desc}</div>
-          ${items.map(cardHtml).join('')}
-          ${items.length===0?'<div style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0">Empty</div>':''}
-        </div>`;
-      }).join('')}
-    </div>`;
-
-  $('review-content').innerHTML = html;
+  $('review-content').innerHTML = comingSoon(
+    'Content Review',
+    'The Kanban approval board (Generated → Tia Approved → Jane QC → Scheduled → Published) activates once the Content Agent is generating weekly outputs.',
+    ['Content Agent pipeline producing weekly-content-YYYY-MM-DD.md',
+     'Team roles confirmed in config/team-roles.json',
+     'Social scheduler credentials connected (Metricool or Buffer)']
+  );
+  if($('review-badge')) $('review-badge').textContent = '';
 }
 
 // ── Render: Website Manager ───────────────────────────────────────────────────
 function renderWebsite() {
-  const seo = D.seo;
-  let html = `<div class="kpi-grid cols-3 mb">
-    ${kpiCard('','Broken Backlinks',seo.broken_backlinks.length,null,'Pages to fix or redirect','secondary')}
-    ${kpiCard('📤','Lost Backlinks',seo.lost_backlinks.length,null,'Last 30 days — outreach needed','secondary')}
-    ${kpiCard('🏥','Domain Rating',seo.domain_rating||'–',null,'Ahrefs authority 0–100')}
-  </div>`;
-
-  html += sectionTitle('🔴 Critical Dev Tasks');
-  html += `<div class="card mb"><ul class="task-list">
-    <li class="task-item"><span class="priority-pill p-critical">Critical</span>Fix broken backlinks — add 301 redirects to ${seo.broken_backlinks.length||0} broken pages</li>
-    <li class="task-item"><span class="priority-pill p-critical">Critical</span>Add H1 tags to all pages missing them (check Ahrefs Site Audit)</li>
-    <li class="task-item"><span class="priority-pill p-critical">Critical</span>Ensure unique meta descriptions on all 20 target keyword pages (&lt;160 chars)</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Add LocalBusiness JSON-LD schema to Malaga + Ellenbrook location pages</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Create /ellenbrook dedicated landing page — estimated $386/week Google Ads saving</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Compress images on top 5 pages (target: &lt;100kb per image, current LCP likely slow)</li>
-    <li class="task-item"><span class="priority-pill p-medium">Medium</span>Add breadcrumb schema markup to blog posts and location pages</li>
-    <li class="task-item"><span class="priority-pill p-medium">Medium</span>Set up 301 redirects for any URL changes from Ahrefs broken backlink report</li>
-    <li class="task-item"><span class="priority-pill p-medium">Medium</span>Submit NAP listings to AU directories: True Local, Yelp, Yellow Pages, Hot Frog</li>
-    <li class="task-item"><span class="priority-pill p-low">Low</span>Audit internal linking — ensure all service pages link to location pages</li>
-  </ul></div>`;
-
-  html += sectionTitle('Broken Backlinks — Fix These Pages');
-  html += `<div class="card mb"><table>
-    <thead><tr><th>Linking Site</th><th>Broken URL on Our Site</th><th class="num">DR</th><th>Fix</th></tr></thead><tbody>
-    ${seo.broken_backlinks.slice(0,8).map(b=>`<tr>
-      <td style="font-size:11px">${(b.url_from||'').replace(/https?:\/\//,'').slice(0,40)}</td>
-      <td style="font-size:11px;color:var(--red)">${(b.url_to||'').replace('https://chasingbetter247.com.au','')}</td>
-      <td class="num">${b.domain_rating_source||'–'}</td>
-      <td style="font-size:11px;color:var(--teal)">Add 301 redirect</td>
-    </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No broken backlinks — great! Run pull_ahrefs.py to check.</td></tr>'}
-    </tbody></table></div>`;
-
-  html += insight('teal','Website Manager Priority',
-    `<b>This week for Mark:</b><br>
-     1. Add LocalBusiness schema to both location pages (Malaga + Ellenbrook) — direct local pack ranking impact.<br>
-     2. Create /ellenbrook page — saves ~$386/week in Google Ads. Use the SEO brief content template.<br>
-     3. Fix broken backlinks from the table above — each one is a free domain authority gain.`);
-
-  $('web-content').innerHTML = html;
+  $('web-content').innerHTML = comingSoon(
+    'Website Manager',
+    'Technical SEO health, dev task queue, and broken backlink report will appear here once the Ahrefs API and Screaming Frog crawl are connected.',
+    ['Ahrefs API key configured in .env (pull_ahrefs.py)',
+     'Screaming Frog CLI installed (run_screaming_frog.py)',
+     'Site crawl run at least once to populate broken link data']
+  );
 }
 
 // ── Render: Recommendations ───────────────────────────────────────────────────
@@ -3446,116 +3505,54 @@ function renderRecommendations() {
   const saved   = JSON.parse(localStorage.getItem(REC_KEY)||'{}');
   const outcomes= JSON.parse(localStorage.getItem(OUTCOME_KEY)||'{}');
 
-  const STATUSES = ['new','accepted','inprogress','done','skipped'];
-  const STATUS_LABELS = {new:'New',accepted:'Accepted',inprogress:'In Progress',done:'Done ✓',skipped:'Skipped'};
-  const STATUS_CLASS  = {new:'status-new',accepted:'status-accepted',inprogress:'status-inprogress',done:'status-done',skipped:'status-skipped'};
-
-  // Recommendations generated by the AI OS (in production these come from state/ files)
-  const RECS = [
-    {id:'r1',channel:'seo',icon:'🔍',title:'Publish content for "reformer pilates malaga"',why:'Revo Fitness ranks #4 for this keyword (210 searches/month). CB247 has the service but no ranking page. Estimated: +$85/week organic value.',owner:'John + Shauna',impact:'+$85/wk organic',week:'Week of 2 Jun 2026'},
-    {id:'r2',channel:'ads',icon:'',title:'Pause Google Ads for keywords ranking organically #1–3',why:'Once CB247 ranks #1 organically for a keyword, running an ad on the same keyword wastes budget — users will click the organic result. Audit and pause overlapping campaigns.',owner:'Tia',impact:'Est. $200–400/wk saving',week:'Week of 2 Jun 2026'},
-    {id:'r3',channel:'gbp',icon:'',title:'Upload 10 photos per location this week',why:'Photo count directly impacts local pack ranking. Malaga has fewer photos than competitor benchmark. Each photo batch improves listing completeness score.',owner:'Joanne',impact:'Local pack ranking ↑',week:'Week of 2 Jun 2026'},
-    {id:'r4',channel:'seo',icon:'',title:'Reclaim broken backlinks — contact 3 top-DR linking sites',why:'Sites linking to broken CB247 pages are already willing to link to you. Emailing to update the URL is the fastest DR improvement possible.',owner:'John',impact:'DR increase',week:'Week of 2 Jun 2026'},
-    {id:'r5',channel:'web',icon:'',title:'Create /ellenbrook dedicated landing page',why:'Ellenbrook Google Ads spend ~$386/week. A dedicated landing page targeting "gym ellenbrook perth" would allow those ads to be paused.',owner:'Mark + John',impact:'Est. $386/wk saving',week:'Week of 2 Jun 2026'},
-    {id:'r6',channel:'gbp',icon:'⭐',title:'Print QR code review cards — both locations',why:'Review velocity is a top GBP ranking signal. Front desk verbal asks + QR code cards proven to increase review rate by 3–5x.',owner:'Tia + Front Desk',impact:'Reviews ↑ → local pack ↑',week:'Week of 2 Jun 2026'},
-    {id:'r7',channel:'content',icon:'',title:'Lead this week\'s Reels with ice bath / sauna content',why:'Google Trends Perth shows "cold plunge" and "sauna" rising. CB247 has this facility — competitors don\'t heavily feature it. First-mover advantage on social.',owner:'Agust + Ivan',impact:'Engagement ↑',week:'Week of 2 Jun 2026'},
-    {id:'r8',channel:'seo',icon:'',title:'Fix H1 tags on top 5 pages',why:'Multiple high-traffic pages missing or duplicating H1 tags. This is a basic on-page SEO issue costing ranking positions.',owner:'Mark',impact:'Rankings ↑ on affected pages',week:'Week of 2 Jun 2026'},
-  ];
-
-  const cycleStatus = (id) => {
-    const s = JSON.parse(localStorage.getItem(REC_KEY)||'{}');
-    const curr = s[id]||'new';
-    s[id] = STATUSES[(STATUSES.indexOf(curr)+1)%STATUSES.length];
-    localStorage.setItem(REC_KEY, JSON.stringify(s));
-    updateRecBadge();
-    renderRecommendations();
-  };
-  const saveOutcome = (id) => {
-    const inp = document.getElementById('outcome-'+id);
-    if(!inp) return;
-    const o = JSON.parse(localStorage.getItem(OUTCOME_KEY)||'{}');
-    o[id] = inp.value;
-    localStorage.setItem(OUTCOME_KEY, JSON.stringify(o));
-    renderRecommendations();
-  };
-  window.cycleRecStatus = cycleStatus;
-  window.saveRecOutcome = saveOutcome;
-
-  const tagClass = {seo:'t-seo',ads:'',gbp:'t-seo',meta:'',content:'',web:''};
-  const tagLabel = {seo:'SEO',ads:'Google Ads',gbp:'GBP',meta:'Meta Ads',content:'Content',web:'Website'};
-
-  // Filter UI
-  const filterRec = (filter) => {
-    document.querySelectorAll('.rec-filter-btn').forEach(b=>b.style.background=(b.dataset.f===filter?'var(--teal)':'#f3f4f6'));
-    document.querySelectorAll('.rec-filter-btn').forEach(b=>b.style.color=(b.dataset.f===filter?'#fff':'var(--text)'));
-    document.querySelectorAll('.rec-card-wrap').forEach(card=>{
-      const status = saved[card.dataset.id]||'new';
-      card.style.display = (filter==='all'||status===filter)?'block':'none';
-    });
-  };
-  window.filterRec = filterRec;
-
-  const openCount = RECS.filter(r=>(saved[r.id]||'new')==='new').length;
-  if($('rec-badge')) $('rec-badge').textContent = openCount;
-
-  let html = `
-    <div class="insight teal mb">
-      <div class="insight-label">How it works</div>
-      Every Monday the Marketing OS generates recommendations from data. Click the status button to update progress.
-      Add an outcome note when done — this builds your performance record over time.
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      ${['all','new','accepted','inprogress','done','skipped'].map(f=>`
-        <button class="rec-filter-btn" data-f="${f}" onclick="filterRec('${f}')"
-          style="border-radius:99px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;border:none;
-                 background:${f==='all'?'var(--teal)':'#f3f4f6'};color:${f==='all'?'#fff':'var(--text)'}">
-          ${f==='all'?'All':STATUS_LABELS[f]}
-          ${f==='new'?`(${openCount})`:''}
-        </button>`).join('')}
-    </div>
-    <div class="rec-board">
-      ${RECS.map(rec=>{
-        const status = saved[rec.id]||'new';
-        const outcome= outcomes[rec.id]||'';
-        return `<div class="rec-card-wrap" data-id="${rec.id}">
-          <div class="rec-card ${status==='done'?'done':''}" style="border-left:4px solid ${status==='done'?'var(--green)':status==='skipped'?'var(--border)':'var(--teal)'}">
-            
-            <div class="rec-body">
-              <div class="rec-tags">
-                <span class="rec-tag ${tagClass[rec.channel]||'tag-seo'}">${tagLabel[rec.channel]||rec.channel}</span>
-                <span style="font-size:10px;color:var(--muted)">${rec.week}</span>
-              </div>
-              <div class="rec-title">${rec.title}</div>
-              <div class="rec-why">${rec.why}</div>
-              <div class="rec-footer">
-                <span class="rec-impact">${rec.impact}</span>
-                <span class="rec-owner">Owner: ${rec.owner}</span>
-                <button class="rec-status-btn ${STATUS_CLASS[status]||'status-new'}" onclick="cycleRecStatus('${rec.id}')">
-                  ${STATUS_LABELS[status]||'New'} ↻
-                </button>
-              </div>
-              ${status==='done'?`
-                <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-                  <input id="outcome-${rec.id}" class="rec-outcome-input" placeholder="What was the actual outcome / result?" value="${outcome}">
-                  <button onclick="saveRecOutcome('${rec.id}')" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-weight:600">Save</button>
-                </div>`:''
-              }
-            </div>
+  // ── Agent-generated priorities from this week's pipeline ─────────────────
+  const _ao_r = D.raw_agent_outputs || {};
+  let agentPriHtml = '';
+  if (_ao_r.has_outputs) {
+    const ao_this = D.agent_outputs || {};
+    if (ao_this.priorities && ao_this.priorities.length) {
+      const ragColor = r => r==='🔴'?'#ef4444':r==='💰'?'#f59e0b':'#3FA69A';
+      agentPriHtml = `
+        <div style="margin-bottom:28px">
+          <div class="section-title">🎯 This Week's Agent Priorities — ${_ao_r.date}</div>
+          <div style="display:grid;gap:10px">
+            ${ao_this.priorities.map((p,i)=>`
+              <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ${ragColor(p.rag)};border-radius:6px;padding:14px 16px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:4px">${i+1}. ${p.title}</div>
+                ${p.why ? `<div style="font-size:11px;color:var(--muted-2);margin-bottom:6px">${p.why}</div>` : ''}
+                <div style="display:flex;gap:16px;font-size:11px;color:var(--muted)">
+                  ${p.who ? `<span>👤 ${p.who}</span>` : ''}
+                  ${p.deadline ? `<span>📅 ${p.deadline}</span>` : ''}
+                </div>
+              </div>`).join('')}
           </div>
         </div>`;
-      }).join('')}
-    </div>`;
+    }
+    if (!agentPriHtml && _ao_r.strategy) {
+      agentPriHtml = `
+        <div style="margin-bottom:28px">
+          <div class="section-title">🤖 Strategist Agent — ${_ao_r.date}</div>
+          <div class="card" style="padding:20px;font-size:12px;line-height:1.7;max-height:500px;overflow-y:auto">
+            ${formatAgentMd(_ao_r.strategy)}
+          </div>
+        </div>`;
+    }
+  }
 
-  $('rec-content').innerHTML = html;
+  const recComingSoon = comingSoon(
+    'Weekly Recommendations',
+    'Auto-generated action cards with owner, impact estimate, and status tracking will appear here once the Strategist Agent pipeline is running weekly.',
+    ['Strategist Agent producing weekly-strategy-YYYY-MM-DD.md',
+     'Performance Agent producing performance-week-YYYY-MM-DD.md',
+     'Run: bash scripts/weekly-report.sh to generate this week\'s recommendations']
+  );
+
+  if($('rec-badge')) $('rec-badge').textContent = '';
+  $('rec-content').innerHTML = agentPriHtml + recComingSoon;
 }
 
 function updateRecBadge() {
-  const saved = JSON.parse(localStorage.getItem('cb247-recommendations')||'{}');
-  const RECS_COUNT = 8; // match RECS array length
-  // Count 'new' ones - approximate from localStorage
-  const open = Object.values(saved).filter(v=>v==='new').length;
-  // if nothing saved, all are new
-  if($('rec-badge')) $('rec-badge').textContent = open||RECS_COUNT;
+  if($('rec-badge')) $('rec-badge').textContent = '';
 }
 
 // ── Render: Status bar ────────────────────────────────────────────────────────
@@ -3564,7 +3561,8 @@ function renderStatus() {
   const allLive = Object.values(s).every(v=>v==='live'||v==='suspended');
   $('system-dot').className = 'status-dot'+(allLive?'':' warn');
   $('refresh-label').textContent = 'Last refresh: '+D.refresh_ts;
-  $('page-footer').innerHTML = `CB247 Marketing OS &nbsp;·&nbsp; Generated: ${D.generated} &nbsp;·&nbsp; <a href="https://cb247agent.github.io/cb_claude/">cb247agent.github.io/cb_claude</a>`;
+  $('page-footer').innerHTML = `CB247 Marketing OS &nbsp;·&nbsp; Report period: <strong>${D.report_period}</strong> &nbsp;·&nbsp; Generated: ${D.generated} &nbsp;·&nbsp; <a href="https://cb247agent.github.io/cb_claude/">cb247agent.github.io/cb_claude</a>`;
+  if($('sidebar-week')) $('sidebar-week').textContent = D.report_period || '';
 }
 
 // ── Render: README / How It Works ────────────────────────────────────────────
@@ -3963,110 +3961,9 @@ function renderReadme() {
   `;
 }
 
-// ── Render: This Week (Agent Pipeline Intelligence) ──────────────────────────
-function renderThisWeek() {
-  const el = $('this-week-content');
-  if (!el) return;
-  const ao = D.agent_outputs || {};
+// ── Render: This Week removed — priorities shown on Recommendations page ──────
+// function renderThisWeek() { /* deleted */ }
 
-  if (!ao.has_outputs) {
-    el.innerHTML = `<div class="card" style="padding:32px;text-align:center;color:var(--muted)">
-      <div style="font-size:32px;margin-bottom:12px">⏳</div>
-      <div style="font-size:16px;font-weight:600;margin-bottom:8px">No agent outputs yet for today</div>
-      <div>Run the weekly pipeline: <code>bash scripts/weekly-report.sh</code></div>
-    </div>`;
-    return;
-  }
-
-  const ragColor = r => r === '🔴' ? '#ef4444' : r === '💰' ? '#10b981' : '#f59e0b';
-
-  // Scorecard
-  const scorecardRows = (ao.scorecard || []).map(r => `
-    <tr>
-      <td style="font-weight:500">${r.metric}</td>
-      <td style="font-weight:700;color:var(--teal)">${r.value}</td>
-      <td style="color:var(--muted);font-size:12px">${r.wow}</td>
-      <td style="font-size:18px">${r.status}</td>
-    </tr>`).join('');
-
-  // Priorities
-  const priorityCards = (ao.priorities || []).map((p, i) => `
-    <div class="card mb" style="border-left:4px solid ${ragColor(p.rag)};padding:16px">
-      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:8px">
-        <span style="font-size:20px;flex-shrink:0">${p.rag}</span>
-        <div style="font-weight:700;font-size:15px">${i+1}. ${p.title}</div>
-      </div>
-      ${p.why ? `<div style="font-size:13px;color:var(--muted);margin-bottom:6px">📊 ${p.why}</div>` : ''}
-      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;margin-top:8px">
-        ${p.who ? `<span style="background:rgba(63,166,154,0.1);color:var(--teal);padding:3px 8px;border-radius:4px">👤 ${p.who}</span>` : ''}
-        ${p.deadline ? `<span style="background:rgba(239,68,68,0.1);color:#ef4444;padding:3px 8px;border-radius:4px">📅 ${p.deadline}</span>` : ''}
-      </div>
-    </div>`).join('');
-
-  // Decisions
-  const decisionCards = (ao.decisions || []).map((d, i) => `
-    <div class="card mb" style="border-left:4px solid #8b5cf6;padding:16px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:8px">🤔 Decision ${i+1}: ${d.title}</div>
-      ${d.recommendation ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;white-space:pre-wrap">${d.recommendation.replace(/\n/g,'<br>')}</div>` : ''}
-      ${d.question ? `<div style="font-size:13px;font-weight:600;color:#8b5cf6">❓ ${d.question}</div>` : ''}
-    </div>`).join('');
-
-  // Team
-  const teamCards = (ao.team || []).map(t => `
-    <div class="card" style="padding:14px">
-      <div style="font-weight:700;margin-bottom:4px">${t.name}</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${t.role}</div>
-      ${t.tasks.map(task => `<div style="font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)">• ${task}</div>`).join('')}
-    </div>`).join('');
-
-  el.innerHTML = `
-    <!-- Seasonal Alert -->
-    ${ao.seasonal ? `
-    <div class="card mb" style="background:linear-gradient(135deg,rgba(63,166,154,0.15),rgba(63,166,154,0.05));border:1px solid var(--teal);padding:20px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--teal);margin-bottom:8px">📅 Seasonal Status</div>
-      <div style="font-size:13px;white-space:pre-wrap;line-height:1.6">${ao.seasonal.replace(/\n/g,'<br>')}</div>
-    </div>` : ''}
-
-    <!-- Weekly Narrative -->
-    ${ao.narrative ? `
-    <div class="card mb" style="background:rgba(0,0,0,0.15);padding:20px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px">📝 Weekly Narrative</div>
-      <div style="font-size:14px;line-height:1.7;color:var(--text)">${ao.narrative.replace(/\n\n/g,'<br><br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
-    </div>` : ''}
-
-    <!-- Scorecard -->
-    <div class="section-title">Weekly Scorecard</div>
-    <div class="card mb" style="overflow:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="border-bottom:2px solid var(--border)">
-          <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600">Metric</th>
-          <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600">Value</th>
-          <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600">WoW</th>
-          <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600">Status</th>
-        </tr></thead>
-        <tbody>${scorecardRows || '<tr><td colspan="4" style="padding:16px;color:var(--muted)">No scorecard data</td></tr>'}</tbody>
-      </table>
-    </div>
-
-    <!-- Top 5 Priorities -->
-    <div class="section-title">Top 5 Priorities This Week</div>
-    ${priorityCards || '<div class="card mb" style="color:var(--muted);padding:16px">No priorities found</div>'}
-
-    <!-- Decisions Needed -->
-    ${ao.decisions && ao.decisions.length ? `
-    <div class="section-title">Decisions Needed From Tia</div>
-    ${decisionCards}` : ''}
-
-    <!-- Team Assignments -->
-    ${ao.team && ao.team.length ? `
-    <div class="section-title">Team Assignments</div>
-    <div class="kpi-grid cols-3 mb">${teamCards}</div>` : ''}
-
-    <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:right">
-      Generated by 9-agent pipeline · ${ao.date || 'today'} · Next run: Monday 10AM Perth
-    </div>
-  `;
-}
 
 // ── Render: Action Tracker ────────────────────────────────────────────────────
 function renderTracker() {
@@ -4256,7 +4153,6 @@ function closeTrackerDetail() {
 function init() {
   renderStatus();
   renderOverview();
-  renderThisWeek();
   renderSEO();
   renderGAds();
   renderOrgSocial();
