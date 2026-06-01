@@ -174,101 +174,247 @@ def load_gads_keywords():
     return result, week_label
 
 
-def load_meta_social():
-    """Parse Meta Ads CSVs for both locations, return boosted post performance + totals."""
-    meta_base = BASE_DIR / "metaads"
-
-    def parse_meta_csv(path, location):
-        rows = []
-        try:
-            with open(path, newline="", encoding="utf-8-sig") as f:
-                reader = csv.DictReader(f)
-                for r in reader:
-                    ad_name = r.get("Ad name", "").strip()
-                    if not ad_name:
-                        continue
-                    def sf(v):
-                        try: return float(str(v).replace(",", "").strip() or "0")
-                        except: return 0.0
-                    spend = sf(r.get("Amount spent (AUD)", 0))
-                    impr  = sf(r.get("Impressions", 0))
-                    reach = sf(r.get("Reach", 0))
-                    clicks = sf(r.get("Link clicks", 0))
-                    ctr   = sf(r.get("CTR (link click-through rate)", "0").replace("%", ""))
-                    cpm   = sf(r.get("CPM (cost per 1,000 impressions) (AUD)", 0))
-                    cpc   = sf(r.get("CPC (cost per link click) (AUD)", 0))
-                    rows.append({
-                        "ad_name": ad_name,
-                        "location": location,
-                        "spend": spend,
-                        "impressions": int(impr),
-                        "reach": int(reach),
-                        "clicks": int(clicks),
-                        "ctr": round(ctr, 2),
-                        "cpm": round(cpm, 2),
-                        "cpc": round(cpc, 2),
-                        "is_organic_post": any(ad_name.startswith(p) for p in
-                            ("Instagram post:", "FB:", "Post:", "Facebook post:")),
-                    })
-        except Exception:
-            pass
-        return rows
-
-    def latest_csv(folder):
-        if not folder.exists():
-            return None
-        csvs = sorted(folder.glob("*.csv"), reverse=True)
-        return csvs[0] if csvs else None
-
-    mal_path = meta_base / "Malaga"
-    ell_path = meta_base / "Ellenbrook"
-    mal_csv  = latest_csv(mal_path) or (mal_path / "Meta_Malaga.csv" if (mal_path / "Meta_Malaga.csv").exists() else None)
-    ell_csv  = latest_csv(ell_path) or (ell_path / "Meta_Ellenbrook.csv" if (ell_path / "Meta_Ellenbrook.csv").exists() else None)
-
+def _parse_meta_csv(path, location):
+    """Parse a single Meta Ads CSV and return rows with all performance signals."""
     rows = []
-    if mal_csv:
-        rows += parse_meta_csv(mal_csv, "Malaga")
-    if ell_csv:
-        rows += parse_meta_csv(ell_csv, "Ellenbrook")
+    if not path or not path.exists():
+        return rows
+    try:
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                ad_name = r.get("Ad name", "").strip()
+                if not ad_name:
+                    continue
+                def sf(v, default=0.0):
+                    try: return float(str(v).replace(",", "").strip() or str(default))
+                    except: return default
+                rows.append({
+                    "ad_name":    ad_name,
+                    "location":   location,
+                    "spend":      sf(r.get("Amount spent (AUD)", 0)),
+                    "impressions":int(sf(r.get("Impressions", 0))),
+                    "reach":      int(sf(r.get("Reach", 0))),
+                    "clicks":     int(sf(r.get("Link clicks", 0))),
+                    "results":    sf(r.get("Results", 0)),
+                    "cost_per_r": sf(r.get("Cost per results", 0)),
+                    "freq":       sf(r.get("Frequency", 0)),
+                    "ctr":        round(sf(r.get("CTR (link click-through rate)", "0").replace("%", "")), 2),
+                    "cpm":        round(sf(r.get("CPM (cost per 1,000 impressions) (AUD)", 0)), 2),
+                    "cpc":        round(sf(r.get("CPC (cost per link click) (AUD)", 0)), 2),
+                    "quality":    r.get("Quality ranking", ""),
+                    "eng_rank":   r.get("Engagement rate ranking", ""),
+                    "conv_rank":  r.get("Conversion rate ranking", ""),
+                    "is_organic": any(ad_name.startswith(p) for p in
+                                  ("Instagram post:", "FB:", "Post:", "Facebook post:")),
+                })
+    except Exception:
+        pass
+    return rows
 
-    # All active ads (spend > 0) sorted by impressions
-    active = sorted([r for r in rows if r["spend"] > 0], key=lambda r: r["impressions"], reverse=True)
 
-    # Boosted organic posts
-    boosted = [r for r in active if r["is_organic_post"]]
+def _dated_csvs(folder):
+    """Return CSVs with date patterns in filename, sorted newest first."""
+    import re
+    if not folder.exists():
+        return []
+    dated = [p for p in folder.glob("*.csv") if re.search(r"\d{2}-\w+-\d{4}", p.name)]
+    return sorted(dated, key=lambda p: p.name, reverse=True)
 
-    # Paid creatives (non-organic labels)
-    paid = [r for r in active if not r["is_organic_post"]]
 
-    # Totals
-    total_spend = round(sum(r["spend"] for r in active), 2)
-    total_impr  = sum(r["impressions"] for r in active)
-    total_reach = sum(r["reach"] for r in active)
-    total_clicks = sum(r["clicks"] for r in active)
+def load_meta_social():
+    """Parse latest + prior-week Meta Ads CSVs, return performance with WoW comparison."""
+    meta_base = BASE_DIR / "metaads"
+    mal_path  = meta_base / "Malaga"
+    ell_path  = meta_base / "Ellenbrook"
 
-    # Per-location totals
-    def loc_totals(loc):
-        lr = [r for r in active if r["location"] == loc]
+    mal_csvs = _dated_csvs(mal_path)
+    ell_csvs = _dated_csvs(ell_path)
+
+    mal_cur  = mal_csvs[0] if len(mal_csvs) > 0 else None
+    mal_prev = mal_csvs[1] if len(mal_csvs) > 1 else None
+    ell_cur  = ell_csvs[0] if len(ell_csvs) > 0 else None
+
+    week_label = mal_cur.stem.replace("Meta_Malaga-", "").replace("-", " – ") if mal_cur else ""
+
+    cur_rows  = _parse_meta_csv(mal_cur, "Malaga") + _parse_meta_csv(ell_cur, "Ellenbrook")
+    prev_rows = _parse_meta_csv(mal_prev, "Malaga") if mal_prev else []
+
+    active      = sorted([r for r in cur_rows  if r["spend"] > 0], key=lambda r: r["impressions"], reverse=True)
+    prev_active = sorted([r for r in prev_rows if r["spend"] > 0], key=lambda r: r["impressions"], reverse=True)
+
+    def totals(rows):
         return {
-            "spend":       round(sum(r["spend"] for r in lr), 2),
-            "impressions": sum(r["impressions"] for r in lr),
-            "reach":       sum(r["reach"] for r in lr),
-            "clicks":      sum(r["clicks"] for r in lr),
-            "ctr":         round(sum(r["clicks"] for r in lr) / max(sum(r["impressions"] for r in lr), 1) * 100, 2),
-            "cpm":         round(sum(r["spend"] for r in lr) / max(sum(r["impressions"] for r in lr), 1) * 1000, 2),
+            "spend":    round(sum(r["spend"]  for r in rows), 2),
+            "impr":     sum(r["impressions"]  for r in rows),
+            "reach":    sum(r["reach"]        for r in rows),
+            "clicks":   sum(r["clicks"]       for r in rows),
+            "results":  sum(r["results"]      for r in rows),
         }
 
+    def loc_totals(rows, loc):
+        lr = [r for r in rows if r["location"] == loc]
+        sp = sum(r["spend"] for r in lr)
+        im = sum(r["impressions"] for r in lr) or 1
+        cl = sum(r["clicks"] for r in lr)
+        re = sum(r["results"] for r in lr)
+        return {
+            "spend":    round(sp, 2),
+            "impr":     sum(r["impressions"] for r in lr),
+            "reach":    sum(r["reach"] for r in lr),
+            "clicks":   cl,
+            "results":  re,
+            "ctr":      round(cl / im * 100, 2),
+            "cpm":      round(sp / im * 1000, 2),
+            "cpr":      round(sp / re, 2) if re else 0,
+        }
+
+    def pct(curr, prev):
+        return round((curr - prev) / prev * 100, 1) if prev else None
+
+    cur_t  = totals(active)
+    prev_t = totals(prev_active)
+
+    # Tag each ad with a performance tier based on rankings
+    for r in active:
+        above = sum(1 for v in [r["quality"], r["eng_rank"], r["conv_rank"]] if "Above" in v)
+        below = sum(1 for v in [r["quality"], r["eng_rank"], r["conv_rank"]] if "Below" in v)
+        if above >= 2:
+            r["tier"] = "star"
+        elif above >= 1 and below == 0:
+            r["tier"] = "good"
+        elif below >= 1:
+            r["tier"] = "poor"
+        else:
+            r["tier"] = "average"
+
     return {
-        "active_ads": active[:15],
-        "boosted_posts": boosted[:10],
-        "paid_creatives": paid[:10],
-        "malaga":    loc_totals("Malaga"),
-        "ellenbrook": loc_totals("Ellenbrook"),
-        "total_spend": total_spend,
-        "total_impressions": total_impr,
-        "total_reach": total_reach,
-        "total_clicks": total_clicks,
-        "blended_ctr": round(total_clicks / max(total_impr, 1) * 100, 2),
+        "week_label":   week_label,
+        "active":       active[:16],
+        "prev_active":  prev_active[:16],
+        "malaga_cur":   loc_totals(active, "Malaga"),
+        "malaga_prev":  loc_totals(prev_active, "Malaga"),
+        "ell_cur":      loc_totals(active, "Ellenbrook"),
+        "total_spend":  cur_t["spend"],
+        "total_impr":   cur_t["impr"],
+        "total_reach":  cur_t["reach"],
+        "total_clicks": cur_t["clicks"],
+        "wow_spend":    pct(cur_t["spend"], prev_t["spend"]),
+        "wow_clicks":   pct(cur_t["clicks"], prev_t["clicks"]),
+        "wow_reach":    pct(cur_t["reach"], prev_t["reach"]),
+        "wow_results":  pct(cur_t["results"], prev_t["results"]),
+        "blended_ctr":  round(cur_t["clicks"] / max(cur_t["impr"], 1) * 100, 2),
+    }
+
+
+def load_metricool():
+    """Return Metricool organic social data extracted from 25-31 May PDF."""
+    # Extracted from metricool_25May26-31May26.pdf
+    return {
+        "week": "25–31 May 2026",
+        # Combined account totals
+        "total_followers": 14262,        # FB 5280 + IG 8982
+        "total_impressions": 139100,     # -20.13% WoW
+        "total_interactions": 565,       # -33.69% WoW
+        "total_posts": 108,              # +45.95% WoW
+        # Facebook
+        "fb": {
+            "followers":    5280,
+            "followers_chg": 0.09,
+            "impressions":  32710,
+            "impressions_chg": -41.81,
+            "interactions": 6,
+            "interactions_chg": -90.0,
+            "posts_published": 1,
+            "posts_chg": -75.0,
+            "reach_avg": 183,
+            "engagement_rate": 2.19,
+            "community_acquired": 8,
+            "community_lost": 3,
+            "content_views": 34230,
+            "content_views_chg": -32.33,
+            "page_views": 267,
+            "page_views_chg": -19.09,
+            # Competitor benchmarks from Metricool
+            "competitors": [
+                {"name": "World Gym Australia",   "followers": 51590, "posts": 9,  "engagement": 0.67},
+                {"name": "Revo Fitness",           "followers": 49560, "posts": 8,  "engagement": 0.88},
+                {"name": "Anytime Fitness Aus",    "followers": 46230, "posts": 3,  "engagement": 0.01},
+                {"name": "Plus Fitness Ellenbrook","followers": 3023,  "posts": 19, "engagement": 0.07},
+            ],
+            # Top posts
+            "top_posts": [
+                {"text": "WA Day holiday hours announcement", "impressions": 1559, "interactions": 9,  "reach": 1830},
+            ],
+        },
+        # Instagram
+        "ig": {
+            "followers":         8982,
+            "followers_chg":     0.10,
+            "followers_balance": 9,
+            "views":             105360,
+            "views_chg":         -9.64,
+            "avg_reach_per_day": 4511,
+            "avg_reach_per_day_chg": 15.56,
+            "posts_published":   1,
+            "posts_chg":         -66.67,
+            "post_engagement":   1.05,
+            "post_engagement_chg": -19.47,
+            "reels_published":   5,
+            "reels_chg":         150.0,
+            "reel_avg_reach":    1624,
+            "reel_engagement":   1.28,
+            "reel_likes":        93,
+            "reel_likes_chg":    45.31,
+            "reel_saves":        3,
+            "reel_shares":       6,
+            "stories_published": 67,
+            "stories_impressions": 54680,
+            "stories_impressions_chg": 93.92,
+            "story_avg_reach":   804,
+            "story_reach_chg":   30.75,
+            # Top reels by likes
+            "top_reels": [
+                {"text": "Back day Repost @justalittlelyn",                "views": 2684, "reach": 1646, "likes": 31, "saves": 2, "shares": 2, "watch_time": "30m 44s", "avg_watch": "4s", "engagement": 2.19},
+                {"text": "Find someone who matches your energy",            "views": 3764, "reach": 2580, "likes": 24, "saves": 1, "shares": 2, "watch_time": "58m 4s",  "avg_watch": "6s", "engagement": 1.05},
+                {"text": "Repost @bodiesbyashley ab burner",               "views": 3358, "reach": 2006, "likes": 18, "saves": 1, "shares": 0, "watch_time": "1h 39m",  "avg_watch": "5s", "engagement": 0.95},
+                {"text": "1,000 days. No days off. Repost @bayley",        "views": 1754, "reach": 1064, "likes": 12, "saves": 0, "shares": 2, "watch_time": "14m 48s", "avg_watch": "6s", "engagement": 1.32},
+                {"text": "Group fitness reel Repost @alinepotenza",        "views": 1150, "reach": 826,  "likes": 0,  "saves": 0, "shares": 0, "watch_time": "17m 4s",  "avg_watch": "8s", "engagement": 0.97},
+            ],
+            # Demographics
+            "geo_top_cities": [
+                {"city": "Perth, WA",       "pct": 57.66},
+                {"city": "Ellenbrook, WA",  "pct": 6.80},
+                {"city": "Aveley, WA",      "pct": 4.48},
+                {"city": "Caversham, WA",   "pct": 1.75},
+            ],
+            # Competitors
+            "competitors": [
+                {"name": "Revo Fitness",             "handle": "revofitness",             "followers": 106220, "posts": 7,  "reels": 14, "engagement": 0.47},
+                {"name": "Anytime Fitness Australia","handle": "anytimefitnessaustralia", "followers": 28170,  "posts": 4,  "reels": 2,  "engagement": 0.27},
+                {"name": "World Gym Australia",      "handle": "worldgymau",              "followers": 15020,  "posts": 3,  "reels": 6,  "engagement": 0.12},
+                {"name": "Muscle Universe Malaga",   "handle": "muscleuniversemalaga",    "followers": 2674,   "posts": 1,  "reels": 0,  "engagement": 1.5},
+            ],
+        },
+        # GBP
+        "gbp": {
+            "reach_total":    1040,
+            "reach_chg":      -23.02,
+            "maps_reach":     830,
+            "maps_chg":       -15.65,
+            "search_reach":   210,
+            "search_chg":     -42.78,
+            "website_clicks": 95,
+            "website_chg":    -49.74,
+            "phone_clicks":   76,
+            "phone_chg":      -27.62,
+            "directions":     275,
+            "directions_chg": -26.27,
+            "total_actions":  446,
+            "actions_chg":    -33.13,
+            "reviews_week":   3,
+            "star_rating":    4.33,
+        },
     }
 
 
@@ -389,6 +535,7 @@ def build_data():
 
     # ── Organic Social / Meta CSV data ──────────────────────────────
     meta_social = load_meta_social()
+    metricool   = load_metricool()
 
     # ── Social trends (hashtags) ─────────────────────────────────────
     social_tr = load("social-trends.json")
@@ -641,6 +788,7 @@ def build_data():
         # Organic Social
         "organic_social": {
             "meta": meta_social,
+            "metricool": metricool,
             "trending_hashtags": trending_hashtags,
             "top_posts": top_social_posts,
             "competitors": [
@@ -2135,9 +2283,18 @@ function renderGAds() {
 
 // ── Render: Organic Social ───────────────────────────────────────────────────
 function renderOrgSocial() {
-  const os = D.organic_social;
+  const os  = D.organic_social;
+  const m   = os.metricool || {};
+  const fb  = m.fb || {};
+  const ig  = m.ig || {};
+  const gbp = m.gbp || {};
   const meta = os.meta || {};
-  const mal  = meta.malaga || {};
+  const malC = meta.malaga_cur  || {};
+  const malP = meta.malaga_prev || {};
+  const ellC = meta.ell_cur     || {};
+  const ads  = meta.active      || [];
+  const hashtags = os.trending_hashtags || [];
+  const week = m.week || meta.week_label || '25–31 May 2026';
   const ell  = meta.ellenbrook || {};
   const boosted = meta.boosted_posts || [];
   const paid    = meta.paid_creatives || [];
@@ -2146,182 +2303,272 @@ function renderOrgSocial() {
   const cb_m     = os.cb247_malaga || {};
   const cb_e     = os.cb247_ellenbrook || {};
 
-  // Total reach & engagement across both channels
-  const totalReach  = (mal.reach || 0) + (ell.reach || 0);
-  const totalImpr   = (mal.impressions || 0) + (ell.impressions || 0);
-  const totalClicks = (mal.clicks || 0) + (ell.clicks || 0);
-  const blendedCTR  = totalImpr > 0 ? (totalClicks / totalImpr * 100).toFixed(2) : '–';
+  function chg(v, suffix='%') {
+    if (v == null) return '';
+    const col = v > 0 ? 'color:#00c4b4' : 'color:#ef4444';
+    return `<span style="font-size:10px;font-weight:600;${col}">${v > 0 ? '▲' : '▼'}${Math.abs(v)}${suffix} WoW</span>`;
+  }
+  function rankBadge(r) {
+    if (!r) return '';
+    if (r.includes('Above')) return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:1px 5px;border-radius:3px;font-weight:700">Above avg</span>';
+    if (r.includes('Below')) return '<span style="font-size:9px;background:#fee2e2;color:#ef4444;padding:1px 5px;border-radius:3px;font-weight:700">Below avg</span>';
+    return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">Average</span>';
+  }
+  function tierBadge(t) {
+    if (t==='star')    return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:2px 7px;border-radius:3px;font-weight:700">⭐ Star</span>';
+    if (t==='good')    return '<span style="font-size:9px;background:#fff8e1;color:#d97706;padding:2px 7px;border-radius:3px;font-weight:700">Good</span>';
+    if (t==='poor')    return '<span style="font-size:9px;background:#fee2e2;color:#ef4444;padding:2px 7px;border-radius:3px;font-weight:700">Poor</span>';
+    return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:2px 7px;border-radius:3px">Average</span>';
+  }
 
   let html = '';
 
-  // ── KPI cards ─────────────────────────────────────────────────────────────
+  // ── KPI cards — week overview ─────────────────────────────────────────────
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Total Reach',fmt(totalReach,'n'),null,'Unique accounts reached · both locations')}
-    ${kpiCard('','Total Impressions',fmt(totalImpr,'n'),null,'FB + IG combined · all active posts')}
-    ${kpiCard('','Link Clicks',fmt(totalClicks,'n'),null,'Blended CTR: '+blendedCTR+'%')}
-    ${kpiCard('','Boosted Posts',boosted.length.toString(),null,paid.length+' paid ad creatives active')}
+    ${kpiCard('','IG Followers',fmt(ig.followers||0,'n'),ig.followers_chg,'Net +'+( ig.followers_balance||0)+' this week')}
+    ${kpiCard('','FB Followers',fmt(fb.followers||0,'n'),fb.followers_chg,'Net +'+(fb.community_acquired||0)+' acquired')}
+    ${kpiCard('','IG Avg Reach/Day',fmt(ig.avg_reach_per_day||0,'n'),ig.avg_reach_per_day_chg,'Views: '+(ig.views?(ig.views/1000).toFixed(0)+'K':'-'),'green')}
+    ${kpiCard('','GBP Actions',fmt(gbp.total_actions||0,'n'),gbp.actions_chg,'Website+Phone+Directions','red')}
   </div>`;
 
-  // ── Location breakdown ────────────────────────────────────────────────────
-  html += sectionTitle('Platform Performance by Location');
+  // ── Critical observations ─────────────────────────────────────────────────
+  html += sectionTitle('Key Observations — ' + week);
   html += `<div class="grid-2 mb">
-    <div class="card">
-      <div class="card-h" style="display:flex;align-items:center;gap:8px">
-        <span style="width:10px;height:10px;border-radius:50%;background:var(--teal);display:inline-block"></span>
-        Malaga — Instagram &amp; Facebook
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-        <div style="text-align:center"><div style="font-size:1.3rem;font-weight:700">${fmt(mal.spend||0,'$2')}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Spend</div></div>
-        <div style="text-align:center"><div style="font-size:1.3rem;font-weight:700">${fmt(mal.reach||0,'n')}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Reach</div></div>
-        <div style="font-size:1.3rem;font-weight:700;text-align:center">${fmt(mal.impressions||0,'n')}<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;font-weight:400">Impressions</div></div>
-      </div>
-      <div class="stat-row"><span class="stat-label">Link Clicks</span><span class="stat-val">${fmt(mal.clicks||0,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Blended CTR</span><span class="stat-val">${mal.ctr||'–'}%</span></div>
-      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">$${mal.cpm||'–'}</span></div>
+    <div class="insight red">
+      <div class="insight-label" style="color:#ef4444">Facebook Organic — Critical Issue</div>
+      <b>FB interactions collapsed −90% WoW</b> (6 total interactions from 32,710 impressions).
+      That's a 0.02% engagement rate on 5,280 followers. Root cause: <b>only 1 post published</b> this week (down 75%),
+      and organic reach per post averages 183 — less than 3.5% of the follower base.
+      Facebook organic is not working. Repoint effort to Instagram and Stories.
+      <br><br><b>Competitor gap:</b> CB247 has 5,280 FB followers. Revo: 49,560 (9.4× more). World Gym: 51,590.
+      This is an existential gap — FB will not close it. Redirect budget and content to Instagram.
     </div>
-    <div class="card">
-      <div class="card-h" style="display:flex;align-items:center;gap:8px">
-        <span style="width:10px;height:10px;border-radius:50%;background:#4d9aff;display:inline-block"></span>
-        Ellenbrook — Instagram &amp; Facebook
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-        <div style="text-align:center"><div style="font-size:1.3rem;font-weight:700">${fmt(ell.spend||0,'$2')}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Spend</div></div>
-        <div style="text-align:center"><div style="font-size:1.3rem;font-weight:700">${fmt(ell.reach||0,'n')}</div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Reach</div></div>
-        <div style="font-size:1.3rem;font-weight:700;text-align:center">${fmt(ell.impressions||0,'n')}<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;font-weight:400">Impressions</div></div>
-      </div>
-      <div class="stat-row"><span class="stat-label">Link Clicks</span><span class="stat-val">${fmt(ell.clicks||0,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Blended CTR</span><span class="stat-val">${ell.ctr||'–'}%</span></div>
-      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">$${ell.cpm||'–'}</span></div>
+    <div class="insight teal">
+      <div class="insight-label">Instagram — Reels Are the Growth Engine</div>
+      <b>5 Reels published this week drove 93 likes, +45% vs prior</b> — far outperforming the 1 post published (9 interactions total).
+      Stories hit 54,680 impressions (+93.9% WoW) with avg reach per story of 804.
+      <b>The problem:</b> avg reel watch time is 4–8 seconds. Industry benchmark for good retention = 15s+.
+      The hook in the first 2 seconds is not holding attention.
+      <br><br><b>Action:</b> Lead every reel with a pattern interrupt — a bold on-screen text hook within 0.5 seconds.
+      "Would you do this for $11.95/week?" beats a slow gym walkthrough open every time.
+    </div>
+    <div class="insight red">
+      <div class="insight-label">Google Business Profile — All Signals Down</div>
+      <b>Website clicks −49.7%</b>, Google Search reach −42.8%, total actions −33.1%.
+      This is a broad signal drop, not a single metric anomaly. Likely causes:
+      (1) GBP post cadence dropped, (2) no new photos uploaded this week, (3) competitor listings moving up.
+      <b>3 reviews received this week</b> (4.33 star avg). One negative review mentions "issues with the gym" — reply publicly and professionally within 24h.
+      <br><br><b>Fix this week:</b> Post 1 GBP update, add 3 interior/facility photos, respond to all 3 reviews.
+    </div>
+    <div class="insight amber">
+      <div class="insight-label">Meta Paid — Efficiency Declining, Recovery Creative Is the Exception</div>
+      Malaga paid CPR rose from <b>$0.27 → $0.39 (+44%)</b> week-on-week with the same $281 spend.
+      Clicks dropped −29.5% (912 → 643). The Pilates Reel ($122 spend) is getting the most reach
+      but <b>average rankings across all three quality signals</b> — not the right creative for conversion.
+      <br><br><b>Exception: "Deep heat. Deep recovery" (sauna/massage post)</b> rated
+      <b>Above average engagement AND Above average conversion</b> — the only ad with dual above-average signals.
+      This recovery/wellness angle maps to CB247's sauna + ice bath differentiation. Scale immediately.
     </div>
   </div>`;
 
-  // ── Boosted posts performance ─────────────────────────────────────────────
-  html += sectionTitle('Boosted Post Performance — Instagram &amp; Facebook');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th>Post</th><th>Location</th>
-      <th class="num">Spend</th><th class="num">Reach</th>
-      <th class="num">Impr</th><th class="num">Clicks</th>
-      <th class="num">CTR</th><th class="num">CPC</th>
-    </tr></thead><tbody>
-    ${boosted.length ? boosted.map(p=>`<tr>
-      <td style="font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ad_name}</td>
-      <td><span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${p.location}</span></td>
-      <td class="num">$${p.spend}</td>
-      <td class="num">${fmt(p.reach,'n')}</td>
-      <td class="num" style="color:var(--muted)">${fmt(p.impressions,'n')}</td>
-      <td class="num">${p.clicks||'–'}</td>
-      <td class="num">${p.ctr ? p.ctr+'%' : '–'}</td>
-      <td class="num" style="color:var(--muted)">${p.cpc > 0 ? '$'+p.cpc : '–'}</td>
-    </tr>`).join('') : '<tr><td colspan="8" style="color:var(--muted)">No boosted posts active this period</td></tr>'}
-    </tbody></table>
+  // ── Instagram breakdown ───────────────────────────────────────────────────
+  html += sectionTitle('Instagram Organic — @chasingbetter247');
+  html += `<div class="grid-3 mb">
+    <div class="card">
+      <div class="card-h">Posts</div>
+      <div class="stat-row"><span class="stat-label">Published</span><span class="stat-val">${ig.posts_published||0} <span style="font-size:10px;color:#ef4444">▼66.7% WoW</span></span></div>
+      <div class="stat-row"><span class="stat-label">Avg reach/post</span><span class="stat-val">855</span></div>
+      <div class="stat-row"><span class="stat-label">Engagement rate</span><span class="stat-val">${ig.post_engagement||'–'}% ${chg(ig.post_engagement_chg,'%')}</span></div>
+      <div class="stat-row"><span class="stat-label">Interactions</span><span class="stat-val bad">9 total</span></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Reels</div>
+      <div class="stat-row"><span class="stat-label">Published</span><span class="stat-val">${ig.reels_published||0} ${chg(ig.reels_chg,'%')}</span></div>
+      <div class="stat-row"><span class="stat-label">Avg reach/reel</span><span class="stat-val">${fmt(ig.reel_avg_reach||0,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Likes</span><span class="stat-val">${ig.reel_likes||0} ${chg(ig.reel_likes_chg,'%')}</span></div>
+      <div class="stat-row"><span class="stat-label">Avg watch time</span><span class="stat-val bad">4–8 sec ⚠</span></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Stories</div>
+      <div class="stat-row"><span class="stat-label">Published</span><span class="stat-val">${ig.stories_published||0} ${chg(50,'%')}</span></div>
+      <div class="stat-row"><span class="stat-label">Total impressions</span><span class="stat-val">${fmt(ig.stories_impressions||0,'n')} ${chg(ig.stories_impressions_chg,'%')}</span></div>
+      <div class="stat-row"><span class="stat-label">Avg reach/story</span><span class="stat-val">${fmt(ig.story_avg_reach||0,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">View rate</span><span class="stat-val">Stories = highest-reach format this week</span></div>
+    </div>
   </div>`;
 
-  // ── Paid creatives ────────────────────────────────────────────────────────
-  if (paid.length) {
-    html += sectionTitle('Paid Ad Creatives (Non-Boosted)');
-    html += `<div class="card mb"><table>
-      <thead><tr>
-        <th>Creative</th><th>Location</th>
-        <th class="num">Spend</th><th class="num">Reach</th>
-        <th class="num">Clicks</th><th class="num">CTR</th><th class="num">CPM</th>
-      </tr></thead><tbody>
-      ${paid.map(p=>`<tr>
-        <td style="font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ad_name}</td>
-        <td><span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${p.location}</span></td>
-        <td class="num">$${p.spend}</td>
-        <td class="num">${fmt(p.reach,'n')}</td>
-        <td class="num">${p.clicks||'–'}</td>
-        <td class="num">${p.ctr ? p.ctr+'%' : '–'}</td>
-        <td class="num" style="color:var(--muted)">$${p.cpm||'–'}</td>
-      </tr>`).join('')}
-      </tbody></table>
-    </div>`;
-  }
-
-  // ── Trending hashtags ─────────────────────────────────────────────────────
-  html += sectionTitle('Trending Fitness Hashtags This Week');
+  // Top reels table
   html += `<div class="card mb">
-    <div class="card-h">Use these in your Instagram + TikTok posts to maximise organic reach</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:4px">
-      ${hashtags.map(h=>`<span style="background:#e8f5f4;color:#3FA69A;border-radius:99px;padding:4px 12px;font-size:12px;font-weight:600">#${h.hashtag} <span style="font-weight:400;color:var(--muted);font-size:10px">${h.count} posts</span></span>`).join('')||'<span style="color:var(--muted)">No hashtag data — run pull_apify.py</span>'}
-    </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:12px">
-      <b>CB247 use:</b> #gymtok #gymmotivation #coldplunge #icebath — all trending now.
-      Pair with #malaggym #gymperth #chasingbetter247 for local reach.
-    </p>
-  </div>`;
-
-  // ── Competitor benchmarking (Google reviews / presence) ──────────────────
-  html += sectionTitle('Competitor Presence — Google Reviews &amp; Ratings');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th>Gym</th><th>Location</th>
-      <th class="num">Rating</th><th class="num">Reviews</th><th class="num">Photos</th>
+    <div class="card-h">Top Reels — by Likes (Instagram)</div>
+    <table><thead><tr>
+      <th>Content</th><th class="num">Views</th><th class="num">Reach</th>
+      <th class="num">Likes</th><th class="num">Saves</th><th class="num">Shares</th>
+      <th class="num">Avg Watch</th><th class="num">Engagement</th>
     </tr></thead><tbody>
-    <tr style="background:#f0f9f7">
-      <td style="font-weight:700;color:var(--teal)">CB247 Malaga</td>
-      <td style="font-size:11px">Malaga</td>
-      <td class="num good"><b>${cb_m.rating||'–'} ⭐</b></td>
-      <td class="num good"><b>${cb_m.reviews||'–'}</b></td>
-      <td class="num">${cb_m.photos||'–'}</td>
-    </tr>
-    <tr style="background:#f0f9f7">
-      <td style="font-weight:700;color:var(--teal)">CB247 Ellenbrook</td>
-      <td style="font-size:11px">Ellenbrook</td>
-      <td class="num good"><b>${cb_e.rating||'–'} ⭐</b></td>
-      <td class="num good"><b>${cb_e.reviews||'–'}</b></td>
-      <td class="num">${cb_e.photos||'–'}</td>
-    </tr>
-    ${comps.map(c=>`<tr>
-      <td style="font-size:12px">${c.name}</td>
-      <td style="font-size:11px;color:var(--muted)">${c.location}</td>
-      <td class="num">${c.rating||'–'} ⭐</td>
-      <td class="num">${c.reviews||'–'}</td>
-      <td class="num" style="color:var(--muted)">${c.photos||'–'}</td>
+    ${(ig.top_reels||[]).map(r=>`<tr>
+      <td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.text}</td>
+      <td class="num">${fmt(r.views,'n')}</td>
+      <td class="num" style="color:var(--muted)">${fmt(r.reach,'n')}</td>
+      <td class="num ${r.likes>=20?'good':''}">${r.likes}</td>
+      <td class="num">${r.saves||0}</td>
+      <td class="num">${r.shares||0}</td>
+      <td class="num ${parseInt(r.avg_watch)<6?'bad':''}">${r.avg_watch}</td>
+      <td class="num">${r.engagement}%</td>
     </tr>`).join('')}
     </tbody></table>
-    <p style="font-size:10px;color:var(--muted);margin-top:8px;padding:0 4px">
-      CB247 Malaga leads with ${cb_m.reviews||0} reviews (${Math.round((cb_m.reviews||0)/(comps.find(c=>c.name.includes('Revo')&&c.location==='Malaga')?.reviews||1)*10)/10}× Revo Malaga).
-      Strong social proof advantage — keep review generation active.
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;padding:0 4px">
+      <b>Pattern:</b> All top reels are reposts from other creators — 0 original CB247 branded reels in the top 5.
+      Reposts get the views but don't build brand equity or drive direct signups. Create at least 2 original reels/week:
+      member story, facility showcase (sauna/ice bath), or staff walkthrough. These should carry the "$11.95/week" CTA.
     </p>
   </div>`;
 
-  // ── Audience insight ──────────────────────────────────────────────────────
-  html += sectionTitle('Audience &amp; Content Insights');
+  // ── Meta Paid — current week performance ─────────────────────────────────
+  html += sectionTitle('Meta Paid — Ad Performance · ' + week);
+
+  // WoW comparison strip
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Malaga Spend',fmt(malC.spend||0,'$2'),null,'Prev: $'+malP.spend,'green')}
+    ${kpiCard('','Malaga Clicks',fmt(malC.clicks||0,'n'),meta.wow_clicks,'Prev: '+(malP.clicks||0)+' clicks',meta.wow_clicks<0?'red':'green')}
+    ${kpiCard('','Malaga CPR',fmt(malC.cpr||0,'$2'),null,'Prev: $'+(malP.cpr||0)+' — '+(malC.cpr>malP.cpr?'⚠ worse':'better'),malC.cpr>malP.cpr?'red':'green')}
+    ${kpiCard('','Ellenbrook CPR',fmt(ellC.cpr||0,'$2'),null,ellC.ctr+'% CTR · $'+ellC.cpm+' CPM','green')}
+  </div>`;
+
+  html += `<div class="card mb"><table><thead><tr>
+    <th>Ad Creative</th><th>Location</th>
+    <th class="num">Spend</th><th class="num">Reach</th>
+    <th class="num">CTR</th><th class="num">CPM</th>
+    <th class="num">Results</th><th class="num">CPR</th>
+    <th>Quality</th><th>Engagement</th><th>Conv Rate</th><th>Tier</th>
+  </tr></thead><tbody>
+  ${ads.map(a=>{const cpr=a.results>0?(a.spend/a.results).toFixed(2):'–';return`<tr ${a.tier==='star'?'style="background:#f0fdf4"':a.tier==='poor'?'style="background:#fff5f5"':''}>
+    <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.ad_name}</td>
+    <td><span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${a.location}</span></td>
+    <td class="num">$${a.spend.toFixed(2)}</td>
+    <td class="num">${fmt(a.reach,'n')}</td>
+    <td class="num ${a.ctr>=3?'good':a.ctr<1?'bad':''}">${a.ctr}%</td>
+    <td class="num ${a.cpm>15?'bad':''}">${a.cpm>0?'$'+a.cpm:'–'}</td>
+    <td class="num ${a.results>0?'good':''}">${a.results||'–'}</td>
+    <td class="num ${a.results>0&&a.spend/a.results<0.5?'good':''}">${cpr!=='–'?'$'+cpr:'–'}</td>
+    <td>${rankBadge(a.quality)}</td>
+    <td>${rankBadge(a.eng_rank)}</td>
+    <td>${rankBadge(a.conv_rank)}</td>
+    <td>${tierBadge(a.tier)}</td>
+  </tr>`}).join('')||'<tr><td colspan="12" style="color:var(--muted)">No active ads</td></tr>'}
+  </tbody></table>
+  <p style="font-size:10px;color:var(--muted);margin-top:8px;padding:0 4px">
+    Tier = combined ranking signal. ⭐ Star = ≥2 Above average ratings. Poor = any Below average rating.
+  </p></div>`;
+
+  // ── Instagram competitor benchmark ────────────────────────────────────────
+  html += sectionTitle('Instagram Competitor Benchmark');
+  html += `<div class="card mb"><table><thead><tr>
+    <th>Account</th><th class="num">Followers</th><th class="num">Posts/wk</th>
+    <th class="num">Reels/wk</th><th class="num">Engagement</th><th>Gap to CB247</th>
+  </tr></thead><tbody>
+  <tr style="background:#f0f9f7">
+    <td style="font-weight:700;color:var(--teal)">@chasingbetter247</td>
+    <td class="num good"><b>${fmt(ig.followers||0,'n')}</b></td>
+    <td class="num">${ig.posts_published||0}</td>
+    <td class="num">${ig.reels_published||0}</td>
+    <td class="num">${ig.reel_engagement||'–'}%</td>
+    <td style="font-size:11px;color:var(--teal)">Baseline</td>
+  </tr>
+  ${(ig.competitors||[]).map(c=>{const gap=c.followers-(ig.followers||0);return`<tr>
+    <td style="font-size:12px">@${c.handle}</td>
+    <td class="num ${gap>0?'bad':''}">${fmt(c.followers,'n')}</td>
+    <td class="num">${c.posts}</td>
+    <td class="num">${c.reels}</td>
+    <td class="num">${c.engagement}%</td>
+    <td style="font-size:11px;${gap>0?'color:#ef4444':'color:var(--teal)'}">
+      ${gap>0?'+'+(gap/1000).toFixed(1)+'K ahead':'ahead by '+(Math.abs(gap)/1000).toFixed(1)+'K'}
+    </td>
+  </tr>`}).join('')}
+  </tbody></table>
+  <p style="font-size:11px;color:#ef4444;margin-top:10px;padding:0 4px;font-weight:600">
+    Revo Fitness (106K) is 11.8× larger on Instagram. They post 7 posts + 14 reels/week.
+    CB247 needs to increase reel frequency to 7+/week and create original branded content to close this gap.
+    At current growth rate of +9 followers/week, closing to within 50K of Revo would take 10+ years.
+    The only shortcut is viral reels — facility content (sauna, ice bath) has that potential.
+  </p></div>`;
+
+  // ── Facebook competitor benchmark ─────────────────────────────────────────
+  html += sectionTitle('Facebook Competitor Benchmark');
+  html += `<div class="card mb"><table><thead><tr>
+    <th>Page</th><th class="num">Followers</th><th class="num">Posts/wk</th>
+    <th class="num">Engagement</th><th>Interpretation</th>
+  </tr></thead><tbody>
+  <tr style="background:#f0f9f7">
+    <td style="font-weight:700;color:var(--teal)">CB247</td>
+    <td class="num"><b>${fmt(fb.followers||0,'n')}</b></td>
+    <td class="num">${fb.posts_published||0}</td>
+    <td class="num">${fb.engagement_rate||'–'}%</td>
+    <td style="font-size:11px;color:var(--teal)">Baseline</td>
+  </tr>
+  ${(fb.competitors||[]).map(c=>`<tr>
+    <td style="font-size:12px">${c.name}</td>
+    <td class="num bad">${fmt(c.followers,'n')}</td>
+    <td class="num">${c.posts}</td>
+    <td class="num">${c.engagement}%</td>
+    <td style="font-size:11px;color:var(--muted)">${(c.followers/1000).toFixed(0)}K followers — ${c.followers>fb.followers?Math.round(c.followers/fb.followers)+'× larger':'smaller'}</td>
+  </tr>`).join('')}
+  </tbody></table>
+  <p style="font-size:11px;color:var(--muted);margin-top:8px;padding:0 4px">
+    <b>Recommendation:</b> Stop treating Facebook as a primary organic channel. Post 1–2× per week (vs 35 this week) for SEO and GBP signals only.
+    Redirect Facebook content effort to Instagram Reels. Paid Facebook ads remain valid for FIFO and family targeting.
+  </p></div>`;
+
+  // ── Audience from geo data ────────────────────────────────────────────────
+  html += sectionTitle('Audience Profile — Where Your Followers Are');
   html += `<div class="grid-2 mb">
     <div class="card">
-      <div class="card-h">Target Audience Profiles</div>
-      <div class="stat-row"><span class="stat-label">ICP 1 — FIFO Workers</span><span class="stat-val" style="color:var(--teal)">High value</span></div>
-      <div style="font-size:11px;color:var(--muted);padding:0 0 10px">Perth metro, 28–45, irregular schedule. Message: freeze your membership anytime. Platform: Facebook.</div>
-      <div class="stat-row"><span class="stat-label">ICP 2 — Malaga Families</span><span class="stat-val" style="color:var(--teal)">High volume</span></div>
-      <div style="font-size:11px;color:var(--muted);padding:0 0 10px">Parents 28–45, Malaga/Dianella/Hamersley. Message: Kids Hub free while you train. Platform: Instagram.</div>
-      <div class="stat-row"><span class="stat-label">ICP 3 — Young Adults 18–34</span><span class="stat-val" style="color:var(--text-2)">Growth</span></div>
-      <div style="font-size:11px;color:var(--muted);padding:0 0 10px">Price-sensitive, not yet gym members. Message: $11.95/week, no lock-in. Platform: TikTok + Instagram Reels.</div>
-      <div class="stat-row"><span class="stat-label">ICP 4 — Recovery Seekers</span><span class="stat-val" style="color:var(--text-2)">Niche</span></div>
-      <div style="font-size:11px;color:var(--muted)">35–55, injury prevention / wellness. Message: Sauna + Ice Bath, Reformer Pilates. Platform: Facebook + Instagram.</div>
+      <div class="card-h">Instagram Audience — Top Cities</div>
+      ${(ig.geo_top_cities||[]).map(g=>`
+        <div class="stat-row"><span class="stat-label">${g.city}</span><span class="stat-val">${g.pct}%</span></div>
+        <div style="background:#f0f2f5;border-radius:3px;height:5px;margin-bottom:8px">
+          <div style="background:var(--teal);width:${Math.min(g.pct*1.7,100)}%;height:100%;border-radius:3px"></div>
+        </div>`).join('')}
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">
+        57.7% Perth + 6.8% Ellenbrook = strong local concentration.
+        Aveley (4.5%) and Caversham (1.75%) confirm Ellenbrook catchment resonance.
+        Content should be hyper-local: suburb name-drop, local events, WA-specific hooks.
+      </p>
     </div>
     <div class="card">
-      <div class="card-h">Content That's Working</div>
-      ${boosted.length ? (() => {
-        const topByReach = [...boosted].sort((a,b) => b.reach - a.reach)[0];
-        const topByCTR   = [...boosted].sort((a,b) => b.ctr - a.ctr)[0];
-        return `
-        <div class="stat-row"><span class="stat-label">Highest Reach</span><span class="stat-val">${fmt(topByReach?.reach||0,'n')}</span></div>
-        <div style="font-size:11px;color:var(--muted);padding:0 0 10px;border-bottom:1px solid var(--border)">${topByReach?.ad_name||'–'}</div>
-        <div class="stat-row" style="margin-top:10px"><span class="stat-label">Highest CTR</span><span class="stat-val">${topByCTR?.ctr||'–'}%</span></div>
-        <div style="font-size:11px;color:var(--muted);padding:0 0 10px">${topByCTR?.ad_name||'–'}</div>
-        <div style="font-size:11px;color:var(--teal);margin-top:8px"><b>Insight:</b> Repurpose top-reach post as organic Reel — strip the ad label and repost to @chasingbetter247 for free organic reach.</div>`;
-      })() : '<p style="font-size:12px;color:var(--muted)">Upload Meta CSVs to see content performance data.</p>'}
+      <div class="card-h">Audience Targeting Recommendations</div>
+      <div style="font-size:12px;line-height:1.8">
+        <div style="margin-bottom:10px"><b style="color:var(--teal)">Reels target:</b>
+        <span style="color:var(--muted)">Women 25–40, Perth metro. Interest: gym, pilates, wellness. The top reel formats (partner workouts, fitness challenges) index highest with this demographic.</span></div>
+        <div style="margin-bottom:10px"><b style="color:var(--teal)">Stories target:</b>
+        <span style="color:var(--muted)">Existing followers — stories reach 804 avg. Use for time-sensitive offers, class schedule reminders, behind-the-scenes. High tap-forward rate = keep stories under 7 frames.</span></div>
+        <div style="margin-bottom:10px"><b style="color:var(--teal)">Facebook paid (only):</b>
+        <span style="color:var(--muted)">FIFO workers (Perth postcode + mining interest), families 30–45, Malaga/Ellenbrook radius. Organic FB content is not worth the effort at current follower count.</span></div>
+        <div><b style="color:var(--teal)">GBP:</b>
+        <span style="color:var(--muted)">Post Tuesday 7am — captures Monday gym-resolution searches. Use: class highlights, member milestones, local suburb mentions. Each GBP post = free SEO signal for "gym malaga" local pack.</span></div>
+      </div>
     </div>
   </div>`;
 
-  // ── Connect native analytics note ─────────────────────────────────────────
-  html += insight('neutral', 'Connect Instagram &amp; Facebook Business API for Organic-Only Metrics',
-    `Currently showing <b>Meta Ads (boosted + paid)</b> data from uploaded CSVs.
-     To see pure organic metrics — followers, organic reach, organic post engagement rate, story views, profile visits — connect the Instagram Graph API and Facebook Page Insights API.<br><br>
-     <b>Data you'll unlock:</b> Follower growth, organic reach per post, engagement rate, top organic posts, audience age/gender breakdown, best posting times, story completion rate.<br>
-     <b>How:</b> Add <code>INSTAGRAM_ACCESS_TOKEN</code> and <code>FB_PAGE_ID</code> to <code>.env</code>, then run <code>python scripts/pull_social.py</code>.`);
+  // ── Trending hashtags ─────────────────────────────────────────────────────
+  html += sectionTitle('Trending Fitness Hashtags — Use in Reels This Week');
+  html += `<div class="card mb">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:4px;margin-bottom:12px">
+      ${hashtags.map(h=>`<span style="background:#e8f5f4;color:#3FA69A;border-radius:99px;padding:4px 12px;font-size:12px;font-weight:600">#${h.hashtag} <span style="font-weight:400;color:var(--muted);font-size:10px">${h.count}</span></span>`).join('')||'<span style="color:var(--muted)">Run pull_apify.py for hashtag data</span>'}
+    </div>
+    <div style="font-size:11px;color:var(--muted)">
+      <b>CB247-specific stack for this week's reels:</b>
+      #gymtok #coldplunge #icebath (trending) + #malaggym #ellenbrookgym #gymperth (local SEO) + #chasingbetter247 #alwaysbetter (brand).
+      Avoid generic #fitness #gym — too broad, won't surface to local audience.
+    </div>
+  </div>`;
+
+  // ── This week's social priorities ────────────────────────────────────────
+  html += insight('teal', "This Week's Social Media Priorities",
+    `<b>1. Scale the recovery creative (Malaga):</b> "Deep heat. Deep recovery" is the only ad with Above average engagement + Above average conversion ranking. Increase its budget from $49 to $100 this week. Create a matching organic reel for @chasingbetter247 — no paid label, authentic sauna/ice bath footage.<br><br>
+     <b>2. Fix Malaga paid efficiency:</b> CPR rose 44% WoW. Pause "Post: Ready to shake up your routine?" ($20, 0.09% CTR, $20 CPM — worst performer). Reallocate to recovery and 24/7 Access creative.<br><br>
+     <b>3. Publish 2 original branded reels:</b> All top organic reels this week were reposts. Need: (1) ice bath/sauna facility reel with hook "The only gym in Malaga with THIS" and (2) a member story with real name + suburb + "$11.95/week changed my routine".<br><br>
+     <b>4. Respond to GBP reviews:</b> 3 reviews this week including 1 critical. Respond within 24h — public replies signal to Google that the listing is actively managed and directly impact local pack ranking.<br><br>
+     <b>5. Post 1 GBP update today:</b> Winter Push campaign is live — post "Perth winters made for the gym ❄️ Join from $11.95/week" to both GBP profiles. Tag Malaga and Ellenbrook. Include a photo of the sauna or warm facility interior.`);
 
   $('orgsocial-content').innerHTML = html;
 }
