@@ -1,0 +1,22 @@
+# Security — never commit these
+.env
+.env.local
+.env.*
+*.env
+
+# API Keys & Secrets
+secrets/
+.secrets
+api-keys.txt
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Sensitive outputs
+outputs/reports/financial-*
+state/*.json
+
+# System files
+.DS_Store
+node_modules/
+*.log

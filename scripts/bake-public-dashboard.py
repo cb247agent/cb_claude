@@ -471,6 +471,107 @@ def _build_bidding_analysis(keywords):
     }
 
 
+def load_agent_outputs():
+    """Parse today's agent markdown outputs into structured data for the dashboard."""
+    import re
+    from datetime import date
+    today = date.today().strftime("%Y-%m-%d")
+    outputs_dir = BASE_DIR / "outputs"
+
+    def read_md(path):
+        try:
+            return path.read_text(encoding="utf-8") if path.exists() else ""
+        except Exception:
+            return ""
+
+    def extract_section(text, heading):
+        """Extract text under a markdown heading until the next same-level heading."""
+        pattern = rf"(?:^|\n)#{1,3} .*{re.escape(heading)}.*\n(.*?)(?=\n#{1,3} |\Z)"
+        m = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+        return m.group(1).strip() if m else ""
+
+    # ── Load agent outputs ──
+    strategy_md    = read_md(outputs_dir / "blueprints" / f"weekly-strategy-{today}.md")
+    performance_md = read_md(outputs_dir / "research"   / f"performance-week-{today}.md")
+    seo_md         = read_md(outputs_dir / "seo"        / f"weekly-seo-brief-{today}.md")
+    competitor_md  = read_md(outputs_dir / "research"   / f"competitor-weekly-{today}.md")
+    paid_ads_md    = read_md(outputs_dir / "research"   / f"paid-ads-weekly-{today}.md")
+    content_md     = read_md(outputs_dir / "content"    / f"weekly-content-{today}.md")
+
+    # ── Parse strategy scorecard table ──
+    scorecard = []
+    sc_section = extract_section(strategy_md, "WEEKLY SCORECARD")
+    for row in re.findall(r'\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|', sc_section):
+        metric, value, wow, status_cell = row
+        emoji = "🟢" if "🟢" in status_cell else ("🔴" if "🔴" in status_cell else "🟡")
+        scorecard.append({"metric": metric.strip(), "value": value.strip(), "wow": wow.strip(), "status": emoji})
+
+    # ── Parse top 5 priorities ──
+    priorities = []
+    pri_section = extract_section(strategy_md, "TOP 5 PRIORITIES")
+    for m in re.finditer(r'###\s*Priority\s*\d+[:\s]*\*\*(.+?)\*\*.*?\n(.*?)(?=###\s*Priority|\Z)', pri_section, re.DOTALL):
+        title = m.group(1).strip()
+        body  = m.group(2).strip()
+        who   = re.search(r'\*\*Who:\*\*\s*(.+)', body)
+        why   = re.search(r'\*\*Why:\*\*\s*(.+)', body)
+        dead  = re.search(r'\*\*Deadline:\*\*\s*(.+)', body)
+        rag   = "🔴" if "🔴" in title or "URGENT" in title or "CRITICAL" in title else ("💰" if "💰" in title else "🟡")
+        priorities.append({
+            "title": re.sub(r'[🔴💰🎯⚔️🟡]', '', title).strip(),
+            "rag": rag,
+            "why":  why.group(1).strip()  if why  else "",
+            "who":  who.group(1).strip()  if who  else "",
+            "deadline": dead.group(1).strip() if dead else "",
+        })
+
+    # ── Parse decisions needed ──
+    decisions = []
+    dec_section = extract_section(strategy_md, "DECISIONS NEEDED")
+    for m in re.finditer(r'###\s*Decision\s*\d+[:\s]*\*\*(.+?)\*\*.*?\n(.*?)(?=###\s*Decision|\Z)', dec_section, re.DOTALL):
+        title = m.group(1).strip()
+        body  = m.group(2).strip()
+        rec   = re.search(r'\*\*Recommendation.*?:\*\*\s*\n?(.*?)(?=\*\*Question|\Z)', body, re.DOTALL)
+        q     = re.search(r'\*\*Question.*?:\*\*\s*(.+)', body)
+        decisions.append({
+            "title": title,
+            "recommendation": rec.group(1).strip()[:300] if rec else "",
+            "question": q.group(1).strip() if q else "",
+        })
+
+    # ── Parse team summary ──
+    team = []
+    team_section = extract_section(strategy_md, "TEAM SUMMARY")
+    for m in re.finditer(r'\*\*(.+?)\s*\((.+?)\)\s*:\*\*\s*\n(.*?)(?=\*\*[A-Z]|\Z)', team_section, re.DOTALL):
+        name, role, tasks_raw = m.group(1).strip(), m.group(2).strip(), m.group(3).strip()
+        tasks = [t.strip("- \n") for t in tasks_raw.split("\n") if t.strip().startswith("-")]
+        team.append({"name": name, "role": role, "tasks": tasks[:3]})
+
+    # ── Parse weekly narrative ──
+    narrative = extract_section(strategy_md, "WEEKLY NARRATIVE")
+    narrative_clean = re.sub(r'\*\*(.*?)\*\*', r'\1', narrative).strip()
+
+    # ── Parse seasonal status ──
+    seasonal = extract_section(strategy_md, "SEASONAL STATUS")
+    seasonal_clean = re.sub(r'\*\*(.*?)\*\*', r'\1', seasonal).strip()[:500]
+
+    return {
+        "date":         today,
+        "has_outputs":  bool(strategy_md),
+        "scorecard":    scorecard,
+        "priorities":   priorities[:5],
+        "decisions":    decisions[:3],
+        "team":         team,
+        "narrative":    narrative_clean[:800],
+        "seasonal":     seasonal_clean,
+        "raw": {
+            "strategy":    strategy_md[:2000],
+            "performance": performance_md[:1000],
+            "seo":         seo_md[:1000],
+            "competitor":  competitor_md[:1000],
+        }
+    }
+
+
 def build_data():
     """Load all state files and return a single dashboard data dict."""
     ga4      = load("ga4-data.json")
@@ -855,6 +956,9 @@ def build_data():
             "meeting_minutes": (tracker.get("meeting_minutes") or [])[-5:],
             "last_updated": tracker.get("last_updated", ""),
         },
+
+        # Agent Outputs — weekly intelligence from 9-agent pipeline
+        "agent_outputs": load_agent_outputs(),
     }
 
 
@@ -1469,6 +1573,7 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
   <div class="sidebar-section">
     <div class="sidebar-section-label">Overview</div>
     <div class="sidebar-item active" data-page="overview" onclick="nav(this)">Dashboard</div>
+    <div class="sidebar-item" data-page="this-week" onclick="nav(this)" style="background:rgba(63,166,154,0.15);font-weight:600">⚡ This Week</div>
   </div>
 
   <div class="sidebar-section">
@@ -1557,6 +1662,15 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
       <!-- Top pages -->
       <div class="section-title">Top Pages</div>
       <div class="card mb" id="overview-pages"></div>
+    </div>
+
+    <!-- ══ PAGE: THIS WEEK ══════════════════════════════════════════ -->
+    <div class="page" id="page-this-week">
+      <div class="page-header">
+        <h1>⚡ This Week</h1>
+        <p>Weekly intelligence from the 9-agent pipeline — strategy, priorities, team assignments</p>
+      </div>
+      <div id="this-week-content"></div>
     </div>
 
     <!-- ══ PAGE: SEO ═════════════════════════════════════════════════ -->
@@ -3849,6 +3963,111 @@ function renderReadme() {
   `;
 }
 
+// ── Render: This Week (Agent Pipeline Intelligence) ──────────────────────────
+function renderThisWeek() {
+  const el = $('this-week-content');
+  if (!el) return;
+  const ao = D.agent_outputs || {};
+
+  if (!ao.has_outputs) {
+    el.innerHTML = `<div class="card" style="padding:32px;text-align:center;color:var(--muted)">
+      <div style="font-size:32px;margin-bottom:12px">⏳</div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:8px">No agent outputs yet for today</div>
+      <div>Run the weekly pipeline: <code>bash scripts/weekly-report.sh</code></div>
+    </div>`;
+    return;
+  }
+
+  const ragColor = r => r === '🔴' ? '#ef4444' : r === '💰' ? '#10b981' : '#f59e0b';
+
+  // Scorecard
+  const scorecardRows = (ao.scorecard || []).map(r => `
+    <tr>
+      <td style="font-weight:500">${r.metric}</td>
+      <td style="font-weight:700;color:var(--teal)">${r.value}</td>
+      <td style="color:var(--muted);font-size:12px">${r.wow}</td>
+      <td style="font-size:18px">${r.status}</td>
+    </tr>`).join('');
+
+  // Priorities
+  const priorityCards = (ao.priorities || []).map((p, i) => `
+    <div class="card mb" style="border-left:4px solid ${ragColor(p.rag)};padding:16px">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:8px">
+        <span style="font-size:20px;flex-shrink:0">${p.rag}</span>
+        <div style="font-weight:700;font-size:15px">${i+1}. ${p.title}</div>
+      </div>
+      ${p.why ? `<div style="font-size:13px;color:var(--muted);margin-bottom:6px">📊 ${p.why}</div>` : ''}
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;margin-top:8px">
+        ${p.who ? `<span style="background:rgba(63,166,154,0.1);color:var(--teal);padding:3px 8px;border-radius:4px">👤 ${p.who}</span>` : ''}
+        ${p.deadline ? `<span style="background:rgba(239,68,68,0.1);color:#ef4444;padding:3px 8px;border-radius:4px">📅 ${p.deadline}</span>` : ''}
+      </div>
+    </div>`).join('');
+
+  // Decisions
+  const decisionCards = (ao.decisions || []).map((d, i) => `
+    <div class="card mb" style="border-left:4px solid #8b5cf6;padding:16px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px">🤔 Decision ${i+1}: ${d.title}</div>
+      ${d.recommendation ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;white-space:pre-wrap">${d.recommendation.replace(/\n/g,'<br>')}</div>` : ''}
+      ${d.question ? `<div style="font-size:13px;font-weight:600;color:#8b5cf6">❓ ${d.question}</div>` : ''}
+    </div>`).join('');
+
+  // Team
+  const teamCards = (ao.team || []).map(t => `
+    <div class="card" style="padding:14px">
+      <div style="font-weight:700;margin-bottom:4px">${t.name}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${t.role}</div>
+      ${t.tasks.map(task => `<div style="font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)">• ${task}</div>`).join('')}
+    </div>`).join('');
+
+  el.innerHTML = `
+    <!-- Seasonal Alert -->
+    ${ao.seasonal ? `
+    <div class="card mb" style="background:linear-gradient(135deg,rgba(63,166,154,0.15),rgba(63,166,154,0.05));border:1px solid var(--teal);padding:20px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--teal);margin-bottom:8px">📅 Seasonal Status</div>
+      <div style="font-size:13px;white-space:pre-wrap;line-height:1.6">${ao.seasonal.replace(/\n/g,'<br>')}</div>
+    </div>` : ''}
+
+    <!-- Weekly Narrative -->
+    ${ao.narrative ? `
+    <div class="card mb" style="background:rgba(0,0,0,0.15);padding:20px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px">📝 Weekly Narrative</div>
+      <div style="font-size:14px;line-height:1.7;color:var(--text)">${ao.narrative.replace(/\n\n/g,'<br><br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
+    </div>` : ''}
+
+    <!-- Scorecard -->
+    <div class="section-title">Weekly Scorecard</div>
+    <div class="card mb" style="overflow:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600">Metric</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600">Value</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600">WoW</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted);font-weight:600">Status</th>
+        </tr></thead>
+        <tbody>${scorecardRows || '<tr><td colspan="4" style="padding:16px;color:var(--muted)">No scorecard data</td></tr>'}</tbody>
+      </table>
+    </div>
+
+    <!-- Top 5 Priorities -->
+    <div class="section-title">Top 5 Priorities This Week</div>
+    ${priorityCards || '<div class="card mb" style="color:var(--muted);padding:16px">No priorities found</div>'}
+
+    <!-- Decisions Needed -->
+    ${ao.decisions && ao.decisions.length ? `
+    <div class="section-title">Decisions Needed From Tia</div>
+    ${decisionCards}` : ''}
+
+    <!-- Team Assignments -->
+    ${ao.team && ao.team.length ? `
+    <div class="section-title">Team Assignments</div>
+    <div class="kpi-grid cols-3 mb">${teamCards}</div>` : ''}
+
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:right">
+      Generated by 9-agent pipeline · ${ao.date || 'today'} · Next run: Monday 10AM Perth
+    </div>
+  `;
+}
+
 // ── Render: Action Tracker ────────────────────────────────────────────────────
 function renderTracker() {
   const container = $('tracker-content');
@@ -4037,6 +4256,7 @@ function closeTrackerDetail() {
 function init() {
   renderStatus();
   renderOverview();
+  renderThisWeek();
   renderSEO();
   renderGAds();
   renderOrgSocial();

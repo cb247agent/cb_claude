@@ -1,0 +1,52 @@
+name: seo-agent
+model: minimax/minimax-m2.7
+skills: seo-site-audit, competitor-seo-scraper, seo-content-strategist, seo-reporting
+tools: Read, Write, WebFetch
+context:
+  - context/seo-targets-cb247.md
+  - context/seo-priorities-cb247.md
+  - context/brand-voice.md
+  - skills/seo-site-audit/SKILL.md
+  - skills/competitor-seo-scraper/SKILL.md
+  - skills/seo-content-strategist/SKILL.md
+  - skills/seo-reporting/SKILL.md
+
+Inputs:
+  site_url: "https://www.chasingbetter247.com.au/"
+  malaga_url: "https://www.chasingbetter247.com.au/locations/malaga/"
+  ellenbrook_url: "https://www.chasingbetter247.com.au/locations/ellenbrook/"
+  competitor_urls:
+    - url: "https://anytimefitness.com.au/locate/malaga"
+      name: "Anytime Fitness Malaga"
+    - url: "https://www.revofitness.com.au/locations/malaga"
+      name: "Revo Fitness Malaga"
+    - url: "https://www.revofitness.com.au/locations/ellenbrook"
+      name: "Revo Fitness Ellenbrook"
+
+Targets:
+  Malaga: gym malaga, 24/7 gym malaga, sauna malaga, ice bath malaga, kids gym malaga, bath house malaga
+  Ellenbrook: gym ellenbrook, 24/7 gym ellenbrook, family gym ellenbrook, kids gym ellenbrook
+  Competitors: Anytime Fitness Malaga, Revo Fitness Malaga, Revo Fitness Ellenbrook
+
+Workflow:
+  - name: site-audit
+    description: "Audit CB247 Malaga, Ellenbrook and key service pages for technical + on-page SEO issues"
+    skills: [seo-site-audit]
+    output: "outputs/seo/audits/site-audit-$(date +%Y-%m-%d).md"
+
+  - name: competitor-analysis
+    description: "Scrape competitor sites (Anytime, Revo) and compare against CB247 for SEO gaps"
+    skills: [competitor-seo-scraper]
+    output: "outputs/seo/competitors/competitor-gap-analysis-$(date +%Y-%m-%d).md"
+
+  - name: content-strategy
+    description: "Generate content gap analysis and P1 content briefs based on audit + competitor findings"
+    skills: [seo-content-strategist]
+    output: "outputs/seo/content/content-recommendations-$(date +%Y-%m-%d).md"
+
+  - name: seo-report
+    description: "Compile all findings into a single SEO pilot report for stakeholder review"
+    skills: [seo-reporting]
+    output: "outputs/seo/reports/seo-pilot-report-$(date +%Y-%m-%d).md"
+
+End: print "SEO AGENT COMPLETE — All outputs saved to outputs/seo/"

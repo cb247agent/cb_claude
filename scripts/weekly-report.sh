@@ -12,12 +12,22 @@
 # Pipeline:
 #   Phase 1  Data Pull      pull_all + pull_ahrefs + pull_apify
 #   Phase 2  Agent Pipeline 9 agents in sequence (research → ... → strategist)
-#   Phase 3  Outputs        bake reports + push Notion + deploy dashboard
+#   Phase 3  Outputs        bake reports + deploy dashboard (source of truth)
 #   Phase 4  Email Delivery Tia OS report ONLY — team emails held until Tia approves
 
 set -e
 BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-PYTHON="$BASE_DIR/.venv/bin/python3"
+
+# ── Load environment (API keys, credentials) — safe parser skips bad lines ──
+if [ -f "$BASE_DIR/.env" ]; then
+    while IFS='=' read -r key val; do
+        # Skip blank lines, comments, and lines without a valid VAR name
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# || ! "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] && continue
+        export "$key"="$val"
+    done < "$BASE_DIR/.env"
+fi
+
+PYTHON="$BASE_DIR/.venv/bin/python3.13"
 CLAUDE="/Users/tiachasingbetter/.local/bin/claude"
 LOG="$BASE_DIR/state/weekly-report.log"
 DATE=$(date '+%Y-%m-%d')
@@ -37,6 +47,7 @@ run_agent() {
     log "  → Running $name..."
     if "$CLAUDE" \
         --allowedTools "Read,Write,Bash,Glob,Grep" \
+        --model "${ANTHROPIC_MODEL:-claude-sonnet-4-5}" \
         --print \
         --output-format text \
         "$prompt" > "$out" 2>>"$LOG"; then
@@ -409,11 +420,7 @@ log "Step 3b — Rebuilding public dashboard..."
 "$PYTHON" "$BASE_DIR/scripts/bake-public-dashboard.py" >> "$LOG" 2>&1 \
     || fail "bake-public-dashboard.py had issues"
 
-log "Step 3c — Pushing to Notion..."
-"$PYTHON" "$BASE_DIR/scripts/push_to_notion.py" >> "$LOG" 2>&1 \
-    || fail "push_to_notion.py had issues"
-
-log "Step 3d — Deploying dashboard to GitHub Pages..."
+log "Step 3c — Deploying dashboard to GitHub Pages..."
 bash "$BASE_DIR/scripts/deploy-dashboard.sh" >> "$LOG" 2>&1 \
     || fail "deploy-dashboard.sh had issues"
 
@@ -441,7 +448,6 @@ log "================================================================"
 log "  ✅ Data pulled    : GA4 + GSC + Google Ads + Ahrefs + Apify"
 log "  ✅ Agents run     : 9/9"
 log "  ✅ Outputs baked  : HTML report + dashboard"
-log "  ✅ Notion updated"
 log "  ✅ Dashboard live : https://cb247agent.github.io/cb_claude/"
 log "  📧 Tia notified   : OS report + approval prompt sent"
 log "  ⏸  Team emails   : HELD — awaiting Tia approval"

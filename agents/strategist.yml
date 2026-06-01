@@ -1,0 +1,7 @@
+name: strategist
+model: minimax/minimax-m2.7
+skills: seasonal-events
+tools: Read, Write(outputs/blueprints/**), Write(state/**)
+Input required: all outputs/research/ files
+Output: outputs/blueprints/[campaign]-blueprint.md
+End: update state/status.json = blueprint-ready → print "BLUEPRINT READY — awaiting review"

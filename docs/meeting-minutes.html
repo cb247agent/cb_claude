@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CB247 — Weekly Meeting Minutes</title>
+<style>
+  :root {
+    --teal: #3FA69A; --teal-light: #7ee8e0; --bg: #F0F2F5; --card: #fff;
+    --text: #1a1a2e; --muted: #6b7280; --border: #e5e7eb;
+    --green: #059669; --amber: #d97706; --red: #dc2626;
+    --sidebar: #1a1a2e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+  .page { max-width: 900px; margin: 0 auto; padding: 32px 16px 80px; }
+
+  /* Header */
+  .page-header { background: var(--sidebar); border-radius: 12px; padding: 28px 32px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; }
+  .page-header h1 { color: #fff; font-size: 1.4rem; font-weight: 800; }
+  .page-header h1 span { color: var(--teal-light); }
+  .page-header .meta { color: rgba(255,255,255,.45); font-size: 0.8rem; margin-top: 4px; }
+  .back-link { color: var(--teal-light); font-size: 0.8rem; text-decoration: none; display: flex; align-items: center; gap: 4px; }
+  .back-link:hover { color: #fff; }
+
+  /* Form sections */
+  .form-section { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 20px; }
+  .form-section h2 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+  label .required { color: var(--red); margin-left: 2px; }
+  input[type="text"], input[type="date"], select, textarea {
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+    font-size: 0.85rem; color: var(--text); background: #fafafa;
+    transition: border-color .15s; font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--teal); background: #fff; }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+  /* Action cards */
+  .action-card { border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 14px; background: #fafafa; }
+  .action-card-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+  .action-id { background: var(--sidebar); color: var(--teal-light); font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 4px; white-space: nowrap; margin-top: 2px; }
+  .action-title { font-size: 0.9rem; font-weight: 600; flex: 1; line-height: 1.4; }
+  .action-meta { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .priority-badge { display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-right: 6px; }
+  .p1 { background: rgba(220,38,38,.1); color: var(--red); }
+  .p2 { background: rgba(217,119,6,.1); color: var(--amber); }
+  .p3 { background: rgba(63,166,154,.1); color: var(--teal); }
+
+  /* Decision pills */
+  .decision-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .decision-pill {
+    padding: 7px 16px; border-radius: 99px; font-size: 0.78rem; font-weight: 600;
+    border: 2px solid var(--border); background: #fff; cursor: pointer; transition: all .15s; color: var(--muted);
+  }
+  .decision-pill:hover { border-color: var(--teal); color: var(--teal); }
+  .decision-pill.active-approved { border-color: var(--green); background: rgba(5,150,105,.08); color: var(--green); }
+  .decision-pill.active-adjusted { border-color: var(--amber); background: rgba(217,119,6,.08); color: var(--amber); }
+  .decision-pill.active-rejected { border-color: var(--red); background: rgba(220,38,38,.08); color: var(--red); }
+
+  /* Adjustment note */
+  .adjustment-note { margin-top: 12px; display: none; }
+  .adjustment-note.visible { display: block; }
+
+  /* Promo section */
+  .promo-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(63,166,154,.1); border: 1px solid rgba(63,166,154,.3); border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; color: var(--teal); margin: 4px; cursor: pointer; }
+  .promo-tag.selected { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .promo-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
+
+  /* Export */
+  .export-section { background: var(--sidebar); border-radius: 12px; padding: 28px 32px; margin-top: 28px; }
+  .export-section h2 { color: #fff; font-size: 1rem; margin-bottom: 8px; }
+  .export-section p { color: rgba(255,255,255,.5); font-size: 0.8rem; margin-bottom: 20px; }
+  .btn { padding: 12px 24px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: #2d7a70; }
+  .btn-secondary { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.2); }
+  .btn-secondary:hover { background: rgba(255,255,255,.15); }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .json-output { background: #0f0f1a; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; padding: 16px; font-family: monospace; font-size: 0.72rem; color: #7ee8e0; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; margin-top: 16px; display: none; }
+  .json-output.visible { display: block; }
+
+  /* Status bar */
+  .status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--sidebar); border-top: 1px solid rgba(255,255,255,.1); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; z-index: 100; }
+  .status-bar .progress { display: flex; align-items: center; gap: 10px; }
+  .progress-text { color: rgba(255,255,255,.6); font-size: 0.78rem; }
+  .progress-pills { display: flex; gap: 6px; }
+  .prog-pill { font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .prog-approved { background: rgba(5,150,105,.2); color: #34d399; }
+  .prog-adjusted { background: rgba(217,119,6,.2); color: #fbbf24; }
+  .prog-rejected { background: rgba(220,38,38,.2); color: #f87171; }
+  .prog-pending { background: rgba(255,255,255,.1); color: rgba(255,255,255,.4); }
+  .save-status { color: var(--teal-light); font-size: 0.78rem; }
+
+  @media (max-width: 640px) {
+    .form-row { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>CB247 <span>Meeting Minutes</span></h1>
+      <div class="meta">Record decisions from the weekly marketing meeting. Export JSON → drop in state/ → run import script.</div>
+    </div>
+    <a href="index.html" class="back-link">← Dashboard</a>
+  </div>
+
+  <!-- Meeting Details -->
+  <div class="form-section">
+    <h2>📋 Meeting Details</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Meeting Date <span class="required">*</span></label>
+        <input type="date" id="meeting-date">
+      </div>
+      <div class="form-group">
+        <label>Attendees</label>
+        <input type="text" id="attendees" placeholder="e.g. Tia, Ange, John, Jane, Mark">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Weekly Narrative / Key Context</label>
+        <textarea id="weekly-narrative" placeholder="3 sentences: where we are, what moved, what matters most this week…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Promo / Campaign Info -->
+  <div class="form-section">
+    <h2>🎯 Active Promos & Campaigns</h2>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Running promos (select all that apply)</label>
+      <div class="promo-tags">
+        <div class="promo-tag" onclick="togglePromo(this)">🎁 Free trial offer</div>
+        <div class="promo-tag" onclick="togglePromo(this)">💰 Reduced joining fee</div>
+        <div class="promo-tag" onclick="togglePromo(this)">📅 No lock-in push</div>
+        <div class="promo-tag" onclick="togglePromo(this)">👨‍👩‍👧 Family deal</div>
+        <div class="promo-tag" onclick="togglePromo(this)">🔧 FIFO freeze campaign</div>
+        <div class="promo-tag" onclick="togglePromo(this)">🧊 Recovery/ice bath push</div>
+        <div class="promo-tag" onclick="togglePromo(this)">🧘 Pilates campaign</div>
+        <div class="promo-tag" onclick="togglePromo(this)">👥 Referral campaign</div>
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Promo Details / Offer Copy</label>
+        <textarea id="promo-details" placeholder="E.g. '20% off 3-month memberships through June. Code: JUNE20. Running on Instagram + Google Ads.' "></textarea>
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Campaign Brief / Additional Context</label>
+        <textarea id="campaign-brief" placeholder="Any new campaigns launching, events, seasonal info, or strategic direction to feed into next week's content generation…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendation Decisions -->
+  <div class="form-section">
+    <h2>✅ Recommendation Decisions</h2>
+    <div id="action-cards">
+      <!-- Populated by JS -->
+    </div>
+    <div id="no-actions" style="color:var(--muted);font-size:0.85rem;padding:12px 0;display:none">
+      No pending recommendations found. Add actions to state/action-tracker.json.
+    </div>
+  </div>
+
+  <!-- Custom Decisions -->
+  <div class="form-section">
+    <h2>➕ Additional Decisions Made in Meeting</h2>
+    <div id="custom-decisions">
+      <div class="action-card" style="border-style:dashed">
+        <textarea class="custom-decision-text" placeholder="Decision or action agreed in the meeting (not from weekly report)…" style="width:100%;border:none;background:transparent;padding:0;font-size:0.85rem;color:var(--text)"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:10px;font-size:0.8rem;padding:8px 16px;background:#f9fafb;color:var(--text);border:1px solid var(--border)" onclick="addCustomDecision()">+ Add another</button>
+  </div>
+
+  <!-- Export -->
+  <div class="export-section">
+    <h2>Export Meeting Minutes</h2>
+    <p>Generate JSON → save as <code>state/meeting-minutes-YYYY-MM-DD.json</code> → run <code>python scripts/import-meeting-minutes.py</code> to push decisions into the tracker.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateExport()">Generate JSON</button>
+      <button class="btn btn-secondary" onclick="downloadJSON()">Download JSON File</button>
+      <button class="btn btn-secondary" onclick="copyJSON()">Copy to Clipboard</button>
+    </div>
+    <div class="json-output" id="json-output"></div>
+  </div>
+
+</div>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <div class="progress">
+    <span class="progress-text">Decisions:</span>
+    <div class="progress-pills">
+      <span class="prog-pill prog-approved" id="count-approved">0 approved</span>
+      <span class="prog-pill prog-adjusted" id="count-adjusted">0 adjusted</span>
+      <span class="prog-pill prog-rejected" id="count-rejected">0 rejected</span>
+      <span class="prog-pill prog-pending" id="count-pending">0 pending</span>
+    </div>
+  </div>
+  <span class="save-status" id="save-status">Auto-saved to localStorage</span>
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────
+// Embedded action tracker data (populated when baked, fallback to sample)
+const TRACKER_ACTIONS = window.TRACKER_ACTIONS || [
+  {
+    id: 'ACT-001', priority: 'P1', category: 'seo', owner: 'Mark', ownerRole: 'Web Developer',
+    recommendation: 'Fix title tag: add "24/7 Gym Malaga WA" to homepage/Malaga page <title>',
+    context: 'Ryderwear outranks CB247 purely because their title tag includes the keyword. 30-minute fix.',
+    due_date: '2026-06-06', decision: 'pending'
+  },
+  {
+    id: 'ACT-002', priority: 'P1', category: 'seo', owner: 'John', ownerRole: 'SEO Specialist',
+    recommendation: 'Build dedicated /kids-hub-malaga/ landing page targeting "kids gym malaga"',
+    context: 'CB247 already #2, no gym competitor. Easy #1 win with a dedicated page.',
+    due_date: '2026-06-13', decision: 'pending'
+  },
+  {
+    id: 'ACT-003', priority: 'P1', category: 'seo', owner: 'John', ownerRole: 'SEO Specialist',
+    recommendation: 'Build /recovery/ page targeting sauna malaga, ice bath malaga',
+    context: 'Zero impressions. CB247 has both facilities. Uncontested keywords.',
+    due_date: '2026-06-20', decision: 'pending'
+  }
+];
+
+const decisions = {};  // { id: { decision, notes, adjusted_brief } }
+
+// ── Render action cards ───────────────────────────────────────────────
+function renderActions() {
+  const container = document.getElementById('action-cards');
+  const noActions = document.getElementById('no-actions');
+
+  if (!TRACKER_ACTIONS.length) {
+    noActions.style.display = 'block';
+    return;
+  }
+
+  container.innerHTML = TRACKER_ACTIONS.map(a => `
+    <div class="action-card" id="card-${a.id}">
+      <div class="action-card-header">
+        <span class="action-id">${a.id}</span>
+        <div style="flex:1">
+          <div class="action-title">${a.recommendation}</div>
+          <div class="action-meta">
+            <span class="priority-badge ${a.priority.toLowerCase()}">${a.priority}</span>
+            ${a.owner} · ${a.ownerRole} · Due ${a.due_date}
+          </div>
+          ${a.context ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:6px;line-height:1.5">${a.context}</div>` : ''}
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px">Decision</div>
+        <div class="decision-row">
+          <button class="decision-pill" onclick="setDecision('${a.id}', 'approved', this)">✅ Approved</button>
+          <button class="decision-pill" onclick="setDecision('${a.id}', 'adjusted', this)">🔄 Needs Adjustment</button>
+          <button class="decision-pill" onclick="setDecision('${a.id}', 'rejected', this)">❌ Rejected</button>
+        </div>
+      </div>
+      <div class="adjustment-note" id="adj-${a.id}">
+        <div class="form-group">
+          <label>Adjustment details / revised brief</label>
+          <textarea id="adj-text-${a.id}" placeholder="What needs to change? Describe the adjusted scope, angle, or deadline…" oninput="saveDecision('${a.id}')"></textarea>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px">
+        <label>Decision notes</label>
+        <input type="text" id="notes-${a.id}" placeholder="Optional: rationale, context, or next step…" oninput="saveDecision('${a.id}')">
+      </div>
+    </div>
+  `).join('');
+
+  restoreFromStorage();
+}
+
+function setDecision(id, val, btn) {
+  const card = document.getElementById(`card-${id}`);
+  card.querySelectorAll('.decision-pill').forEach(p => {
+    p.classList.remove('active-approved', 'active-adjusted', 'active-rejected');
+  });
+  btn.classList.add(`active-${val}`);
+  document.getElementById(`adj-${id}`).classList.toggle('visible', val === 'adjusted');
+  if (!decisions[id]) decisions[id] = {};
+  decisions[id].decision = val;
+  saveDecision(id);
+  updateCounts();
+}
+
+function saveDecision(id) {
+  if (!decisions[id]) decisions[id] = {};
+  const notesEl = document.getElementById(`notes-${id}`);
+  const adjEl = document.getElementById(`adj-text-${id}`);
+  if (notesEl) decisions[id].notes = notesEl.value;
+  if (adjEl) decisions[id].adjusted_brief = adjEl.value;
+  persistToStorage();
+  document.getElementById('save-status').textContent = 'Saved · ' + new Date().toLocaleTimeString();
+}
+
+function updateCounts() {
+  const counts = {approved: 0, adjusted: 0, rejected: 0, pending: 0};
+  TRACKER_ACTIONS.forEach(a => {
+    const d = decisions[a.id]?.decision || 'pending';
+    counts[d]++;
+  });
+  document.getElementById('count-approved').textContent = counts.approved + ' approved';
+  document.getElementById('count-adjusted').textContent = counts.adjusted + ' adjusted';
+  document.getElementById('count-rejected').textContent = counts.rejected + ' rejected';
+  document.getElementById('count-pending').textContent = counts.pending + ' pending';
+}
+
+// ── Promos ──────────────────────────────────────────────────────────
+function togglePromo(el) { el.classList.toggle('selected'); }
+function getSelectedPromos() {
+  return Array.from(document.querySelectorAll('.promo-tag.selected')).map(e => e.textContent.trim());
+}
+
+// ── Custom decisions ─────────────────────────────────────────────────
+function addCustomDecision() {
+  const wrap = document.getElementById('custom-decisions');
+  const d = document.createElement('div');
+  d.className = 'action-card';
+  d.style.borderStyle = 'dashed';
+  d.style.marginTop = '10px';
+  d.innerHTML = `<textarea class="custom-decision-text" placeholder="Decision or action…" style="width:100%;border:none;background:transparent;padding:0;font-size:0.85rem;color:var(--text)"></textarea>`;
+  wrap.appendChild(d);
+}
+
+function getCustomDecisions() {
+  return Array.from(document.querySelectorAll('.custom-decision-text'))
+    .map(e => e.value.trim()).filter(Boolean);
+}
+
+// ── Export ───────────────────────────────────────────────────────────
+let lastJSON = '';
+
+function buildExportData() {
+  const meetingDate = document.getElementById('meeting-date').value || new Date().toISOString().split('T')[0];
+  return {
+    meeting_date: meetingDate,
+    attendees: document.getElementById('attendees').value.split(',').map(s => s.trim()).filter(Boolean),
+    weekly_narrative: document.getElementById('weekly-narrative').value,
+    active_promos: getSelectedPromos(),
+    promo_details: document.getElementById('promo-details').value,
+    campaign_brief: document.getElementById('campaign-brief').value,
+    decisions: TRACKER_ACTIONS.map(a => ({
+      id: a.id,
+      decision: decisions[a.id]?.decision || 'pending',
+      notes: decisions[a.id]?.notes || '',
+      adjusted_brief: decisions[a.id]?.adjusted_brief || ''
+    })),
+    custom_decisions: getCustomDecisions(),
+    generated_at: new Date().toISOString()
+  };
+}
+
+function generateExport() {
+  const data = buildExportData();
+  lastJSON = JSON.stringify(data, null, 2);
+  const el = document.getElementById('json-output');
+  el.textContent = lastJSON;
+  el.classList.add('visible');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function downloadJSON() {
+  generateExport();
+  const meetingDate = document.getElementById('meeting-date').value || new Date().toISOString().split('T')[0];
+  const blob = new Blob([lastJSON], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `meeting-minutes-${meetingDate}.json`;
+  a.click();
+}
+
+function copyJSON() {
+  generateExport();
+  navigator.clipboard.writeText(lastJSON).then(() => {
+    document.getElementById('save-status').textContent = 'JSON copied to clipboard ✓';
+    setTimeout(() => document.getElementById('save-status').textContent = 'Auto-saved to localStorage', 2000);
+  });
+}
+
+// ── Persistence ──────────────────────────────────────────────────────
+function persistToStorage() {
+  localStorage.setItem('cb247-meeting-decisions', JSON.stringify(decisions));
+  const fields = ['meeting-date','attendees','weekly-narrative','promo-details','campaign-brief'];
+  const saved = {};
+  fields.forEach(id => { const el = document.getElementById(id); if (el) saved[id] = el.value; });
+  localStorage.setItem('cb247-meeting-fields', JSON.stringify(saved));
+}
+
+function restoreFromStorage() {
+  try {
+    const savedDecisions = JSON.parse(localStorage.getItem('cb247-meeting-decisions') || '{}');
+    Object.assign(decisions, savedDecisions);
+
+    const savedFields = JSON.parse(localStorage.getItem('cb247-meeting-fields') || '{}');
+    Object.entries(savedFields).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    });
+
+    // Re-apply decision pill states
+    TRACKER_ACTIONS.forEach(a => {
+      const d = decisions[a.id];
+      if (!d?.decision || d.decision === 'pending') return;
+      const card = document.getElementById(`card-${a.id}`);
+      if (!card) return;
+      const pills = card.querySelectorAll('.decision-pill');
+      const map = { approved: 0, adjusted: 1, rejected: 2 };
+      const idx = map[d.decision];
+      if (idx !== undefined && pills[idx]) {
+        pills[idx].classList.add(`active-${d.decision}`);
+        if (d.decision === 'adjusted') {
+          document.getElementById(`adj-${a.id}`)?.classList.add('visible');
+        }
+      }
+      if (d.notes) {
+        const notesEl = document.getElementById(`notes-${a.id}`);
+        if (notesEl) notesEl.value = d.notes;
+      }
+      if (d.adjusted_brief) {
+        const adjEl = document.getElementById(`adj-text-${a.id}`);
+        if (adjEl) adjEl.value = d.adjusted_brief;
+      }
+    });
+    updateCounts();
+  } catch(e) {}
+}
+
+// Auto-save fields on change
+['meeting-date','attendees','weekly-narrative','promo-details','campaign-brief'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', persistToStorage);
+});
+
+// Set today as default date
+document.getElementById('meeting-date').value = new Date().toISOString().split('T')[0];
+
+renderActions();
+updateCounts();
+</script>
+</body>
+</html>

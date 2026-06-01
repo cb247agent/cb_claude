@@ -1,0 +1,4 @@
+{
+    "ok": false,
+    "reason": "The file met the criteria (a .md file in /outputs/ not ending in -final.md), but the task could not be completed because write and bash access are restricted in 'don't ask' mode."
+}

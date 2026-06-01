@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.cb247.weekly-seo</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>cd /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing && ./scripts/weekly-seo.sh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>11</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+            <key>Weekday</key>
+            <integer>1</integer>
+        </dict>
+    </array>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/com.cb247.weekly-seo.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/com.cb247.weekly-seo.err</string>
+    <key>WorkingDirectory</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </array>
+</dict>
+</plist>

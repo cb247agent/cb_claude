@@ -1,0 +1,9 @@
+name: content-intel
+model: minimax/minimax-m2.7
+skills: viral-content-finder
+tools: Read, Write(outputs/research/**), WebSearch
+Focus: Top fitness content AU — Instagram, Facebook, YouTube
+  Extract: hooks, formats, caption length, emotion triggers
+  Perth filter + @chasingbetter247 audit
+Output: outputs/research/content-intel.md
+End: print "CONTENT INTEL COMPLETE"

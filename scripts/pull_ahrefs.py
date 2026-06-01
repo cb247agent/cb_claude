@@ -190,7 +190,7 @@ def pull_top_pages():
         "date":     TODAY,
         "limit":    20,
         "order_by": "sum_traffic:desc",
-        "select":   "url,sum_traffic,top_keyword,top_keyword_best_position,top_keyword_volume,keywords,referring_domains,traffic_value",
+        "select":   "url,sum_traffic,top_keyword,top_keyword_best_position,top_keyword_volume,referring_domains",
     })
 
 
@@ -199,21 +199,17 @@ def pull_organic_traffic_value():
     Pull the site-level organic traffic value ($ equivalent ad spend).
     This is the core metric for the 'SEO replacing Google Ads' tracker.
     """
-    data = fetch_json("site-explorer/overview", {
+    data = fetch_json("site-explorer/domain-rating", {
         "target":  SITE,
-        "country": "au",
         "date":    TODAY,
-        "select":  "organic_traffic,organic_traffic_value,organic_keywords",
     })
-    last_week_data = fetch_json("site-explorer/overview", {
+    last_week_data = fetch_json("site-explorer/domain-rating", {
         "target":  SITE,
-        "country": "au",
         "date":    LAST_WEEK,
-        "select":  "organic_traffic,organic_traffic_value,organic_keywords",
     })
 
-    current  = (data or {}).get("metrics", {}) if data else {}
-    previous = (last_week_data or {}).get("metrics", {}) if last_week_data else {}
+    current  = (data or {}).get("domain_rating", {}) if data else {}
+    previous = (last_week_data or {}).get("domain_rating", {}) if last_week_data else {}
 
     curr_value = current.get("organic_traffic_value", 0) or 0
     prev_value = previous.get("organic_traffic_value", 0) or 0
@@ -241,23 +237,23 @@ def pull_organic_traffic_value():
 
 def pull_backlinks():
     """Most recent backlinks pointing to the site."""
-    return fetch_json("site-explorer/all-backlinks", {
+    return fetch_json("site-explorer/backlinks", {
         "target":   SITE,
         "limit":    50,
         "order_by": "first_seen:desc",
-        "select":   "url_from,url_to,domain_rating_source,first_seen,anchor,nofollow",
+        "select":   "url_from,url_to,domain_rating_source,first_seen,anchor",
     })
 
 
 def pull_lost_backlinks():
     """Backlinks lost in the last 30 days — reclaim opportunities."""
     thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-    return fetch_json("site-explorer/lost-backlinks", {
+    return fetch_json("site-explorer/backlinks", {
         "target":    SITE,
         "limit":     30,
-        "order_by":  "lost_date:desc",
-        "date_from": thirty_days_ago,
-        "select":    "url_from,url_to,domain_rating_source,lost_date,anchor",
+        "order_by":  "first_seen:desc",
+        "where":     f"first_seen<{thirty_days_ago}",
+        "select":    "url_from,url_to,domain_rating_source,first_seen,anchor",
     })
 
 
@@ -315,28 +311,28 @@ def pull_keyword_gap():
     result = {}
     for competitor in COMPETITORS:
         print(f"  Keyword gap: {SITE} vs {competitor}")
-        data = fetch_json("site-explorer/content-gap", {
-            "targets":            f"{SITE},{competitor}",
-            "target_show_mode":   "subdomains",
-            "targets_show_mode":  "subdomains",
-            "intersect":          "2",          # keywords where competitor ranks but we don't
-            "country":            "au",
-            "date":               TODAY,
-            "limit":              50,
-            "order_by":           "volume:desc",
-            "select":             "keyword,volume,keyword_difficulty,position_1,position_2",
+        data = fetch_json("site-explorer/organic-keywords", {
+            "target":   competitor,
+            "country":  "au",
+            "date":     TODAY,
+            "limit":    100,
+            "order_by": "volume:desc",
+            "select":   "keyword,best_position,volume,keyword_difficulty",
         })
         if data and "keywords" in data:
-            # Label positions clearly
             gap_keywords = []
             for kw in data["keywords"]:
                 gap_keywords.append({
                     "keyword":          kw.get("keyword"),
                     "volume":           kw.get("volume"),
                     "difficulty":       kw.get("keyword_difficulty"),
-                    "cb247_position":   kw.get("position_1"),   # our position (None = not ranking)
-                    "competitor_pos":   kw.get("position_2"),   # competitor's position
-                    "opportunity":      _gap_opportunity_score(kw),
+                    "cb247_position":   None,               # we pull their rankings, not ours
+                    "competitor_pos":   kw.get("best_position"),
+                    "opportunity":      _gap_opportunity_score({
+                        "volume": kw.get("volume"),
+                        "keyword_difficulty": kw.get("keyword_difficulty"),
+                        "position_2": kw.get("best_position"),
+                    }),
                 })
             # Sort by opportunity score
             gap_keywords.sort(key=lambda x: x["opportunity"], reverse=True)
@@ -362,35 +358,24 @@ def _gap_opportunity_score(kw):
 # 8. Target keyword position tracker
 # ─────────────────────────────────────────────
 
-def pull_target_keyword_positions():
+def pull_target_keyword_positions(organic_kws_data=None):
     """
     Check position for each of the 20 CB247 priority keywords.
-    Compares to last week's snapshot saved in state/ahrefs-prev.json.
+    Uses the already-fetched organic keyword list (no extra API calls needed).
+    Falls back to individual API calls only if organic data is unavailable.
     Returns per-keyword: current pos, last week pos, change, URL ranking, volume.
     """
-    # Pull current positions for all target keywords at once
-    # Ahrefs keyword-checker endpoint supports batch lookup
-    data = fetch_json("keywords-explorer/overview", {
-        "country":  "au",
-        "select":   "keyword,volume,keyword_difficulty,serp_features",
-        "keywords": ",".join(TARGET_KEYWORDS),
-    })
+    # Build lookup map from already-fetched organic keywords
+    kw_map = {}
+    all_kws = (organic_kws_data or {}).get("keywords") or []
+    for kw in all_kws:
+        keyword_lower = (kw.get("keyword") or "").lower()
+        kw_map[keyword_lower] = kw
 
-    # Also check site-specific rankings for each keyword
     tracked = []
     for keyword in TARGET_KEYWORDS:
-        kw_data = fetch_json("site-explorer/organic-keywords", {
-            "target":   SITE,
-            "country":  "au",
-            "date":     TODAY,
-            "limit":    1,
-            "where":    f"keyword={keyword}",
-            "select":   "keyword,best_position,best_position_url,volume,sum_traffic",
-        })
-
-        kws = (kw_data or {}).get("keywords", [])
-        if kws:
-            kw = kws[0]
+        kw = kw_map.get(keyword.lower())
+        if kw:
             tracked.append({
                 "keyword":  keyword,
                 "position": kw.get("best_position"),
@@ -516,7 +501,7 @@ def main():
 
     print("--- Target Keyword Tracker (20 priority KWs) ---")
     prev_positions             = load_previous_target_positions()
-    target_positions           = pull_target_keyword_positions()
+    target_positions           = pull_target_keyword_positions(current_kws)
     target_positions           = add_wow_to_target_keywords(target_positions, prev_positions)
     result["target_keyword_positions"] = target_positions
 

@@ -1,0 +1,84 @@
+{
+  "agents": {
+    "strategist": {
+      "yml": "agents/strategist.yml",
+      "triggers": ["run strategist", "build campaign", "create blueprint", "campaign blueprint", "strategist"],
+      "description": "Generates campaign blueprints from research inputs",
+      "input_required": "outputs/research/ files must exist first",
+      "output": "outputs/blueprints/[campaign]-blueprint.md"
+    },
+    "audience-intel": {
+      "yml": "agents/audience-intel.yml",
+      "triggers": ["run audience-intel", "audience analysis", "ICP", "ideal customer", "audience intel"],
+      "description": "Builds 5 ICP profiles for Malaga + Ellenbrook demographics",
+      "input_required": "None",
+      "output": "outputs/research/audience-analysis.md"
+    },
+    "competitor-spy": {
+      "yml": "agents/competitor-spy.yml",
+      "triggers": ["run competitor-spy", "competitor research", "spy on competitors", "competitor spy", "monitor competitors"],
+      "description": "Full competitor analysis: Revo, Ryderwear, Anytime, Snap, World Gym",
+      "input_required": "None",
+      "output": "outputs/research/competitor-full-analysis.md"
+    },
+    "content-agent": {
+      "yml": "agents/content-agent.yml",
+      "triggers": ["run content-agent", "generate content", "weekly content", "write posts", "content agent", "instagram", "facebook", "reel script"],
+      "description": "Social media content: weekly plans, reels, ad copy, competitor responses",
+      "input_required": "context/brand-voice.md, context/research-competitors.md",
+      "output": "outputs/content/"
+    },
+    "content-intel": {
+      "yml": "agents/content-intel.yml",
+      "triggers": ["run content-intel", "content research", "viral content", "content intel", "trending content"],
+      "description": "Monitors top fitness content AU — hooks, formats, emotion triggers",
+      "input_required": "None",
+      "output": "outputs/research/content-intel.md"
+    },
+    "research-agent": {
+      "yml": "agents/research-agent.yml",
+      "triggers": ["run research-agent", "research", "market research", "trend monitor", "pestle", "swot"],
+      "description": "Competitor monitor, fitness trends, PESTLE/SWOT updates",
+      "input_required": "context/research-competitors.md, context/strategy-pestle-swot.md",
+      "output": "outputs/research/"
+    },
+    "paid-ads": {
+      "yml": "agents/paid-ads.yml",
+      "triggers": ["run paid-ads", "google ads", "meta ads", "paid advertising", "ad copy", "paid ads"],
+      "description": "Google + Meta ad copy from campaign blueprint",
+      "input_required": "outputs/blueprints/ must have a blueprint first",
+      "output": "outputs/creatives/[campaign]/paid-ads/"
+    },
+    "performance": {
+      "yml": "agents/performance.yml",
+      "triggers": ["run performance", "performance report", "analytics", "KPI", "weekly performance", "ad performance"],
+      "description": "Weekly performance analysis: Meta CPM/CPC/CPL, Google CTR/CPC",
+      "input_required": "state/ga4-data.json, state/google-ads-data.json",
+      "output": "outputs/research/performance-week-[N].md"
+    },
+    "seo-agent": {
+      "yml": "agents/seo-agent.yml",
+      "triggers": ["run seo-agent", "SEO audit", "SEO", "search engine", "keyword research", "SEO content", "seo agent"],
+      "description": "Site audit, competitor SEO gap analysis, content strategy, reporting",
+      "input_required": "context/seo-targets-cb247.md, context/seo-priorities-cb247.md, context/brand-voice.md",
+      "output": "outputs/seo/audits/, outputs/seo/competitors/, outputs/seo/content/, outputs/seo/reports/"
+    }
+  },
+  "skills": {
+    "team-commands": {
+      "triggers": ["/blog", "/meeting prepare", "/meeting record", "/meeting actions", "/status", "/creative", "/performance review", "slash commands", "team commands", "non-technical"],
+      "description": "User-facing slash commands for team members without technical expertise",
+      "skill": "skills/team-commands/SKILL.md"
+    },
+    "seo-blog-generator": {
+      "triggers": ["/blog", "weekly seo blog", "generate blog", "write blog post", "seo blog", "blog draft"],
+      "description": "Generate weekly SEO blog posts with topic rotation and data-driven keyword research",
+      "skill": "skills/seo-blog-generator/SKILL.md"
+    },
+    "meeting-workflow": {
+      "triggers": ["/meeting prepare", "/meeting record", "/meeting actions", "meeting workflow", "management meeting", "meeting minutes"],
+      "description": "Management meeting workflow: recommendations, minutes, action tracking",
+      "skill": "skills/meeting-workflow/SKILL.md"
+    }
+  }
+}

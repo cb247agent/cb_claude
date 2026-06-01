@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 32px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .header { background: linear-gradient(135deg, #0d1f1c, #1a2e28); border: 1px solid #3FA69A; border-radius: 12px; padding: 24px 32px; margin-bottom: 32px; }
+  h1 { color: #3FA69A; font-size: 1.75rem; margin: 0 0 8px; }
+  h2 { color: #3FA69A; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid #222; padding-bottom: 8px; margin: 28px 0 14px; }
+  .subhead { color: #888; font-size: 0.875rem; margin: 0; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+  .badge-red { background: rgba(224,85,85,0.15); color: #e05555 }
+  .badge-yellow { background: rgba(255,217,61,0.15); color: #ffd93d }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: #141414; border: 1px solid #1e1e1e; border-radius: 8px; padding: 16px; }
+  .kpi .label { color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi .value { font-size: 1.5rem; font-weight: 700; color: #fff; }
+  .kpi .delta { font-size: 0.7rem; margin-top: 4px; }
+  .delta-pos { color: #3FA69A; }
+  .delta-neg { color: #e05555; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-bottom: 16px; }
+  th { color: #888; text-align: left; padding: 8px 10px; border-bottom: 1px solid #2a2a2a; background: #0f0f0f; font-size: 0.7rem; text-transform: uppercase; }
+  td { padding: 8px 10px; border-bottom: 1px solid #161616; color: #bbb; }
+  tr:hover td { background: #141414; }
+  .pos-good { color: #00cc77; font-weight: 700; }
+  .pos-mid { color: #ffd93d; font-weight: 700; }
+  .pos-bad { color: #e05555; }
+  .pos-none { color: #555; }
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e1e1e; color: #444; font-size: 0.7rem; text-align: center; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.65rem; margin-left: 6px; }
+  .tag-gsc { background: rgba(63,166,154,0.2); color: #3FA69A }
+  .tag-ahrefs { background: rgba(255,107,53,0.2); color: #ff6b35 }
+  .tag-sf { background: rgba(255,217,61,0.2); color: #ffd93d }
+  .tag-ga4 { background: rgba(0,150,255,0.2); color: #0096ff }
+  .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>CB247 Weekly SEO Report</h1>
+  <p class="subhead">2026-04-13 – 2026-05-11 &nbsp;|&nbsp; Generated 11 May 2026 &nbsp;|&nbsp; 5 data sources combined</p>
+</div>
+
+<h2><span class="tag tag-gsc">GSC</span> Google Search Console</h2>
+<div class="kpi-grid">
+  <div class="kpi"><div class="label">Clicks</div><div class="value">1,913</div><div class="delta delta-pos">↗️ n/a vs prev</div></div>
+  <div class="kpi"><div class="label">Impressions</div><div class="value">7,367</div><div class="delta delta-pos">↗️ n/a vs prev</div></div>
+  <div class="kpi"><div class="label">Avg CTR</div><div class="value">25.97%</div><div class="delta">↗️ vs prev</div></div>
+  <div class="kpi"><div class="label">Avg Position</div><div class="value">1.4</div><div class="delta delta-neg">worse</div></div>
+</div>
+
+<h2><span class="tag tag-ga4">GA4</span> Google Analytics</h2>
+<div class="kpi-grid">
+  <div class="kpi"><div class="label">Total Sessions</div><div class="value">2,829</div><div class="delta delta-pos">↘️ -20.5% vs prev</div></div>
+  <div class="kpi"><div class="label">New Users</div><div class="value">1822</div><div class="delta">2353 prev week</div></div>
+  <div class="kpi"><div class="label">Conversions</div><div class="value">482</div><div class="delta">544</div></div>
+  <div class="kpi"><div class="label">Domain Rating</div><div class="value">—</div><div class="delta"><span class="tag tag-ahrefs">Ahrefs</span></div></div>
+</div>
+
+<div class="section-grid">
+  <div>
+    <h2>Target Keyword Rankings</h2>
+    <table><tr><th>Keyword</th><th>Location</th><th>Position</th></tr><tr><td>gym malaga</td><td>Malaga</td><td class="pos-mid">#4.9</td></tr><tr><td>24/7 gym malaga</td><td>Malaga</td><td class="pos-none">Not tracked</td></tr><tr><td>gym ellenbrook</td><td>Ellenbrook</td><td class="pos-bad">#16.0</td></tr><tr><td>24/7 gym ellenbrook</td><td>Ellenbrook</td><td class="pos-none">Not tracked</td></tr><tr><td>sauna malaga</td><td>Malaga</td><td class="pos-none">Not tracked</td></tr><tr><td>ice bath malaga</td><td>Malaga</td><td class="pos-none">Not tracked</td></tr><tr><td>kids gym malaga</td><td>Malaga</td><td class="pos-none">Not tracked</td></tr><tr><td>reformer pilates perth</td><td>Perth</td><td class="pos-none">Not tracked</td></tr><tr><td>bath house malaga</td><td>Malaga</td><td class="pos-none">Not tracked</td></tr></table>
+  </div>
+  <div>
+    <h2>Top Ahrefs Keywords</h2>
+    <table><tr><th>Keyword</th><th>Position</th><th>Volume</th><th>CPC</th></tr><tr><td colspan='4' style='color:#555'>No Ahrefs data.</td></tr></table>
+  </div>
+</div>
+
+<h2>Top 10 Queries <span class="tag tag-gsc">GSC</span></h2>
+<table><tr><th>Query</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr><tr><td>chasing better malaga</td><td>636</td><td>1726</td><td>36.9%</td><td>#1.1</td></tr><tr><td>chasing better</td><td>465</td><td>1482</td><td>31.4%</td><td>#1.2</td></tr><tr><td>chasing better ellenbrook</td><td>416</td><td>881</td><td>47.2%</td><td>#1.1</td></tr><tr><td>chasing better gym</td><td>38</td><td>134</td><td>28.4%</td><td>#1.3</td></tr><tr><td>chasing better cancel membership</td><td>34</td><td>48</td><td>70.8%</td><td>#1.0</td></tr><tr><td>chasingbetter</td><td>24</td><td>108</td><td>22.2%</td><td>#2.6</td></tr><tr><td>chasingbetter247</td><td>22</td><td>108</td><td>20.4%</td><td>#2.8</td></tr><tr><td>chasing better 247</td><td>21</td><td>46</td><td>45.6%</td><td>#1.4</td></tr><tr><td>chasingbetter247 malaga</td><td>15</td><td>52</td><td>28.8%</td><td>#1.1</td></tr><tr><td>chasing better fitness</td><td>13</td><td>21</td><td>61.9%</td><td>#1.2</td></tr></table>
+
+<h2>Top 10 Pages <span class="tag tag-gsc">GSC</span></h2>
+<table><tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr><tr><td>https://www.chasingbetter247.com.au/?utm_source=GMB&utm_medi</td><td>1088</td><td>8516</td><td>12.8%</td><td>#3.9</td></tr><tr><td>https://www.chasingbetter247.com.au/</td><td>1002</td><td>13033</td><td>7.7%</td><td>#8.2</td></tr><tr><td>https://www.chasingbetter247.com.au/faqs</td><td>146</td><td>6922</td><td>2.1%</td><td>#2.4</td></tr><tr><td>https://www.chasingbetter247.com.au/contact</td><td>131</td><td>6932</td><td>1.9%</td><td>#2.7</td></tr><tr><td>https://www.chasingbetter247.com.au/casual-passes</td><td>75</td><td>5974</td><td>1.3%</td><td>#2.5</td></tr><tr><td>https://www.chasingbetter247.com.au/group-fitness-timetable</td><td>61</td><td>5920</td><td>1.0%</td><td>#2.3</td></tr><tr><td>https://www.chasingbetter247.com.au/kids-hub</td><td>31</td><td>2281</td><td>1.4%</td><td>#3.1</td></tr><tr><td>https://www.chasingbetter247.com.au/reformer-pilates</td><td>25</td><td>3610</td><td>0.7%</td><td>#3.4</td></tr><tr><td>https://www.chasingbetter247.com.au/personal-training</td><td>24</td><td>2032</td><td>1.2%</td><td>#54.7</td></tr><tr><td>https://www.chasingbetter247.com.au/resources/fifo-members</td><td>23</td><td>784</td><td>2.9%</td><td>#7.0</td></tr></table>
+
+<div class="section-grid">
+  <div>
+    <h2><span class="tag tag-sf">SF</span> Critical Tech Issues</h2>
+    <table><tr><th>Issue</th><th>Type</th><th>Count</th></tr><tr><td>Response Codes: Internal Client Error (4xx)</td><td>Issue</td><td>1</td></tr><tr><td>Canonicals: Canonicalised</td><td>Warning</td><td>1</td></tr></table>
+  </div>
+  <div>
+    <h2><span class="tag tag-sf">SF</span> Medium Priority Issues</h2>
+    <table><tr><th>Issue</th><th>Type</th><th>Count</th></tr><tr><td>Page Titles: Below 200 Pixels</td><td>Opportunity</td><td>9</td></tr><tr><td>Content: Low Content Pages</td><td>Opportunity</td><td>15</td></tr><tr><td>Page Titles: Over 561 Pixels</td><td>Opportunity</td><td>1</td></tr><tr><td>Images: Over 100 KB</td><td>Opportunity</td><td>7</td></tr><tr><td>Page Titles: Over 60 Characters</td><td>Opportunity</td><td>1</td></tr></table>
+  </div>
+</div>
+
+<div class="section-grid">
+  <div>
+    <h2><span class="tag tag-ahrefs">AHREFS</span> New Links This Week</h2>
+    <table><tr><th>URL</th><th>First Seen</th></tr><tr><td colspan="2" style="color:#555">None this week</td></tr></table>
+  </div>
+  <div>
+    <h2><span class="tag tag-ahrefs">AHREFS</span> Lost Links This Week</h2>
+    <table><tr><th>URL</th><th>Last Seen</th></tr><tr><td colspan="2" style="color:#555">None this week</td></tr></table>
+  </div>
+</div>
+
+<h2>Priority Actions This Week</h2>
+<table>
+  <tr><th>Action</th><th>Priority</th><th>Source</th></tr>
+  <tr><td>"gym malaga" position #1.4 — target top 3 with Malaga landing page + backlinks</td><td><span class="badge badge-red">P1</span></td><td><span class="tag tag-gsc">GSC</span></td></tr>
+  <tr><td>Add "bath house malaga" content — competitor gap from Ahrefs keyword data</td><td><span class="badge badge-red">P1</span></td><td><span class="tag tag-ahrefs">AHREFS</span></td></tr>
+  <tr><td>Fix 2 critical Screaming Frog issues</td><td><span class="badge badge-red">P1</span></td><td><span class="tag tag-sf">SF</span></td></tr>
+  <tr><td>Implement 5 medium priority SEO fixes</td><td><span class="badge badge-yellow">P2</span></td><td><span class="tag tag-sf">SF</span></td></tr>
+  <tr><td>Ahrefs DR #— — build 5+ new backlinks this week</td><td><span class="badge badge-yellow">P2</span></td><td><span class="tag tag-ahrefs">AHREFS</span></td></tr>
+</table>
+
+<div class="footer">
+CB247 Marketing — Automated Weekly SEO Report<br>
+Data: GA4 · Google Search Console · Ahrefs · Apify · Screaming Frog<br>
+Full attachments: outputs/seo/reports/ | Pipeline: scripts/weekly-seo.sh
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CB247 Agent Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0a0a0f;
+            --card-bg: #13131a;
+            --border-color: #1e1e2e;
+            --accent-green: #00ff88;
+            --accent-yellow: #ffd93d;
+            --accent-orange: #ff6b35;
+            --accent-blue: #4ecdc4;
+            --accent-purple: #a855f7;
+            --accent-red: #ff4757;
+            --text-main: #e0e0e6;
+            --text-dim: #a0a0b0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        /* ── Header ── */
+        header {
+            grid-column: span 12;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .brand-title {
+            color: var(--accent-green);
+            font-size: 22px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .header-title-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+        #live-clock {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            color: var(--text-main);
+        }
+        .header-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Status Chips ── */
+        .chip {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .chip-green  { background: #00ff8822; color: var(--accent-green); border: 1px solid #00ff8844; }
+        .chip-yellow { background: #ffd93d22; color: var(--accent-yellow); border: 1px solid #ffd93d44; }
+        .chip-orange { background: #ff6b3522; color: var(--accent-orange); border: 1px solid #ff6b3544; }
+        .chip-red    { background: #ff475722; color: var(--accent-red); border: 1px solid #ff475744; }
+        .chip-blue   { background: #4ecdc422; color: var(--accent-blue); border: 1px solid #4ecdc444; }
+        .chip-grey   { background: #33333344; color: #888; border: 1px solid #444; }
+        .chip-purple { background: #a855f722; color: var(--accent-purple); border: 1px solid #a855f744; }
+
+        /* ── Generic Card ── */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: border-color 0.3s ease;
+        }
+        .card:hover { border-color: var(--accent-green); }
+        .card-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Agent Pipeline Row ── */
+        .pipeline-row {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 12px;
+        }
+        .pipeline-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .pipeline-card:hover { border-color: var(--accent-green); transform: translateY(-2px); }
+        .pipeline-card.idle { opacity: 0.5; }
+        .pipeline-icon { font-size: 20px; margin-bottom: 6px; }
+        .pipeline-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+        .pipeline-status { margin-top: 6px; }
+
+        /* ── Agent Grid ── */
+        .agent-grid {
+            grid-column: span 8;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .agent-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+        }
+        .agent-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .agent-name {
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .agent-task {
+            font-size: 11px;
+            color: var(--text-dim);
+            border-left: 2px solid var(--border-color);
+            padding-left: 10px;
+            font-style: italic;
+            min-height: 32px;
+        }
+        .agent-meta {
+            font-size: 11px;
+            color: var(--text-dim);
+            display: flex;
+            gap: 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .agent-output {
+            font-size: 11px;
+            background: #0a0a0f;
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: var(--accent-green);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .agent-output a {
+            color: var(--accent-green);
+            text-decoration: none;
+        }
+        .agent-output a:hover { text-decoration: underline; }
+
+        /* ── Execution Stream ── */
+        .execution-section {
+            grid-column: span 4;
+            display: flex;
+            flex-direction: column;
+            max-height: 520px;
+        }
+        .stream-container {
+            background: #05050a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            overflow-y: auto;
+            flex-grow: 1;
+            color: #888;
+        }
+        .stream-container::-webkit-scrollbar { width: 4px; }
+        .stream-container::-webkit-scrollbar-track { background: #0a0a0f; }
+        .stream-container::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        .log-entry {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #111;
+            line-height: 1.5;
+        }
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: #555; margin-right: 6px; }
+        .log-agent { font-weight: 600; margin-right: 6px; }
+        .log-agent.cyan  { color: var(--accent-green); }
+        .log-agent.blue  { color: var(--accent-blue); }
+        .log-agent.purple{ color: var(--accent-purple); }
+        .log-agent.orange{ color: var(--accent-orange); }
+        .log-agent.yellow{ color: var(--accent-yellow); }
+        .log-agent.red   { color: var(--accent-red); }
+        .log-agent.dim   { color: #666; }
+        .cursor {
+            display: inline-block;
+            width: 7px;
+            height: 13px;
+            background: var(--accent-green);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* ── Agent Network Map ── */
+        .map-section {
+            grid-column: span 12;
+        }
+        #network-map { max-width: 100%; }
+
+        /* ── Campaign Status ── */
+        .campaign-row {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .campaign-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .campaign-name {
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .campaign-dates {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+        .campaign-tags {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .campaign-tag {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: #1e1e2e;
+            color: var(--text-dim);
+        }
+
+        /* ── Quick Actions ── */
+        .actions-row {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .action-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dim);
+        }
+        .action-btn:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            transform: translateY(-1px);
+        }
+        .action-btn .btn-icon { font-size: 18px; display: block; margin-bottom: 6px; }
+
+        /* ── Footer ── */
+        .footer {
+            grid-column: span 12;
+            font-size: 10px;
+            color: #555;
+            text-align: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1100px) {
+            .agent-grid { grid-template-columns: repeat(2, 1fr); }
+            .pipeline-row { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .agent-grid { grid-template-columns: 1fr; }
+            .execution-section { grid-column: span 12; max-height: 300px; }
+            .pipeline-row { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ── Header ── -->
+    <header>
+        <div class="header-top">
+            <div>
+                <div class="brand-title">CB247 Agent Monitor</div>
+                <div class="header-title-sub">Marketing Automation System — Malaga + Ellenbrook</div>
+            </div>
+            <div id="live-clock" style="text-align:right;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:18px;">--:--:--</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">AEST Perth</div>
+            </div>
+        </div>
+        <div class="header-badges">
+            <span class="badge" style="color:var(--accent-green);border-color:#00ff8844;">● 9 Agents Available</span>
+            <span class="badge" id="activeCount">0 Running</span>
+            <span class="badge" id="lastRun">Last agent run: —</span>
+            <span class="badge" id="openOutputs">0 Outputs today</span>
+        </div>
+    </header>
+
+    <!-- ── Agent Pipeline ── -->
+    <div class="card" style="grid-column:span 12;padding:16px 20px;">
+        <div class="card-title">&#9673; Agent Pipeline</div>
+        <div class="pipeline-row" style="grid-template-columns:repeat(9,1fr);">
+            <div class="pipeline-card" id="pc-researcher">
+                <div class="pipeline-icon">&#128269;</div>
+                <div class="pipeline-name">Researcher</div>
+                <div style="font-size:10px;color:var(--text-dim);">Research</div>
+                <div class="pipeline-status" id="ps-researcher"></div>
+            </div>
+            <div class="pipeline-card" id="pc-competitor-spy">
+                <div class="pipeline-icon">&#128737;</div>
+                <div class="pipeline-name">Competitor Spy</div>
+                <div style="font-size:10px;color:var(--text-dim);">Research</div>
+                <div class="pipeline-status" id="ps-competitor-spy"></div>
+            </div>
+            <div class="pipeline-card" id="pc-audience-intel">
+                <div class="pipeline-icon">&#128101;</div>
+                <div class="pipeline-name">Audience Intel</div>
+                <div style="font-size:10px;color:var(--text-dim);">Research</div>
+                <div class="pipeline-status" id="ps-audience-intel"></div>
+            </div>
+            <div class="pipeline-card" id="pc-content-intel">
+                <div class="pipeline-icon">&#128200;</div>
+                <div class="pipeline-name">Content Intel</div>
+                <div style="font-size:10px;color:var(--text-dim);">Research</div>
+                <div class="pipeline-status" id="ps-content-intel"></div>
+            </div>
+            <div class="pipeline-card" id="pc-strategist">
+                <div class="pipeline-icon">&#129504;</div>
+                <div class="pipeline-name">Strategist</div>
+                <div style="font-size:10px;color:var(--text-dim);">Strategy</div>
+                <div class="pipeline-status" id="ps-strategist"></div>
+            </div>
+            <div class="pipeline-card" id="pc-content-agent">
+                <div class="pipeline-icon">&#128221;</div>
+                <div class="pipeline-name">Content Agent</div>
+                <div style="font-size:10px;color:var(--text-dim);">Execution</div>
+                <div class="pipeline-status" id="ps-content-agent"></div>
+            </div>
+            <div class="pipeline-card" id="pc-paid-ads">
+                <div class="pipeline-icon">&#128179;</div>
+                <div class="pipeline-name">Paid Ads</div>
+                <div style="font-size:10px;color:var(--text-dim);">Execution</div>
+                <div class="pipeline-status" id="ps-paid-ads"></div>
+            </div>
+            <div class="pipeline-card" id="pc-seo-agent">
+                <div class="pipeline-icon">&#127760;</div>
+                <div class="pipeline-name">SEO Agent</div>
+                <div style="font-size:10px;color:var(--text-dim);">Execution</div>
+                <div class="pipeline-status" id="ps-seo-agent"></div>
+            </div>
+            <div class="pipeline-card" id="pc-performance">
+                <div class="pipeline-icon">&#128200;</div>
+                <div class="pipeline-name">Performance</div>
+                <div style="font-size:10px;color:var(--text-dim);">Analysis</div>
+                <div class="pipeline-status" id="ps-performance"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Campaign Status ── -->
+    <div class="campaign-row">
+        <div class="campaign-card">
+            <div>
+                <div class="campaign-name" style="color:var(--accent-orange);">&#9889; Winter Attack 2026</div>
+                <div class="campaign-dates">May 2026 — Active Campaign</div>
+                <div class="campaign-tags">
+                    <span class="campaign-tag">Malaga</span>
+                    <span class="campaign-tag">Ellenbrook</span>
+                    <span class="campaign-tag">Seasonal</span>
+                    <span class="campaign-tag">Competitor Attack</span>
+                </div>
+            </div>
+            <span class="chip chip-orange">LIVE</span>
+        </div>
+        <div class="campaign-card">
+            <div>
+                <div class="campaign-name" style="color:var(--accent-green);">&#128227; Anytime Switch</div>
+                <div class="campaign-dates">May 2026 — On Hold</div>
+                <div class="campaign-tags">
+                    <span class="campaign-tag">Revo / Anytime</span>
+                    <span class="campaign-tag">Value</span>
+                </div>
+            </div>
+            <span class="chip chip-yellow">HOLD</span>
+        </div>
+    </div>
+
+    <!-- ── Agent Activity Grid ── -->
+    <div class="card" style="grid-column:span 12;padding:16px 20px;">
+        <div class="card-title">&#9673; Agent Activity Log</div>
+        <div class="agent-grid" id="agentGrid">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- ── Execution Stream ── -->
+    <div class="card execution-section">
+        <div class="card-title">&#9673; Execution Stream</div>
+        <div class="stream-container" id="stream">
+            <div class="log-entry"><span class="log-time">[--:--]</span><span class="log-agent dim">SYSTEM</span> — Agent monitor initialised</div>
+            <div class="log-entry"><span class="log-time">[--:--]</span><span class="log-agent dim">SYSTEM</span> — Checking outputs/ directory...</div>
+            <div class="log-entry"><span class="log-time">[--:--]</span><span class="log-agent dim">SYSTEM</span> — Checking state/status.json...</div>
+            <div><span class="cursor"></span></div>
+        </div>
+    </div>
+
+    <!-- ── Agent Network Map ── -->
+    <div class="card map-section">
+        <div class="card-title">&#9673; Agent Network Map</div>
+        <svg id="network-map" width="100%" height="280" viewBox="0 0 900 280">
+            <defs>
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+                    <polygon points="0 0, 8 3, 0 6" fill="#333" />
+                </marker>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+            </defs>
+
+            <!-- Research Phase -->
+            <g transform="translate(100,40)">
+                <circle r="24" fill="#13131a" stroke="#00ff88" stroke-width="2" filter="url(#glow)" />
+                <text y="5" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="700">R</text>
+                <text y="42" text-anchor="middle" fill="#555" font-size="9">Research</text>
+            </g>
+            <g transform="translate(220,40)">
+                <circle r="24" fill="#13131a" stroke="#00ff88" stroke-width="2" />
+                <text y="5" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="700">CS</text>
+                <text y="42" text-anchor="middle" fill="#555" font-size="9">Comp. Spy</text>
+            </g>
+            <g transform="translate(340,40)">
+                <circle r="24" fill="#13131a" stroke="#00ff88" stroke-width="2" />
+                <text y="5" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="700">AI</text>
+                <text y="42" text-anchor="middle" fill="#555" font-size="9">Audience</text>
+            </g>
+            <g transform="translate(460,40)">
+                <circle r="24" fill="#13131a" stroke="#00ff88" stroke-width="2" />
+                <text y="5" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="700">CI</text>
+                <text y="42" text-anchor="middle" fill="#555" font-size="9">Content</text>
+            </g>
+
+            <!-- Strategy Phase -->
+            <g transform="translate(280,130)">
+                <circle r="30" fill="#13131a" stroke="#a855f7" stroke-width="2.5" filter="url(#glow)" />
+                <text y="5" text-anchor="middle" fill="#a855f7" font-size="11" font-weight="700">ST</text>
+                <text y="48" text-anchor="middle" fill="#555" font-size="9">Strategist</text>
+            </g>
+
+            <!-- Execution Phase -->
+            <g transform="translate(160,220)">
+                <circle r="24" fill="#13131a" stroke="#ffd93d" stroke-width="2" />
+                <text y="5" text-anchor="middle" fill="#ffd93d" font-size="11" font-weight="700">CA</text>
+                <text y="42" text-anchor="middle" fill="#555" font-size="9">Content</text>
+            </g>
+            <g transform="translate(280,220)">
+                <circle r="24" fill="#13131a" stroke="#ffd93d" stroke-width="2" />
+                <text y="5" text-anchor="middle" fill="#ffd93d" font-size="11" font-weight="700">PA</text>
+                <text y="42" text-anchor="middle" fill="#555" font-size="9">Paid Ads</text>
+            </g>
+            <g transform="translate(400,220)">
+                <circle r="24" fill="#13131a" stroke="#ffd93d" stroke-width="2" />
+                <text y="5" text-anchor="middle" fill="#ffd93d" font-size="11" font-weight="700">SEO</text>
+                <text y="42" text-anchor="middle" fill="#555" font-size="9">SEO Agent</text>
+            </g>
+
+            <!-- Analysis Phase -->
+            <g transform="translate(540,130)">
+                <circle r="24" fill="#13131a" stroke="#4ecdc4" stroke-width="2" />
+                <text y="5" text-anchor="middle" fill="#4ecdc4" font-size="11" font-weight="700">PF</text>
+                <text y="42" text-anchor="middle" fill="#555" font-size="9">Performance</text>
+            </g>
+
+            <!-- Arrows: Research → Strategy -->
+            <path d="M 125 64 Q 200 90 260 105" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <path d="M 245 64 Q 260 90 270 105" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <path d="M 365 64 Q 320 90 300 105" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <path d="M 485 64 Q 310 90 295 105" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+
+            <!-- Arrows: Strategy → Execution -->
+            <path d="M 265 160 Q 220 190 185 198" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <path d="M 285 155 Q 285 190 285 198" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+            <path d="M 300 158 Q 370 185 400 198" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+
+            <!-- Arrows: Strategy → Performance -->
+            <path d="M 310 145 Q 400 120 520 130" stroke="#333" stroke-width="1.5" fill="none" marker-end="url(#arrowhead)" />
+
+            <!-- Legend -->
+            <g transform="translate(640,30)">
+                <rect width="220" height="120" rx="8" fill="#0a0a0f" stroke="#1e1e2e" />
+                <text x="12" y="20" fill="#555" font-size="9" font-weight="700" text-transform="uppercase" letter-spacing="1">Legend</text>
+                <circle cx="20" cy="40" r="6" fill="none" stroke="#00ff88" stroke-width="2"/>
+                <text x="35" y="44" fill="#888" font-size="10">Research Agents</text>
+                <circle cx="20" cy="62" r="6" fill="none" stroke="#a855f7" stroke-width="2"/>
+                <text x="35" y="66" fill="#888" font-size="10">Strategy Agent</text>
+                <circle cx="20" cy="84" r="6" fill="none" stroke="#ffd93d" stroke-width="2"/>
+                <text x="35" y="88" fill="#888" font-size="10">Execution Agents</text>
+                <circle cx="20" cy="106" r="6" fill="none" stroke="#4ecdc4" stroke-width="2"/>
+                <text x="35" y="110" fill="#888" font-size="10">Analysis Agent</text>
+            </g>
+
+            <!-- Phase Labels -->
+            <text x="280" y="12" fill="#333" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="2">PHASE 1 — RESEARCH</text>
+            <text x="280" y="110" fill="#333" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="2">PHASE 2 — STRATEGY</text>
+            <text x="280" y="195" fill="#333" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="2">PHASE 3 — EXECUTION</text>
+            <text x="540" y="110" fill="#333" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="2">PHASE 4</text>
+        </svg>
+    </div>
+
+    <!-- ── Quick Actions ── -->
+    <div class="actions-row">
+        <div class="action-btn" onclick="runAgent('competitor-spy')">
+            <span class="btn-icon">&#128737;</span>
+            Run Competitor Spy
+        </div>
+        <div class="action-btn" onclick="runAgent('strategist')">
+            <span class="btn-icon">&#129504;</span>
+            Run Strategist
+        </div>
+        <div class="action-btn" onclick="runAgent('performance')">
+            <span class="btn-icon">&#128200;</span>
+            Run Performance Report
+        </div>
+        <div class="action-btn" onclick="runAgent('content-agent')">
+            <span class="btn-icon">&#128221;</span>
+            Run Content Agent
+        </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <div class="footer">
+        CB247 Agent Monitor &nbsp;|&nbsp; OpenRouter: minimax/minimax-m2.7 &nbsp;|&nbsp;
+        <span id="footerTime">--</span>
+    </div>
+
+</div><!-- /container -->
+
+<script>
+    // ─── Clock ───────────────────────────────────────────────────────────────
+    function updateClock() {
+        const now = new Date();
+        const time = now.toLocaleTimeString('en-AU', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('live-clock').innerHTML = `<div style="font-family:'JetBrains Mono',monospace;font-size:18px;">${time}</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px;">AEST Perth | ${now.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</div>`;
+        document.getElementById('footerTime').textContent = now.toLocaleString('en-AU', { hour12: false });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ─── Agent Definitions ───────────────────────────────────────────────────
+    const AGENTS = [
+        {
+            id: 'researcher',
+            name: 'Researcher',
+            icon: '🔍',
+            phase: 'Research',
+            chipClass: 'chip-green',
+            lastRun: '2026-05-11',
+            task: 'Perth fitness market Q2 2026 analysis',
+            output: 'outputs/research/trends-2026-05-11.md',
+            cost: '$0.42',
+            status: 'IDLE'
+        },
+        {
+            id: 'competitor-spy',
+            name: 'Competitor Spy',
+            icon: '🕵️',
+            phase: 'Research',
+            chipClass: 'chip-green',
+            lastRun: '2026-05-11',
+            task: 'Revo Fitness + Anytime + Ryderwear full audit',
+            output: 'outputs/research/competitor-full-analysis-2026-05-11.md',
+            cost: '$0.68',
+            status: 'IDLE'
+        },
+        {
+            id: 'audience-intel',
+            name: 'Audience Intel',
+            icon: '👥',
+            phase: 'Research',
+            chipClass: 'chip-green',
+            lastRun: '2026-05-11',
+            task: 'FIFO + Family ICP language bank built',
+            output: 'outputs/research/audience-analysis.md',
+            cost: '$0.51',
+            status: 'IDLE'
+        },
+        {
+            id: 'content-intel',
+            name: 'Content Intel',
+            icon: '📊',
+            phase: 'Research',
+            chipClass: 'chip-green',
+            lastRun: '2026-05-11',
+            task: 'Top AU fitness hooks + viral content analysis',
+            output: 'outputs/research/content-intel.md',
+            cost: '$0.38',
+            status: 'IDLE'
+        },
+        {
+            id: 'strategist',
+            name: 'Strategist',
+            icon: '🧠',
+            phase: 'Strategy',
+            chipClass: 'chip-purple',
+            lastRun: '2026-05-12',
+            task: 'Winter Attack 2026 blueprint generated',
+            output: 'outputs/blueprints/winter-attack-2026-blueprint-2026-05-12.md',
+            cost: '$1.20',
+            status: 'IDLE'
+        },
+        {
+            id: 'content-agent',
+            name: 'Content Agent',
+            icon: '📣',
+            phase: 'Execution',
+            chipClass: 'chip-yellow',
+            lastRun: '2026-05-12',
+            task: 'Weekly social content calendar — May 2026',
+            output: 'outputs/social/calendar-may-june-2026.md',
+            cost: '$0.85',
+            status: 'IDLE'
+        },
+        {
+            id: 'paid-ads',
+            name: 'Paid Ads',
+            icon: '💰',
+            phase: 'Execution',
+            chipClass: 'chip-yellow',
+            lastRun: '2026-05-12',
+            task: 'Winter Attack ad sets — Google + Meta ready',
+            output: 'outputs/creatives/winter-attack-2026/paid-ads/',
+            cost: '$0.92',
+            status: 'IDLE'
+        },
+        {
+            id: 'seo-agent',
+            name: 'SEO Agent',
+            icon: '🌐',
+            phase: 'Execution',
+            chipClass: 'chip-yellow',
+            lastRun: '2026-05-11',
+            task: 'Site audit + SEO report + content recommendations',
+            output: 'outputs/seo/audits/site-audit-cb247-full-technical-2026-05-09.md',
+            cost: '$0.75',
+            status: 'IDLE'
+        },
+        {
+            id: 'performance',
+            name: 'Performance',
+            icon: '📈',
+            phase: 'Analysis',
+            chipClass: 'chip-blue',
+            lastRun: '2026-05-12',
+            task: 'Weekly performance report + HTML dashboard generated',
+            output: 'outputs/reports/cb247-weekly-report-2026-05-12.html',
+            cost: '$0.31',
+            status: 'IDLE'
+        }
+    ];
+
+    // ─── Render Pipeline ────────────────────────────────────────────────────
+    function renderPipeline() {
+        AGENTS.forEach(agent => {
+            const statusEl = document.getElementById(`ps-${agent.id}`);
+            const cardEl = document.getElementById(`pc-${agent.id}`);
+            if (!statusEl) return;
+
+            const lastRunFormatted = agent.lastRun
+                ? new Date(agent.lastRun).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+                : '—';
+
+            statusEl.innerHTML = `<span class="chip ${agent.chipClass}" style="font-size:9px;">${agent.status}</span>
+                <div style="font-size:10px;color:#555;margin-top:4px;">${lastRunFormatted}</div>`;
+
+            if (agent.status === 'IDLE') {
+                cardEl.classList.add('idle');
+            } else {
+                cardEl.classList.remove('idle');
+            }
+        });
+
+        // Update header badges
+        const running = AGENTS.filter(a => a.status !== 'IDLE').length;
+        const todayOutputs = AGENTS.filter(a => a.lastRun === '2026-05-12').length;
+        const lastAgent = AGENTS.reduce((latest, a) => {
+            if (!a.lastRun) return latest;
+            return !latest || a.lastRun > latest ? a.lastRun : latest;
+        }, null);
+
+        document.getElementById('activeCount').textContent = `${running} Running`;
+        document.getElementById('openOutputs').textContent = `${todayOutputs} Outputs today`;
+        document.getElementById('lastRun').textContent = lastAgent
+            ? `Last run: ${new Date(lastAgent).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
+            : 'Last run: —';
+    }
+
+    // ─── Render Agent Grid ──────────────────────────────────────────────────
+    function renderAgentGrid() {
+        const grid = document.getElementById('agentGrid');
+        grid.innerHTML = AGENTS.map(agent => {
+            const lastRunFormatted = agent.lastRun
+                ? new Date(agent.lastRun).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: '2-digit' })
+                : '—';
+            return `
+            <div class="agent-card card">
+                <div class="agent-header">
+                    <div class="agent-name">${agent.icon} ${agent.name}</div>
+                    <span class="chip ${agent.chipClass}">${agent.status}</span>
+                </div>
+                <div class="agent-task">${agent.task}</div>
+                <div class="agent-meta">
+                    <span>${lastRunFormatted}</span>
+                    <span>${agent.cost}</span>
+                </div>
+                <div class="agent-output">
+                    <a href="../${agent.output}" target="_blank">${agent.output}</a>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ─── Execution Stream ───────────────────────────────────────────────────
+    const LOGS = [
+        { time: '09:00', agent: 'SYSTEM', agentClass: 'dim', msg: 'CB247 Agent Monitor started' },
+        { time: '09:01', agent: 'SYSTEM', agentClass: 'dim', msg: 'All 9 agents loaded from agents/*.yml' },
+        { time: '09:01', agent: 'SYSTEM', agentClass: 'dim', msg: 'Reading state/status.json...' },
+        { time: '09:02', agent: 'PERFORMANCE', agentClass: 'cyan', msg: 'Weekly report + HTML dashboard generated' },
+        { time: '09:03', agent: 'CONTENT-AGENT', agentClass: 'yellow', msg: 'Weekly social calendar saved to outputs/social/' },
+        { time: '09:05', agent: 'PAID-ADS', agentClass: 'yellow', msg: 'Google Ads copy written: Malaga + Ellenbrook RSA' },
+        { time: '09:06', agent: 'PAID-ADS', agentClass: 'yellow', msg: 'Meta Ads copy written: Cold Local + FIFO campaigns' },
+        { time: '09:10', agent: 'STRATEGIST', agentClass: 'purple', msg: 'Winter Attack 2026 blueprint saved' },
+        { time: '09:12', agent: 'SYSTEM', agentClass: 'dim', msg: 'Report auto-formatted to McKinsey style via report-formatter skill' },
+        { time: '09:15', agent: 'COMPETITOR-SPY', agentClass: 'cyan', msg: 'Full competitor analysis: Revo, Anytime, Ryderwear complete' },
+        { time: '09:18', agent: 'SEO-AGENT', agentClass: 'yellow', msg: 'Site audit complete. 4 critical issues found.' },
+        { time: '09:20', agent: 'CONTENT-INTEL', agentClass: 'cyan', msg: '10 viral hooks identified for May 2026' },
+        { time: '09:22', agent: 'SYSTEM', agentClass: 'dim', msg: 'CB_Brain wiki updated: Agent-Learnings + Campaign-History' },
+        { time: '09:25', agent: 'SYSTEM', agentClass: 'dim', msg: 'Session complete. Say "run [agent]" to activate.' },
+    ];
+
+    function renderStream() {
+        const container = document.getElementById('stream');
+        const html = LOGS.map(log => `
+            <div class="log-entry">
+                <span class="log-time">[${log.time}]</span>
+                <span class="log-agent ${log.agentClass}">${log.agent}</span>
+                <span style="color:#888;">—</span>
+                <span style="color:#aaa;">${log.msg}</span>
+            </div>`).join('');
+        container.innerHTML = html + '<div><span class="cursor"></span></div>';
+    }
+
+    // ─── Run Agent ──────────────────────────────────────────────────────────
+    function runAgent(agentId) {
+        const agent = AGENTS.find(a => a.id === agentId);
+        if (!agent) return;
+        const logEntry = { time: new Date().toLocaleTimeString('en-AU', { hour12: false, hour: '2-digit', minute: '2-digit' }), agent: agent.name.toUpperCase(), agentClass: agent.phase === 'Research' ? 'cyan' : agent.phase === 'Strategy' ? 'purple' : 'yellow', msg: `Agent triggered — running...` };
+        LOGS.unshift(logEntry);
+        renderStream();
+
+        const container = document.getElementById('stream');
+        container.scrollTop = 0;
+
+        // In production: trigger the actual agent via Claude Code "run [agent]" command
+        // For now: simulate activation
+        console.log(`Triggering agent: ${agentId} — say "run ${agentId}" in Claude Code to activate`);
+    }
+
+    // ─── Init ───────────────────────────────────────────────────────────────
+    renderPipeline();
+    renderAgentGrid();
+    renderStream();
+</script>
+</body>
+</html>

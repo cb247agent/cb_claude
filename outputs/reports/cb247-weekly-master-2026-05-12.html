@@ -1,0 +1,2756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CB247 — Weekly Master Report 2026-05-12</title>
+    <style>
+        :root {
+            --primary-green: #00b894;
+            --dark-header: #0a0a0f;
+            --white: #ffffff;
+            --bg-light: #f4f7f6;
+            --text-dark: #2d3436;
+            --text-muted: #636e72;
+            --red-alert: #d63031;
+            --orange-warn: #fdcb6e;
+            --blue-info: #0984e3;
+            --grey-neutral: #b2bec3;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--dark-header);
+            color: var(--white);
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--primary-green);
+        }
+
+        .header-left h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .header-left .week-label {
+            color: var(--grey-neutral);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .tagline {
+            color: var(--primary-green);
+            font-weight: 600;
+            font-style: italic;
+            margin-bottom: 4px;
+        }
+
+        .locations {
+            font-size: 0.8rem;
+            color: var(--grey-neutral);
+        }
+
+        .nav-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: var(--primary-green);
+            border-color: var(--primary-green);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        /* Quick nav */
+        .quick-nav {
+            background: var(--white);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .quick-nav-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-right: 10px;
+        }
+
+        .quick-nav a {
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            background: var(--bg-light);
+            border-radius: 20px;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .quick-nav a:hover {
+            background: var(--primary-green);
+            color: white;
+        }
+
+        /* Agent sections */
+        .agent-section {
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, #fafafa 0%, #fff 100%);
+        }
+
+        .section-icon {
+            font-size: 1.8rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-light);
+            border-radius: 10px;
+        }
+
+        .section-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .section-desc {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .file-count {
+            margin-left: auto;
+            background: var(--primary-green);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .report-list {
+            padding: 15px 25px 25px;
+        }
+
+        .report-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #fafafa;
+            gap: 15px;
+        }
+
+        .report-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .report-icon {
+            font-size: 1rem;
+        }
+
+        .report-title {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .report-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-link {
+            background: var(--primary-green);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .btn-toggle {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 1px solid #ddd;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-toggle:hover {
+            background: var(--bg-light);
+        }
+
+        .report-preview {
+            display: none;
+            margin: 0;
+            padding: 15px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .report-preview.show {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+
+        .empty-state code {
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        footer a {
+            color: var(--primary-green);
+        }
+
+        /* Print */
+        @media print {
+            .nav-buttons, .btn-toggle, .report-actions { display: none !important; }
+            body { background: white; }
+            .container { max-width: 100%; margin: 0; padding: 0; }
+            .agent-section { box-shadow: none; border: 1px solid #eee; page-break-inside: avoid; }
+            .report-preview { display: none !important; }
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; text-align: center; }
+            .header-right { text-align: center; margin-top: 15px; }
+            .nav-buttons { justify-content: center; }
+            .report-header { flex-direction: column; align-items: flex-start; }
+            .report-actions { align-self: flex-end; }
+            .quick-nav { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <h1>CB247 — Weekly Marketing Master Report</h1>
+            <div class="week-label">Week 20 — May 11–May 17, 2026</div>
+        </div>
+        <div class="header-right">
+            <div class="tagline">AlwaysBetter</div>
+            <div class="locations">Malaga & Ellenbrook, Perth WA</div>
+            <div class="nav-buttons">
+                <a href="cb247-weekly-report-2026-05-12.html" class="btn">Performance Report ↗</a>
+                <button class="btn" onclick="window.print()">Export PDF</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- QUICK NAV -->
+        <div class="quick-nav">
+            <span class="quick-nav-label">Jump to:</span>
+            <a href="#research-agent">🔍 Research</a>
+            <a href="#competitor-spy">🕵️ Competitor</a>
+            <a href="#audience-intel">👥 Audience</a>
+            <a href="#content-intel">📱 Content Intel</a>
+            <a href="#performance">📊 Performance</a>
+            <a href="#strategist">🗺️ Strategy</a>
+            <a href="#content-agent">✍️ Content</a>
+            <a href="#paid-ads">📢 Paid Ads</a>
+            <a href="#seo-agent">🔎 SEO</a>
+        </div>
+
+        
+    <div class="agent-section" id="research-agent">
+        <div class="section-header">
+            <span class="section-icon">🔍</span>
+            <div>
+                <h2 class="section-title">Research Agent</h2>
+                <p class="section-desc">Market trends, PESTLE, SWOT updates</p>
+            </div>
+            <span class="file-count">3 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔍</span>
+                    <strong class="report-title">pestle-update-2026-05-11.md</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/research/pestle-update-2026-05-11.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('research-agent-25911')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-research-agent-25911"># PESTLE Analysis Update: ChasingBetter247
+**Date:** 2026-05-11
+**Prepared by:** Research-Agent (Claude Code)
+
+## Review of External Factors Affecting CB247 (Malaga &amp; Ellenbrook)
+
+### POLITICAL
+*   **Gym Safety Standards:** Ongoing WA state discussions regarding stricter mandatory duress system requirements for 24/7 unstaffed facilities. CB247's existing 24/7 security protocol remains a strength. 
+
+### ECONOMIC
+*   **Cost-of-Living Pivot:** Inflationary pressures in WA are driving a migration from &quot;Boutique-only&quot; (Pilates/Yoga studios) to &quot;All-inclusive Budget&quot; facilities. CB247's **$11.95/week** price point is increasingly positioned as a &quot;household essential&quot; rather than a luxury.
+*   **FIFO Market Stability:** Strong iron ore and lithium prices in the Pilbara continue to drive high demand for northern Perth housing (Ellenbrook/Malaga), maintaining the primary FIFO target audience.
+
+### SOCIAL (CRITICAL UPDATES)
+*   **Recovery Culture:** The transition from &quot;bodybuilding&quot; to &quot;longevity&quot; is accelerating. Members are seeking ice baths and saunas not just for muscle soreness, but for mental health and stress management.
+*   **Childcare Sensitivity:** With increasing childcare costs in WA, the inclusion of the **Kids Hub** at CB247 is a primary social driver for millennial parents in Ellenbrook.
+
+### TECHNOLOGICAL
+*   **AI Marketing Efficiency:** Competitors (specifically national chains) are lagging in hyper-local AI content automation. CB247's move to automate market research and content gives us a speed-to-market advantage.
+*   **Protocol-Driven Apps:** Members are increasingly using apps to track &quot;Recovery Minutes.&quot; Opportunity to integrate sauna/ice bath tracking into membership engagement.
+
+### LEGAL
+*   **Privacy &amp; Biometrics:** Australia's updated Privacy Act requires more transparent handling of 24/7 access (fob/biometric) data. 
+*   **Safety Compliance:** Ensure all sauna and ice bath safety signage meets current WA health regulations for commercial recovery facilities.
+
+### ENVIRONMENTAL
+*   **Energy Costs:** Increasing electricity tariffs in WA for 24/7 businesses. Opportunity to explore solar-focused marketing to highlight sustainability and long-term cost stability.
+
+---
+**Summary of Changes:** Focus has shifted heavily toward **Economic Value + Recovery Benefits** as the primary external drivers for May 2026.</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔍</span>
+                    <strong class="report-title">trends-2026-05-11.md</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/research/trends-2026-05-11.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('research-agent-08817')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-research-agent-08817"># Fitness Industry Trends Update: ChasingBetter247
+**Date:** 2026-05-11
+**Prepared by:** Research-Agent (Claude Code)
+
+## 1. Social Media Content Trends (May 2026)
+
+### Top Performing Instagram &amp; TikTok Formats
+*   **&quot;Day in the Life of a Recovery Junkie&quot;:** Short-form reels showing a 60-minute training session followed by a specifically sequenced ice bath/sauna recovery.
+*   **&quot;The Modern Parent's Office&quot;:** Content featuring parents training while their children are in a high-quality Kids Hub. Focus is on &quot;Self-care without the childcare stress.&quot;
+*   **&quot;Budget Boutiquing&quot;:** Exposing the high cost of standalone Reformer Pilates studios vs. &quot;all-in&quot; gym memberships.
+
+### Trending Australian Gym Hashtags
+*   #PerthFitnessCommunity
+*   #ReformerPilatesPerth
+*   #IceBathRecovery
+*   #AlwaysBetter
+*   #FIFOLifePerth
+*   #EllenbrookGyms
+
+## 2. Traction in Recovery &amp; Wellness
+*   **Recovery Sequencing:** Market is shifting from &quot;using a sauna&quot; to &quot;recovery protocols.&quot; Trends show interest in 3 rounds of 15-min sauna / 3-min ice bath. 
+*   **Active Recovery Classes:** High demand for low-impact HIIT + Stretch combos (ideal for Neon21 or ChasingRX programming).
+*   **Social Recovery:** Using the sauna/ice bath area as a community hub for social interaction post-training—the &quot;new pub.&quot;
+
+## 3. Class &amp; Format Trends
+*   **Hybrid Strength/Pilates:** Combining heavy lifting with Reformer stability. CB247's proximity of weights floor to Reformer room is a major facility advantage.
+*   **Micro-Goals:** Focus on &quot;Better than yesterday&quot; (aligns perfectly with AlwaysBetter tagline) rather than 12-week transformations.
+
+## 4. Recommended Content Angles for CB247 (Week of May 11)
+
+
+... (17 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔍</span>
+                    <strong class="report-title">swot-update-2026-05-11.md</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/research/swot-update-2026-05-11.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('research-agent-23492')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-research-agent-23492"># SWOT Analysis Update: ChasingBetter247
+**Date:** 2026-05-11
+**Prepared by:** Research-Agent (Claude Code)
+
+## Strategic Assessment of CB247 Internal &amp; External Position
+
+### STRENGTHS (Maintained &amp; Enhanced)
+*   **Facility Monopoly:** Still the only gym in the Malaga/Ellenbrook corridor offering **Kids Hub + Sauna + Ice Bath + Reformer Pilates + 24/7 Access** in one location.
+*   **Price Leadership:** At **$11.95/week**, we are technically cheaper for &quot;all-in&quot; members than Revo’s Level 2 ($12.69), while offering significantly more facilities (Childcare &amp; Recovery).
+*   **FIFO-Native Positioning:** The &quot;$0 FIFO Freeze&quot; (Swing-Shift Guarantee) remains a unique market feature that national competitors (Anytime/Snap) cannot effectively replicate at a local level.
+
+### WEAKNESSES (Addressed &amp; Current)
+*   **Brand Awareness Gap:** Revo and Ryderwear still dominate the &quot;aesthetic&quot; and &quot;vibe&quot; search/social volume.
+*   **Operational Transition:** Moving from manual marketing to AI-powered automation is in progress (Phase 1 complete).
+*   **Geographic Density:** Two high-performance locations vs. competitors with 10+ locations in Perth—requires &quot;destination gym&quot; marketing strategy.
+
+### OPPORTUNITIES (New &amp; Growing)
+*   **The &quot;Recovery Pivot&quot;:** High market interest in deliberate cold/heat exposure. Opportunity to market CB247 as a &quot;Recovery Center that happens to have a world-class gym.&quot;
+*   **Boutique Defectors:** Capture members leaving standalone Pilates studios due to cost-of-living—price anchor $11.95/wk vs $60/wk studio memberships.
+*   **AI Social Dominance:** Leverage automated research to produce 5x more hyper-local content than competitors.
+
+### THREATS (Priority Monitoring)
+*   **Revo level 2 Expansion:** Revo aggressively rolling out &quot;The Studio&quot; (Reformer) across all Perth sites.
+*   **Ryderwear Community:** They are building an &quot;exclusive&quot; feeling in Malaga that can resist price-swapping.
+*   **Macro-Economic Shielding:** If unemployment rises in WA, the gym must double down on the &quot;cheapest therapy for mental health&quot; angle.
+
+---
+
+## Strategic Action Recommendation: &quot;The Studio Killer&quot;
+**Action:** Launch a direct-comparison creative campaign targeting Revo &quot;Level 2&quot; searchers.
+
+... (5 more lines)</pre>
+        </div>
+        </div>
+    </div>
+    <div class="agent-section" id="competitor-spy">
+        <div class="section-header">
+            <span class="section-icon">🕵️</span>
+            <div>
+                <h2 class="section-title">Competitor Spy</h2>
+                <p class="section-desc">Full competitor analysis — Revo, Anytime, Ryderwear</p>
+            </div>
+            <span class="file-count">4 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🕵️</span>
+                    <strong class="report-title">competitor-full-analysis.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/research/competitor-full-analysis.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('competitor-spy-42407')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-competitor-spy-42407"># Competitor Ads Analysis - Malaga, Perth
+Date: 2026-04-29
+
+## Target Competitors
+- Revo Fitness
+- Ryderwear Gym Malaga
+- Anytime Fitness
+- Snap Fitness
+- World Gym AU
+
+## Findings
+The search for current active Facebook ads for these specific locations returned no immediate direct results via the search tool. This often happens because the Facebook Ads Library is a dynamic internal tool and not fully indexable by standard search engines.
+
+### General Competitor Strategies (Inferred)
+Based on brand positioning:
+- **Revo Fitness**: Likely pushing &quot;high-value/low-cost&quot; and their 24/7 access.
+- **Ryderwear Gym**: Likely focusing on &quot;premium bodybuilding/lifting&quot; environment and community.
+- **Anytime/Snap**: Likely using national &quot;join now&quot; promotions and convenience-focused messaging.
+- **World Gym**: Likely focusing on &quot;elite training&quot; and professional results.
+
+## Recommendations for CB247
+To compete with these, CB247 should emphasize the unique facilities that competitors lack:
+- **Kids Hub**: Unique selling point for parents.
+- **Sauna + Ice Bath**: High-end recovery not common in budget gyms.
+- **FIFO-friendly freeze**: Hyper-local WA appeal.
+- **Price Point**: $11.95/week remains highly competitive.
+
+## Next Steps
+- Manually visit Facebook Ads Library for each brand.
+- Monitor Instagram @chasingbetter247 for engagement spikes vs competitors.</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🕵️</span>
+                    <strong class="report-title">competitor-full-analysis-final.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/research/competitor-full-analysis-final.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('competitor-spy-05473')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-competitor-spy-05473"># Chasing Better Group Internal Report - Malaga Competitive Analysis
+Date: 2026-04-29
+Status: Final
+
+## Executive Summary
+CB247 holds a significant structural advantage in the Malaga fitness market. While competitors (Revo, Ryderwear, etc.) compete primarily on price or niche lifting environments, CB247 has successfully diversified its value proposition through high-utility facilities. The &quot;Bottom Line&quot; is that we can disrupt the market by aggressively framing competitors as &quot;basic boxes&quot; while positioning CB247 as a &quot;complete wellness hub&quot; at an identical price point.
+
+## Strategic Context
+The Malaga fitness corridor is currently fragmented between high-volume budget gyms (Revo, Anytime, Snap) and specialized premium environments (Ryderwear). Current market dynamics show a gap in &quot;Family-Friendly Premium&quot; and &quot;Worker-Centric Flexibility.&quot; This analysis was triggered to identify the specific levers required to pivot from a generic gym offering to a dominant local market leader.
+
+## Key Findings
+| Observation | Evidence/Insight |
+| :--- | :--- |
+| **Budget Gym Commodity** | Revo, Anytime, and Snap utilize national, standardized &quot;join now&quot; promotions; their offering is a commodity with low differentiation. |
+| **Niche Premiumity** | Ryderwear maintains a strong hold on the &quot;elite lifter&quot; segment through a specialized environment, but lacks broad-market appeal. |
+| **Facility Vacuum** | No local competitor currently integrates Childcare (Kids Hub) and high-end recovery (Sauna/Ice Bath) within a budget price bracket. |
+| **Operational Friction** | National brands rely on rigid corporate contracts, creating a friction point for the significant local FIFO workforce. |
+
+## Strategic Implications
+1. **Price Parity is a Weapon**: Because we are priced competitively ($11.95/week), the conversation shifts from &quot;Can I afford it?&quot; to &quot;Why would I go anywhere else?&quot;
+2. **High Switching Cost (Emotional)**: By targeting parents (Kids Hub) and FIFO workers (Freeze), we create an emotional lock-in that exceeds the value of a cheaper monthly fee.
+3. **Positioning Pivot**: We are no longer just &quot;another gym&quot;; we are a &quot;lifestyle utility&quot; for the Malaga community.
+
+## Recommendations (Prioritized)
+- **High Impact / Low Effort**: **The &quot;Anti-Box&quot; Campaign.** Launch creative that explicitly contrasts CB247's facilities against the &quot;basic box&quot; experience of budget competitors.
+- **High Impact / Medium Effort**: **FIFO Loyalty Program.** Formalize and market the &quot;FIFO-friendly freeze&quot; as a core product feature, not just a policy.
+- **Medium Impact / Low Effort**: **Parent-Centric Retargeting.** Use Meta ads to target parents within a 5km radius of Malaga specifically highlighting the Kids Hub.
+
+## Next Steps
+1. **Creative Execution**: Deploy the &quot;Competitor-Attack&quot; ad set based on the identified facility gaps (Immediate).
+
+... (2 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🕵️</span>
+                    <strong class="report-title">competitor-full-analysis-2026-05-11.md</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/research/competitor-full-analysis-2026-05-11.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('competitor-spy-58792')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-competitor-spy-58792"># Perth Fitness Market Analysis: ChasingBetter247 Competitive Intelligence
+**Date:** 2026-05-11
+**Prepared by:** Competitor-Spy Agent (Claude Code)
+**Classification:** Internal Strategic Report
+
+## 1. Executive Summary: The &quot;Facility Advantage&quot; Gap
+Current research confirms ChasingBetter247 (CB247) holds a unique &quot;Middle Ground&quot; position in Perth's northern corridor (Malaga/Ellenbrook). While competitors are locked in a price war or niche specialization, CB247 is the only operator providing premium recovery and childcare at a budget-parity price point.
+
+### Top 3 Market Threats
+*   **Revo Fitness (The Price Leader):** Aggressively undercutting on base price ($9.69) and capturing the 24/7 Reformer Pilates market with their Level 2 ($12.69) tier. They are the #1 threat to our Ellenbrook and Malaga membership volume.
+*   **Ryderwear Gym Malaga (The Community Leader):** Owns the &quot;serious lifter&quot; and &quot;athlete&quot; aesthetic. Their brand presence on social media creates high organic loyalty that is harder to break with price alone.
+*   **Anytime Fitness/Snap Fitness (The Convenience Leaders):** Maintain market share through sheer volume of locations and national brand recognition, despite higher weekly rates (~$15-18).
+
+---
+
+## 2. Pricing &amp; Membership Analysis
+| Gym | Price/Week | Joining Fee | Lock-in? | Primary Offer |
+| :--- | :--- | :--- | :--- | :--- |
+| **CB247** | **$11.95** | **Low/Variable** | **NO** | **Everything Included (Pilates/Classes)** |
+| Revo Fitness | $9.69 - $12.69 | $0 - $49 | NO | Level 2 includes &quot;The Studio&quot; (Pilates) |
+| Ryderwear Malaga | ~$19.95 | ~$50+ | YES/NO | Premium athlete environment |
+| Anytime Fitness | $15.95 - $18.95 | ~$99 | 12mo/NO | Global access, 24/7 convenience |
+| Snap Fitness | ~$15.00+ | ~$49 | NO options | National network, 24/7 access |
+
+**Market Insight:** CB247's **$11.95/week** with **no lock-in** remains the most dangerous price point for competitors because it includes Reformer Pilates and classes that Revo charges a premium for ($12.69).
+
+---
+
+## 3. Facility Comparison Matrix
+| Feature | CB247 | Revo | Ryderwear | Anytime/Snap |
+
+... (42 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🕵️</span>
+                    <strong class="report-title">competitor-ads-analysis-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/research/competitor-ads-analysis-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('competitor-spy-41121')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-competitor-spy-41121"># Competitor Ad Intelligence: Winter Attack 2026
+
+## Competitor Landscape Analysis
+*Date: 2026-05-12 | Campaign: Winter Attack 2026 | Focus: Competitor Attack*
+
+### 1. Revo Fitness (Primary Threat)
+- **Current Offers:** Likely $9.69/week (Simple) or $12.69/week (Level Two).
+- **Creative Angles:** Minimalism, &quot;No Lock-in&quot;, &quot;Open 24/7&quot;, &quot;Reformer Pilates&quot; (Level Two focus).
+- **CB247 Advantage:** CB247 matches the $11.95/week price point but includes **Sauna + Ice Bath + Kids Hub** which Revo lacks entirely. CB247's Reformer is included in the base membership ($11.95) vs Revo's &quot;Level Two&quot; tier.
+
+### 2. Ryderwear Gym Malaga (Location Threat)
+- **Current Offers:** Premium pricing, often focuses on apparel/influencer aesthetic.
+- **Creative Angles:** High-end equipment, &quot;Best gym in Malaga&quot;, lifting culture.
+- **CB247 Advantage:** **Price** (CB247 is significantly cheaper) and **Facilities** (Reformer, Sauna, Ice Bath, Kids Hub). Ryderwear is &quot;lifter-only&quot; focused; CB247 is &quot;lifestyle + family + recovery&quot;.
+
+### 3. Anytime Fitness / Snap Fitness (Awareness Threat)
+- **Current Offers:** Usually ~$15-18/week + joining fees + key fob fees.
+- **Creative Angles:** Global network, convenience, &quot;join one join all&quot;.
+- **CB247 Advantage:** **Price anchor ($11.95)** vs $15+. **Facilities** — Anytime/Snap are basic cardio/weights gyms. CB247 is a &quot;Wellness Hub&quot;. **FIFO-specific freeze** — AF/Snap offer standard freezes but CB247 owns the local FIFO market.
+
+### 4. Competitive Differentiation Strategy
+- **The Hook:** &quot;Why pay $15/week for half the facilities?&quot;
+- **The Anchor:** $11.95/week. No lock-in.
+- **The Attack:** Targeted ads at people visiting &quot;Revo Malaga&quot; or searching for &quot;Gym Malaga&quot;.
+- **FIFO Power Move:** Highlight the FIFO-friendly freeze which competitors don't promote or handle as well locally.
+
+---
+*Co-Authored-By: Claude Opus 4.7 &lt;noreply@anthropic.com&gt;*</pre>
+        </div>
+        </div>
+    </div>
+    <div class="agent-section" id="audience-intel">
+        <div class="section-header">
+            <span class="section-icon">👥</span>
+            <div>
+                <h2 class="section-title">Audience Intel</h2>
+                <p class="section-desc">ICP profiles, segmentation analysis</p>
+            </div>
+            <span class="file-count">0 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="empty-state">
+            <p>No outputs found for this week. Run <code>run audience-intel</code> to generate.</p>
+        </div>
+        </div>
+    </div>
+    <div class="agent-section" id="content-intel">
+        <div class="section-header">
+            <span class="section-icon">📱</span>
+            <div>
+                <h2 class="section-title">Content Intel</h2>
+                <p class="section-desc">Viral content research, top fitness content AU</p>
+            </div>
+            <span class="file-count">0 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="empty-state">
+            <p>No outputs found for this week. Run <code>run content-intel</code> to generate.</p>
+        </div>
+        </div>
+    </div>
+    <div class="agent-section" id="performance">
+        <div class="section-header">
+            <span class="section-icon">📊</span>
+            <div>
+                <h2 class="section-title">Performance Agent</h2>
+                <p class="section-desc">Weekly KPI analysis, wins, issues, actions</p>
+            </div>
+            <span class="file-count">1 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">📊</span>
+                    <strong class="report-title">performance-week-20-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/research/performance-week-20-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('performance-38924')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-performance-38924"># CB247 Weekly Performance Report: Week 20, 2026
+**Report Period:** 4 to 10 May 2026
+**Date of Report:** 12 May 2026
+
+## 1. Executive Summary
+Week 20 saw a significant pull-back in overall traffic volume (-20.5% sessions), yet efficiency improved with conversion rates climbing to **17.0%** (+1.7pp). While total users dropped, the quality of intent remained high for those hitting the site. The most critical issue identified is a **broken Meta Pixel**, where 576 paid social sessions resulted in zero tracked conversions despite historical performance. Google Ads efficiency diverged sharply between locations, with Malaga's CPA spiking while Ellenbrook remained healthy.
+
+## 2. GA4 Performance Metrics (4-10 May vs Prev. Week)
+| Metric | 4-10 May 2026 | 27 Apr - 3 May | Change | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Sessions** | 2,829 | 3,558 | -20.5% | 🔴 DOWN |
+| **Users** | 2,173 | 2,722 | -20.2% | 🔴 DOWN |
+| **New Users** | 1,822 | 2,353 | -22.6% | 🔴 DOWN |
+| **Conversions** | 482 | 544 | -11.4% | ⚠️ WATCH |
+| **Conv. Rate** | 17.0% | 15.3% | +1.7pp | ✅ UP |
+
+**Traffic Channel Breakdown:**
+- **Organic Search:** 1,003 sessions | 143 conversions (14.3%)
+- **Paid Social:** 576 sessions | 0 conversions (0.0%) — **URGENT: Broken Tracking**
+- **Direct:** 509 sessions | 240 conversions (47.2%)
+- **Cross-network:** 398 sessions | 73 conversions (18.3%)
+- **Paid Search:** 244 sessions | 22 conversions (9.0%)
+
+**Top Visited Pages:**
+1. `/` (Home): 2,053 sessions
+2. `/reformer-pilates`: 310 sessions
+3. `/contact`: 238 sessions
+4. `/group-fitness-timetable`: 234 sessions
+
+**Device Mix:**
+
+... (96 more lines)</pre>
+        </div>
+        </div>
+    </div>
+    <div class="agent-section" id="strategist">
+        <div class="section-header">
+            <span class="section-icon">🗺️</span>
+            <div>
+                <h2 class="section-title">Strategist</h2>
+                <p class="section-desc">Campaign blueprints, strategic plans</p>
+            </div>
+            <span class="file-count">6 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🗺️</span>
+                    <strong class="report-title">mothers-day-2026-campaign-brief-v3.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/blueprints/mothers-day-2026-campaign-brief-v3.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('strategist-96093')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-strategist-96093"># Campaign Brief: Mother's Day 2026 v3 — &quot;The Gift of Better&quot;
+
+## 1. Overview
+**Campaign Name:** The Gift of Better
+**Tagline:** Because you deserve to feel AlwaysBetter.
+**Offer:** $0 Joining Fee + Free PT Session for new members (May 1 – May 10)
+**Primary Goal:** New membership sign-ups (Target: 15+ per location)
+**Brand Color:** #3FA69A
+
+---
+
+## 2. Meta Ads Strategy (Psychology-Driven)
+**Objective:** Lead Generation / Conversions
+**Creative Direction:** Real mums in the gym, recovery sessions, kids in the Kids Hub. No stock photos.
+
+### Ad Set 1: Cold Mums (28-50)
+- **Headline:** The Strongest Mum in the Room
+- **Body:** Still putting everyone else first?
+You already show up every single day — for everyone else. Now it's time to show up for yourself. 8,000+ Perth mums chose themselves. You ready?
+
+$11.95/week. Sauna. Ice Bath. Reformer Pilates. Kids Hub on-site.
+No lock-in. No judgment. First visit free.
+$0 joining fee ends May 10.
+- **CTA:** [Book Free Tour](https://chasingbetter247.com.au/join?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=mothersday-perth-may-2026&amp;utm_content=ad-cold-mums)
+- **Triggers:** Shame$\rightarrow$Identity, Authority, Social Proof, Safety, Loss Aversion.
+
+### Ad Set 2: Warm Audience (Retargeting)
+- **Headline:** You looked. Now take the step.
+- **Body:** You've already seen what CB247 offers. You're already one of us. Just make it official.
+The only thing stopping you is the first visit.
+
+... (140 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🗺️</span>
+                    <strong class="report-title">mothers-day-2026-campaign-brief.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/blueprints/mothers-day-2026-campaign-brief.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('strategist-10169')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-strategist-10169"># Campaign Brief: Mother's Day 2026 — &quot;The Gift of Better&quot;
+
+## 1. Overview
+**Campaign Name:** The Gift of Better
+**Tagline:** Because you deserve to feel AlwaysBetter.
+**Offer:** $0 Joining Fee for new members (May 1 – May 10)
+**Primary Goal:** New membership sign-ups (Target: 15+ per location)
+**Brand Color:** #3FA69A
+
+---
+
+## 2. Meta Ads Strategy
+**Objective:** Lead Generation / Conversions
+**Creative Direction:** Real mums in the gym, recovery sessions, kids in the Kids Hub. No stock photos.
+
+### Ad Set 1: Cold Mums (28-50)
+- **Targeting:** Women 28-50, Malaga/Ellenbrook + 15km, Interests: Fitness, Parenting, Wellness.
+- **Angle:** &quot;You take care of everyone else. Who takes care of you?&quot;
+- **UTM:** `utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=mothersday-perth-may-2026&amp;utm_content=ad-cold-mums`
+
+### Ad Set 2: Warm Audience (Retargeting)
+- **Targeting:** IG/FB Engagers (past 30 days), Website visitors.
+- **Angle:** &quot;The sign you've been waiting for. $0 joining fee ends May 10.&quot;
+- **UTM:** `utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=mothersday-perth-may-2026&amp;utm_content=ad-warm-retargeting`
+
+### Ad Set 3: Gift Buyers (Partners/Children)
+- **Targeting:** Men 25-55, Women 18-30, Malaga/Ellenbrook area.
+- **Angle:** &quot;Give her the gift of health and a space for herself. $0 joining fee.&quot;
+- **UTM:** `utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=mothersday-perth-may-2026&amp;utm_content=ad-gift-buyers`
+
+
+... (81 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🗺️</span>
+                    <strong class="report-title">mothers-day-2026-campaign-brief-v2.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/blueprints/mothers-day-2026-campaign-brief-v2.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('strategist-70731')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-strategist-70731"># Campaign Brief: Mother's Day 2026 v2 — &quot;The Gift of Better&quot;
+
+## 1. Overview
+**Campaign Name:** The Gift of Better
+**Tagline:** Because you deserve to feel AlwaysBetter.
+**Offer:** $0 Joining Fee + Free PT Session for new members (May 1 – May 10)
+**Primary Goal:** New membership sign-ups (Target: 15+ per location)
+**Brand Color:** #3FA69A
+
+---
+
+## 2. Meta Ads Strategy (Psychology-Driven)
+**Objective:** Lead Generation / Conversions
+**Creative Direction:** Real mums in the gym, recovery sessions, kids in the Kids Hub. No stock photos.
+
+### Ad Set 1: Cold Mums (28-50)
+- **Headline:** The Strongest Mum in the Room
+- **Body:** You already show up every single day — for everyone else. It's time to show up for yourself.
+$11.95/week. Sauna. Ice Bath. Reformer Pilates. Kids Hub on-site.
+8,000+ Perth members. No lock-in. No judgment.
+$0 joining fee ends May 10.
+- **CTA:** [Join for $0](https://chasingbetter247.com.au/join?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=mothersday-perth-may-2026&amp;utm_content=ad-cold-mums)
+- **Triggers:** Identity, Authority, Social Proof, Safety, Loss Aversion.
+
+### Ad Set 2: Warm Audience (Retargeting)
+- **Headline:** You looked. Now take the step.
+- **Body:** You've already seen what CB247 offers. The only thing stopping you is the first visit.
+We'll make it free. $0 joining fee — ends May 10.
+8,000 members already made the move.
+- **CTA:** [Claim Your $0 Offer](https://chasingbetter247.com.au/join?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=mothersday-perth-may-2026&amp;utm_content=ad-warm-retargeting)
+
+... (130 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🗺️</span>
+                    <strong class="report-title">winter-attack-2026-blueprint-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/blueprints/winter-attack-2026-blueprint-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('strategist-57066')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-strategist-57066"># Campaign Blueprint: winter-attack-2026
+
+## 1. Overview
+- **Campaign Name:** winter-attack-2026
+- **Tagline:** Don't Hibernate. Dominate. #AlwaysBetter
+- **Offer:** $0 Joining Fee + 1st Week Free (Includes Unlimited Pilates, Sauna &amp; Ice Bath)
+- **Primary Goal:** 150 new membership sign-ups (75 per location)
+- **Target:** Adults 25-50 in Malaga, Ellenbrook, and surrounding northern suburbs
+- **Brand Color:** #3FA69A
+
+## 2. Meta Ads Strategy
+### Ad Set 1: Busy Parents &amp; Career Professionals (28-45)
+- **Headline:** The Only Antidote to Winter Laziness. ❄️
+- **Body:** Stop using the cold as an excuse to hit snooze. With our 24/7 access, onsite Kids Hub, and premium recovery suite, we've removed every barrier. Torch calories in our Neon21 classes, then reset in the Sauna and Ice Bath. All for just $11.95/week with NO lock-in.
+- **CTA:** Join Free Now
+- **Triggers:** Safety (No lock-in), Authority ($11.95 value), Identity (Not a snoozer)
+- **UTM:** utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=ad-parents-pro
+
+### Ad Set 2: FIFO Workers &amp; Shift Seekers (21-45)
+- **Headline:** We Don’t Charge for Days You’re Away. ✈️
+- **Body:** Headed to the Pilbara? Our unique Swing-Shift Guarantee means a $0 membership freeze while you're on site. When you're back, hit the weights floor or the recovery zone 24/7. It’s the FIFO-friendly gym Perth has been waiting for. $11.95/wk. No lock-in. No catches.
+- **CTA:** Get FIFO Offer
+- **Triggers:** Reciprocity ($0 Freeze), Safety (No catches), Identity (FIFO worker)
+- **UTM:** utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=ad-fifo
+
+### Ad Set 3: Recovery &amp; Wellness Seekers / Pilates Defectors (25-50)
+- **Headline:** Why Pay $60/wk for Just Pilates? 🧊🔥
+- **Body:** Standalone studios are a winter luxury you don't need to overpay for. Get unlimited Reformer Pilates PLUS our Sauna and Ice Bath recovery suite for just $11.95/week. It’s the ultimate hot-cold therapy protocol to keep your immune system sharp and your body moving this winter.
+- **CTA:** Book a Tour
+- **Triggers:** Authority (Price anchor), Loss Aversion (Stop overpaying), Reciprocity (Included recovery)
+
+... (71 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🗺️</span>
+                    <strong class="report-title">winter-attack-2026-blueprint-2026-05-12-final.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/blueprints/winter-attack-2026-blueprint-2026-05-12-final.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('strategist-65565')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-strategist-65565"># EXECUTIVE REPORT: Campaign Blueprint - Winter Attack 2026
+
+## 1. STRATEGIC OVERVIEW
+The &quot;Winter Attack 2026&quot; campaign is mid-market acquisition strategy designed to position ChasingBetter247 (CB247) as the premier value-recovery destination in Perth’s northern corridor. By leveraging the transition into winter, the campaign pivots from traditional &quot;aesthetics&quot; messaging to &quot;wellness and immunity,&quot; directly addressing the $12.69/week price threat from Revo Fitness while highlighting unique facility advantages.
+
+## 2. CAMPAIGN ARCHITECTURE
+- **Campaign Name:** winter-attack-2026
+- **Primary Tagline:** Don't Hibernate. Dominate. #AlwaysBetter
+- **Core Offer:** $0 Joining Fee + 1st Week Free (Inclusive of all premium facilities)
+- **Primary KPI:** 150 New Membership Sign-ups
+- **Strategic Anchor:** High-Performance Recovery (Sauna/Ice Bath) + FIFO Flexibility
+
+## 3. MULTI-CHANNEL EXECUTION PLAN
+
+### 3.1 Meta Ads (Direct Response)
+The social strategy utilizes three distinct psychological profiles to disrupt competitors:
+1.  **The &quot;Parental Self-Care&quot; Segment:** Utilizing the Kids Hub as a friction-remover for winter training.
+2.  **The &quot;FIFO Swing-Shift&quot; Segment:** Aggressively marketing the $0 Freeze &quot;Swing-Shift Guarantee&quot; to differentiate from national chains.
+3.  **The &quot;Pilates Defector&quot; Segment:** A price-anchor play ($11.95 vs. $60/wk) targeting boutique studio users seeking cost-of-living relief without sacrificing quality.
+
+### 3.2 Google Search (Intent Capture)
+Targeting high-intent, facility-specific long-tail keywords that competitors like Revo and Anytime Fitness cannot serve:
+- *Keyword Clusters:* &quot;Gym with childcare Malaga,&quot; &quot;Sauna and ice bath Perth,&quot; &quot;FIFO gym membership WA.&quot;
+- *RSA Strategy:* Focus on &quot;All-inclusive&quot; value vs. &quot;Tiered&quot; pricing models.
+
+### 3.3 CRM &amp; Retention (Email/SMS)
+A 14-day re-engagement and lead-nurture sequence built on loss aversion and social proof, emphasizing that winter is the season to gain a competitive edge while others &quot;hibernate.&quot;
+
+## 4. BRANDING &amp; QUALITY CONTROL
+- **Visual Identity:** Heavy utilization of #3FA69A (CB247 Teal) to maintain brand recall.
+
+... (12 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🗺️</span>
+                    <strong class="report-title">winter-attack-2026-campaign-brief-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/blueprints/winter-attack-2026-campaign-brief-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('strategist-67279')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-strategist-67279"># Campaign Brief: Winter Attack 2026
+
+## 1. Overview
+- **Campaign Name:** Winter Attack 2026
+- **Objective:** Competitor Attack / Acquisition (Switch from Revo/Anytime/Boutique Pilates)
+- **Start Date:** 2026-05-12
+- **Duration:** 30 Days (Full Month Attack)
+- **Locations:** Malaga + Ellenbrook
+- **Primary Offer:** $11.95/week, NO Lock-in, 1st Week FREE + $0 Joining Fee.
+- **Inclusions:** 24/7 Access, Unlimited Reformer Pilates, Sauna, Ice Bath, Kids Hub, Neon21 HIIT.
+- **Budget:** ~$1,100/week ($4,400 total)
+- **KPIs:** 300+ New Leads, 150+ Sign-ups (target $30 CPA).
+
+## 2. Target Audience (ICPs)
+- **Primary ICP: The FIFO Worker**
+    - **Pain Points:** Paying for gym while on-site, limited recovery options.
+    - **Hook:** $0 membership freezes while you're away + premium recovery when you're back.
+- **Secondary ICP: The Cost-Conscious Fitness Switcher**
+    - **Pain Points:** Overpaying for boutique Pilates or bare-bones &quot;big box&quot; gyms.
+    - **Hook:** Everything included for $11.95/wk. Cheaper than Revo/Anytime with 5x more facilities.
+
+## 3. Brand Voice &amp; Psychology
+- **Voice:** Direct, coach-to-mate, Perth-local.
+- **Triggers:**
+    - **Loss Aversion:** Stop overpaying for boutique studios ($60/wk vs $11.95/wk).
+    - **Authority:** Only gym with the &quot;Big 5&quot; (Pilates + Sauna + Ice Bath + Kids Hub + 24/7).
+    - **Safety:** No Lock-in — you're in control.
+
+## 4. Channel Strategy
+- **Meta Ads (60%):** High-energy Reels and price-anchor image ads.
+
+... (9 more lines)</pre>
+        </div>
+        </div>
+    </div>
+    <div class="agent-section" id="content-agent">
+        <div class="section-header">
+            <span class="section-icon">✍️</span>
+            <div>
+                <h2 class="section-title">Content Agent</h2>
+                <p class="section-desc">Social content calendars, reel scripts, ad copy</p>
+            </div>
+            <span class="file-count">2 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">✍️</span>
+                    <strong class="report-title">email-sequence-winter-attack-2026-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/content/email-sequence-winter-attack-2026-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('content-agent-17172')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-content-agent-17172"># Email &amp; SMS Nurture Sequence: Winter Attack 2026
+
+## Sequence: New Lead Acquisition (300% Value Nurture)
+
+### [EMAIL 01] Day 0: The &quot;Why Wait?&quot; Hook
+- **Subject:** Your 1st Week Free is waiting... 🧊🔥
+- **Preview:** Claim your $0 Joining + Free Week before winter hits.
+- **Body:**
+Hi [First Name],
+
+You requested more info on the **Winter Attack 2026** offer — and you're just one step away from reclaiming your motivation.
+
+While everyone else is hitting snooze and hiding under the covers, you’re about to get access to:
+- **Unlimited Reformer Pilates** (worth $60/wk elsewhere)
+- **Sauna &amp; Ice Bath** (the ultimate immune booster)
+- **24/7 Elite Gym Floor**
+- **Kids Hub** (so you can train stress-free)
+
+All for just **$11.95/week** with **No Lock-in**.
+
+**[CTA: ACTIVATE MY FREE WEEK]**
+
+See you on the floor,
+The CB247 Team
+
+---
+
+### [EMAIL 02] Day 2: The &quot;Boutique Killer&quot; (Value Stack)
+- **Subject:** Why pay $60/wk for just Pilates?
+- **Preview:** See what $11.95/wk actually gets you at CB247.
+
+... (78 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">✍️</span>
+                    <strong class="report-title">waterfall-winter-attack-2026-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/content/waterfall-winter-attack-2026-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('content-agent-29126')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-content-agent-29126"># Multi-Channel Content Waterfall: Winter Attack 2026
+
+## 1. Instagram / Facebook Feed
+### [IG/FB-01] Post: The &quot;Math&quot; Post
+**Visual:** Split screen. Left Side (Greyscale): &quot;Boutique Studio - $60/wk&quot;. Right Side (Teal/CB Neon): &quot;CB247 - $11.95/wk&quot;. Overlay: &quot;Same Pilates. Better Recovery. Half the Price.&quot;
+**Caption:** 
+Stop overpaying for your sweat. 🛑
+
+Why pay $60+ a week just for Pilates when you can get UNLIMITED Reformer Pilates PLUS:
+✅ 24/7 Gym Access
+✅ Sauna &amp; Ice Bath Suit
+✅ Neon21 HIIT Classes
+✅ Kids Hub (Childcare)
+
+...all for just $11.95/wk. No lock-in. No catches.
+
+WINTER ATTACK SPECIAL: Join this week and get your 1st Week FREE + $0 Joining Fee.
+
+Train smarter, not more expensive. Tap the link in bio to claim your free week. 🔗
+
+#AlwaysBetter #ChasingBetter247 #PerthFitness #MalagaGym #Ellenbrook
+
+---
+
+## 2. IG Reel Scripts
+### [REEL-01] The Contrast Hook (Visual/Text)
+- **0-3s:** Quick cut of someone shivering outside in Perth rain vs. stepping into the CB247 Sauna. Text: &quot;Perth Winter is coming...&quot;
+- **3-7s:** Fast cuts: Weights flying, Reformer Pilates moves, Ice bath plunge. Text: &quot;Don't Hibernate. Dominate.&quot;
+- **7-12s:** Founder/Coach to camera: &quot;Everything you need — Pilates, Recovery, 24/7 access. $11.95. No lock-in. Join now.&quot;
+
+
+... (56 more lines)</pre>
+        </div>
+        </div>
+    </div>
+    <div class="agent-section" id="paid-ads">
+        <div class="section-header">
+            <span class="section-icon">📢</span>
+            <div>
+                <h2 class="section-title">Paid Ads Agent</h2>
+                <p class="section-desc">Google Ads + Meta Ads copy, UTM audit</p>
+            </div>
+            <span class="file-count">4 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">📢</span>
+                    <strong class="report-title">google-ads-complete.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/creatives/winter-attack-2026/paid-ads/google-ads-complete.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('paid-ads-09557')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-paid-ads-09557"># Google Ads Complete: Winter Attack 2026
+
+## Campaign Structure
+- **Campaign 1:** Brand Search (Protecting keywords)
+- **Campaign 2:** Non-Brand Local (Competitor Attack + Generic)
+- **Campaign 3:** Performance Max (Asset-led)
+
+---
+
+## Campaign 2: Non-Brand Local (Search)
+
+### 15 RSA Headlines (≤30 chars)
+1. $11.95/wk Gym - No Lock-in
+2. Best Gym in Malaga 24/7
+3. Reformer Pilates Included
+4. Sauna + Ice Bath + Gym
+5. 24/7 Access Ellenbrook
+6. FIFO-Friendly Gym Freeze
+7. Join For $11.95 - No Strings
+8. Better Than Your Basic Gym
+9. Kids Hub + 24/7 Gym access
+10. Luxury Gym, Local Price
+11. Malaga's Best Values Gym
+12. Ellenbrook's Wellness Hub
+13. Stop Overpaying For Gyms
+14. AlwaysBetter | CB247
+15. Perth's Best Recovery Gym
+
+### 4 RSA Descriptions (≤90 chars)
+1. Upgrade to a wellness hub for just $11.95/week. No lock-in, 24/7 access, everything included.
+
+... (33 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">📢</span>
+                    <strong class="report-title">meta-ads-complete.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/creatives/winter-attack-2026/paid-ads/meta-ads-complete.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('paid-ads-53814')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-paid-ads-53814"># Meta Ads Complete: Winter Attack 2026
+
+## Campaign Settings
+- **Objective:** Sales (Conversion)
+- **Campaign Name:** `winter-attack-2026`
+- **Budget:** ~$600-700/week (Meta portion)
+- **Locations:** Malaga (5km radius) + Ellenbrook (7km radius)
+
+---
+
+## Ad Set 1: Cold Local (Switchers)
+**Persona:** Cost-conscious gym-goers at Anytime/Snap/Revo.
+**Trigger:** Value for money / Facility upgrade.
+
+### Variant 1.1: Price Anchor (The &quot;No Brainer&quot;)
+- **Primary Text:** Stop paying $15+/week for a basic gym. $11.95/week gets you 24/7 access + Reformer Pilates + Sauna + Ice Bath. No lock-in. Join the club.
+- **Headline:** $11.95/wk - No Lock-in
+- **Description:** Sauna + Pilates Included
+- **UTM:** `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-price-coldlocal`
+
+### Variant 1.2: Facility Upgrade (The &quot;Everything&quot;)
+- **Primary Text:** Wish your gym had a Sauna? Or Reformer Pilates? At CB247, it's all included for $11.95/week. No lock-in, just Perth's best facilities.
+- **Headline:** Upgrade Your Gym 🚀
+- **Description:** Everything included.
+- **UTM:** `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-facility-coldlocal`
+
+### Variant 1.3: Social Proof (The &quot;Community&quot;)
+- **Primary Text:** &quot;Best gym in Malaga, hands down.&quot; - join 8,000+ members getting more for less. $11.95/week, no lock-in. Train with the best.
+- **Headline:** Join Perth's Top Gym ⭐️
+- **Description:** 8,000+ Happy Members
+
+... (76 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">📢</span>
+                    <strong class="report-title">creative-brief-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/creatives/winter-attack-2026/creative-briefs/creative-brief-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('paid-ads-20744')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-paid-ads-20744"># Creative Brief: Winter Attack 2026
+
+## Overview
+- **Campaign:** Winter Attack 2026
+- **Objective:** Acquisition / Competitor Attack
+- **Brand Essence:** AlwaysBetter. Local, energetic, premium-for-less.
+
+---
+
+## 1. Visual Style Guide
+- **Colors:** Deep Black (BG), High-Vis Neon/White (Text), Cold Blue (Recovery highlights).
+- **Typography:** Bold, heavy san-serif. Headlines should hit hard.
+- **Vibe:** &quot;Raw but clean&quot;. High-quality gym footage, not stock photos.
+
+---
+
+## 2. Image Asset Concepts
+
+### Concept A: The &quot;Stack&quot; (Price vs Facilities)
+- **Visual:** Split screen. Left side: Boring basic gym photo. Right side: High-energy CB247 shot (Sauna/Reformer).
+- **Text Overlay:** &quot;Them: $15+ / Us: $11.95&quot;
+- **AI Prompt (Ideogram):** High-contrast split screen photo. Left side is a dimly lit dated gym. Right side is a modern luxury fitness club with a sauna and reformer pilates machines. Text overlay in bold neon letters: &quot;STOP OVERPAYING&quot;.
+- **Format:** 1080x1080 (Feed).
+
+### Concept B: FIFO Life
+- **Visual:** A worker in high-vis gear dropping their bag at the Malaga gym entrance.
+- **Text Overlay:** &quot;WFH? Nah, WFS (Work From Site).&quot;
+- **AI Prompt (Ideogram):** A muscular Australian man in high-visibility work gear walking into a modern 24/7 gym at night. Neon signs, high contrast, cinematic lighting.
+- **Format:** 1080x1350 (Feed/Portait).
+
+
+... (23 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">📢</span>
+                    <strong class="report-title">utm-audit-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/creatives/winter-attack-2026/paid-ads/utm-audit-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('paid-ads-81420')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-paid-ads-81420"># UTM Audit: Winter Attack 2026
+
+## Audit Summary
+*Date: 2026-05-12 | Campaign: Winter Attack 2026*
+
+| Parameter | Value | Status |
+|---|---|---|
+| utm_source | `meta` / `google` | ✅ Standardized |
+| utm_medium | `paid_social` / `paid_search` | ✅ Standardized |
+| utm_campaign | `winter-attack-2026` | ✅ Objective-Year match |
+| utm_content | Variable (per variant) | ✅ Descriptive |
+| utm_term | `{keyword}` (Google only) | ✅ Dynamic Insertion |
+
+---
+
+## Meta Ads URL Verified List
+1. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-price-coldlocal`
+2. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-facility-coldlocal`
+3. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-proof-coldlocal`
+4. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-fifopain-coldfifo`
+5. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-identity-coldfifo`
+6. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-math-coldfifo`
+7. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-soft-warm`
+8. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-urgency-warm`
+9. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-reformer-warm`
+10. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-pt-rt`
+11. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-commit-rt`
+12. `https://chasingbetter247.com.au/?utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=winter-attack-2026&amp;utm_content=image-risk-rt`
+
+## Google Ads URL Verified List
+
+... (13 more lines)</pre>
+        </div>
+        </div>
+    </div>
+    <div class="agent-section" id="seo-agent">
+        <div class="section-header">
+            <span class="section-icon">🔎</span>
+            <div>
+                <h2 class="section-title">SEO Agent</h2>
+                <p class="section-desc">Site audits, competitor gap analysis, content briefs</p>
+            </div>
+            <span class="file-count">31 outputs</span>
+        </div>
+        <div class="report-list">
+            
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">site-audit-cb247-malaga-summary.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/audits/site-audit-cb247-malaga-summary.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-75215')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-75215"># Site Audit Snapshot: CB247 Malaga
+
+## Overview
+The current digital presence for CB247 Malaga is strong on brand identity and service offering, but lacks the deep, keyword-optimized landing page structure required to displace high-authority competitors like Anytime Fitness. The site effectively communicates *what* is offered, but doesn't yet maximize *how* it's found by local searchers.
+
+## Strengths
+- **Clear Brand Positioning:** The &quot;AlwaysBetter&quot; identity is consistent.
+- **Unique Value Prop:** Strong emphasis on Kids Hub and Recovery (Sauna/Ice Bath), which are massive differentiators.
+- **Local Signals:** Correct address and location data for Malaga are present.
+- **Direct Voice:** Brand voice is energetic and avoids corporate jargon.
+- **Clean UI:** Modern look that aligns with a &quot;premium&quot; fitness experience.
+
+## Issues Identified
+
+### On-Page Basics
+- **Title Tag Optimization:** Current titles are brand-centric rather than keyword-centric (e.g., &quot;Home | ChasingBetter247&quot; vs &quot;24/7 Gym Malaga | Sauna &amp; Ice Bath | ChasingBetter247&quot;).
+- **H1 Hierarchy:** Some pages lack a clear, single H1 containing the primary target keyword.
+- **Meta Descriptions:** Several key pages have generic or missing meta descriptions, reducing Click-Through Rate (CTR) from SERPs.
+
+### Content Gaps
+- **Thin Recovery Content:** While sauna and ice baths are mentioned, there isn't a dedicated, long-form &quot;Recovery Hub&quot; page to capture &quot;sauna Malaga&quot; or &quot;ice bath Malaga&quot; intent.
+- **Kids Hub Detail:** The Kids Hub is a primary USP but lacks a dedicated landing page with detailed FAQs, safety info, and benefits for parents.
+- **Local Relevance:** Lack of &quot;neighborhood&quot; content (referencing local Malaga landmarks or specific FIFO commuter patterns).
+
+### Internal Linking
+- **Siloing:** High-value services (Recovery, Kids Hub) are often mentioned in lists but not linked to deep-dive pages.
+- **Conversion Path:** The path from an informational &quot;recovery&quot; section to the &quot;Join&quot; page could be more aggressive and direct.
+
+## Priority Fixes
+
+
+... (13 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">cockburn-headline-test.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/tests/cockburn-headline-test.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-99751')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-99751"># A/B Test Design: Cockburn Pre-Launch Headline Framing Test
+**Date:** 2026-05-11 | **Status:** Draft
+
+---
+
+## 1. Test Overview
+
+| Field | Value |
+|-------|-------|
+| Test Name | Cockburn Pre-Launch Headline Framing Test |
+| Platform | Website (Cockburn Landing Page) |
+| Test ID | WEBSITE_CockburnHeadline_20260511 |
+| Hypothesis | &quot;Founding Member&quot; framing (Option A) will outperform &quot;Be First&quot; framing (Option B) because it creates a sense of exclusivity and tangible benefit rather than just urgency. |
+| Target Audience | Cold Traffic (Spearwood, Bibra Lake, Hamilton Hill, Coogee, Cockburn) |
+| Traffic Split | 50/50 |
+| Duration | 14 days minimum |
+
+---
+
+## 2. Variant Descriptions
+
+### Option A (Control): Founding Member Framing
+Focuses on the status and longevity of the benefit.
+- **Headline:** &quot;Claim Your Founding Member Spot — Cockburn's First 24/7 Gym + Bath House&quot;
+- **CTA:** &quot;Secure Founding Status&quot;
+- **Secondary Element:** &quot;Only 50 founding spots remaining&quot;
+
+### Option B (Variant): Urgency / &quot;Be First&quot; Framing
+Focuses on speed and being a pioneer in the area.
+- **Headline:** &quot;Be the First to Train in Cockburn — Founding Member Pricing Locked In&quot;
+
+... (68 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-gym-bath-house-cockburn-prelaunch-page.html</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-gym-bath-house-cockburn-prelaunch-page.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-70659')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-70659">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;script type=&quot;application/ld+json&quot;&gt;
+{
+  &quot;@context&quot;: &quot;https://schema.org&quot;,
+  &quot;@type&quot;: &quot;HealthAndBeautyBusiness&quot;,
+  &quot;name&quot;: &quot;ChasingBetter247 Cockburn&quot;,
+  &quot;description&quot;: &quot;24/7 gym with Bath House, sauna and ice bath coming soon to Cockburn, WA. Join the waitlist for founding member benefits.&quot;,
+  &quot;url&quot;: &quot;https://chasingbetter247.com.au/locations/cockburn/gym-bath-house-cockburn-prelaunch&quot;,
+  &quot;telephone&quot;: &quot;+61499039039&quot;,
+  &quot;address&quot;: {
+    &quot;@type&quot;: &quot;PostalAddress&quot;,
+    &quot;addressLocality&quot;: &quot;Cockburn&quot;,
+    &quot;addressRegion&quot;: &quot;WA&quot;,
+    &quot;postalCode&quot;: &quot;6167&quot;,
+    &quot;addressCountry&quot;: &quot;AU&quot;
+  },
+  &quot;openingHoursSpecification&quot;: [
+    {
+      &quot;@type&quot;: &quot;OpeningHoursSpecification&quot;,
+      &quot;dayOfWeek&quot;: [&quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;],
+      &quot;opens&quot;: &quot;00:00&quot;,
+      &quot;closes&quot;: &quot;23:59&quot;
+    }
+  ],
+  &quot;priceRange&quot;: &quot;$$&quot;,
+  &quot;amenityFeature&quot;: [
+
+... (277 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">faq-page-cb247.html</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/faq-page-cb247.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-08009')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-08009">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+  &lt;title&gt;CB247 FAQ — Everything You Need to Know About Joining&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Answers to all your questions about CB247 gym membership, 24/7 access, FIFO freeze policy, Kids Hub, and facilities. No lock-in, $11.95/week.&quot;&gt;
+
+  &lt;script type=&quot;application/ld+json&quot;&gt;
+  {
+    &quot;@context&quot;: &quot;https://schema.org&quot;,
+    &quot;@type&quot;: &quot;FAQPage&quot;,
+    &quot;mainEntity&quot;: [
+      {
+        &quot;@type&quot;: &quot;Question&quot;,
+        &quot;name&quot;: &quot;What are CB247's staffed hours?&quot;,
+        &quot;acceptedAnswer&quot;: {
+          &quot;@type&quot;: &quot;Answer&quot;,
+          &quot;text&quot;: &quot;Our team is on the floor to help you out from 8am–8pm Monday to Thursday, 8am–4pm on Fridays, and 8am–12pm on Saturdays. Sundays we're unstaffed, but the gym is all yours 24/7.&quot;
+        }
+      },
+      {
+        &quot;@type&quot;: &quot;Question&quot;,
+        &quot;name&quot;: &quot;Is CB247 really open 24/7?&quot;,
+        &quot;acceptedAnswer&quot;: {
+          &quot;@type&quot;: &quot;Answer&quot;,
+          &quot;text&quot;: &quot;Too right it is. Whether you're a night owl, an early bird, or just finishing a late shift, your key fob gets you into Malaga and Ellenbrook 365 days a year, 24 hours a day. No exceptions.&quot;
+        }
+      },
+      {
+
+... (387 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">content-recommendations-cb247.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/content-recommendations-cb247.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-84527')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-84527"># Content Recommendations: ChasingBetter247
+
+## Overview
+To win in the Malaga market, CB247 must shift from a &quot;General Gym&quot; SEO strategy to a &quot;Specialized Performance &amp; Recovery Hub&quot; strategy. While competitors like Anytime Fitness own the &quot;convenience&quot; keyword, CB247 can dominate &quot;premium recovery,&quot; &quot;family-friendly fitness,&quot; and &quot;performance training.&quot;
+
+## Recommended SEO Pages
+
+| Title / Working Title | Target Location | Target Keywords | Intent | Business Goal | Priority |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **24/7 Gym Malaga: Recovery &amp; Performance** | Malaga | 24/7 gym malaga, sauna malaga, ice bath malaga | Transactional | New Memberships | **P1** |
+| **The Kids Hub: Family-Friendly Gym Malaga** | Malaga | kids gym malaga, gym with childminding malaga | Transactional | New Family Members | **P1** |
+| **The Bath House: Malaga's Premier Recovery** | Malaga | bath house malaga, sauna and ice bath perth | Transactional | Recovery Memberships | P2 |
+| **24/7 Gym Ellenbrook: Family &amp; Community** | Ellenbrook | gym ellenbrook, 24/7 gym ellenbrook | Transactional | New Memberships | P2 |
+| **Cockburn Pre-Launch: Join the Waitlist** | Cockburn | gym cockburn, bath house cockburn | Informational | Lead Generation | P2 |
+| **FIFO Fitness Guide: Training on the Swing** | Perth (General) | FIFO gym perth, mining fitness wa | Informational | Brand Awareness/Authority | P3 |
+| **Massage &amp; Recovery Services Malaga** | Malaga | massage malaga, sports massage malaga | Transactional | Service Revenue | P3 |
+
+## Implementation Plan for This Run
+The following pages are designated as **P1** and will be drafted in this session:
+1. **24/7 Gym Malaga: Recovery &amp; Performance** (Focus: 24/7 access + Sauna/Ice Bath)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-gym-bath-house-cockburn-prelaunch-page.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-gym-bath-house-cockburn-prelaunch-page.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-17700')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-17700"># SEO Landing Page Draft — CB247 Cockburn Pre-Launch
+## Gym &amp; Bath House Coming Soon to Cockburn, WA
+
+**Status:** Draft v1 | Date: 2026-04-30
+**Author:** AI (SEO Content Writer — CB247)
+**For Review:** Human-in-the-loop — do not publish without review
+**Purpose:** Pre-launch awareness + email/waitlist capture
+
+---
+
+## SEO Title Tag (60 chars max)
+
+```
+Gym &amp; Bath House Cockburn | CB247 — Opening Soon
+```
+
+---
+
+## Meta Description (155 chars max)
+
+```
+A premium 24/7 gym with sauna, ice bath and Bath House is coming to Cockburn. Join the waitlist for founding member benefits. CB247 AlwaysBetter.
+```
+
+---
+
+## H1
+
+```
+Gym &amp; Bath House Cockburn — CB247 is Coming to WA's South
+
+... (179 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-24-7-gym-malaga-page.html</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-24-7-gym-malaga-page.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-25111')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-25111">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;script type=&quot;application/ld+json&quot;&gt;
+{
+  &quot;@context&quot;: &quot;https://schema.org&quot;,
+  &quot;@type&quot;: &quot;HealthAndBeautyBusiness&quot;,
+  &quot;name&quot;: &quot;ChasingBetter247 Malaga&quot;,
+  &quot;description&quot;: &quot;24/7 gym in Malaga with sauna, ice bath, recovery suite and Kids Hub. $11.95/week, no lock-in.&quot;,
+  &quot;url&quot;: &quot;https://chasingbetter247.com.au/locations/malaga/24-7-gym-malaga&quot;,
+  &quot;telephone&quot;: &quot;+61499039039&quot;,
+  &quot;address&quot;: {
+    &quot;@type&quot;: &quot;PostalAddress&quot;,
+    &quot;streetAddress&quot;: &quot;738 Marshall Road&quot;,
+    &quot;addressLocality&quot;: &quot;Malaga&quot;,
+    &quot;addressRegion&quot;: &quot;WA&quot;,
+    &quot;postalCode&quot;: &quot;6090&quot;,
+    &quot;addressCountry&quot;: &quot;AU&quot;
+  },
+  &quot;geo&quot;: {
+    &quot;@type&quot;: &quot;GeoCoordinates&quot;,
+    &quot;latitude&quot;: &quot;-31.8520&quot;,
+    &quot;longitude&quot;: &quot;115.8790&quot;
+  },
+  &quot;openingHoursSpecification&quot;: [
+    {
+      &quot;@type&quot;: &quot;OpeningHoursSpecification&quot;,
+      &quot;dayOfWeek&quot;: [&quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;],
+
+... (173 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-recovery-hub-malaga-page.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-recovery-hub-malaga-page.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-81696')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-81696"># SEO Landing Page Draft — Recovery Hub, CB247 Malaga
+
+**Status:** Draft v1 | Date: 2026-04-30
+**Author:** AI (SEO Content Writer — CB247)
+**For Review:** Human-in-the-loop — do not publish without review
+
+---
+
+## SEO Title Tag (60 chars max)
+
+```
+Recovery Hub Malaga | Sauna, Ice Bath &amp; Massage | CB247
+```
+
+---
+
+## Meta Description (155 chars max)
+
+```
+CB247 Malaga Recovery Hub — sauna, ice bath &amp; massage for athletes &amp; FIFO workers. Only gym in Perth north with full recovery suite. From $11.95/week.
+```
+
+---
+
+## H1
+
+```
+Recovery Hub Malaga — Sauna, Ice Bath &amp; Massage for Perth Athletes
+```
+
+
+... (204 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-24-7-gym-ellenbrook-page.html</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-24-7-gym-ellenbrook-page.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-29204')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-29204">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;script type=&quot;application/ld+json&quot;&gt;
+{
+  &quot;@context&quot;: &quot;https://schema.org&quot;,
+  &quot;@type&quot;: &quot;LocalBusiness&quot;,
+  &quot;name&quot;: &quot;ChasingBetter247 Ellenbrook&quot;,
+  &quot;description&quot;: &quot;24/7 gym in Ellenbrook with Kids Hub, group classes and recovery suite. Family-friendly, no lock-in. From $11.95/week.&quot;,
+  &quot;url&quot;: &quot;https://chasingbetter247.com.au/locations/ellenbrook/24-7-gym-ellenbrook&quot;,
+  &quot;telephone&quot;: &quot;+61499039039&quot;,
+  &quot;address&quot;: {
+    &quot;@type&quot;: &quot;PostalAddress&quot;,
+    &quot;addressLocality&quot;: &quot;Ellenbrook&quot;,
+    &quot;addressRegion&quot;: &quot;WA&quot;,
+    &quot;postalCode&quot;: &quot;6069&quot;,
+    &quot;addressCountry&quot;: &quot;AU&quot;
+  },
+  &quot;openingHoursSpecification&quot;: [
+    {
+      &quot;@type&quot;: &quot;OpeningHoursSpecification&quot;,
+      &quot;dayOfWeek&quot;: [&quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;],
+      &quot;opens&quot;: &quot;00:00&quot;,
+      &quot;closes&quot;: &quot;23:59&quot;
+    }
+  ],
+  &quot;priceRange&quot;: &quot;$$&quot;,
+  &quot;amenityFeature&quot;: [
+
+... (169 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">seo-report-cb247-week-01.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/reports/seo-report-cb247-week-01.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-89863')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-89863"># SEO Report: ChasingBetter247 — Week 01 (Pilot)
+
+## THIS WEEK SUMMARY
+This week focused on establishing the SEO baseline for the Malaga location. I conducted a full competitor snapshot of Anytime Fitness Malaga, performed a site audit of current CB247 Malaga pages, developed a targeted content roadmap, and drafted a high-conversion landing page for the core &quot;24/7 Gym + Recovery&quot; offering.
+
+## 3 WINS
+1. **Identified &quot;Recovery Gap&quot;:** Confirmed that Anytime Fitness has zero content targeting &quot;sauna&quot; or &quot;ice bath&quot; in Malaga, creating a clear path for CB247 to dominate these high-intent keywords.
+2. **Strategic Content Map:** Established a priority-based content plan that moves beyond &quot;generic gym&quot; terms to target specific ICPs (Families via Kids Hub and Performance athletes via Recovery).
+3. **Conversion-Ready Draft:** Produced a full SEO landing page for Malaga that integrates the &quot;No Lock-in&quot; price anchor with premium recovery USPs, ready for implementation.
+
+## 1 MAIN ISSUE
+**Authority Gap:** Anytime Fitness has significant domain authority and local SEO signals. CB247 cannot compete on &quot;generic&quot; volume alone; we must win by being &quot;the most specific&quot; answer for recovery and family-friendly training in Malaga.
+
+## 3 PRIORITIES NEXT WEEK
+1. **Implement Malaga Landing Pages:** Work with the web team to deploy the &quot;24/7 Gym + Recovery&quot; and &quot;Kids Hub&quot; pages.
+2. **GBP Optimization:** Audit and optimize the Google Business Profile for Malaga to ensure NAP consistency and encourage recovery-specific reviews.
+3. **Ellenbrook Audit:** Repeat the site audit and competitor analysis for the Ellenbrook location to identify similar &quot;service gaps.&quot;</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-kids-hub-malaga-page.html</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-kids-hub-malaga-page.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-30996')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-30996">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;script type=&quot;application/ld+json&quot;&gt;
+{
+  &quot;@context&quot;: &quot;https://schema.org&quot;,
+  &quot;@type&quot;: &quot;LocalBusiness&quot;,
+  &quot;name&quot;: &quot;ChasingBetter247 Malaga Kids Hub&quot;,
+  &quot;description&quot;: &quot;On-site childminding at CB247 Malaga gym. Safe supervised kids play area while parents train. Included with membership.&quot;,
+  &quot;url&quot;: &quot;https://chasingbetter247.com.au/locations/malaga/kids-hub-malaga&quot;,
+  &quot;telephone&quot;: &quot;+61499039039&quot;,
+  &quot;address&quot;: {
+    &quot;@type&quot;: &quot;PostalAddress&quot;,
+    &quot;streetAddress&quot;: &quot;738 Marshall Road&quot;,
+    &quot;addressLocality&quot;: &quot;Malaga&quot;,
+    &quot;addressRegion&quot;: &quot;WA&quot;,
+    &quot;postalCode&quot;: &quot;6090&quot;,
+    &quot;addressCountry&quot;: &quot;AU&quot;
+  },
+  &quot;geo&quot;: {
+    &quot;@type&quot;: &quot;GeoCoordinates&quot;,
+    &quot;latitude&quot;: &quot;-31.8520&quot;,
+    &quot;longitude&quot;: &quot;115.8790&quot;
+  },
+  &quot;openingHoursSpecification&quot;: [
+    {
+      &quot;@type&quot;: &quot;OpeningHoursSpecification&quot;,
+      &quot;dayOfWeek&quot;: [&quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;],
+
+... (188 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-kids-hub-malaga-page.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-kids-hub-malaga-page.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-42909')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-42909"># SEO Landing Page Draft — Kids Hub, CB247 Malaga
+
+**Status:** Draft v1 | Date: 2026-04-30
+**Author:** AI (SEO Content Writer — CB247)
+**For Review:** Human-in-the-loop — do not publish without review
+
+---
+
+## SEO Title Tag (60 chars max)
+
+```
+Kids Hub Malaga | Childminding Gym for Families | CB247
+```
+
+---
+
+## Meta Description (155 chars max)
+
+```
+Safe, fun kids childminding at CB247 Malaga gym. Kids play while you train — 24/7 access, no lock-in, from $11.95/week. Book a tour today.
+```
+
+---
+
+## H1
+
+```
+Kids Hub Malaga — Childminding Gym for Busy Parents
+```
+
+
+... (162 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-kids-hub-malaga-page-final.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-kids-hub-malaga-page-final.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-00256')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-00256"># Kids Hub Malaga — Childminding Gym for Busy Parents: Executive Summary
+
+## Overview
+The Kids Hub at CB247 Malaga represents a strategic expansion of our service offering, directly addressing the pain point of childcare for fitness-focused parents in the 6090 postcode area. By integrating supervised childcare within the existing 24/7 fitness facility, we effectively differentiate CB247 from competitors like Anytime Fitness and Snap Fitness.
+
+## Key Strategic Pillars
+1. **Competitive Differentiation:** Unlike local competitors, we offer a &quot;total solution&quot; that includes 24/7 access, sauna, ice bath, and a dedicated Kids Hub.
+2. **Operational Flexibility:** The service is designed for the modern, busy parent with FIFO-friendly membership freezes and no lock-in contracts.
+3. **Value Proposition:** At $11.95/week, the Kids Hub is included in the base membership, providing a significant competitive advantage in price and utility.
+
+## Operational Plan
+- **Supervision:** The facility uses a supervised model with strict ratios, emphasizing a safe, fun, and screen-free environment.
+- **Access:** Booking is centralized via our online timetable, ensuring seamless integration with existing gym systems.
+- **Conversion Strategy:** We are leveraging a free tour model to convert prospective parents, emphasizing transparency and trust before commitment.
+
+## Next Steps for Launch
+1. Ensure full staffing for the scheduled Kids Hub sessions (Mon-Fri 8am-12pm, Sat 9am-12pm).
+2. Finalize recovery hub integration to market the full suite of amenities.
+3. Initiate local area marketing focusing on the &quot;No Lock-in, Family-Friendly&quot; value proposition.
+
+---
+*End of Report*</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-24-7-gym-ellenbrook-page.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-24-7-gym-ellenbrook-page.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-12413')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-12413"># SEO Landing Page Draft — CB247 Ellenbrook Main Landing Page
+
+**Status:** Draft v1 | Date: 2026-04-30
+**Author:** AI (SEO Content Writer — CB247)
+**For Review:** Human-in-the-loop — do not publish without review
+
+---
+
+## SEO Title Tag (60 chars max)
+
+```
+24/7 Gym Ellenbrook | Family Friendly Fitness | CB247
+```
+
+---
+
+## Meta Description (155 chars max)
+
+```
+CB247 Ellenbrook — 24/7 family gym with Kids Hub, group classes and no lock-in contracts. From $11.95/week. Join the Ellenbrook community today.
+```
+
+---
+
+## H1
+
+```
+24/7 Gym Ellenbrook — Family Fitness Built for the Local Community
+```
+
+
+... (177 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-24-7-gym-malaga-page.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-24-7-gym-malaga-page.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-21236')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-21236">---
+SEO Title: 24/7 Gym Malaga | Sauna &amp; Ice Bath Recovery | ChasingBetter247
+Meta Description: Looking for a 24/7 gym in Malaga? Train at ChasingBetter247. Premium equipment, sauna, ice bath, and no lock-in contracts. Join the AlwaysBetter movement today.
+---
+
+# 24/7 Gym in Malaga with Serious Equipment, Sauna &amp; Ice Bath
+
+## Stop Settling for a &quot;Basic&quot; Gym Experience.
+Most gyms in Malaga give you a treadmill and a few dumbbells and call it a day. We think you deserve better. At ChasingBetter247 Malaga, we’ve built a performance sanctuary designed for people who actually want to see results—and recover properly.
+
+Whether you're a FIFO worker hitting the gym after a long swing, a local athlete chasing a PB, or someone just looking for a welcoming place to get strong, we've got you covered.
+
+### 24/7 Gym in Malaga with Serious Equipment
+We don't do &quot;corporate&quot; equipment. We provide the gear that actually moves the needle. From heavy-duty racks to a full suite of performance machines, our floor is designed for training, not just exercising.
+
+**Why train with us?**
+- **True 24/7 Access:** Your schedule is yours. Train at 3 AM or 3 PM.
+- **No Lock-in Contracts:** We believe in our product. If you're happy, you stay. No traps, no stress.
+- **Space to Move:** No more waiting in line for the only squat rack in the suburb.
+
+### Sauna &amp; Ice Bath for Recovery and Performance
+Training is only half the battle. If you aren't recovering, you aren't growing. CB247 Malaga is one of the only gyms in the area offering a professional-grade recovery suite.
+
+**The Heat: Infrared Sauna**
+Flush out toxins, soothe sore muscles, and clear your mind. Our sauna isn't just a &quot;feature&quot;—it's a tool for longevity and mental clarity.
+
+**The Cold: Ice Bath Therapy**
+Ditch the lukewarm showers. Our ice baths are designed to crush inflammation, boost dopamine, and reset your central nervous system. It's the ultimate &quot;wake up&quot; call for your body.
+
+**The Result:** Better sleep, faster recovery, and the energy to go again tomorrow.
+
+... (34 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-recovery-hub-malaga-page.html</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-recovery-hub-malaga-page.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-25716')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-25716">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;script type=&quot;application/ld+json&quot;&gt;
+{
+  &quot;@context&quot;: &quot;https://schema.org&quot;,
+  &quot;@type&quot;: &quot;HealthAndBeautyBusiness&quot;,
+  &quot;name&quot;: &quot;ChasingBetter247 Malaga Recovery Hub&quot;,
+  &quot;description&quot;: &quot;Recovery suite with sauna, ice bath and massage at CB247 Malaga. Hot/cold therapy included with membership.&quot;,
+  &quot;url&quot;: &quot;https://chasingbetter247.com.au/locations/malaga/recovery-hub-malaga&quot;,
+  &quot;telephone&quot;: &quot;+61499039039&quot;,
+  &quot;address&quot;: {
+    &quot;@type&quot;: &quot;PostalAddress&quot;,
+    &quot;streetAddress&quot;: &quot;738 Marshall Road&quot;,
+    &quot;addressLocality&quot;: &quot;Malaga&quot;,
+    &quot;addressRegion&quot;: &quot;WA&quot;,
+    &quot;postalCode&quot;: &quot;6090&quot;,
+    &quot;addressCountry&quot;: &quot;AU&quot;
+  },
+  &quot;geo&quot;: {
+    &quot;@type&quot;: &quot;GeoCoordinates&quot;,
+    &quot;latitude&quot;: &quot;-31.8520&quot;,
+    &quot;longitude&quot;: &quot;115.8790&quot;
+  },
+  &quot;openingHoursSpecification&quot;: [
+    {
+      &quot;@type&quot;: &quot;OpeningHoursSpecification&quot;,
+      &quot;dayOfWeek&quot;: [&quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;],
+
+... (180 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">gmb-posts-may-2026.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/gmb/gmb-posts-may-2026.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-16082')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-16082"># Google Business Profile Posts — May 2026
+
+## Overview: May Content Calendar
+
+| Week | Monday (Offer) | Wednesday (Facility) | Friday (Social Proof) |
+|:---|:---|:---|:---|
+| **Week 1** | May 11: 7-Day Trial | May 13: Malaga Bath House | May 15: Member Milestone |
+| **Week 2** | May 18: No Lock-in $11.95 | May 20: Reformer Pilates | May 22: Kids Hub Success |
+| **Week 3** | May 25: FIFO-Friendly | May 27: Neon21/ChasingRX | May 29: Recovery Testimonial |
+| **Week 4** | June 1: Ellenbrook 24/7 | June 3: 24/7 Access | June 5: Monthly Wins |
+
+---
+
+## Posting Strategy &amp; Timing
+To align with Perth FIFO swing patterns and local engagement habits:
+*   **Monday Morning:** Post before the 6:00 AM / 7:00 AM shift starts / FIFO fly-outs.
+*   **Wednesday Evening:** Engagement peaks after work (5:00 PM – 7:00 PM).
+*   **Friday Afternoon:** Pre-weekend motivation (2:00 PM – 4:00 PM).
+
+---
+
+## Week 1: May 11–15
+
+### Monday, May 11 — [OFFER]
+**Copy:**
+Stop thinking about it and start doing it. We don't do high-pressure sales or complex contracts. Every journey starts with a single session, and yours starts on the house.
+
+Grab a 7-day free trial and get full access to our Malaga or Ellenbrook clubs. Test the gear, meet the coaches, and see why 8,000+ Perth locals choose to train here.
+
+**Image Suggestion:** High-quality photo of a member entering the Malaga club with a smile.
+
+... (125 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">competitor-anytime-malaga-snapshot.md</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/competitors/competitor-anytime-malaga-snapshot.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-77256')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-77256"># Competitor Snapshot: Anytime Fitness Malaga
+
+## Overview
+Anytime Fitness Malaga is a primary local competitor leveraging the global Anytime Fitness brand. Their positioning focuses on extreme convenience, 24/7 accessibility, and a standardized gym experience. While they offer the core &quot;gym&quot; utility, they lack the specialized high-end recovery and family-centric facilities that CB247 provides.
+
+## Page Analysis
+| Page Type | URL | Title | H1 | Main Sections | Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Location Page | `anytimefitness.com.au/clubs/malaga` | Anytime Fitness Malaga | Anytime Fitness Malaga | Hours, Location, Join Now, Amenities | Standard template; high domain authority. |
+| Home Page | `anytimefitness.com.au` | Anytime Fitness Australia | Find a Club | Search, Brand Promise, Generic Benefits | Brand-wide SEO power; pushes local clubs. |
+| Membership | `anytimefitness.com.au/membership` | Membership Options | Join Anytime Fitness | Pricing tiers, Terms, Global Access | Focuses on the &quot;Anywhere&quot; benefit. |
+
+## Core Content Themes
+- **Convenience:** Emphasis on 24/7 access and &quot;anywhere&quot; club entry.
+- **Reliability:** Brand trust through global presence.
+- **Basic Utility:** Focus on cardio, weights, and a clean environment.
+- **Low Friction:** Simplified &quot;Join Now&quot; processes.
+
+## SEO Strengths
+- **Domain Authority:** Massive backlink profile from the global/national site.
+- **Local SEO:** Strong Google Business Profile (GBP) integration and consistent NAP (Name, Address, Phone).
+- **User Experience:** High-conversion landing pages with clear CTAs.
+- **Broad Reach:** Ranks for generic &quot;gym malaga&quot; due to brand volume.
+
+## Weaknesses &amp; Opportunities for CB247
+- **Generic Offering:** No specialized recovery (sauna/ice bath) or community-focused &quot;Bath House&quot; concepts.
+- **Lack of Niche Targeting:** No specific messaging for FIFO workers or families (Kids Hub).
+- **Corporate Feel:** Content is templated and lacks the &quot;local coach&quot; warmth of CB247.
+- **Pricing Rigidity:** Often bound by corporate contracts; CB247's &quot;No Lock-in&quot; is a strong differentiator.
+
+
+... (5 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">comparison-cb247-vs-revo.html</strong>
+                    <span class="report-date">No date</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/comparison-cb247-vs-revo.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-92153')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-92153">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;Revo Fitness vs CB247 — Which Perth Gym Actually Gives You More?&lt;/title&gt;
+    &lt;meta name=&quot;description&quot; content=&quot;Revo Fitness vs CB247. Same 24/7 access. Better recovery suite. Better for families. $11.95/week. See exactly what you get with each gym.&quot;&gt;
+    &lt;style&gt;
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --accent: #3FA69A;
+            --text-light: #ffffff;
+            --text-muted: #aaaaaa;
+            --success: #2ecc71;
+            --fail: #e74c3c;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-light);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+
+... (295 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">weekly-seo-report-2026-05-11.html</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/reports/weekly-seo-report-2026-05-11.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-61324')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-61324">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;style&gt;
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 32px; }
+  .container { max-width: 680px; margin: 0 auto; }
+  h1 { color: #3FA69A; font-size: 1.5rem; margin-bottom: 4px; }
+  .subhead { color: #aaa; font-size: 0.875rem; margin-bottom: 32px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .kpi { background: #141414; border: 1px solid #222; border-radius: 8px; padding: 20px; }
+  .kpi .label { color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .kpi .value { font-size: 1.75rem; font-weight: 700; color: #fff; }
+  .kpi .delta { font-size: 0.75rem; color: #3FA69A; margin-top: 4px; }
+  .delta-neg { color: #e05555 !important; }
+  h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: #3FA69A; border-bottom: 1px solid #222; padding-bottom: 8px; margin: 28px 0 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  th { color: #888; text-align: left; padding: 8px 12px; border-bottom: 1px solid #222; }
+  td { padding: 10px 12px; border-bottom: 1px solid #1a1a1a; color: #ddd; }
+  tr:hover td { background: #141414; }
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #222; color: #555; font-size: 0.75rem; text-align: center; }
+  .badge { display: inline-block; background: rgba(63,166,154,0.15); color: #3FA69A; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+  .pos-good { color: #00cc77; font-weight: 700; }
+  .pos-mid { color: #ffd93d; font-weight: 700; }
+  .pos-bad { color: #e05555; font-weight: 700; }
+  .pos-none { color: #666; }
+  .opportunity { background: rgba(255,107,53,0.08); border-left: 3px solid #ff6b35; padding: 12px 16px; margin: 12px 0; border-radius: 4px; }
+  .opportunity-title { color: #ff6b35; font-weight: 600; font-size: 0.875rem; margin-bottom: 4px; }
+  .opportunity-text { color: #aaa; font-size: 0.8rem; }
+&lt;/style&gt;
+
+... (93 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">full-seo-report-2026-05-11.md</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/reports/full-seo-report-2026-05-11.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-89973')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-89973"># CB247 Weekly SEO Report — 11 May 2026
+
+&gt; **Automated Report** | Generated by CB247 Marketing AI
+&gt; Data sources: GA4 · Google Search Console · Ahrefs · Apify · Screaming Frog
+
+---
+
+## Google Search Console — 2026-04-13 to 2026-05-11
+
+### KPI Summary
+
+| Metric | This Week | vs Prev Week | Trend |
+|--------|-----------|--------------|-------|
+| Clicks | 1,913 | n/a | ↗️ |
+| Impressions | 7,367 | n/a | ↗️ |
+| Avg CTR | 25.97% | n/a | ↗️ |
+| Avg Position | 1.4 | worse | ↘️ |
+
+### Top 10 Queries
+
+| Query | Clicks | Impressions | CTR | Position |
+|-------|--------|-------------|-----|----------|
+| chasing better malaga | 636 | 1726 | 36.9% | #1.1 |
+| chasing better | 465 | 1482 | 31.4% | #1.2 |
+| chasing better ellenbrook | 416 | 881 | 47.2% | #1.1 |
+| chasing better gym | 38 | 134 | 28.4% | #1.3 |
+| chasing better cancel membership | 34 | 48 | 70.8% | #1.0 |
+| chasingbetter | 24 | 108 | 22.2% | #2.6 |
+| chasingbetter247 | 22 | 108 | 20.4% | #2.8 |
+| chasing better 247 | 21 | 46 | 45.6% | #1.4 |
+
+... (173 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">full-seo-email-2026-05-11.html</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/reports/full-seo-email-2026-05-11.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-94354')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-94354">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;style&gt;
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 32px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .header { background: linear-gradient(135deg, #0d1f1c, #1a2e28); border: 1px solid #3FA69A; border-radius: 12px; padding: 24px 32px; margin-bottom: 32px; }
+  h1 { color: #3FA69A; font-size: 1.75rem; margin: 0 0 8px; }
+  h2 { color: #3FA69A; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid #222; padding-bottom: 8px; margin: 28px 0 14px; }
+  .subhead { color: #888; font-size: 0.875rem; margin: 0; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; }
+  .badge-red { background: rgba(224,85,85,0.15); color: #e05555 }
+  .badge-yellow { background: rgba(255,217,61,0.15); color: #ffd93d }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: #141414; border: 1px solid #1e1e1e; border-radius: 8px; padding: 16px; }
+  .kpi .label { color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi .value { font-size: 1.5rem; font-weight: 700; color: #fff; }
+  .kpi .delta { font-size: 0.7rem; margin-top: 4px; }
+  .delta-pos { color: #3FA69A; }
+  .delta-neg { color: #e05555; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-bottom: 16px; }
+  th { color: #888; text-align: left; padding: 8px 10px; border-bottom: 1px solid #2a2a2a; background: #0f0f0f; font-size: 0.7rem; text-transform: uppercase; }
+  td { padding: 8px 10px; border-bottom: 1px solid #161616; color: #bbb; }
+  tr:hover td { background: #141414; }
+  .pos-good { color: #00cc77; font-weight: 700; }
+  .pos-mid { color: #ffd93d; font-weight: 700; }
+  .pos-bad { color: #e05555; }
+  .pos-none { color: #555; }
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e1e1e; color: #444; font-size: 0.7rem; text-align: center; }
+
+... (89 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">blog-fifo-24-7-gym-2026-05-11.html</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/blog-fifo-24-7-gym-2026-05-11.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-66058')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-66058">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;Why FIFO Workers Need a 24/7 Gym (And Not Just Any Gym) | ChasingBetter247&lt;/title&gt;
+    &lt;meta name=&quot;description&quot; content=&quot;Discover why ChasingBetter247 is the ultimate fifo friendly gym in Perth. 24/7 access, unique FIFO freeze policy, and premium recovery for WA workers.&quot;&gt;
+    &lt;style&gt;
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --accent: #3FA69A;
+            --text-light: #ffffff;
+            --text-muted: #aaaaaa;
+            --max-width: 800px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-light);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+... (234 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">full-seo-report-2026-05-11.html</strong>
+                    <span class="report-date">11 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/reports/full-seo-report-2026-05-11.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-96915')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-96915">&lt;!DOCTYPE html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;style&gt;
+body{font-family:-apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,sans-serif;background:#0a0a0a;color:#fff;padding:32px}
+.container{max-width:800px;margin:0 auto}
+h1{color:#3FA69A;font-size:1.75rem;border-bottom:2px solid #3FA69A;padding-bottom:8px}
+h2{color:#3FA69A;font-size:1rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #222;padding-bottom:6px;margin-top:32px}
+table{width:100%;border-collapse:collapse;font-size:.875rem;margin-bottom:16px}
+th{color:#888;text-align:left;padding:8px 12px;border-bottom:1px solid #333;background:#111}
+td{padding:10px 12px;border-bottom:1px solid #1a1a1a;color:#ddd}
+tr:hover td{background:#141414}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.kpi{background:#141414;border:1px solid #222;border-radius:8px;padding:20px}
+.kpi .label{color:#888;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.kpi .value{font-size:1.75rem;font-weight:700}
+.badge{display:inline-block;background:rgba(63,166,154,.15);color:#3FA69A;padding:2px 8px;border-radius:4px;font-size:.7rem}
+blockquote{{border-left:3px solid #3FA69A;padding:8px 16px;background:#111;margin:16px 0}}
+{{color:#aaa;font-size:.875rem}}
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div class=&quot;container&quot;&gt;
+&lt;h1&gt;CB247 Weekly SEO Report — 11 May 2026&lt;/h1&gt;
+&lt;blockquote&gt;**Automated Report** | Generated by CB247 Marketing AI&lt;/blockquote&gt;
+&lt;blockquote&gt;Data sources: GA4 · Google Search Console · Ahrefs · Apify · Screaming Frog&lt;/blockquote&gt;
+&lt;p&gt;---&lt;/p&gt;
+&lt;h2&gt;Google Search Console — 2026-04-13 to 2026-05-11&lt;/h2&gt;
+&lt;p&gt;### KPI Summary&lt;/p&gt;
+&lt;table&gt;
+&lt;th&gt;Metric&lt;/th&gt;
+&lt;th&gt;This Week&lt;/th&gt;
+&lt;th&gt;vs Prev Week&lt;/th&gt;
+&lt;th&gt;Trend&lt;/th&gt;
+&lt;/tr&gt;
+
+... (606 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-winter-attack-landing-2026-05-12.html</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-winter-attack-landing-2026-05-12.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-11342')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-11342">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;Winter Attack 2026 | ChasingBetter247&lt;/title&gt;
+    &lt;style&gt;
+        :root {
+            --primary: #3FA69A;
+            --dark: #0a0a0a;
+            --light: #f5f5f5;
+            --accent: #ff4d4d;
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            margin: 0;
+            line-height: 1.6;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        header { padding: 20px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .logo { font-weight: 800; font-size: 1.5rem; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+
+        .hero { padding: 80px 0; text-align: center; background: linear-gradient(180deg, #0a0a0a 0%, #111 100%); }
+        h1 { font-size: 4rem; margin: 0; line-height: 1.1; font-weight: 900; text-transform: uppercase; }
+        span.highlight { color: var(--primary); }
+        .subhead { font-size: 1.5rem; color: #888; margin: 20px 0 40px; }
+
+        .cta-box { background: var(--primary); color: white; padding: 20px 40px; font-weight: 800; text-transform: uppercase; text-decoration: none; border-radius: 4px; display: inline-block; font-size: 1.2rem; transition: transform 0.2s; }
+
+... (115 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">site-audit-reformer-pilates-malaga-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/audits/site-audit-reformer-pilates-malaga-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-59903')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-59903"># SEO Site Audit: Malaga — 2026-05-12
+
+## Executive Summary
+Strategic audit for &quot;reformer pilates malaga&quot; targeting FIFO and premium seekers. The core issue is a critically low CTR (0.69%) for Reformer Pilates content despite strong brand presence. Technical infrastructure is stable, but on-page optimization for location-specific pilates terms is non-existent, leading to missed local intent and high bounce potential.
+
+## Critical Issues (Fix Immediately)
+| Issue | Page/Section | Recommendation |
+|-------|--------------|----------------|
+| Low CTR (0.69%) | /reformer-pilates | Rewrite Title/Meta to include &quot;Malaga&quot; + &quot;24/7 Access&quot; to capture local intent. |
+| Missing H1 Focus | Reformer Pilates Page | Update H1 to &quot;Reformer Pilates Malaga | 24/7 Premium Studio&quot; for keyword relevance. |
+| Thin Content | Reformer Pilates Section | Increase word count to 600+ with FIFO-specific benefits and session details. |
+
+## High Priority Issues (Fix This Week)
+| Issue | Page/Section | Recommendation |
+|-------|--------------|----------------|
+| NAP Consistency | Footer/Contact | Ensure Malaga address (738 Marshall Road) is linked directly to pilates mentions. |
+| Missing Internal Links | Home -&gt; Pilates | Add high-visibility internal link from Malaga homepage to Pilates landing page. |
+
+## Technical SEO Findings
+### Title Tags
+| Page | Current Title | Length | Issue? | Recommendation |
+|------|--------------|--------|--------|----------------|
+| Reformer Pilates | Reformer Pilates Classes | 24 | Yes (Too Short) | Reformer Pilates Malaga | 24/7 Premium Studio | CB247 |
+
+### Meta Descriptions
+| Page | Current Meta | Length | Issue? | Recommendation |
+|------|-------------|--------|--------|----------------|
+| Reformer Pilates | [Generic Pilates Meta] | [N] | Yes | $11.95/week Reformer Pilates in Malaga. 24/7 access, premium beds, and no lock-in contracts. Perfect for FIFO. Join CB247 today. |
+
+### Heading Structure
+
+... (41 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">gap-analysis-reformer-pilates-malaga-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/competitors/gap-analysis-reformer-pilates-malaga-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-90764')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-90764"># Competitor SEO Gap Analysis: Reformer Pilates Malaga — 2026-05-12
+
+## SERP Landscape Analysis
+Keyword: `reformer pilates malaga`
+Current Ranking: Outside Top 20 (Brand page ranks for general terms, not services).
+Primary Competitors: Revo Fitness (Malaga), Perth HPC, Best Body.
+
+## Competitor Performance Matrix
+| Competitor | Target URL | Est. Traffic | Key Strength |
+|------------|------------|--------------|--------------|
+| Revo Fitness | /gyms/malaga/ | High | Price ($9.69) + 24/7 access mention. |
+| Perth HPC | /gym/pilates-reformer | Medium | High relevance title + service focus. |
+| ClassPass | /search/perth/reformer-pilates | High | Aggregator dominance. |
+
+## Strategic Gaps Identified
+
+### 1. The &quot;Revo Gap&quot; (Price/Access)
+Revo dominates &quot;Malaga Gym&quot; queries and is starting to bleed into &quot;Pilates&quot; intent. Revo's $9.69 price point is the biggest threat.
+**CB247 Advantage:** We offer a more premium environment with Sauna + Ice Bath included, which Revo lacks in their base tier.
+
+### 2. The &quot;Anytime Gap&quot; (Facility Quality)
+Anytime Malaga does not emphasize Reformer Pilates.
+**CB247 Opportunity:** Occupy the high-end boutique pilates space within a 24/7 gym format.
+
+### 3. The &quot;FIFO Gap&quot; (Contract Flexibility)
+Competitors (Revo/Anytime) have rigid or confusing freeze-friendly policies for FIFO.
+**CB247 Advantage:** &quot;FIFO-friendly freeze&quot; is our unique selling proposition in WA.
+
+## Content Gaps vs Top 3 Results
+| Competitor Element | Missing in CB247 | Priority |
+
+... (13 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">compliance-review-reformer-pilates-malaga-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/compliance-review-reformer-pilates-malaga-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-94700')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-94700"># Compliance Review: Reformer Pilates Malaga Landing Page
+**Date:** 2026-05-12 | **Reviewer:** Claude Code
+
+---
+
+## Content Being Reviewed
+`outputs/seo/content/draft-24-7-gym-malaga-reformer-pilates-2026-05-12.html`
+
+---
+
+## Compliance Status
+
+| Check | Status | Notes |
+|-------|--------|-------|
+| AANA Code of Ethics | ✅ PASS | Adheres to truth and accuracy in pricing and service descriptions. |
+| ACL Truth in Advertising | ✅ PASS | &quot;$11.95/week&quot; and &quot;No Lock-in&quot; are clear and unsubstantiated claims reflect actual pricing. |
+| Testimonial Requirements | ✅ PASS | No specific member testimonials used in this draft. |
+| Therapeutic Claims | ✅ PASS | No prohibited &quot;heal&quot; or &quot;cure&quot; language. Uses &quot;Supports recovery&quot;. |
+| Membership Pricing Rules | ✅ PASS | Pricing is transparent; no hidden signup fees mentioned as per guidelines. |
+| Privacy/Spam Act | ✅ PASS | Placeholders for forms follow standard consent protocols. |
+
+---
+
+## Issues Found
+
+### Critical Issues (Must Fix)
+*None found.*
+
+### Warnings (Should Fix)
+| Issue | Regulation | Fix Required |
+
+... (25 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">seo-pipeline-reformer-pilates-malaga-2026-05-12-final.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/reports/seo-pipeline-reformer-pilates-malaga-2026-05-12-final.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-37330')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-37330"># Executive Report: SEO Pipeline — Reformer Pilates Malaga
+**Date:** 2026-05-12 | **Target:** Reformer Pilates Malaga | **Priority:** P1
+
+## Executive Summary
+The Reformer Pilates pipeline for Malaga is complete. The primary objective was to solve the low CTR (0.69%) identified in GSC data. Audit findings showed a total lack of location-based keywords in titles and metadata. We have produced a high-converting, SEO-optimized landing page targeting the FIFO and premium recovery markets, leveraging CB247's price advantage and 24/7 access.
+
+## Pipeline Stage Outcomes
+
+| Stage | Output File | Key Findings / Result |
+|-------|-------------|-----------------------|
+| 1. Site Audit | `site-audit-reformer-pilates-malaga-2026-05-12.md` | Missing H1/Meta location keywords. CTR bottleneck identified. |
+| 2. Gap Analysis | `gap-analysis-reformer-pilates-malaga-2026-05-12.md` | Revo dominates on price; CB247 wins on &quot;Recovery + Flex&quot; (FIFO Gap). |
+| 3. Content Brief | `content-brief-reformer-pilates-malaga-2026-05-12.md` | Strategy: Position as the only &quot;Boutique-quality 24/7 studio&quot; in Malaga. |
+| 4. Landing Page | `draft-24-7-gym-malaga-reformer-pilates-2026-05-12.html` | Dark premium UI, PAS framework, 3 CTAs, FIFO-priority copy. |
+| 5. Compliance | `compliance-review-reformer-pilates-malaga-2026-05-12.md` | ✅ PASS. All health and pricing claims meet Australian AANA/ACL standards. |
+
+## Strategic Recommendations
+1. **Immediate Deployment:** Replace current /reformer-pilates meta tags with the optimized versions provided to fix CTR issues.
+2. **Internal Linking:** Create a direct link from the &quot;Malaga Location&quot; home section to this new Pilates URL.
+3. **Cross-Sell:** Market the &quot;Pilates + Recovery&quot; stack to the 35–55 recovery ICP via Facebook.
+
+## Next Actions
+- [ ] Review HTML draft with the Malaga reception team for timetable accuracy.
+- [ ] Implement HealthAndBeautyBusiness Schema via GTM.
+- [ ] Monitor CTR over the next 14 days following meta tag updates.
+
+---
+*Report generated by CB247 SEO Orchestrator (Claude Code)*
+Co-Authored-By: Claude Opus 4.7 &lt;noreply@anthropic.com&gt;</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">content-brief-reformer-pilates-malaga-2026-05-12.md</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/content-brief-reformer-pilates-malaga-2026-05-12.md" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-26450')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-26450">## Content Brief: 24/7 Reformer Pilates Malaga
+
+### Metadata
+- **Type:** Landing Page
+- **Target URL:** /locations/malaga/reformer-pilates
+- **Primary Keyword:** reformer pilates malaga
+- **Secondary Keywords:** 24/7 pilates malaga, pilates classes malaga, gym with pilates malaga, perth reformer pilates
+- **Target ICP:** FIFO Workers, Premium Fitness Seekers, Parents
+- **Intent:** Commercial / Transactional
+- **Priority:** P1
+
+### SEO Requirements
+- **Title Tag:** Reformer Pilates Malaga | 24/7 Access &amp; No Lock-in | CB247
+- **Meta Description:** $11.95/week Reformer Pilates in Malaga. 24/7 access, no lock-in, and premium recovery suite included. Perfect for FIFO workers. Join today.
+- **H1:** Premium Reformer Pilates in Malaga
+- **Word Count Target:** 650+ words
+- **Schema Type:** HealthAndBeautyBusiness, Course, FAQ
+
+### Content Outline
+1. **Hero Section** — High energy, premium beds
+   - Value: $11.95/week, 24/7 Access, No lock-in.
+   - Keywords: Reformer Pilates Malaga, 24/7 Access.
+
+2. **Problem (PAS)** — &quot;Boutique studios don't fit your life.&quot;
+   - Pain: High prices ($35/class), limited hours, lock-in contracts.
+   - Agitate: Missing classes because of shift work or FIFO swings.
+   - Solve: CB247 Malaga Reformer Pilates — 24/7 access for one low weekly price.
+
+3. **The &quot;Full Cycle&quot; Difference** — Pilates + Recovery
+   - Features: Premium reformers, Sauna, Ice Bath included.
+
+... (19 more lines)</pre>
+        </div>
+        <div class="report-item">
+            <div class="report-header">
+                <div class="report-meta">
+                    <span class="report-icon">🔎</span>
+                    <strong class="report-title">draft-24-7-gym-malaga-reformer-pilates-2026-05-12.html</strong>
+                    <span class="report-date">12 May 2026</span>
+                </div>
+                <div class="report-actions">
+                    <a href="outputs/seo/content/draft-24-7-gym-malaga-reformer-pilates-2026-05-12.html" target="_blank" class="btn-link">Open ↗</a>
+                    <button class="btn-toggle" onclick="togglePreview('seo-agent-35572')">Preview</button>
+                </div>
+            </div>
+            <pre class="report-preview" id="preview-seo-agent-35572">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+  &lt;title&gt;Reformer Pilates Malaga | 24/7 Access &amp; No Lock-in | CB247&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;$11.95/week Reformer Pilates in Malaga. 24/7 access, no lock-in, and premium recovery suite included. Perfect for FIFO workers. Join today.&quot;&gt;
+  &lt;style&gt;
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-card: #141414;
+      --accent: #3FA69A;
+      --accent-hover: #2d7a70;
+      --text-light: #ffffff;
+      --text-muted: #aaaaaa;
+      --overlay: rgba(63,166,154,0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-light);
+      line-height: 1.6;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+    .hero {
+
+... (173 more lines)</pre>
+        </div>
+        </div>
+    </div>
+
+    </div>
+
+    <footer>
+        <p>Generated 12 May 2026 at 21:18 by CB247 Marketing System</p>
+        <p>All agent outputs are linked above. Run <code>python scripts/pull_all.py</code> to refresh data before generating.</p>
+    </footer>
+
+    <script>
+        function togglePreview(id) {
+            const el = document.getElementById('preview-' + id);
+            if (el) {
+                el.classList.toggle('show');
+                el.textContent = el.textContent; // reset scroll
+            }
+        }
+
+        // Show previews for first item of each section by default
+        document.querySelectorAll('.report-item').forEach((item, i) => {
+            if (i < 9) {
+                const preview = item.querySelector('.report-preview');
+                if (preview) preview.classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>

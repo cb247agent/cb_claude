@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing",
+        "/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain"
+      ]
+    },
+    "higgsfield": {
+      "command": "node",
+      "args": [
+        "mcp_servers/higgsfield_server.js"
+      ],
+      "env": {
+        "HIGGSFIELD_API_KEY": "${HIGGSFIELD_API_KEY}"
+      }
+    }
+  }
+}

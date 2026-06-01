@@ -1,0 +1,65 @@
+# Google Ads Disavow File — ChasingBetter247
+# Generated: 2026-05-30
+# Site: chasingbetter247.com.au
+#
+# Purpose: Disavow 29 toxic spam backlink domains (seoexpress.store network)
+# and 8 seo-anomaly bot crawler domains detected in Ahrefs backlink profile.
+#
+# HOW TO SUBMIT:
+# 1. Go to: https://search.google.com/search-console/disavow-links
+# 2. Select property: chasingbetter247.com.au
+# 3. Upload this file
+# 4. Wait 2–4 weeks for Google to process
+#
+# WARNING: Only submit this if you are confident these are toxic/spam links.
+# This file has been reviewed — all domains are confirmed spam link networks.
+#
+# ------------------------------------------------------------------
+# BLOCK 1: seoexpress.store spam network (29 domains, identified May 2026)
+# All link to chasingbetter247.com.au from identical spam page templates.
+# ------------------------------------------------------------------
+
+domain:advanced-search-seoexpress-pros.store
+domain:elite-authority-marketplace-seoexpress.store
+domain:exclusive-traffic-experts-seoexpress.store
+domain:exclusive-webpage-center-seoexpress.store
+domain:expert-organic-seoexpress.store
+domain:global-digital-seoexpress-portal.store
+domain:high-domain-seoexpress-center.store
+domain:high-seoexpress-organic-team.store
+domain:instant-webpage-seoexpress-consultants.store
+domain:luxury-seoexpress-tier-1-house.store
+domain:modern-authority-seoexpress.store
+domain:official-anchor-text-seoexpress-system.store
+domain:official-domain-seoexpress.store
+domain:official-seoexpress-white-hat-team.store
+domain:powerful-link-building-hub-seoexpress.store
+domain:premium-seoexpress-outreach-provider.store
+domain:seoexpress-anchor-text-experts.store
+domain:seoexpress-leading-dofollow-pros.store
+domain:seoexpress-off-page-solutions.store
+domain:seoexpress-organic-partners.store
+domain:seoexpress-ranking-hub.store
+domain:seoexpress-verified-high-da-consultants.store
+domain:smart-indexer-seoexpress.store
+domain:smart-marketing-seoexpress.store
+domain:smart-seoexpress-webpage-experts.store
+domain:trusted-dofollow-team-seoexpress.store
+domain:trusted-off-page-pros-seoexpress.store
+domain:trusted-seoexpress-backlink-experts.store
+domain:ultimate-seoexpress-niche-edit-experts.store
+
+# ------------------------------------------------------------------
+# BLOCK 2: seo-anomaly bot crawler domains (8 domains)
+# Zero DR, clearly automated crawlers / negative SEO probes.
+# ------------------------------------------------------------------
+
+domain:seo-anomaly-keyword-1.xyz
+domain:seo-anomaly-anchor-2.xyz
+domain:seo-anomaly-anchor-1.xyz
+domain:seo-anomaly-crawler-2.xyz
+domain:seo-anomaly-redirect-2.xyz
+domain:seo-anomaly-canonical-1.xyz
+domain:seo-anomaly-sitemap-1.xyz
+domain:seo-anomaly-crawler-1.xyz
+domain:seo-anomaly-backlink-2.xyz

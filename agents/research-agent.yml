@@ -1,0 +1,63 @@
+# Research Agent — ChasingBetter247
+
+name: research-agent
+description: Monitors competitors, trends, and market signals for CB247
+version: 1.0
+model: minimax/minimax-m2.7
+
+context_files:
+  - context/research-competitors.md
+  - context/strategy-pestle-swot.md
+  - CLAUDE.md
+
+output_folder: outputs/research/
+
+tasks:
+
+  competitor_monitor:
+    trigger: "monitor competitors"
+    output: outputs/research/competitor-update-[DATE].md
+    instructions: |
+      Research latest activity for these Perth gyms:
+        - Revo Fitness (revofitness.com.au + Instagram)
+        - Ryderwear Gym Malaga (ryderweargym.com)
+        - Anytime Fitness Perth locations
+        - Snap Fitness Perth locations
+      Report for each:
+        1. Any new pricing changes
+        2. New services or facilities added
+        3. Recent promotions or offers
+        4. Social media content themes
+      Flag anything CB247 should respond to.
+
+  trend_monitor:
+    trigger: "check fitness trends"
+    output: outputs/research/trends-[DATE].md
+    instructions: |
+      Research current trending topics in fitness & gym industry:
+        - Top performing fitness content on Instagram & TikTok
+        - Trending gym hashtags in Australia/Perth
+        - New fitness formats or class types gaining traction
+        - Recovery & wellness trends (sauna, ice bath, pilates)
+      Recommend 3 content angles CB247 should use this week.
+
+  pestle_update:
+    trigger: "update pestle analysis"
+    output: outputs/research/pestle-update-[DATE].md
+    instructions: |
+      Review and update context/strategy-pestle-swot.md PESTLE section.
+      Check for changes in:
+        - Perth economic conditions (cost of living, FIFO industry)
+        - New gym regulations or council decisions in WA
+        - Technology shifts in fitness marketing
+        - Social trends affecting gym membership behaviour
+      Update only changed sections. Keep unchanged sections as-is.
+
+  swot_update:
+    trigger: "update swot analysis"
+    output: outputs/research/swot-update-[DATE].md
+    instructions: |
+      Review CB247 SWOT based on latest competitor & market data.
+      Compare current SWOT vs new findings.
+      Flag: any new threats, new opportunities, or changed strengths.
+      Recommend 1 strategic action based on findings.

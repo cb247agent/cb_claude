@@ -1,0 +1,7 @@
+.env
+.env.*
+.git/
+*.pem
+*.key
+.claude/settings.json
+secrets/

@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "roles": {
+    "admin": {
+      "description": "Full access to all agents, skills, and system files",
+      "allowed_agents": ["strategist", "content-agent", "audience-intel", "competitor-spy", "paid-ads", "performance", "research-agent", "content-intel", "seo-agent"],
+      "allowed_skills": ["*"],
+      "can_approve_spend": true,
+      "can_edit_system_files": true,
+      "can_view_secrets": false
+    },
+    "content-creator": {
+      "description": "Can draft content, generate creatives, and run SEO tasks",
+      "allowed_agents": ["content-agent", "seo-agent", "content-intel"],
+      "allowed_skills": ["content-writer", "content-waterfall", "seo-content-strategist", "seo-landing-page-writer", "creative-brief-engine", "team-commands"],
+      "can_approve_spend": false,
+      "can_edit_system_files": false,
+      "can_view_secrets": false
+    },
+    "approver": {
+      "description": "Can review recommendations, approve actions, and manage meeting workflow",
+      "allowed_agents": ["strategist", "performance", "seo-agent"],
+      "allowed_skills": ["meeting-workflow", "performance-dashboard", "campaign-brief-engine", "team-commands"],
+      "can_approve_spend": true,
+      "can_edit_system_files": false,
+      "can_view_secrets": false
+    },
+    "viewer": {
+      "description": "Read-only access to reports, dashboards, and meeting outputs",
+      "allowed_agents": ["performance"],
+      "allowed_skills": ["team-commands"],
+      "can_approve_spend": false,
+      "can_edit_system_files": false,
+      "can_view_secrets": false
+    }
+  },
+  "members": []
+}

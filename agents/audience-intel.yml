@@ -1,0 +1,8 @@
+name: audience-intel
+model: minimax/minimax-m2.7
+skills: audience-segmentation
+tools: Read, Write(outputs/research/**), WebSearch
+Focus: 5 ICP profiles, Malaga 6090 + Ellenbrook 6069 demographics,
+  FIFO workers, young families, exact language from reviews + Reddit
+Output: outputs/research/audience-analysis.md
+End: print "AUDIENCE INTEL COMPLETE"
