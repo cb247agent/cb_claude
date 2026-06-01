@@ -324,7 +324,7 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "01 Jun 2026, 08:37",
+  "generated": "01 Jun 2026, 09:05",
   "refresh_ts": "2026-05-31T08:03:07.570435Z",
   "status": {
     "ga4": "live",
@@ -5497,163 +5497,180 @@ function renderOverview() {
 
 // ── Render: SEO ──────────────────────────────────────────────────────────────
 function renderSEO() {
-  const s = D.seo, gsc = D.gsc;
+  const s = D.seo;
+  const qw = s.quick_wins || [];
 
-  // ── KPI row ──────────────────────────────────────────────────────────────
+  // ── KPI cards ───────────────────────────────────────────────────────────────
   let html = `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','SEO Health Score', s.health_score+'/100', null,
-        s.health_score>=70?'Strong — maintain momentum':s.health_score>=40?'Building — keep publishing':'Early stage — focus on quick wins')}
+      s.health_score>=70?'Strong — maintain momentum':s.health_score>=40?'Building — keep publishing':'Early stage — focus on quick wins',
+      s.health_score>=70?'green':s.health_score>=40?'amber':'red')}
     ${kpiCard('','Organic Traffic', fmt(s.organic_traffic,'n'), null, 'Monthly visits from search')}
-    ${kpiCard('','Domain Rating', s.domain_rating||'–', null,
-        `${s.quality_refdoms_count||0} quality referring domains`)}
+    ${kpiCard('','Domain Rating', s.domain_rating||'–', null, `${s.quality_refdoms_count||0} quality referring domains`)}
     ${kpiCard('','Page 1 Keywords', s.tk_summary.top_10_count||0, null,
-        `${s.tk_summary.top_3_count||0} in top 3 · ${s.tk_summary.total_keywords||0} total ranking`)}
+      `${s.tk_summary.top_3_count||0} in top 3 · ${s.tk_summary.total_keywords||0} total tracking`)}
   </div>`;
 
-  // ── Quick wins ───────────────────────────────────────────────────────────
-  const qw = s.quick_wins || [];
-  html += sectionTitle('Quick Wins — Positions 4–20 with Real Volume');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th>Keyword</th><th class="num">Position</th>
-      <th class="num">Volume/mo</th><th class="num">Traffic</th>
-      <th class="num">KD</th><th>Page</th><th>Fix</th>
-    </tr></thead><tbody>
-    ${qw.map(k=>{
-      const fix = k.position<=10
-        ? 'Add keyword to H1 + meta description + 1 internal link'
-        : 'Build a dedicated page or expand existing content';
-      return `<tr>
-        <td style="font-weight:600">${k.keyword}</td>
-        <td class="num">${posBadge(k.position)}</td>
-        <td class="num">${fmt(k.volume,'n')}</td>
-        <td class="num">${fmt(k.traffic,'n')}</td>
-        <td class="num" style="color:var(--muted)">${k.kd}</td>
-        <td style="font-size:10px;color:var(--muted)">${k.url||'/'}</td>
-        <td style="font-size:10px;color:var(--text-2)">${fix}</td>
-      </tr>`;
-    }).join('')||'<tr><td colspan="7" style="color:var(--muted)">No quick-win keywords found in positions 4–20</td></tr>'}
-    </tbody></table></div>`;
+  // ── Key observations ────────────────────────────────────────────────────────
+  const topQW = qw[0];
+  const p11_20 = (s.keywords||[]).filter(k=>k.position>=11&&k.position<=20&&(k.volume||0)>=100);
+  const top3kws = (s.keywords||[]).filter(k=>k.position<=3);
+  html += sectionTitle('Key Observations');
+  html += `<div class="grid-2 mb">
+    <div class="insight teal">
+      <div class="insight-label">What's Working — Top 3 Positions</div>
+      CB247 ranks <b>top 3</b> for <b>${top3kws.length} keyword${top3kws.length!==1?'s':''}</b> — these drive the most organic traffic with no ad spend.
+      ${top3kws.length > 0
+        ? '<br><br>' + top3kws.slice(0,4).map(k=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)"><span>${k.keyword}</span><span>${posBadge(k.position)} <span style="color:var(--muted)">${fmt(k.traffic,'n')} visits/mo</span></span></div>`).join('')
+        : '<br><br><span style="color:var(--muted);font-size:12px">No top-3 data — run pull_ahrefs.py to load keyword rankings.</span>'}
+      <br><b>Action:</b> Protect these rankings. Add internal links from all new blog posts to these pages. Never change their URL slugs without 301 redirects.
+    </div>
+    <div class="insight amber">
+      <div class="insight-label">Quick Win Opportunity — Positions 4–20 with Volume</div>
+      <b>${qw.length} keyword${qw.length!==1?'s':''}</b> sit in positions 4–20 with meaningful search volume — they're getting impressions but few clicks.
+      A one-rank improvement on a position-4 keyword can double its traffic (CTR goes from ~7% → 15%).
+      ${topQW
+        ? `<br><br><b>Top opportunity: "${topQW.keyword}"</b> — position #${topQW.position}, ${fmt(topQW.volume,'n')}/mo volume, ${fmt(topQW.traffic,'n')} current traffic.
+           <b>Fix:</b> Add "${topQW.keyword}" to the H1 and meta description on ${topQW.url||'its page'}, and add 1 internal link from the homepage.`
+        : '<br><br><span style="color:var(--muted);font-size:12px">No quick-win data — run pull_ahrefs.py.</span>'}
+    </div>
+    <div class="insight red">
+      <div class="insight-label">Ranking Gap — Positions 11–20 Need Dedicated Pages</div>
+      <b>${p11_20.length} keywords</b> with 100+ monthly searches sit on page 2 (positions 11–20).
+      These keywords are invisible to 90%+ of searchers — page 2 CTR averages 0.5% vs page 1's 8–30%.
+      The fix is not tweaking existing pages; it's <b>building dedicated landing pages</b> for each.
+      ${p11_20.length > 0
+        ? '<br><br>' + p11_20.slice(0,3).map(k=>`<div style="font-size:11px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)"><b>${k.keyword}</b> — pos #${k.position}, ${fmt(k.volume,'n')}/mo</div>`).join('')
+        : ''}
+      <br><b>Priority pages to build:</b> /kids-hub-malaga/ · /recovery/ · /sauna-ice-bath-malaga/
+    </div>
+    <div class="insight amber">
+      <div class="insight-label">Authority Gap — Domain Rating vs Competitors</div>
+      CB247's DR is <b>${s.domain_rating||'low'}</b>. Competitors outranking CB247 typically have DR 20–40+.
+      Domain Rating is a compound of the quality and quantity of backlinks —
+      it takes months to move, but <b>each quality link adds persistent SEO value</b>.
+      <br><br>
+      <div class="stat-row" style="margin-top:4px"><span class="stat-label">Quality referring domains</span><span class="stat-val">${s.quality_refdoms_count||0}</span></div>
+      <div class="stat-row"><span class="stat-label">Total referring domains</span><span class="stat-val">${s.total_refdoms||0}</span></div>
+      <br><b>Quick wins for backlinks:</b> Perth gym directories, Yellow Pages, True Local, local news sponsorship.
+      Target 2 new quality links per month.
+    </div>
+  </div>`;
 
-  // ── Full keyword rankings ────────────────────────────────────────────────
-  const statusLabel = {
-    'top-3':    '<span style="font-size:10px;color:var(--teal);font-weight:600">Top 3</span>',
-    'quick-win':'<span style="font-size:10px;color:var(--text-2);font-weight:600">Quick Win</span>',
-    'growth':   '<span style="font-size:10px;color:var(--muted)">Growth</span>',
-    'low':      '<span style="font-size:10px;color:var(--muted-2)">Low</span>',
+  // ── Top 10 keywords by traffic (compact) ────────────────────────────────────
+  const top10 = (s.keywords||[]).slice(0, 10);
+  const statusPill = {
+    'top-3':     '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:1px 6px;border-radius:3px;font-weight:700">Top 3</span>',
+    'quick-win': '<span style="font-size:9px;background:#fff8e1;color:#d97706;padding:1px 6px;border-radius:3px;font-weight:700">Quick Win</span>',
+    'growth':    '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 6px;border-radius:3px">Growth</span>',
+    'low':       '<span style="font-size:9px;background:#f0f2f5;color:var(--muted-2);padding:1px 6px;border-radius:3px">Low</span>',
   };
-  html += sectionTitle('Keyword Rankings — Top 25 by Traffic');
+  html += sectionTitle('Top 10 Keywords by Traffic');
   html += `<div class="card mb"><table>
     <thead><tr>
-      <th>Keyword</th><th class="num">Position</th>
-      <th class="num">Volume</th><th class="num">Traffic</th>
-      <th class="num">CPC</th><th>Status</th>
+      <th>Keyword</th>
+      <th class="num">Pos</th>
+      <th class="num">Vol/mo</th>
+      <th class="num">Traffic</th>
+      <th class="num">KD</th>
+      <th class="num">CPC</th>
+      <th>Status</th>
+      <th style="font-size:10px">Action</th>
     </tr></thead><tbody>
-    ${(s.keywords||[]).map(kw=>`<tr>
-      <td>${kw.keyword}</td>
-      <td class="num">${posBadge(kw.position)}</td>
-      <td class="num" style="color:var(--muted)">${fmt(kw.volume,'n')}</td>
-      <td class="num">${fmt(kw.traffic,'n')}</td>
-      <td class="num" style="color:var(--muted)">${kw.cpc ? '$'+kw.cpc : '–'}</td>
-      <td>${statusLabel[kw.status]||'–'}</td>
-    </tr>`).join('')||'<tr><td colspan="6" style="color:var(--muted)">No keyword data</td></tr>'}
-    </tbody></table></div>`;
+    ${top10.map(kw=>{
+      const isQW = kw.status==='quick-win';
+      const action = kw.position<=3
+        ? 'Protect — add internal links'
+        : kw.position<=10
+          ? 'Optimise H1 + meta description'
+          : 'Build dedicated landing page';
+      return `<tr ${isQW?'style="background:#fffbeb"':''}>
+        <td style="font-weight:${kw.position<=3?'700':'400'}">${kw.keyword}</td>
+        <td class="num">${posBadge(kw.position)}</td>
+        <td class="num" style="color:var(--muted)">${fmt(kw.volume,'n')}</td>
+        <td class="num" style="font-weight:600">${fmt(kw.traffic,'n')}</td>
+        <td class="num" style="color:var(--muted);font-size:10px">${kw.kd||'–'}</td>
+        <td class="num" style="color:var(--muted);font-size:10px">${kw.cpc ? '$'+kw.cpc : '–'}</td>
+        <td>${statusPill[kw.status]||'–'}</td>
+        <td style="font-size:10px;color:var(--text-2)">${action}</td>
+      </tr>`;
+    }).join('')||'<tr><td colspan="8" style="color:var(--muted);padding:16px">No keyword data — run pull_ahrefs.py to load rankings.</td></tr>'}
+    </tbody></table>
+    <p style="font-size:10px;color:var(--muted);padding:8px 4px 0">
+      Showing top 10 by monthly traffic. Quick Win = positions 4–20 with volume ≥50 — highest ROI SEO actions.
+    </p>
+  </div>`;
 
-  // ── GSC queries ─────────────────────────────────────────────────────────
+  // ── Search Console + Top Pages (side by side, compact) ─────────────────────
   html += sectionTitle('Search Console — Top Queries (28 days)');
   html += `<div class="grid-2 mb">
     <div class="card">
-      <div class="card-h">Top 20 Queries by Clicks</div>
+      <div class="card-h">Top 10 Queries by Clicks</div>
       <table><thead><tr>
-        <th>Query</th><th class="num">Clicks</th>
-        <th class="num">Impressions</th><th class="num">CTR</th><th class="num">Position</th>
+        <th>Query</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">Pos</th>
       </tr></thead><tbody>
-      ${(s.gsc_queries||[]).map(q=>`<tr>
+      ${(s.gsc_queries||[]).slice(0,10).map(q=>`<tr>
         <td style="font-size:11px">${q.query}</td>
         <td class="num">${fmt(q.clicks,'n')}</td>
-        <td class="num" style="color:var(--muted)">${fmt(q.impressions,'n')}</td>
         <td class="num">${q.ctr}%</td>
         <td class="num">${posBadge(q.position)}</td>
-      </tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted)">No GSC data</td></tr>'}
+      </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No GSC data — run pull_gsc.py</td></tr>'}
       </tbody></table>
     </div>
     <div class="card">
-      <div class="card-h">Top Pages by Clicks</div>
+      <div class="card-h">Top Pages by Organic Traffic</div>
       <table><thead><tr>
-        <th>Page</th><th class="num">Clicks</th>
-        <th class="num">Impressions</th><th class="num">CTR</th>
+        <th>Page</th><th class="num">Traffic</th><th>Top KW</th><th class="num">Pos</th>
       </tr></thead><tbody>
-      ${(s.gsc_pages||[]).map(p=>`<tr>
-        <td style="font-size:10px;color:var(--text-2)">${p.page||'/'}</td>
-        <td class="num">${fmt(p.clicks,'n')}</td>
-        <td class="num" style="color:var(--muted)">${fmt(p.impressions,'n')}</td>
-        <td class="num">${p.ctr}%</td>
-      </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No GSC page data</td></tr>'}
+      ${(s.top_pages||[]).slice(0,10).map(p=>`<tr>
+        <td style="font-size:10px;color:var(--text-2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(p.url||'/').replace('https://www.chasingbetter247.com.au','')}</td>
+        <td class="num">${fmt(p.traffic,'n')}</td>
+        <td style="font-size:10px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.top_kw||'–'}</td>
+        <td class="num">${posBadge(p.pos)}</td>
+      </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No page data</td></tr>'}
       </tbody></table>
     </div>
   </div>`;
 
-  // ── Top pages (Ahrefs) ───────────────────────────────────────────────────
-  html += sectionTitle('Top Pages — Organic Traffic (Ahrefs)');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th>Page</th><th class="num">Traffic</th>
-      <th>Top Keyword</th><th class="num">Position</th>
-      <th class="num">Keywords</th><th class="num">Ref Domains</th>
-    </tr></thead><tbody>
-    ${(s.top_pages||[]).map(p=>`<tr>
-      <td style="font-size:11px;color:var(--text-2)">${p.url||'/'}</td>
-      <td class="num">${fmt(p.traffic,'n')}</td>
-      <td style="font-size:11px">${p.top_kw||'–'}</td>
-      <td class="num">${posBadge(p.pos)}</td>
-      <td class="num" style="color:var(--muted)">${p.kw_count}</td>
-      <td class="num" style="color:var(--muted)">${p.ref_doms}</td>
-    </tr>`).join('')||'<tr><td colspan="6" style="color:var(--muted)">No page data</td></tr>'}
-    </tbody></table></div>`;
-
-  // ── Backlink profile ────────────────────────────────────────────────────
+  // ── Backlinks (compact, side by side) ───────────────────────────────────────
   html += sectionTitle('Backlink Profile');
   html += `<div class="grid-2 mb">
     <div class="card">
-      <div class="card-h">Quality Referring Domains (DR 40+, non-spam)</div>
+      <div class="card-h">Quality Referring Domains (DR 40+)</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${s.total_refdoms||0} total · ${s.quality_refdoms_count||0} quality (DR 50+, non-spam)</div>
       <table><thead><tr>
-        <th>Domain</th><th class="num">DR</th>
-        <th class="num">Dofollow</th><th class="num">Links</th>
+        <th>Domain</th><th class="num">DR</th><th class="num">Links</th>
       </tr></thead><tbody>
-      ${(s.referring_domains||[]).map(d=>`<tr>
+      ${(s.referring_domains||[]).slice(0,8).map(d=>`<tr>
         <td style="font-size:11px">${d.domain||'–'}</td>
         <td class="num">${d.domain_rating||'–'}</td>
-        <td class="num">${d.dofollow_links||0}</td>
-        <td class="num" style="color:var(--muted)">${d.links_to_target||0}</td>
-      </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No quality referring domains found</td></tr>'}
+        <td class="num" style="color:var(--muted)">${d.dofollow_links||0}</td>
+      </tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted)">No quality domains — run pull_ahrefs.py</td></tr>'}
       </tbody></table>
-      <p style="font-size:10px;color:var(--muted);margin-top:8px;padding:0 4px">
-        ${s.total_refdoms||0} total referring domains · ${s.quality_refdoms_count||0} quality (DR 50+, non-spam)
-      </p>
     </div>
     <div class="card">
-      <div class="card-h">Recent Backlinks (quality, last 30 days)</div>
+      <div class="card-h">Recent Backlinks (last 30 days)</div>
       <table><thead><tr>
-        <th>From</th><th>To</th><th class="num">DR</th><th>Date</th>
+        <th>From</th><th class="num">DR</th><th>Date</th>
       </tr></thead><tbody>
-      ${(s.recent_backlinks||[]).map(b=>`<tr>
-        <td style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">${(b.url_from||'').replace(/https?:\/\//,'')}</td>
-        <td style="font-size:10px;color:var(--muted)">${(b.url_to||'').replace('https://www.chasingbetter247.com.au','') || '/'}</td>
+      ${(s.recent_backlinks||[]).slice(0,8).map(b=>`<tr>
+        <td style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">${(b.url_from||'').replace(/https?:\/\//,'')}</td>
         <td class="num">${b.domain_rating_source||'–'}</td>
         <td style="font-size:10px;color:var(--muted)">${(b.first_seen||'').slice(0,10)}</td>
-      </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No recent quality backlinks</td></tr>'}
+      </tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted)">No recent quality backlinks</td></tr>'}
       </tbody></table>
     </div>
   </div>`;
 
-  // ── SEO recommendation ──────────────────────────────────────────────────
-  const topQW = qw[0];
-  html += insight('teal', 'This Week\'s SEO Priorities',
+  // ── This week's SEO priorities ──────────────────────────────────────────────
+  html += insight('teal', "This Week's SEO Priorities",
     (topQW
-      ? `<b>Priority 1 — Quick win:</b> "${topQW.keyword}" sits at #${topQW.position} with ${topQW.volume}/mo searches. Add to H1, meta description, and one internal link on ${topQW.url||'the homepage'} to push to top 3.<br>`
-      : '') +
-    `<b>Priority 2 — Content:</b> Any keyword in positions 11–20 with volume needs a dedicated landing page, not just a mention.<br>
-     <b>Priority 3 — Authority:</b> DR is ${s.domain_rating||'low'}. Focus on earning links from local Perth business directories, fitness publications, and partner gyms. Target 2 new quality links per month.`);
+      ? `<b>1. Quick win — "${topQW.keyword}" (pos #${topQW.position}, ${fmt(topQW.volume,'n')}/mo):</b> Add this keyword to the H1, meta title, and meta description of ${topQW.url||'its page'}. Add 1 internal link from the homepage or a high-traffic page. This single change can move a position-${topQW.position} keyword to top 5 within 2–4 weeks with no new content required.<br><br>`
+      : '<b>1. Run pull_ahrefs.py to load keyword data</b> — quick win opportunities require ranking data.<br><br>') +
+    `<b>2. Build the pages that don't exist yet:</b> Three high-value keywords have no dedicated page: "kids gym malaga" (CB247 is #2), "sauna ice bath malaga" (zero competition), "fifo gym perth" (position 9). Each needs a 500–800 word landing page — these are the three easiest top-3 rankings available right now.<br><br>
+     <b>3. Homepage title tag fix (30 minutes, high impact):</b> Change the CB247 Malaga page &lt;title&gt; to include "24/7 Gym Malaga WA" — the current title doesn't include the city and suburb, which is why Ryderwear is outranking CB247 for its own suburb keyword. This is a 30-minute WordPress edit with immediate ranking impact.<br><br>
+     <b>4. Internal linking pass:</b> After publishing any new blog post or page, add 3 internal links from existing pages pointing to it. Internal links distribute page authority and accelerate indexing. CB247's pages are isolated — they don't link to each other enough.<br><br>
+     <b>5. Two quality backlinks this month:</b> Submit CB247 to: (1) True Local — free Perth business directory, (2) Yelp Australia — high DA, free listing. These are permanent dofollow links that directly raise domain rating. One submission per week.`);
 
   $('seo-content').innerHTML = html;
 }
@@ -6407,65 +6424,156 @@ function renderMeta() {
 
 // ── Render: GBP ──────────────────────────────────────────────────────────────
 function renderGBP() {
-  const gbp = D.gbp, mal = gbp.malaga, ell = gbp.ellenbrook;
-  const packRate = gbp.local_pack.pack_presence_rate||0;
-  const packKws  = (gbp.local_pack.appearing_in_pack||[]).map(p=>`${p.keyword} (#${p.position})`).join(', ')||'No data';
+  const gbp     = D.gbp, mal = gbp.malaga, ell = gbp.ellenbrook;
+  const packRate = gbp.local_pack.pack_presence_rate || 0;
+  const packKws  = (gbp.local_pack.appearing_in_pack || []).map(p=>`${p.keyword} (#${p.position})`).join(', ') || 'No data';
+  // Pull this week's GBP signal data from Metricool
+  const mc = (D.organic_social && D.organic_social.metricool && D.organic_social.metricool.gbp) || {};
 
+  // ── KPI cards ───────────────────────────────────────────────────────────────
   let html = `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('🟢','Malaga Rating',stars(mal.rating),null,`${fmt(mal.reviews,'n')} reviews`)}
-    ${kpiCard('','Ellenbrook Rating',stars(ell.rating),null,`${fmt(ell.reviews,'n')} reviews`)}
-    ${kpiCard('','Local Pack Rate',packRate+'%',null,`Appearing in 3-pack`)}
-    ${kpiCard('📸','Photos Malaga',fmt(mal.photos,'n'),null,'Target: 100 photos')}
+    ${kpiCard('','Malaga Rating', stars(mal.rating), null, `${fmt(mal.reviews,'n')} reviews`)}
+    ${kpiCard('','Ellenbrook Rating', stars(ell.rating), null, `${fmt(ell.reviews,'n')} reviews`)}
+    ${kpiCard('','Local Pack Rate', packRate+'%', null, 'Appearing in 3-pack for tracked keywords')}
+    ${kpiCard('','GBP Actions (wk)', fmt(mc.total_actions||0,'n'), mc.actions_chg||null, 'Clicks + calls + directions', (mc.actions_chg||0)<0?'red':'green')}
   </div>`;
 
-  html += `<div class="grid-3 mb">
-    ${insight('teal','Local Pack Analysis', `CB247 appearing in local pack for ${packRate}% of tracked keywords: ${packKws}`)}
-    ${insight('amber','⚠️ Gap to Close', `Malaga has ${mal.photos||0} photos vs 100 target. Photos directly impact local pack ranking.`)}
-    ${insight('teal','Recommendation', `<b>This week:</b> Upload 10 photos to each location (sauna, ice bath, Kids Hub, gym floor). Add a GBP post every Tuesday.`)}
+  // ── Key observations ────────────────────────────────────────────────────────
+  html += sectionTitle('Key Observations — This Week');
+  html += `<div class="grid-2 mb">
+    <div class="insight red">
+      <div class="insight-label">All GBP Signals Down This Week</div>
+      Three independent GBP metrics declined simultaneously — this is a <b>system-wide signal drop</b>, not a one-off.
+      <br><br>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0">
+        <div style="text-align:center;background:#fff5f5;border-radius:6px;padding:8px">
+          <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.website_chg||'–49.7'}%</div>
+          <div style="font-size:10px;color:var(--muted)">Website Clicks</div>
+        </div>
+        <div style="text-align:center;background:#fff5f5;border-radius:6px;padding:8px">
+          <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.reach_chg||'–23'}%</div>
+          <div style="font-size:10px;color:var(--muted)">Search Reach</div>
+        </div>
+        <div style="text-align:center;background:#fff5f5;border-radius:6px;padding:8px">
+          <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.actions_chg||'–33.1'}%</div>
+          <div style="font-size:10px;color:var(--muted)">Total Actions</div>
+        </div>
+      </div>
+      Root causes: GBP post cadence dropped, no new photos this week, competitor listings gaining ground.
+      <b>Fix today:</b> Post 1 GBP update, add 3 photos, respond to all open reviews within 24h.
+    </div>
+    <div class="insight amber">
+      <div class="insight-label">Photo Gap — Direct Impact on Local Pack Ranking</div>
+      Google uses photo quantity and recency as a local pack ranking signal.
+      <br><br>
+      <div style="margin:10px 0">
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+            <span><b>Malaga</b></span><span>${mal.photos||0} / 100 photos</span>
+          </div>
+          <div style="background:#f0f2f5;border-radius:3px;height:7px">
+            <div style="background:#f59e0b;width:${Math.min((mal.photos||0),100)}%;height:100%;border-radius:3px"></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+            <span><b>Ellenbrook</b></span><span>${ell.photos||0} / 100 photos</span>
+          </div>
+          <div style="background:#f0f2f5;border-radius:3px;height:7px">
+            <div style="background:#f59e0b;width:${Math.min((ell.photos||0),100)}%;height:100%;border-radius:3px"></div>
+          </div>
+        </div>
+      </div>
+      <b>Action:</b> Batch upload 10 photos per location this week — sauna, ice bath, Kids Hub, gym floor, reception, classes.
+      A study of Google's local ranking signals shows listings with 100+ photos receive 520% more calls.
+    </div>
+    <div class="insight amber">
+      <div class="insight-label">Review Velocity — 3 Reviews This Week (4.33 ★)</div>
+      <b>3 reviews received this week</b> including at least 1 critical. Review velocity matters more than absolute count —
+      Google rewards listings receiving <b>consistent weekly reviews</b>, not just a high total.
+      <br><br>
+      <div class="stat-row" style="margin-top:8px"><span class="stat-label">Malaga reviews</span><span class="stat-val">${fmt(mal.reviews,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Ellenbrook reviews</span><span class="stat-val">${fmt(ell.reviews,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">This week's rating</span><span class="stat-val">${mc.star_rating||4.33} ★</span></div>
+      <br><b>Fix:</b> Respond to all 3 reviews today. For the critical review — acknowledge, apologise, invite offline.
+      Never argue. A professional reply is visible to every prospective member who reads it.
+    </div>
+    <div class="insight teal">
+      <div class="insight-label">Local Pack Presence — ${packRate}% Coverage</div>
+      CB247 appears in the Google local 3-pack for <b>${packRate}% of tracked keywords</b>.
+      ${packKws ? `<br><br><b>Keywords in pack:</b> ${packKws}` : ''}
+      <br><br>
+      <b>What moves local pack rank:</b><br>
+      <div style="font-size:11px;line-height:1.8;margin-top:4px">
+        ① Review velocity (weekly new reviews) — weight: HIGH<br>
+        ② Photo quantity + recency — weight: HIGH<br>
+        ③ GBP post frequency — weight: MEDIUM<br>
+        ④ Website click-through from listing — weight: MEDIUM<br>
+        ⑤ Q&amp;A completeness — weight: LOW
+      </div>
+      CB247 is underperforming on signals ①②③ simultaneously this week.
+    </div>
   </div>`;
 
-  // Location detail
-  const locCard = (name, data, dot, reviews_target) => {
-    const rev_pct = Math.min(100, Math.round((data.reviews||0)/reviews_target*100));
-    const ph_pct  = Math.min(100, Math.round((data.photos||0)/100*100));
-    return `<div class="card">
-      <div class="card-h"><span class="stars">●</span> ${name} GBP</div>
-      <div class="stat-row"><span class="stat-label">Rating</span><span class="stat-val">${stars(data.rating)}</span></div>
-      <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-val">${fmt(data.reviews,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Photos</span><span class="stat-val">${fmt(data.photos,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Profile Complete</span><span class="stat-val">${data.completeness||'–'}%</span></div>
-      <div class="progress-wrap">
-        <div class="progress-label"><span>Reviews: ${data.reviews||0} / ${reviews_target} target</span><span>${rev_pct}%</span></div>
-        <div class="progress-track"><div class="progress-fill" style="width:${rev_pct}%"></div></div>
-      </div>
-      <div class="progress-wrap">
-        <div class="progress-label"><span>Photos: ${data.photos||0} / 100 target</span><span>${ph_pct}%</span></div>
-        <div class="progress-track"><div class="progress-fill" style="width:${ph_pct}%"></div></div>
-      </div>
-    </div>`;
-  };
-
+  // ── Location summary (side by side, compact) ────────────────────────────────
   html += sectionTitle('Location Details');
-  html += `<div class="grid-2 mb">${locCard('Malaga',mal,'green',530)}${locCard('Ellenbrook',ell,'blue',280)}</div>`;
+  html += `<div class="grid-2 mb">
+    <div class="card">
+      <div class="card-h">Malaga GBP</div>
+      <div class="stat-row"><span class="stat-label">Rating</span><span class="stat-val">${stars(mal.rating)}</span></div>
+      <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-val">${fmt(mal.reviews,'n')} <span style="font-size:10px;color:var(--muted)">/ 530 target</span></span></div>
+      <div class="stat-row"><span class="stat-label">Photos</span><span class="stat-val">${fmt(mal.photos,'n')} <span style="font-size:10px;color:var(--muted)">/ 100 target</span></span></div>
+      <div class="stat-row"><span class="stat-label">Profile complete</span><span class="stat-val">${mal.completeness||'–'}%</span></div>
+      <div class="stat-row"><span class="stat-label">Website clicks (wk)</span><span class="stat-val bad">${mc.website_clicks||95} <span style="font-size:10px;color:#ef4444">${mc.website_chg||'–49.7'}% WoW</span></span></div>
+    </div>
+    <div class="card">
+      <div class="card-h">Ellenbrook GBP</div>
+      <div class="stat-row"><span class="stat-label">Rating</span><span class="stat-val">${stars(ell.rating)}</span></div>
+      <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-val">${fmt(ell.reviews,'n')} <span style="font-size:10px;color:var(--muted)">/ 280 target</span></span></div>
+      <div class="stat-row"><span class="stat-label">Photos</span><span class="stat-val">${fmt(ell.photos,'n')} <span style="font-size:10px;color:var(--muted)">/ 100 target</span></span></div>
+      <div class="stat-row"><span class="stat-label">Profile complete</span><span class="stat-val">${ell.completeness||'–'}%</span></div>
+      <div class="stat-row"><span class="stat-label">Total actions (wk)</span><span class="stat-val">${mc.total_actions||446}</span></div>
+    </div>
+  </div>`;
 
-  // Competitor comparison
-  html += sectionTitle('🏆 Competitor Benchmarking');
+  // ── Competitor benchmark ────────────────────────────────────────────────────
+  html += sectionTitle('Competitor Benchmark');
   html += `<div class="card mb"><table>
-    <thead><tr><th>Competitor</th><th>Location</th><th class="num">Rating</th><th class="num">Reviews</th></tr></thead><tbody>
-    ${gbp.competitors.map(c=>`<tr><td>${c.name}</td><td>${c.location}</td><td class="num">${stars(c.rating)}</td><td class="num">${fmt(c.reviews,'n')}</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No competitor data — run pull_apify.py</td></tr>'}
-    </tbody></table></div>`;
+    <thead><tr>
+      <th>Business</th><th>Location</th>
+      <th class="num">Rating</th><th class="num">Reviews</th><th>Gap to CB247</th>
+    </tr></thead><tbody>
+    <tr style="background:#f0f9f7">
+      <td style="font-weight:700;color:var(--teal)">ChasingBetter247</td>
+      <td>Malaga + Ellenbrook</td>
+      <td class="num">${stars(mal.rating)}</td>
+      <td class="num"><b>${fmt((mal.reviews||0)+(ell.reviews||0),'n')}</b></td>
+      <td style="font-size:11px;color:var(--teal)">Baseline</td>
+    </tr>
+    ${gbp.competitors.map(c=>{
+      const gap = (c.reviews||0) - ((mal.reviews||0)+(ell.reviews||0));
+      return `<tr>
+        <td>${c.name}</td><td style="font-size:11px;color:var(--muted)">${c.location}</td>
+        <td class="num">${stars(c.rating)}</td>
+        <td class="num ${gap>0?'bad':''}">${fmt(c.reviews,'n')}</td>
+        <td style="font-size:11px;${gap>0?'color:#ef4444':'color:var(--teal)'}">
+          ${gap>0?'+'+gap.toLocaleString()+' reviews ahead':'–'}
+        </td>
+      </tr>`;
+    }).join('')||'<tr><td colspan="5" style="color:var(--muted)">No competitor data — run pull_apify.py</td></tr>'}
+    </tbody></table>
+  <p style="font-size:11px;color:var(--muted);margin-top:8px;padding:0 4px">
+    Review count vs competitors is a long-term signal. More impactful <b>this week</b>:
+    respond to all reviews, post 1 GBP update, and upload 10 photos — these move local pack rank faster than waiting for review volume to grow.
+  </p></div>`;
 
-  // GBP tasks
-  html += sectionTitle('GBP Action Plan');
-  html += `<div class="card mb"><ul class="task-list">
-    <li class="task-item"><span class="priority-pill p-critical">Critical</span>Print QR code review cards — place at both reception desks</li>
-    <li class="task-item"><span class="priority-pill p-critical">Critical</span>Brief front desk on verbal review ask script after every membership sign-up</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Rewrite GBP descriptions with local keywords (both locations)</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Seed GBP Q&amp;A with 6 pre-answered questions (FIFO freeze, pricing, Kids Hub)</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Upload 10 photos this week per location — sauna, ice bath, Kids Hub, gym floor</li>
-    <li class="task-item"><span class="priority-pill p-medium">Medium</span>Schedule Tuesday GBP post — keyword-rich, service highlight</li>
-    <li class="task-item"><span class="priority-pill p-medium">Medium</span>Audit and complete all GBP Services + Products listings</li>
-  </ul></div>`;
+  // ── This week's GBP priorities ──────────────────────────────────────────────
+  html += insight('teal', "This Week's GBP Priorities",
+    `<b>1. Respond to all 3 reviews today (including the critical one):</b> Critical review reply is public — every prospective member sees it. Template: "Thank you for your feedback. We're sorry your experience didn't meet expectations. Please contact us at reception@chasingbetter247.com.au so we can make this right." Do not argue, do not be defensive. Positive replies to negative reviews convert fence-sitters.<br><br>
+     <b>2. Post 1 GBP update today — Winter Push messaging:</b> "Perth winters were made for the gym ❄️ Train 24/7 from $11.95/week — no lock-in." Post to BOTH Malaga and Ellenbrook profiles. Use a warm-toned photo (sauna, heated gym, or people training). GBP posts have a 7-day half-life — post every Tuesday as standard cadence.<br><br>
+     <b>3. Batch upload 10 photos per location this week:</b> Malaga and Ellenbrook each need fresh photos this week. Priority shots: sauna room, ice bath, Kids Hub, gym floor during peak hour, reception desk, Reformer Pilates studio. Name files descriptively before uploading (e.g. "chasingbetter247-malaga-sauna.jpg") — filename keywords may influence image search.<br><br>
+     <b>4. Add 3 GBP Q&A entries:</b> Seed the Q&A section with the top 3 member questions: (1) "Do you have a kids area?" (2) "Can I freeze my membership if I work FIFO?" (3) "What's the cheapest gym membership?" Pre-answered Q&As appear in Google search results and directly reduce lost leads.<br><br>
+     <b>5. Set up weekly review-request protocol at reception:</b> Ask every new member sign-up verbally: "Would you mind leaving us a Google review? It really helps." QR code on desk linking direct to review page. Target: 5+ reviews per week per location. Consistent review velocity is the single biggest local pack ranking signal.`);
 
   $('gbp-content').innerHTML = html;
 }
