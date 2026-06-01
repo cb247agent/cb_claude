@@ -2288,19 +2288,9 @@ function renderOrgSocial() {
   const fb  = m.fb || {};
   const ig  = m.ig || {};
   const gbp = m.gbp || {};
-  const meta = os.meta || {};
-  const malC = meta.malaga_cur  || {};
-  const malP = meta.malaga_prev || {};
-  const ellC = meta.ell_cur     || {};
-  const ads  = meta.active      || [];
   const hashtags = os.trending_hashtags || [];
-  const week = m.week || meta.week_label || '25–31 May 2026';
-  const ell  = meta.ellenbrook || {};
-  const boosted = meta.boosted_posts || [];
-  const paid    = meta.paid_creatives || [];
-  const comps    = os.competitors || [];
-  const cb_m     = os.cb247_malaga || {};
-  const cb_e     = os.cb247_ellenbrook || {};
+  const week = m.week || '25–31 May 2026';
+  const comps = os.competitors || {};
 
   function chg(v, suffix='%') {
     if (v == null) return '';
@@ -2360,13 +2350,13 @@ function renderOrgSocial() {
       <br><br><b>Fix this week:</b> Post 1 GBP update, add 3 interior/facility photos, respond to all 3 reviews.
     </div>
     <div class="insight amber">
-      <div class="insight-label">Meta Paid — Efficiency Declining, Recovery Creative Is the Exception</div>
-      Malaga paid CPR rose from <b>$0.27 → $0.39 (+44%)</b> week-on-week with the same $281 spend.
-      Clicks dropped −29.5% (912 → 643). The Pilates Reel ($122 spend) is getting the most reach
-      but <b>average rankings across all three quality signals</b> — not the right creative for conversion.
-      <br><br><b>Exception: "Deep heat. Deep recovery" (sauna/massage post)</b> rated
-      <b>Above average engagement AND Above average conversion</b> — the only ad with dual above-average signals.
-      This recovery/wellness angle maps to CB247's sauna + ice bath differentiation. Scale immediately.
+      <div class="insight-label">Content Volume — Organic Reach Is a Volume Game</div>
+      CB247 published <b>1 post + 5 Reels this week</b>. Revo publishes 7 posts + 14 Reels/week.
+      The organic algorithm rewards consistency: accounts posting 7+ Reels/week receive up to 3× more
+      distribution than accounts posting 1–2. At 5 Reels/week CB247 is close, but posting cadence
+      dropped vs prior week (−66.7% posts, same Reels).
+      <br><br><b>Fix:</b> Maintain 5–7 Reels/week minimum. Batch-film on Sundays — 1 filming session
+      can produce 4–6 Reels (ice bath, sauna, class snippet, facility tour, member moment, hook clip).
     </div>
   </div>`;
 
@@ -2421,43 +2411,6 @@ function renderOrgSocial() {
       member story, facility showcase (sauna/ice bath), or staff walkthrough. These should carry the "$11.95/week" CTA.
     </p>
   </div>`;
-
-  // ── Meta Paid — current week performance ─────────────────────────────────
-  html += sectionTitle('Meta Paid — Ad Performance · ' + week);
-
-  // WoW comparison strip
-  html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Malaga Spend',fmt(malC.spend||0,'$2'),null,'Prev: $'+malP.spend,'green')}
-    ${kpiCard('','Malaga Clicks',fmt(malC.clicks||0,'n'),meta.wow_clicks,'Prev: '+(malP.clicks||0)+' clicks',meta.wow_clicks<0?'red':'green')}
-    ${kpiCard('','Malaga CPR',fmt(malC.cpr||0,'$2'),null,'Prev: $'+(malP.cpr||0)+' — '+(malC.cpr>malP.cpr?'⚠ worse':'better'),malC.cpr>malP.cpr?'red':'green')}
-    ${kpiCard('','Ellenbrook CPR',fmt(ellC.cpr||0,'$2'),null,ellC.ctr+'% CTR · $'+ellC.cpm+' CPM','green')}
-  </div>`;
-
-  html += `<div class="card mb"><table><thead><tr>
-    <th>Ad Creative</th><th>Location</th>
-    <th class="num">Spend</th><th class="num">Reach</th>
-    <th class="num">CTR</th><th class="num">CPM</th>
-    <th class="num">Results</th><th class="num">CPR</th>
-    <th>Quality</th><th>Engagement</th><th>Conv Rate</th><th>Tier</th>
-  </tr></thead><tbody>
-  ${ads.map(a=>{const cpr=a.results>0?(a.spend/a.results).toFixed(2):'–';return`<tr ${a.tier==='star'?'style="background:#f0fdf4"':a.tier==='poor'?'style="background:#fff5f5"':''}>
-    <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.ad_name}</td>
-    <td><span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${a.location}</span></td>
-    <td class="num">$${a.spend.toFixed(2)}</td>
-    <td class="num">${fmt(a.reach,'n')}</td>
-    <td class="num ${a.ctr>=3?'good':a.ctr<1?'bad':''}">${a.ctr}%</td>
-    <td class="num ${a.cpm>15?'bad':''}">${a.cpm>0?'$'+a.cpm:'–'}</td>
-    <td class="num ${a.results>0?'good':''}">${a.results||'–'}</td>
-    <td class="num ${a.results>0&&a.spend/a.results<0.5?'good':''}">${cpr!=='–'?'$'+cpr:'–'}</td>
-    <td>${rankBadge(a.quality)}</td>
-    <td>${rankBadge(a.eng_rank)}</td>
-    <td>${rankBadge(a.conv_rank)}</td>
-    <td>${tierBadge(a.tier)}</td>
-  </tr>`}).join('')||'<tr><td colspan="12" style="color:var(--muted)">No active ads</td></tr>'}
-  </tbody></table>
-  <p style="font-size:10px;color:var(--muted);margin-top:8px;padding:0 4px">
-    Tier = combined ranking signal. ⭐ Star = ≥2 Above average ratings. Poor = any Below average rating.
-  </p></div>`;
 
   // ── Instagram competitor benchmark ────────────────────────────────────────
   html += sectionTitle('Instagram Competitor Benchmark');
@@ -2562,56 +2515,218 @@ function renderOrgSocial() {
   </div>`;
 
   // ── This week's social priorities ────────────────────────────────────────
-  html += insight('teal', "This Week's Social Media Priorities",
-    `<b>1. Scale the recovery creative (Malaga):</b> "Deep heat. Deep recovery" is the only ad with Above average engagement + Above average conversion ranking. Increase its budget from $49 to $100 this week. Create a matching organic reel for @chasingbetter247 — no paid label, authentic sauna/ice bath footage.<br><br>
-     <b>2. Fix Malaga paid efficiency:</b> CPR rose 44% WoW. Pause "Post: Ready to shake up your routine?" ($20, 0.09% CTR, $20 CPM — worst performer). Reallocate to recovery and 24/7 Access creative.<br><br>
-     <b>3. Publish 2 original branded reels:</b> All top organic reels this week were reposts. Need: (1) ice bath/sauna facility reel with hook "The only gym in Malaga with THIS" and (2) a member story with real name + suburb + "$11.95/week changed my routine".<br><br>
-     <b>4. Respond to GBP reviews:</b> 3 reviews this week including 1 critical. Respond within 24h — public replies signal to Google that the listing is actively managed and directly impact local pack ranking.<br><br>
-     <b>5. Post 1 GBP update today:</b> Winter Push campaign is live — post "Perth winters made for the gym ❄️ Join from $11.95/week" to both GBP profiles. Tag Malaga and Ellenbrook. Include a photo of the sauna or warm facility interior.`);
+  html += insight('teal', "This Week's Organic Social Priorities",
+    `<b>1. Publish 2 original branded Reels:</b> All top organic reels this week were reposts from other creators — 0 original CB247 branded content in the top 5. Priority: (1) ice bath/sauna reel with hook "The only gym in Malaga with THIS" and (2) a real member story with suburb name + "$11.95/week changed my routine." Original branded reels build equity; reposts do not.<br><br>
+     <b>2. Fix the hook — avg watch time is 4–8 seconds (benchmark: 15s+):</b> Lead every Reel with a bold on-screen text hook in the first 0.5 seconds before any music or movement. Example: "Would you do THIS for $11.95/week?" Pattern interrupts in the first frame = longer retention = more distribution.<br><br>
+     <b>3. Stop treating Facebook as a primary organic channel:</b> 6 interactions from 32,710 impressions = 0.02% rate. Post 1–2× per week max (for GBP signal only). Redirect all content effort to Instagram Reels. Facebook organic is not recoverable without significant paid support.<br><br>
+     <b>4. Respond to all 3 GBP reviews within 24h:</b> Including the 1 critical review — public replies signal to Google the listing is actively managed and directly affect local pack ranking. Template for critical: acknowledge, apologise, invite them to resolve offline. Never argue.<br><br>
+     <b>5. Post 1 GBP update today:</b> Winter Push is live — post "Perth winters made for the gym ❄️ Join from $11.95/week" to both GBP profiles with a warm facility photo (sauna, heated gym floor, or ice bath contrast). Each GBP post = free local SEO signal.`);
 
   $('orgsocial-content').innerHTML = html;
 }
 
 // ── Render: Meta Ads ─────────────────────────────────────────────────────────
 function renderMeta() {
-  const intel = D.intel;
-  let html = `
-    <div class="insight amber mb">
-      <div class="insight-label">Account Status</div>
-      <b>Meta Ads account is currently suspended.</b> Content below is preparation for reinstatement.
-    </div>`;
+  const meta = (D.organic_social && D.organic_social.meta) || {};
+  const malC  = meta.malaga_cur  || {};
+  const malP  = meta.malaga_prev || {};
+  const ellC  = meta.ell_cur     || {};
+  const ads   = meta.active      || [];
+  const week  = meta.week_label  || '25–31 May 2026';
 
+  function rankBadge(r) {
+    if (!r) return '';
+    if (r.includes('Above')) return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:1px 5px;border-radius:3px;font-weight:700">Above avg</span>';
+    if (r.includes('Below')) return '<span style="font-size:9px;background:#fee2e2;color:#ef4444;padding:1px 5px;border-radius:3px;font-weight:700">Below avg</span>';
+    return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">Average</span>';
+  }
+  function tierBadge(t) {
+    if (t==='star') return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:2px 7px;border-radius:3px;font-weight:700">⭐ Star</span>';
+    if (t==='good') return '<span style="font-size:9px;background:#fff8e1;color:#d97706;padding:2px 7px;border-radius:3px;font-weight:700">Good</span>';
+    if (t==='poor') return '<span style="font-size:9px;background:#fee2e2;color:#ef4444;padding:2px 7px;border-radius:3px;font-weight:700">Poor</span>';
+    return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:2px 7px;border-radius:3px">Average</span>';
+  }
+
+  // Derived totals
+  const totalSpend   = (malC.spend||0) + (ellC.spend||0);
+  const totalResults = (malC.results||0) + (ellC.results||0);
+  const totalReach   = (malC.reach||0) + (ellC.reach||0);
+  const blendedCPR   = totalResults > 0 ? (totalSpend / totalResults).toFixed(2) : '–';
+  const prevSpend    = (malP.spend||0);
+  const spendChg     = prevSpend > 0 ? ((totalSpend - prevSpend) / prevSpend * 100).toFixed(1) : null;
+
+  let html = '';
+
+  // ── KPI cards ──────────────────────────────────────────────────────────────
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Total Spend','$'+totalSpend.toFixed(2),spendChg?parseFloat(spendChg):null,'Both locations this week')}
+    ${kpiCard('','Total Results',totalResults||'–',null,'Link clicks / leads across all ads')}
+    ${kpiCard('','Malaga CPR',malC.cpr?'$'+malC.cpr:'–',null,'Prev: $'+(malP.cpr||'–')+' — '+(malC.cpr&&malP.cpr?(malC.cpr>malP.cpr?'⚠ worse this week':'improved'):''),malC.cpr&&malP.cpr?(malC.cpr>malP.cpr?'red':'green'):'')}
+    ${kpiCard('','Ellenbrook CPR',ellC.cpr?'$'+ellC.cpr:'–',null,ellC.ctr+'% CTR · $'+ellC.cpm+' CPM','green')}
+  </div>`;
+
+  // ── Key observations ────────────────────────────────────────────────────────
+  html += sectionTitle('Key Observations — ' + week);
+  html += `<div class="grid-2 mb">
+    <div class="insight red">
+      <div class="insight-label">Malaga Efficiency Declining — CPR Up 44% WoW</div>
+      Malaga CPR rose from <b>$0.27 → $0.39 (+44%)</b> week-on-week with the <b>same $281 spend</b>.
+      Clicks dropped −29.5% (912 → 643). This means the same budget is generating fewer results at a higher cost.
+      Root cause: ad fatigue on underperforming creatives. The Pilates Reel ($122 spend) drives the most impressions
+      but scores <b>Average across all three quality signals</b> — it's not converting.
+      <br><br><b>Action:</b> Pause lowest-performing ads. Shift budget to the proven creative immediately.
+    </div>
+    <div class="insight teal">
+      <div class="insight-label">Star Creative — "Deep Heat. Deep Recovery" Must Be Scaled</div>
+      <b>"Deep heat. Deep recovery"</b> (sauna + massage post) is the <b>only ad with dual Above average signals</b>:
+      Above average engagement ranking AND Above average conversion rate ranking. No other active ad achieves this.
+      This recovery/wellness angle maps directly to CB247's sauna + ice bath differentiation — the strongest
+      competitive moat in the Malaga market.
+      <br><br><b>Action:</b> Scale budget from ~$49 → $100 this week. Create a matching organic Reel
+      using the same visual and messaging angle. Test a second variation: "Ice bath. Then sauna. $11.95/week."
+    </div>
+    <div class="insight amber">
+      <div class="insight-label">Ellenbrook — Fewer Ads, Better Efficiency</div>
+      Ellenbrook is running fewer ads than Malaga but with stronger CPR and CTR signals.
+      The location is underinvested — budget concentration in Malaga means Ellenbrook reach
+      is lower than its member growth potential justifies.
+      <br><br><b>Action:</b> Increase Ellenbrook daily budget by $5–10/day. Test 1 Ellenbrook-specific
+      creative: "Your neighbourhood gym, 24/7" — hyperlocal messaging performs better in suburban markets.
+    </div>
+    <div class="insight amber">
+      <div class="insight-label">Ad Quality Signals — Most Ads Are Average, Not Outstanding</div>
+      Across all active ads, only "Deep heat. Deep recovery" scores Above average on 2+ signals.
+      The remaining ads score Average or Below on at least one quality dimension.
+      Meta's algorithm distributes budget toward higher-quality ads — poor-scoring ads get progressively
+      worse delivery, compounding cost inefficiency over time.
+      <br><br><b>Action:</b> Retire any ad with a Below average signal. Refresh creative every 3–4 weeks
+      — Meta quality signals degrade with frequency cap and audience saturation.
+    </div>
+  </div>`;
+
+  // ── WoW comparison — Malaga ─────────────────────────────────────────────────
+  html += sectionTitle('Malaga — Week-on-Week Comparison');
+  html += `<div class="card mb"><table><thead><tr>
+    <th>Metric</th><th class="num">This Week (${week})</th><th class="num">Prior Week</th><th class="num">Change</th>
+  </tr></thead><tbody>
+    <tr><td>Spend</td><td class="num">$${(malC.spend||0).toFixed(2)}</td><td class="num">$${(malP.spend||0).toFixed(2)}</td>
+      <td class="num ${Math.abs((malC.spend||0)-(malP.spend||0))<1?'':'flat'}">${malP.spend?((malC.spend-malP.spend)/malP.spend*100).toFixed(1)+'%':'–'}</td></tr>
+    <tr><td>Clicks</td><td class="num">${fmt(malC.clicks||0,'n')}</td><td class="num">${fmt(malP.clicks||0,'n')}</td>
+      <td class="num ${malC.clicks<malP.clicks?'bad':'good'}">${malP.clicks?((malC.clicks-malP.clicks)/malP.clicks*100).toFixed(1)+'%':'–'}</td></tr>
+    <tr><td>Reach</td><td class="num">${fmt(malC.reach||0,'n')}</td><td class="num">${fmt(malP.reach||0,'n')}</td>
+      <td class="num">${malP.reach?((malC.reach-malP.reach)/malP.reach*100).toFixed(1)+'%':'–'}</td></tr>
+    <tr><td>Results</td><td class="num">${malC.results||'–'}</td><td class="num">${malP.results||'–'}</td><td class="num">–</td></tr>
+    <tr><td>Cost per Result (CPR)</td>
+      <td class="num ${malC.cpr>malP.cpr?'bad':'good'}">$${malC.cpr||'–'}</td>
+      <td class="num">$${malP.cpr||'–'}</td>
+      <td class="num ${malC.cpr>malP.cpr?'bad':'good'}">${malC.cpr&&malP.cpr?((malC.cpr-malP.cpr)/malP.cpr*100).toFixed(1)+'%':'–'}</td></tr>
+    <tr><td>CTR</td><td class="num">${malC.ctr||'–'}%</td><td class="num">–</td><td class="num">–</td></tr>
+    <tr><td>CPM</td><td class="num">$${malC.cpm||'–'}</td><td class="num">–</td><td class="num">–</td></tr>
+  </tbody></table></div>`;
+
+  // ── Ad performance table ────────────────────────────────────────────────────
+  html += sectionTitle('Active Ads — Quality Ranking & Performance · ' + week);
+  html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
+    <th>Ad Creative</th><th>Location</th>
+    <th class="num">Spend</th><th class="num">Reach</th>
+    <th class="num">Impressions</th><th class="num">CTR</th><th class="num">CPM</th>
+    <th class="num">Results</th><th class="num">CPR</th>
+    <th>Quality</th><th>Engagement</th><th>Conv Rate</th><th>Tier</th>
+  </tr></thead><tbody>
+  ${ads.map(a=>{
+    const cpr = a.results>0 ? (a.spend/a.results).toFixed(2) : '–';
+    const rowStyle = a.tier==='star' ? 'style="background:#f0fdf4"' : a.tier==='poor' ? 'style="background:#fff5f5"' : '';
+    return `<tr ${rowStyle}>
+      <td style="font-size:11px;max-width:200px;word-break:break-word">${a.ad_name}</td>
+      <td><span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${a.location}</span></td>
+      <td class="num">$${a.spend.toFixed(2)}</td>
+      <td class="num">${fmt(a.reach,'n')}</td>
+      <td class="num">${fmt(a.impressions||0,'n')}</td>
+      <td class="num ${a.ctr>=3?'good':a.ctr<1?'bad':''}">${a.ctr}%</td>
+      <td class="num ${a.cpm>15?'bad':''}">${a.cpm>0?'$'+a.cpm:'–'}</td>
+      <td class="num ${a.results>0?'good':''}">${a.results||'–'}</td>
+      <td class="num ${a.results>0&&(a.spend/a.results)<0.5?'good':''}">${cpr!=='–'?'$'+cpr:'–'}</td>
+      <td>${rankBadge(a.quality)}</td>
+      <td>${rankBadge(a.eng_rank)}</td>
+      <td>${rankBadge(a.conv_rank)}</td>
+      <td>${tierBadge(a.tier)}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="13" style="color:var(--muted);padding:16px">No active ads — upload Meta CSV files to load ad data.</td></tr>'}
+  </tbody></table>
+  <div style="font-size:10px;color:var(--muted);margin-top:8px;padding:0 4px">
+    <b>Tier logic:</b> ⭐ Star = ≥2 Above average ranking signals. Good = 1 Above, no Below. Poor = any Below average signal. Average = remainder.
+    Meta's algorithm gives better placement and lower CPMs to higher-tier ads — poor-tier ads erode over time.
+  </div></div>`;
+
+  // ── Location summary cards ────────────────────────────────────────────────
+  html += sectionTitle('Location Summary');
   html += `<div class="grid-2 mb">
     <div class="card">
-      <div class="card-h">Competitor Ad Themes</div>
-      ${intel.fb_ads_themes.length?
-        intel.fb_ads_themes.map(t=>`<div class="stat-row"><span class="stat-label">${t.theme}</span><span class="stat-val">${t.count} competitors using this</span></div>`).join('')
-        :'<p style="color:var(--muted);font-size:13px">Run pull_apify.py to load competitor ad intelligence.</p>'}
+      <div class="card-h">Malaga — ${week}</div>
+      <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">$${(malC.spend||0).toFixed(2)}</span></div>
+      <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(malC.clicks||0,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(malC.reach||0,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val ${(malC.ctr||0)>=3?'good':(malC.ctr||0)<1?'bad':''}">${malC.ctr||'–'}%</span></div>
+      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${malC.cpm?'$'+malC.cpm:'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">CPR</span><span class="stat-val ${malC.cpr&&malP.cpr?(malC.cpr>malP.cpr?'bad':'good'):''}">${malC.cpr?'$'+malC.cpr:'–'} <span style="font-size:10px;color:var(--muted)">(prev: $${malP.cpr||'–'})</span></span></div>
+      <div class="stat-row"><span class="stat-label">Results</span><span class="stat-val">${malC.results||'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">Active ads</span><span class="stat-val">${ads.filter(a=>a.location==='Malaga').length}</span></div>
     </div>
     <div class="card">
-      <div class="card-h">CB247 Advantages Competitors Don't Use</div>
-      ${intel.fb_ads_gaps.length?
-        intel.fb_ads_gaps.map(g=>`<div class="stat-row"><span class="stat-label">${g.cb247_advantage}</span><span class="stat-val good">Opportunity</span></div><div style="font-size:11px;color:var(--muted);padding:0 0 6px">${g.message}</div>`).join('')
-        :'<p style="color:var(--muted);font-size:13px">Run pull_apify.py to load competitor intelligence.</p>'}
+      <div class="card-h">Ellenbrook — ${week}</div>
+      <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">$${(ellC.spend||0).toFixed(2)}</span></div>
+      <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(ellC.clicks||0,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(ellC.reach||0,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val ${(ellC.ctr||0)>=3?'good':(ellC.ctr||0)<1?'bad':''}">${ellC.ctr||'–'}%</span></div>
+      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${ellC.cpm?'$'+ellC.cpm:'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">CPR</span><span class="stat-val">${ellC.cpr?'$'+ellC.cpr:'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">Results</span><span class="stat-val">${ellC.results||'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">Active ads</span><span class="stat-val">${ads.filter(a=>a.location==='Ellenbrook').length}</span></div>
     </div>
   </div>`;
 
-  html += insight('teal','Meta Ads Priority — When Reinstated',
-    `<b>Audience 1 (FIFO):</b> Target WA postcodes near FIFO hubs. Interest: fly-in fly-out, mining, construction. Key message: "Pause your membership anytime. Train hard when you're home."<br>
-     <b>Audience 2 (Malaga Families):</b> Parents 28–45, Malaga/Hamersley/Dianella. Key message: "Kids Hub free while you train."<br>
-     <b>Audience 3 (Health Newcomers):</b> 18–35 not currently gym members. Key message: "$11.95/week. No lock-in. Try your first week."<br>
-     <b>Creative:</b> Lead with Sauna + Ice Bath content — highest engagement in current fitness trends.`);
-
-  html += `<div class="card mb">
-    <div class="card-h">Reinstatement Checklist</div>
-    <ul class="task-list">
-      <li class="task-item"><span class="priority-pill p-critical">Critical</span>Submit identity verification documents to Meta</li>
-      <li class="task-item"><span class="priority-pill p-critical">Critical</span>Review ad copy compliance — remove any claims Meta flagged</li>
-      <li class="task-item"><span class="priority-pill p-high">High</span>Pre-load 3 audience segments in Ads Manager (FIFO, Families, Newcomers)</li>
-      <li class="task-item"><span class="priority-pill p-high">High</span>Create 3 ad creatives — Sauna, Kids Hub, FIFO freeze</li>
-      <li class="task-item"><span class="priority-pill p-medium">Medium</span>Set up Meta Pixel events: contact form, location page visit, scroll depth</li>
-    </ul>
+  // ── Audience targeting context ────────────────────────────────────────────
+  html += sectionTitle('Audience Strategy');
+  html += `<div class="grid-3 mb">
+    <div class="card">
+      <div class="card-h">Audience 1 — FIFO Workers</div>
+      <div style="font-size:12px;line-height:1.8;color:var(--text)">
+        <div><b>Target:</b> WA postcodes near FIFO hubs. Interest: fly-in fly-out, mining, construction</div>
+        <div><b>Age:</b> 25–45, male skew</div>
+        <div><b>Radius:</b> Perth metro + Ellenbrook / Swan Valley</div>
+        <div><b>Key message:</b> "Pause your membership anytime. Train hard when you're home."</div>
+        <div><b>Best creative:</b> Freeze feature demo, no lock-in angle, 24/7 access for shift workers</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h">Audience 2 — Malaga Families</div>
+      <div style="font-size:12px;line-height:1.8;color:var(--text)">
+        <div><b>Target:</b> Parents 28–45, Malaga / Hamersley / Dianella / Nollamara</div>
+        <div><b>Age:</b> 28–45, female skew</div>
+        <div><b>Radius:</b> 5km from Malaga location</div>
+        <div><b>Key message:</b> "Kids Hub free while you train."</div>
+        <div><b>Best creative:</b> Kids Hub footage + parent training in same session, before/after routine</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h">Audience 3 — Health Newcomers</div>
+      <div style="font-size:12px;line-height:1.8;color:var(--text)">
+        <div><b>Target:</b> 18–35, not currently gym members (behaviour: no gym interest)</div>
+        <div><b>Age:</b> 18–35, mixed gender</div>
+        <div><b>Radius:</b> 8km from each location</div>
+        <div><b>Key message:</b> "$11.95/week. No lock-in. Try your first week."</div>
+        <div><b>Best creative:</b> Price anchor, facility tour, ice bath/sauna surprise reveal</div>
+      </div>
+    </div>
   </div>`;
+
+  // ── This week's Meta Ads priorities ────────────────────────────────────────
+  html += insight('teal', "This Week's Meta Ads Priorities",
+    `<b>1. Scale "Deep heat. Deep recovery" immediately:</b> The only ad with Above average engagement + conversion ranking. Raise daily budget from current level to $100/week total. Do NOT change the creative — Meta's algorithm has learned the audience. Small changes reset learning phase.<br><br>
+     <b>2. Pause worst-performing creative:</b> Any ad with a Below average signal on any ranking dimension should be paused today. Below average = Meta is penalising delivery and charging you more for worse placement. Reallocate budget to Star and Good-tier ads only.<br><br>
+     <b>3. Refresh Average-tier ads with new creative:</b> Ads scoring Average on all three signals are plateaued. Create 1 new Malaga ad and 1 new Ellenbrook ad using the recovery/wellness angle that's proving to work. Test: "Ice bath. Sauna. Reformer Pilates. $11.95/week. No lock-in."<br><br>
+     <b>4. Increase Ellenbrook budget by $5–10/day:</b> Ellenbrook is underinvested relative to its location potential. Add 1 hyperlocal Ellenbrook creative: "Your neighbourhood 24/7 gym" — suburb-name targeting consistently outperforms generic Perth-wide campaigns in suburban markets.<br><br>
+     <b>5. Set up Meta Pixel events if not done:</b> Contact form submission, location page visit (Malaga + Ellenbrook), scroll depth 75% on pricing page. Without pixel events, Meta can't optimise for conversions — you're paying for clicks, not members.`);
 
   $('meta-content').innerHTML = html;
 }
