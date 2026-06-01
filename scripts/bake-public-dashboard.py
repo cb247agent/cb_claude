@@ -2298,7 +2298,6 @@ function renderOrgSocial() {
   const ell  = meta.ellenbrook || {};
   const boosted = meta.boosted_posts || [];
   const paid    = meta.paid_creatives || [];
-  const hashtags = os.trending_hashtags || [];
   const comps    = os.competitors || [];
   const cb_m     = os.cb247_malaga || {};
   const cb_e     = os.cb247_ellenbrook || {};
