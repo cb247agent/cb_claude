@@ -641,6 +641,22 @@ def build_data():
     # GSC top pages for display
     gsc_top_pages = (gsc.get("top_pages") or [])[:15]
 
+    # GSC position breakdown — non-branded queries for ranking gap analysis
+    BRAND_TERMS = ["chasing better", "chasingbetter", "chasing fitness", "cb247", "chasingbetter247"]
+    def _is_branded(q):
+        ql = (q.get("query") or "").lower()
+        return any(b in ql for b in BRAND_TERMS)
+    gsc_all_q = gsc.get("top_queries") or []
+    gsc_nonbrand = [q for q in gsc_all_q if not _is_branded(q)]
+    gsc_p11_25 = sorted(
+        [q for q in gsc_nonbrand if 11 <= (q.get("position") or 0) <= 25],
+        key=lambda q: q.get("impressions", 0), reverse=True
+    )
+    gsc_p4_10 = sorted(
+        [q for q in gsc_nonbrand if 4 <= (q.get("position") or 0) < 11],
+        key=lambda q: q.get("impressions", 0), reverse=True
+    )
+
     # ── SEO health score ─────────────────────────────────────────────
     def seo_score():
         s = 0
@@ -745,6 +761,26 @@ def build_data():
                     "ref_doms":p.get("referring_domains") or 0,
                 }
                 for p in ah_pages[:12]
+            ],
+            "gsc_p11_25": [
+                {
+                    "keyword":     q.get("query",""),
+                    "position":    round(q.get("position") or 0, 1),
+                    "impressions": q.get("impressions",0),
+                    "clicks":      q.get("clicks",0),
+                    "ctr":         round((q.get("ctr") or 0)*100, 1),
+                }
+                for q in gsc_p11_25
+            ],
+            "gsc_p4_10": [
+                {
+                    "keyword":     q.get("query",""),
+                    "position":    round(q.get("position") or 0, 1),
+                    "impressions": q.get("impressions",0),
+                    "clicks":      q.get("clicks",0),
+                    "ctr":         round((q.get("ctr") or 0)*100, 1),
+                }
+                for q in gsc_p4_10
             ],
             "gsc_queries": [
                 {
@@ -1838,54 +1874,75 @@ function renderSEO() {
   </div>`;
 
   // ── Key observations ────────────────────────────────────────────────────────
-  const topQW = qw[0];
-  const p11_20 = (s.keywords||[]).filter(k=>k.position>=11&&k.position<=20&&(k.volume||0)>=100);
+  const topQW   = qw[0];
+  const p11_25  = s.gsc_p11_25 || [];   // GSC non-branded queries: positions 11-25
+  const p4_10   = s.gsc_p4_10  || [];   // GSC non-branded queries: positions 4-10
   const top3kws = (s.keywords||[]).filter(k=>k.position<=3);
+  // Top-3 from GSC (branded clicks show what's already winning)
+  const gsc_top3 = (s.gsc_queries||[]).filter(q=>q.position<=3);
   html += sectionTitle('Key Observations');
   html += `<div class="grid-2 mb">
     <div class="insight teal">
       <div class="insight-label">What's Working — Top 3 Positions</div>
-      CB247 ranks <b>top 3</b> for <b>${top3kws.length} keyword${top3kws.length!==1?'s':''}</b> — these drive the most organic traffic with no ad spend.
-      ${top3kws.length > 0
-        ? '<br><br>' + top3kws.slice(0,4).map(k=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)"><span>${k.keyword}</span><span>${posBadge(k.position)} <span style="color:var(--muted)">${fmt(k.traffic,'n')} visits/mo</span></span></div>`).join('')
-        : '<br><br><span style="color:var(--muted);font-size:12px">No top-3 data — run pull_ahrefs.py to load keyword rankings.</span>'}
-      <br><b>Action:</b> Protect these rankings. Add internal links from all new blog posts to these pages. Never change their URL slugs without 301 redirects.
+      CB247 ranks <b>top 3</b> for <b>${gsc_top3.length} queries</b> — these drive the most organic clicks with no ad spend.
+      ${gsc_top3.length > 0
+        ? '<br><br>' + gsc_top3.slice(0,5).map(q=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)"><span>${q.query}</span><span>${posBadge(q.position)} <span style="color:var(--muted)">${fmt(q.clicks,'n')} clicks</span></span></div>`).join('')
+        : '<br><br><span style="color:var(--muted);font-size:12px">No GSC data — run pull_gsc.py.</span>'}
+      <br><b>Action:</b> Protect these rankings. Add internal links from all new blog posts back to these pages. Never change URL slugs without 301 redirects.
     </div>
     <div class="insight amber">
-      <div class="insight-label">Quick Win Opportunity — Positions 4–20 with Volume</div>
-      <b>${qw.length} keyword${qw.length!==1?'s':''}</b> sit in positions 4–20 with meaningful search volume — they're getting impressions but few clicks.
-      A one-rank improvement on a position-4 keyword can double its traffic (CTR goes from ~7% → 15%).
-      ${topQW
-        ? `<br><br><b>Top opportunity: "${topQW.keyword}"</b> — position #${topQW.position}, ${fmt(topQW.volume,'n')}/mo volume, ${fmt(topQW.traffic,'n')} current traffic.
-           <b>Fix:</b> Add "${topQW.keyword}" to the H1 and meta description on ${topQW.url||'its page'}, and add 1 internal link from the homepage.`
-        : '<br><br><span style="color:var(--muted);font-size:12px">No quick-win data — run pull_ahrefs.py.</span>'}
-    </div>
-    <div class="insight red">
-      <div class="insight-label">Ranking Gap — Positions 11–20 Need Dedicated Pages</div>
-      <b>${p11_20.length} keyword${p11_20.length!==1?'s':''}</b> with 100+ monthly searches sit on page 2 (positions 11–20).
-      Page 2 CTR averages 0.5% — these keywords are generating impressions but near-zero clicks.
-      The fix is <b>dedicated landing pages</b>, not tweaking existing content.
-      ${p11_20.length > 0
+      <div class="insight-label">Quick Win — Non-Branded Queries in Positions 4–10</div>
+      <b>${p4_10.length} non-branded keyword${p4_10.length!==1?'s':''}</b> rank positions 4–10 in Google Search Console.
+      These queries get impressions but low CTR — a 2–3 rank improvement pushes them to page 1 top 5 and can 3–5× their clicks.
+      ${p4_10.length > 0
         ? `<br><br><table style="width:100%;font-size:11px;margin-top:4px">
             <thead><tr>
-              <th style="text-align:left;padding:4px 6px 4px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Keyword</th>
-              <th style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Pos</th>
-              <th style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Vol/mo</th>
-              <th style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Traffic</th>
-              <th style="text-align:left;padding:4px 0 4px 8px;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Page to build</th>
+              <th style="text-align:left;padding:3px 6px 3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Keyword</th>
+              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Pos</th>
+              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Impr</th>
+              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Clicks</th>
+              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">CTR</th>
             </tr></thead><tbody>
-            ${p11_20.map(k=>{
+            ${p4_10.map(k=>`<tr>
+              <td style="padding:3px 6px 3px 0;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">${k.keyword}</td>
+              <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)">${posBadge(k.position)}</td>
+              <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04);color:var(--muted)">${fmt(k.impressions,'n')}</td>
+              <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)">${fmt(k.clicks,'n')}</td>
+              <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04);color:${k.ctr<3?'#ef4444':'var(--teal)'}">${k.ctr}%</td>
+            </tr>`).join('')}
+            </tbody></table>
+            <p style="font-size:10px;color:var(--muted);margin-top:6px"><b>Fix:</b> Add each keyword to the H1 + meta description of its ranking page. One internal link from homepage. Target: move each to top 3.</p>`
+        : '<br><br><span style="color:var(--muted);font-size:12px">No non-branded quick-win data in GSC.</span>'}
+    </div>
+    <div class="insight red">
+      <div class="insight-label">Ranking Gap — Positions 11–25, Near-Zero Clicks</div>
+      <b>${p11_25.length} non-branded keyword${p11_25.length!==1?'s':''}</b> rank in positions 11–25 in Google Search Console.
+      Page 2+ CTR averages 0.5% — these queries show CB247 exists in Google's index for the topic,
+      but no searcher sees it. The fix is <b>dedicated landing pages</b>, not tweaking existing content.
+      ${p11_25.length > 0
+        ? `<br><br><table style="width:100%;font-size:11px;margin-top:4px">
+            <thead><tr>
+              <th style="text-align:left;padding:3px 6px 3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Keyword</th>
+              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Pos</th>
+              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Impr</th>
+              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Clicks</th>
+              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">CTR</th>
+              <th style="text-align:left;padding:3px 0 3px 8px;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Page to build</th>
+            </tr></thead><tbody>
+            ${p11_25.map(k=>{
               const slug = k.keyword.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
               return `<tr>
-                <td style="padding:4px 6px 4px 0;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">${k.keyword}</td>
-                <td style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04)">${posBadge(k.position)}</td>
-                <td style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04);color:var(--muted)">${fmt(k.volume,'n')}</td>
-                <td style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04)">${fmt(k.traffic,'n')}</td>
-                <td style="padding:4px 0 4px 8px;border-bottom:1px solid rgba(0,0,0,.04);color:var(--teal);font-size:10px">/${slug}/</td>
+                <td style="padding:3px 6px 3px 0;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">${k.keyword}</td>
+                <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)">${posBadge(k.position)}</td>
+                <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04);color:var(--muted)">${fmt(k.impressions,'n')}</td>
+                <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)">${fmt(k.clicks,'n')}</td>
+                <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04);color:#ef4444">${k.ctr}%</td>
+                <td style="padding:3px 0 3px 8px;border-bottom:1px solid rgba(0,0,0,.04);color:var(--teal);font-size:10px">/${slug}/</td>
               </tr>`;
             }).join('')}
-            </tbody></table>`
-        : '<br><br><span style="color:var(--muted);font-size:12px">No page-2 keywords found — run pull_ahrefs.py to load data.</span>'}
+            </tbody></table>
+            <p style="font-size:10px;color:var(--muted);margin-top:6px">Source: Google Search Console 28-day data · Non-branded queries only</p>`
+        : '<br><br><span style="color:var(--muted);font-size:12px">No page-2+ non-branded keywords in GSC data. Connect Ahrefs API to see full keyword universe.</span>'}
     </div>
     <div class="insight amber">
       <div class="insight-label">Authority Gap — Domain Rating vs Competitors</div>
