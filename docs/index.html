@@ -324,9 +324,9 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "01 Jun 2026, 22:17",
+  "generated": "01 Jun 2026, 22:37",
   "report_period": "25 May \u2013 31 May 2026",
-  "refresh_ts": "2026-06-01T14:16:13.151408Z",
+  "refresh_ts": "2026-06-01T14:36:00.699491Z",
   "status": {
     "ga4": "live",
     "gsc": "live",
@@ -342,52 +342,52 @@ window.DASHBOARD_DATA = {
     "week_label": "25May26-31May26"
   },
   "ga4": {
-    "sessions": 3214,
+    "sessions": 3233,
     "p_sessions": 3866,
     "convs": 511,
     "p_convs": 537,
-    "users": 2479,
-    "new_users": 2148,
-    "conv_rate": 15.9,
+    "users": 2489,
+    "new_users": 2157,
+    "conv_rate": 15.8,
     "mob_share": 84,
-    "ses_chg": -16.9,
+    "ses_chg": -16.4,
     "conv_chg": -4.8,
     "sources": [
       {
         "label": "Organic Search",
-        "sessions": 1012
+        "sessions": 1018
       },
       {
         "label": "Paid Social",
-        "sessions": 702
+        "sessions": 703
       },
       {
         "label": "Direct",
-        "sessions": 551
+        "sessions": 554
       },
       {
         "label": "Cross-network",
-        "sessions": 515
+        "sessions": 516
       },
       {
         "label": "Paid Search",
-        "sessions": 253
+        "sessions": 256
       },
       {
         "label": "Organic Social",
-        "sessions": 153
+        "sessions": 154
       }
     ],
     "top_pages": [
       {
         "path": "/",
-        "views": 5079,
-        "sessions": 2310
+        "views": 5113,
+        "sessions": 2324
       },
       {
         "path": "/reformer-pilates",
-        "views": 664,
-        "sessions": 324
+        "views": 670,
+        "sessions": 326
       },
       {
         "path": "/contact",
@@ -396,8 +396,8 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/group-fitness-timetable",
-        "views": 418,
-        "sessions": 195
+        "views": 424,
+        "sessions": 197
       },
       {
         "path": "/thank-you",
@@ -407,27 +407,27 @@ window.DASHBOARD_DATA = {
       {
         "path": "/resources/post-workout-recovery",
         "views": 292,
-        "sessions": 141
+        "sessions": 142
       },
       {
         "path": "/personal-training",
-        "views": 263,
-        "sessions": 117
+        "views": 265,
+        "sessions": 118
       },
       {
         "path": "/neon21",
-        "views": 220,
-        "sessions": 79
+        "views": 222,
+        "sessions": 80
       },
       {
         "path": "/kids-hub",
-        "views": 209,
-        "sessions": 78
+        "views": 211,
+        "sessions": 79
       },
       {
         "path": "/faqs",
-        "views": 205,
-        "sessions": 93
+        "views": 207,
+        "sessions": 94
       }
     ],
     "period": "25 May \u2013 31 May 2026"
@@ -2869,7 +2869,6 @@ window.DASHBOARD_DATA = {
       Action Tracker
       <span class="badge neutral" id="tracker-badge">0</span>
     </div>
-    <div class="sidebar-item" onclick="window.open('meeting-minutes.html','_blank')">Meeting Minutes</div>
   </div>
 
   <div class="sidebar-section">
@@ -2913,7 +2912,10 @@ window.DASHBOARD_DATA = {
       </div>
 
       <!-- KPI row -->
-      <div class="kpi-grid cols-3 mb" id="overview-kpis"></div>
+      <div class="kpi-grid cols-4 mb" id="overview-kpis"></div>
+
+      <!-- Insight strip -->
+      <div id="overview-insights"></div>
 
       <!-- GA4 + GSC -->
       <div class="section-title">Web Performance</div>
@@ -3168,15 +3170,43 @@ function switchBiz(el) {
 // ── Render: Overview ─────────────────────────────────────────────────────────
 function renderOverview() {
   const g = D.ga4, s = D.seo, ads = D.google_ads;
+  const metaSpend   = (D.meta&&D.meta.total_spend)||0;
+  const totalSpend  = ads.spend + metaSpend;
+  const organicMult = totalSpend > 0 ? Math.round(s.organic_value / totalSpend * 10) / 10 : 0;
+  const mal = D.gbp.malaga, ell = D.gbp.ellenbrook;
 
-  // KPI cards
+  // ── 4 KPI cards ──────────────────────────────────────────────────────────
   $('overview-kpis').innerHTML =
-    kpiCard('','Weekly Sessions',fmt(g.sessions,'n'),g.ses_chg,`Prior: ${fmt(g.p_sessions,'n')}`) +
-    kpiCard('','Conversions',fmt(g.convs,'n'),g.conv_chg,`Rate: ${fmt(g.conv_rate,'%')}`) +
-    kpiCard('','SEO Health',s.health_score+'/100',null,`${s.tk_summary.top_3_count||0} top-3 · DR ${s.domain_rating||'–'}`, s.health_score>=70?'green':s.health_score>=40?'amber':'red') +
-    kpiCard('','Organic Traffic',fmt(s.organic_traffic,'n'),null,`DR ${s.domain_rating||'–'} · ${s.quality_refdoms_count||0} quality backlinks`,'') +
-    (()=>{ const metaSpend=(D.meta&&D.meta.total_spend)||0; const totalSpend=ads.spend+metaSpend; const sub=metaSpend>0?`Google ${fmt(ads.spend,'$2')} · Meta ${fmt(metaSpend,'$2')}`:`${fmt(ads.convs,'n')} conversions`; return kpiCard('','Total Ad Spend',fmt(totalSpend,'$2'),null,sub); })() +
-    kpiCard('📏','Blended CPA',fmt(ads.cpa,'$2'),null,`Mal: ${fmt(ads.malaga.cpa,'$2')} · Ell: ${fmt(ads.ellenbrook.cpa,'$2')}`,ads.cpa>50?'red':'green');
+    kpiCard('','Weekly Sessions', fmt(g.sessions,'n'), g.ses_chg, `Prior week: ${fmt(g.p_sessions,'n')}`, g.ses_chg<-10?'red':g.ses_chg>5?'green':'') +
+    kpiCard('','Conversions',     fmt(g.convs,'n'),    g.conv_chg, `Conv. rate: ${fmt(g.conv_rate,'%')}`, g.conv_chg>0?'green':'') +
+    kpiCard('','Total Ad Spend',  fmt(totalSpend,'$2'),ads.spend_chg, metaSpend>0?`Google ${fmt(ads.spend,'$2')} · Meta ${fmt(metaSpend,'$2')}`:`CPA: ${fmt(ads.cpa,'$2')}`) +
+    kpiCard('','Organic Value',   fmt(s.organic_value,'$')+'/wk', null, organicMult>1?`${organicMult}× return vs ad spend`:`DR ${s.domain_rating||'–'} · ${s.tk_summary.top_3_count||0} top-3 keywords`, 'green');
+
+  // ── Insight strip ─────────────────────────────────────────────────────────
+  const insightEl = document.getElementById('overview-insights');
+  if (insightEl) {
+    const sesDown = (g.ses_chg||0) < -10;
+    const cpaHigh = ads.cpa > 15 && ads.cpa > 0;
+    insightEl.innerHTML = `<div class="grid-2 mb">
+      <div class="insight ${sesDown||cpaHigh?'red':'amber'}">
+        <div class="insight-label">${sesDown ? '⚠️ Traffic Drop — Investigate' : cpaHigh ? '⚠️ CPA Above $15 — Review Campaigns' : '⚠️ Watch: Paid Social Conversions'}</div>
+        ${sesDown
+          ? `Sessions fell <b>${Math.abs(g.ses_chg||0)}% WoW</b> (${fmt(g.p_sessions,'n')} → ${fmt(g.sessions,'n')}). Check which channel dropped in GA4 — most likely paid campaign paused or a ranking lost.`
+          : cpaHigh
+          ? `Blended CPA is <b>${fmt(ads.cpa,'$2')}</b> — above the $15 target. Malaga: ${fmt(ads.malaga.cpa,'$2')} · Ellenbrook: ${fmt(ads.ellenbrook.cpa,'$2')}. Review low-converting campaigns and pause underperformers.`
+          : `Meta Ads spent <b>${fmt(metaSpend,'$2')}</b> this week. Ensure conversion events are firing in Meta Events Manager — disconnected tracking inflates CPR.`
+        }
+      </div>
+      <div class="insight teal">
+        <div class="insight-label">${organicMult>1 ? `✅ Organic Delivers ${organicMult}× More Value Than Paid` : '✅ Conversion Rate Strong'}</div>
+        ${organicMult>1
+          ? `SEO organic is worth <b>${fmt(s.organic_value,'$')}/wk</b> vs <b>${fmt(totalSpend,'$2')}</b> in ad spend. Organic traffic compounds — every page published keeps delivering without paying per click.`
+          : `CB247 converts at <b>${fmt(g.conv_rate,'%')}</b> — well above the gym industry average of 5–8%. The site copy and UX are working.`
+        }
+        <br><br><b>Organic top-3 rankings:</b> ${s.tk_summary.top_3_count||0} keywords &nbsp;·&nbsp; <b>GBP:</b> Malaga ${mal.rating}⭐ (${fmt(mal.reviews,'n')} reviews) &nbsp;·&nbsp; Ellenbrook ${ell.rating}⭐ (${fmt(ell.reviews,'n')} reviews)
+      </div>
+    </div>`;
+  }
 
   // Web cards
   const gsc = D.gsc;
@@ -4424,6 +4454,22 @@ function renderGBP() {
   $('gbp-content').innerHTML = html;
 }
 
+// ── Helper: Coming Soon page ──────────────────────────────────────────────────
+function comingSoon(title, what, needs) {
+  return `<div style="max-width:560px;margin:48px auto;text-align:center">
+    <div style="font-size:36px;margin-bottom:14px">🚧</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:8px">${title}</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6">${what}</div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:left">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px">Activates when connected</div>
+      ${needs.map(n=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;margin-top:4px"></span>
+        <span style="font-size:12px;line-height:1.5">${n}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
 // ── Render: Content Planner ───────────────────────────────────────────────────
 // ── Content Planner Items ─────────────────────────────────────────────────────
 const PLANNER_ITEMS = [
@@ -4557,93 +4603,13 @@ window.cycleFromModal = () => {
 };
 
 function renderPlanner() {
-  const today = new Date();
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  const calDays = Array.from({length:14},(_,i)=>{
-    const d = new Date(today); d.setDate(d.getDate()+i);
-    return {date:d, label:days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()]};
-  });
-
-  const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
-  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
-
-  const approvalIcon = (id) => {
-    const a = (approval[id]||{}).status;
-    if(a==='approved') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block"></span>';
-    if(a==='adjustment') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block"></span>';
-    if(a==='rejected') return '<span style="float:right;width:7px;height:7px;border-radius:50%;background:var(--text-2);display:inline-block"></span>';
-    return '';
-  };
-
-  const week = (startDay) => {
-    const weekDays = calDays.slice(startDay, startDay+7);
-    return '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px">' +
-      weekDays.map((day,i)=>{
-        const globalDay = startDay+i;
-        const items = PLANNER_ITEMS.filter(c=>c.day===globalDay);
-        const isToday = i===0&&startDay===0;
-        const borderCol = isToday?'var(--teal)':'var(--border)';
-        const bgCol = isToday?'#f0fffe':'#fff';
-        const todayBadge = isToday?' <span style="background:var(--teal);color:#fff;border-radius:99px;padding:1px 6px;font-size:9px">TODAY</span>':'';
-        return '<div style="background:'+bgCol+';border-radius:8px;border:1px solid '+borderCol+';padding:10px;min-height:120px">' +
-          '<div style="font-size:11px;font-weight:700;color:'+(isToday?'var(--teal)':'var(--muted)')+';margin-bottom:6px">'+day.label+todayBadge+'</div>' +
-          items.map(item=>{
-            const status = saved[item.id]||'Idea';
-            const bg = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
-            return '<div style="background:'+bg+';border-radius:6px;padding:6px 8px;margin-bottom:4px;cursor:pointer;font-size:11px;border:1px solid transparent" ' +
-              'onclick="openPlannerModal(\''+item.id+'\')" ' +
-              'onmouseenter="this.style.borderColor=\'var(--teal)\'" ' +
-              'onmouseleave="this.style.borderColor=\'transparent\'">' +
-              '<span class="platform-tag platform-'+item.platform+'" style="font-size:9px">'+item.platform.toUpperCase()+'</span>' +
-              approvalIcon(item.id) +
-              '<div style="font-weight:600;margin:2px 0;line-height:1.3">'+item.title+'</div>' +
-              '<div style="color:var(--muted);font-size:10px">'+item.assignee+' · <span style="opacity:.7">'+item.assigneeRole+'</span></div>' +
-              '<div style="font-size:9px;margin-top:2px;font-weight:700;color:#666">'+status+'</div>' +
-              '</div>';
-          }).join('') +
-        '</div>';
-      }).join('') +
-    '</div>';
-  };
-
-  // Summary row
-  const totalItems = PLANNER_ITEMS.length;
-  const approvedCount = PLANNER_ITEMS.filter(i=>(approval[i.id]||{}).status==='approved').length;
-  const pendingCount = PLANNER_ITEMS.filter(i=>!(approval[i.id]||{}).status).length;
-
-  let html = `
-    <div class="insight blue mb">
-      <div class="insight-label">Content Planner</div>
-      ${totalItems} items this fortnight · <strong>${approvedCount} approved</strong> · <strong>${pendingCount} awaiting review</strong> — Click any card to view full brief, assign, approve, or update status.
-    </div>
-    ${sectionTitle('Week 1 — Days 1–7')}${week(0)}
-    ${sectionTitle('Week 2 — Days 8–14')}${week(7)}
-    <div class="card">
-      <div class="card-h">All Content Items</div>
-      <table><thead><tr><th>Day</th><th>Platform</th><th>Title</th><th>Assignee</th><th>Role</th><th>Status</th><th>Approval</th><th>Brief</th></tr></thead><tbody>`;
-
-  const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
-  PLANNER_ITEMS.forEach(item=>{
-    const status = saved[item.id]||'Idea';
-    const sc = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
-    const day = calDays[item.day];
-    const apprData = approval[item.id]||{};
-    const apprLabel = apprData.status==='approved'?'Approved':apprData.status==='adjustment'?'Adjustment':apprData.status==='rejected'?'Rejected':'—';
-    html += '<tr>' +
-      '<td style="font-size:11px">'+(day?day.label:'–')+'</td>' +
-      '<td><span class="platform-tag platform-'+item.platform+'">'+item.platform+'</span></td>' +
-      '<td style="font-weight:600;cursor:pointer;color:var(--teal)" onclick="openPlannerModal(\''+item.id+'\')">'+item.title+'</td>' +
-      '<td>'+item.assignee+'</td>' +
-      '<td style="font-size:11px;color:var(--muted)">'+item.assigneeRole+'</td>' +
-      '<td><span style="background:'+sc+';border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">'+status+'</span></td>' +
-      '<td style="font-size:11px">'+apprLabel+'</td>' +
-      '<td><a href="'+baseUrl+'/briefs/'+item.id+'.html" target="_blank" style="font-size:11px;color:var(--teal);font-weight:600">View →</a></td>' +
-      '</tr>';
-  });
-
-  html += '</tbody></table></div>';
+  let html = comingSoon(
+    'Content Planner',
+    'The automated 2-week content calendar will appear here once the Content Agent pipeline is connected. It will generate platform-specific content items, assign them to team members, and track approval status.',
+    ['Content Agent pipeline running weekly (weekly-content-YYYY-MM-DD.md)',
+     'Team member assignments configured in config/team-roles.json',
+     'Approval workflow wired to agent outputs']
+  );
 
   // ── SEO Content Briefs — pages to build from SEO agent ──────────────────────
   const _ao_seo_p = D.raw_agent_outputs || {};
@@ -4697,142 +4663,27 @@ function renderPlanner() {
   $('planner-content').innerHTML = html;
 }
 
-// ── Render: Content Review (Kanban) ──────────────────────────────────────────
+// ── Render: Content Review ────────────────────────────────────────────────────
 function renderContentReview() {
-  const REVIEW_KEY = 'cb247-content-review';
-  const saved = JSON.parse(localStorage.getItem(REVIEW_KEY)||'{}');
-
-  const CONTENT_QUEUE = [
-    {id:'cr1',platform:'gbp',title:'GBP Post — Sauna & Ice Bath',preview:'Recovery is part of training. Our Sauna + Ice Bath combo gives your body the reset it needs...',assignee:'Joanne',keyword:'sauna gym perth',channel:'GBP'},
-    {id:'cr2',platform:'instagram',title:'Reel — FIFO Lifestyle',preview:'Fly in. Train hard. We get it. CB247\'s FIFO-friendly freeze means your membership works around your roster...',assignee:'Agust',keyword:'fifo gym perth',channel:'Instagram'},
-    {id:'cr3',platform:'blog',title:'Blog — Best Gym Malaga',preview:'Targeting "best gym Malaga" (320 searches/month). H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247"...',assignee:'John',keyword:'best gym malaga',channel:'Blog'},
-    {id:'cr4',platform:'instagram',title:'Kids Hub Instagram Post',preview:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this...',assignee:'Shauna',keyword:'kids gym malaga',channel:'Instagram'},
-    {id:'cr5',platform:'tiktok',title:'TikTok — Ice Bath Reaction',preview:'First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247...',assignee:'Ivan',keyword:'ice bath gym perth',channel:'TikTok'},
-    {id:'cr6',platform:'meta',title:'Meta Ad — FIFO Audience',preview:'Headline: Train hard when you\'re home. Body: CB247 FIFO-friendly freeze. Pause anytime. $11.95/week...',assignee:'Jane',keyword:'',channel:'Meta Ads'},
-    {id:'cr7',platform:'gbp',title:'GBP Post — Reformer Pilates',preview:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook...',assignee:'Joanne',keyword:'reformer pilates perth',channel:'GBP'},
-    {id:'cr8',platform:'email',title:'Weekly Email Newsletter',preview:'Member spotlight + this week\'s class timetable + sauna booking tip for VIP members...',assignee:'Shauna',keyword:'',channel:'Email'},
-  ];
-
-  const COLS = [
-    {key:'generated', label:'Generated', desc:'AI output — Tia to review', color:'#6b7280'},
-    {key:'tia-approved', label:'Tia Approved', desc:'Sent to Jane for QC', color:'#3b82f6'},
-    {key:'jane-approved', label:'Jane Approved', desc:'Ready for Joanne', color:'#f59e0b'},
-    {key:'scheduled', label:'Scheduled', desc:'Joanne has this', color:'#8b5cf6'},
-    {key:'published', label:'Published', desc:'Live!', color:'#22c55e'},
-  ];
-
-  const moveCard = (id, col) => {
-    const s = JSON.parse(localStorage.getItem(REVIEW_KEY)||'{}');
-    s[id] = col;
-    localStorage.setItem(REVIEW_KEY, JSON.stringify(s));
-    // Update review badge
-    const pending = CONTENT_QUEUE.filter(c=>(s[c.id]||'generated')==='generated').length;
-    if($('review-badge')) $('review-badge').textContent = pending;
-    renderContentReview();
-  };
-  window.moveReviewCard = moveCard;
-
-  const cardHtml = (item) => {
-    const status = saved[item.id]||'generated';
-    const colIdx = COLS.findIndex(c=>c.key===status);
-    const prevCol = colIdx>0?COLS[colIdx-1].key:null;
-    const nextCol = colIdx<COLS.length-1?COLS[colIdx+1].key:null;
-    return `<div class="content-card" style="border-left-color:${COLS[colIdx].color}">
-      <span class="platform-tag platform-${item.platform}">${item.platform.toUpperCase()}</span>
-      <div class="cc-title">${item.title}</div>
-      <div class="cc-preview">${item.preview}</div>
-      ${item.keyword?`<div style="margin-top:6px"><span class="chip" style="font-size:9px">${item.keyword}</span></div>`:''}
-      <div class="cc-footer">
-        <span class="cc-assignee">→ ${item.assignee}</span>
-        <div style="display:flex;gap:4px">
-          ${prevCol?`<button onclick="moveReviewCard('${item.id}','${prevCol}')" style="background:#f3f4f6;border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer">← Back</button>`:''}
-          ${nextCol?`<button onclick="moveReviewCard('${item.id}','${nextCol}')" style="background:var(--teal);color:#fff;border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer;border:none">Approve →</button>`:''}
-        </div>
-      </div>
-    </div>`;
-  };
-
-  const pending = CONTENT_QUEUE.filter(c=>(saved[c.id]||'generated')==='generated').length;
-  if($('review-badge')) $('review-badge').textContent = pending;
-
-  let html = `
-    <div class="insight blue mb">
-      <div class="insight-label">Approval Flow</div>
-      <b>Tia</b> reviews Generated → approves to Jane &nbsp;·&nbsp; <b>Jane</b> QCs → approves to Joanne &nbsp;·&nbsp; <b>Joanne</b> schedules → marks Published.
-      Status saves in your browser automatically.
-    </div>
-    <div class="kanban">
-      ${COLS.map(col=>{
-        const items = CONTENT_QUEUE.filter(c=>(saved[c.id]||'generated')===col.key);
-        return `<div class="kanban-col">
-          <div class="kanban-col-header" style="color:${col.color}">
-            ${col.label} <span class="count">${items.length}</span>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${col.desc}</div>
-          ${items.map(cardHtml).join('')}
-          ${items.length===0?'<div style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0">Empty</div>':''}
-        </div>`;
-      }).join('')}
-    </div>`;
-
-  // ── Content agent output as the full content review source ─────────────────
-  const _ao_cr = D.raw_agent_outputs || {};
-  if (_ao_cr.has_outputs && _ao_cr.content) {
-    html += `<div style="margin-top:28px">
-      ${sectionTitle('📋 Content Agent Full Output — ' + _ao_cr.date)}
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">
-        Review each section below. Copy-paste directly into your social scheduler, GBP, or blog CMS.
-      </div>
-      <div class="card" style="padding:20px;font-size:12px;line-height:1.7;max-height:700px;overflow-y:auto">
-        ${formatAgentMd(_ao_cr.content)}
-      </div>
-    </div>`;
-  }
-
-  $('review-content').innerHTML = html;
+  $('review-content').innerHTML = comingSoon(
+    'Content Review',
+    'The Kanban approval board (Generated → Tia Approved → Jane QC → Scheduled → Published) activates once the Content Agent is generating weekly outputs.',
+    ['Content Agent pipeline producing weekly-content-YYYY-MM-DD.md',
+     'Team roles confirmed in config/team-roles.json',
+     'Social scheduler credentials connected (Metricool or Buffer)']
+  );
+  if($('review-badge')) $('review-badge').textContent = '';
 }
 
 // ── Render: Website Manager ───────────────────────────────────────────────────
 function renderWebsite() {
-  const seo = D.seo;
-  let html = `<div class="kpi-grid cols-3 mb">
-    ${kpiCard('','Broken Backlinks',seo.broken_backlinks.length,null,'Pages to fix or redirect','secondary')}
-    ${kpiCard('📤','Lost Backlinks',seo.lost_backlinks.length,null,'Last 30 days — outreach needed','secondary')}
-    ${kpiCard('🏥','Domain Rating',seo.domain_rating||'–',null,'Ahrefs authority 0–100')}
-  </div>`;
-
-  html += sectionTitle('🔴 Critical Dev Tasks');
-  html += `<div class="card mb"><ul class="task-list">
-    <li class="task-item"><span class="priority-pill p-critical">Critical</span>Fix broken backlinks — add 301 redirects to ${seo.broken_backlinks.length||0} broken pages</li>
-    <li class="task-item"><span class="priority-pill p-critical">Critical</span>Add H1 tags to all pages missing them (check Ahrefs Site Audit)</li>
-    <li class="task-item"><span class="priority-pill p-critical">Critical</span>Ensure unique meta descriptions on all 20 target keyword pages (&lt;160 chars)</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Add LocalBusiness JSON-LD schema to Malaga + Ellenbrook location pages</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Create /ellenbrook dedicated landing page — estimated $386/week Google Ads saving</li>
-    <li class="task-item"><span class="priority-pill p-high">High</span>Compress images on top 5 pages (target: &lt;100kb per image, current LCP likely slow)</li>
-    <li class="task-item"><span class="priority-pill p-medium">Medium</span>Add breadcrumb schema markup to blog posts and location pages</li>
-    <li class="task-item"><span class="priority-pill p-medium">Medium</span>Set up 301 redirects for any URL changes from Ahrefs broken backlink report</li>
-    <li class="task-item"><span class="priority-pill p-medium">Medium</span>Submit NAP listings to AU directories: True Local, Yelp, Yellow Pages, Hot Frog</li>
-    <li class="task-item"><span class="priority-pill p-low">Low</span>Audit internal linking — ensure all service pages link to location pages</li>
-  </ul></div>`;
-
-  html += sectionTitle('Broken Backlinks — Fix These Pages');
-  html += `<div class="card mb"><table>
-    <thead><tr><th>Linking Site</th><th>Broken URL on Our Site</th><th class="num">DR</th><th>Fix</th></tr></thead><tbody>
-    ${seo.broken_backlinks.slice(0,8).map(b=>`<tr>
-      <td style="font-size:11px">${(b.url_from||'').replace(/https?:\/\//,'').slice(0,40)}</td>
-      <td style="font-size:11px;color:var(--red)">${(b.url_to||'').replace('https://chasingbetter247.com.au','')}</td>
-      <td class="num">${b.domain_rating_source||'–'}</td>
-      <td style="font-size:11px;color:var(--teal)">Add 301 redirect</td>
-    </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No broken backlinks — great! Run pull_ahrefs.py to check.</td></tr>'}
-    </tbody></table></div>`;
-
-  html += insight('teal','Website Manager Priority',
-    `<b>This week for Mark:</b><br>
-     1. Add LocalBusiness schema to both location pages (Malaga + Ellenbrook) — direct local pack ranking impact.<br>
-     2. Create /ellenbrook page — saves ~$386/week in Google Ads. Use the SEO brief content template.<br>
-     3. Fix broken backlinks from the table above — each one is a free domain authority gain.`);
-
-  $('web-content').innerHTML = html;
+  $('web-content').innerHTML = comingSoon(
+    'Website Manager',
+    'Technical SEO health, dev task queue, and broken backlink report will appear here once the Ahrefs API and Screaming Frog crawl are connected.',
+    ['Ahrefs API key configured in .env (pull_ahrefs.py)',
+     'Screaming Frog CLI installed (run_screaming_frog.py)',
+     'Site crawl run at least once to populate broken link data']
+  );
 }
 
 // ── Render: Recommendations ───────────────────────────────────────────────────
@@ -4876,116 +4727,20 @@ function renderRecommendations() {
     }
   }
 
-  const STATUSES = ['new','accepted','inprogress','done','skipped'];
-  const STATUS_LABELS = {new:'New',accepted:'Accepted',inprogress:'In Progress',done:'Done ✓',skipped:'Skipped'};
-  const STATUS_CLASS  = {new:'status-new',accepted:'status-accepted',inprogress:'status-inprogress',done:'status-done',skipped:'status-skipped'};
+  const recComingSoon = comingSoon(
+    'Weekly Recommendations',
+    'Auto-generated action cards with owner, impact estimate, and status tracking will appear here once the Strategist Agent pipeline is running weekly.',
+    ['Strategist Agent producing weekly-strategy-YYYY-MM-DD.md',
+     'Performance Agent producing performance-week-YYYY-MM-DD.md',
+     'Run: bash scripts/weekly-report.sh to generate this week\'s recommendations']
+  );
 
-  // Recommendations generated by the AI OS (in production these come from state/ files)
-  const RECS = [
-    {id:'r1',channel:'seo',icon:'🔍',title:'Publish content for "reformer pilates malaga"',why:'Revo Fitness ranks #4 for this keyword (210 searches/month). CB247 has the service but no ranking page. Estimated: +$85/week organic value.',owner:'John + Shauna',impact:'+$85/wk organic',week:'Week of 2 Jun 2026'},
-    {id:'r2',channel:'ads',icon:'',title:'Pause Google Ads for keywords ranking organically #1–3',why:'Once CB247 ranks #1 organically for a keyword, running an ad on the same keyword wastes budget — users will click the organic result. Audit and pause overlapping campaigns.',owner:'Tia',impact:'Est. $200–400/wk saving',week:'Week of 2 Jun 2026'},
-    {id:'r3',channel:'gbp',icon:'',title:'Upload 10 photos per location this week',why:'Photo count directly impacts local pack ranking. Malaga has fewer photos than competitor benchmark. Each photo batch improves listing completeness score.',owner:'Joanne',impact:'Local pack ranking ↑',week:'Week of 2 Jun 2026'},
-    {id:'r4',channel:'seo',icon:'',title:'Reclaim broken backlinks — contact 3 top-DR linking sites',why:'Sites linking to broken CB247 pages are already willing to link to you. Emailing to update the URL is the fastest DR improvement possible.',owner:'John',impact:'DR increase',week:'Week of 2 Jun 2026'},
-    {id:'r5',channel:'web',icon:'',title:'Create /ellenbrook dedicated landing page',why:'Ellenbrook Google Ads spend ~$386/week. A dedicated landing page targeting "gym ellenbrook perth" would allow those ads to be paused.',owner:'Mark + John',impact:'Est. $386/wk saving',week:'Week of 2 Jun 2026'},
-    {id:'r6',channel:'gbp',icon:'⭐',title:'Print QR code review cards — both locations',why:'Review velocity is a top GBP ranking signal. Front desk verbal asks + QR code cards proven to increase review rate by 3–5x.',owner:'Tia + Front Desk',impact:'Reviews ↑ → local pack ↑',week:'Week of 2 Jun 2026'},
-    {id:'r7',channel:'content',icon:'',title:'Lead this week\'s Reels with ice bath / sauna content',why:'Google Trends Perth shows "cold plunge" and "sauna" rising. CB247 has this facility — competitors don\'t heavily feature it. First-mover advantage on social.',owner:'Agust + Ivan',impact:'Engagement ↑',week:'Week of 2 Jun 2026'},
-    {id:'r8',channel:'seo',icon:'',title:'Fix H1 tags on top 5 pages',why:'Multiple high-traffic pages missing or duplicating H1 tags. This is a basic on-page SEO issue costing ranking positions.',owner:'Mark',impact:'Rankings ↑ on affected pages',week:'Week of 2 Jun 2026'},
-  ];
-
-  const cycleStatus = (id) => {
-    const s = JSON.parse(localStorage.getItem(REC_KEY)||'{}');
-    const curr = s[id]||'new';
-    s[id] = STATUSES[(STATUSES.indexOf(curr)+1)%STATUSES.length];
-    localStorage.setItem(REC_KEY, JSON.stringify(s));
-    updateRecBadge();
-    renderRecommendations();
-  };
-  const saveOutcome = (id) => {
-    const inp = document.getElementById('outcome-'+id);
-    if(!inp) return;
-    const o = JSON.parse(localStorage.getItem(OUTCOME_KEY)||'{}');
-    o[id] = inp.value;
-    localStorage.setItem(OUTCOME_KEY, JSON.stringify(o));
-    renderRecommendations();
-  };
-  window.cycleRecStatus = cycleStatus;
-  window.saveRecOutcome = saveOutcome;
-
-  const tagClass = {seo:'t-seo',ads:'',gbp:'t-seo',meta:'',content:'',web:''};
-  const tagLabel = {seo:'SEO',ads:'Google Ads',gbp:'GBP',meta:'Meta Ads',content:'Content',web:'Website'};
-
-  // Filter UI
-  const filterRec = (filter) => {
-    document.querySelectorAll('.rec-filter-btn').forEach(b=>b.style.background=(b.dataset.f===filter?'var(--teal)':'#f3f4f6'));
-    document.querySelectorAll('.rec-filter-btn').forEach(b=>b.style.color=(b.dataset.f===filter?'#fff':'var(--text)'));
-    document.querySelectorAll('.rec-card-wrap').forEach(card=>{
-      const status = saved[card.dataset.id]||'new';
-      card.style.display = (filter==='all'||status===filter)?'block':'none';
-    });
-  };
-  window.filterRec = filterRec;
-
-  const openCount = RECS.filter(r=>(saved[r.id]||'new')==='new').length;
-  if($('rec-badge')) $('rec-badge').textContent = openCount;
-
-  let html = `
-    <div class="insight teal mb">
-      <div class="insight-label">How it works</div>
-      Every Monday the Marketing OS generates recommendations from data. Click the status button to update progress.
-      Add an outcome note when done — this builds your performance record over time.
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      ${['all','new','accepted','inprogress','done','skipped'].map(f=>`
-        <button class="rec-filter-btn" data-f="${f}" onclick="filterRec('${f}')"
-          style="border-radius:99px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;border:none;
-                 background:${f==='all'?'var(--teal)':'#f3f4f6'};color:${f==='all'?'#fff':'var(--text)'}">
-          ${f==='all'?'All':STATUS_LABELS[f]}
-          ${f==='new'?`(${openCount})`:''}
-        </button>`).join('')}
-    </div>
-    <div class="rec-board">
-      ${RECS.map(rec=>{
-        const status = saved[rec.id]||'new';
-        const outcome= outcomes[rec.id]||'';
-        return `<div class="rec-card-wrap" data-id="${rec.id}">
-          <div class="rec-card ${status==='done'?'done':''}" style="border-left:4px solid ${status==='done'?'var(--green)':status==='skipped'?'var(--border)':'var(--teal)'}">
-            
-            <div class="rec-body">
-              <div class="rec-tags">
-                <span class="rec-tag ${tagClass[rec.channel]||'tag-seo'}">${tagLabel[rec.channel]||rec.channel}</span>
-                <span style="font-size:10px;color:var(--muted)">${rec.week}</span>
-              </div>
-              <div class="rec-title">${rec.title}</div>
-              <div class="rec-why">${rec.why}</div>
-              <div class="rec-footer">
-                <span class="rec-impact">${rec.impact}</span>
-                <span class="rec-owner">Owner: ${rec.owner}</span>
-                <button class="rec-status-btn ${STATUS_CLASS[status]||'status-new'}" onclick="cycleRecStatus('${rec.id}')">
-                  ${STATUS_LABELS[status]||'New'} ↻
-                </button>
-              </div>
-              ${status==='done'?`
-                <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-                  <input id="outcome-${rec.id}" class="rec-outcome-input" placeholder="What was the actual outcome / result?" value="${outcome}">
-                  <button onclick="saveRecOutcome('${rec.id}')" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-weight:600">Save</button>
-                </div>`:''
-              }
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-
-  $('rec-content').innerHTML = agentPriHtml + html;
+  if($('rec-badge')) $('rec-badge').textContent = '';
+  $('rec-content').innerHTML = agentPriHtml + recComingSoon;
 }
 
 function updateRecBadge() {
-  const saved = JSON.parse(localStorage.getItem('cb247-recommendations')||'{}');
-  const RECS_COUNT = 8; // match RECS array length
-  // Count 'new' ones - approximate from localStorage
-  const open = Object.values(saved).filter(v=>v==='new').length;
-  // if nothing saved, all are new
-  if($('rec-badge')) $('rec-badge').textContent = open||RECS_COUNT;
+  if($('rec-badge')) $('rec-badge').textContent = '';
 }
 
 // ── Render: Status bar ────────────────────────────────────────────────────────
