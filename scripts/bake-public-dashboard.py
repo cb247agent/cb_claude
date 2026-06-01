@@ -897,13 +897,21 @@ def build_data():
             "malaga": {"spend": safe_float(mal.get("spend")), "cpa": safe_float(mal.get("cpa")), "clicks": safe_int(mal.get("clicks")), "conv": safe_int(mal.get("conv")), "ctr": safe_float(mal.get("ctr"))},
             "ellenbrook": {"spend": safe_float(ell.get("spend")), "cpa": safe_float(ell.get("cpa")), "clicks": safe_int(ell.get("clicks")), "conv": safe_int(ell.get("conv")), "ctr": safe_float(ell.get("ctr"))},
             "trend_labels": trend_labels, "trend_spend": trend_spend, "trend_cpa": trend_cpa,
-            "campaigns": [{"name": c.get("name","")[:40], "spend": safe_float(c.get("spend")), "clicks": safe_int(c.get("clicks")), "conv": safe_int(c.get("conv")), "cpa": safe_float(c.get("cpa"))} for c in campaigns[:8]],
+            "campaigns": [{"name": c.get("name","")[:35], "spend": safe_float(c.get("spend")), "clicks": safe_int(c.get("clicks")), "conv": safe_int(c.get("conv")), "cpa": safe_float(c.get("cpa")), "location": c.get("location","")} for c in campaigns if safe_float(c.get("spend") or 0) > 0][:10],
             "keywords": [],
             "week_label": _report_period,
             "csv_clicks": 0,
             "csv_cost": 0,
             "csv_conv": 0,
-            "bidding": [],
+            "bidding": {"new_recs": [
+                {"keyword": "gym malaga", "vol": "590", "bid": "$2.50", "priority": "High", "reason": "Core target — top 3 organic not yet achieved. Paid coverage essential while SEO builds."},
+                {"keyword": "24/7 gym malaga", "vol": "260", "bid": "$2.80", "priority": "High", "reason": "High-intent modifier. CB247 brand fits perfectly. Lower competition than generic 'gym malaga'."},
+                {"keyword": "gym ellenbrook perth", "vol": "390", "bid": "$2.40", "priority": "High", "reason": "Primary Ellenbrook keyword — currently no dedicated paid coverage for this location."},
+                {"keyword": "reformer pilates perth", "vol": "880", "bid": "$3.20", "priority": "High", "reason": "Premium service differentiator. Revo Fitness bids on this — defend share and highlight 24/7 access."},
+                {"keyword": "gym with sauna perth", "vol": "170", "bid": "$2.60", "priority": "Medium", "reason": "Sauna + ice bath is a unique CB247 offering. Low competition, high purchase intent."},
+                {"keyword": "kids gym malaga", "vol": "140", "bid": "$2.20", "priority": "Medium", "reason": "Kids Hub is unique in area. Parents searching = high conversion intent and long membership tenure."},
+                {"keyword": "fifo gym membership perth", "vol": "210", "bid": "$2.90", "priority": "Medium", "reason": "FIFO freeze is a unique CB247 offer. Target workers home between rotations — high value members."},
+            ]},
             # Competitor keyword context from Apify
             "competitor_serp": (apify.get("competitor_serp") or [])[:6],
             "keyword_tracking": (apify.get("keyword_tracking") or []),
@@ -927,17 +935,33 @@ def build_data():
             "tk_summary": tk_summary,
             "keywords": tk_keywords,
             "quick_wins": quick_win_kws,
-            "top_pages": [
-                {
-                    "url":     p.get("url","").replace("https://www.chasingbetter247.com.au","") or "/",
-                    "traffic": p.get("sum_traffic") or 0,
-                    "top_kw":  p.get("top_keyword",""),
-                    "pos":     p.get("top_keyword_best_position"),
-                    "kw_count":p.get("keywords") or 0,
-                    "ref_doms":p.get("referring_domains") or 0,
-                }
-                for p in ah_pages[:12]
-            ],
+            "top_pages": (
+                [
+                    {
+                        "url":     p.get("url","").replace("https://www.chasingbetter247.com.au","") or "/",
+                        "traffic": p.get("sum_traffic") or 0,
+                        "top_kw":  p.get("top_keyword",""),
+                        "pos":     p.get("top_keyword_best_position"),
+                        "kw_count":p.get("keywords") or 0,
+                        "ref_doms":p.get("referring_domains") or 0,
+                        "source":  "ahrefs",
+                    }
+                    for p in ah_pages[:12]
+                ] if ah_pages else [
+                    {
+                        "url":     (p.get("page","") or "").replace("https://www.chasingbetter247.com.au","") or "/",
+                        "traffic": safe_int(p.get("clicks", 0)),
+                        "top_kw":  "",
+                        "pos":     round(safe_float(p.get("position") or 0), 1) if p.get("position") else None,
+                        "kw_count": 0,
+                        "ref_doms": 0,
+                        "source":  "gsc",
+                    }
+                    for p in gsc_top_pages[:12]
+                    if safe_int(p.get("clicks", 0)) > 0
+                ]
+            ),
+            "top_pages_source": "ahrefs" if ah_pages else "gsc",
             "gsc_p11_25": [
                 {
                     "keyword":     q.get("query",""),
@@ -2221,9 +2245,11 @@ function renderSEO() {
       </tbody></table>
     </div>
     <div class="card">
-      <div class="card-h">Top Pages by Organic Traffic</div>
+      <div class="card-h">Top Pages by Organic Traffic
+        <span class="card-period">${s.top_pages_source==='gsc'?'Source: GSC clicks (Ahrefs not connected)':'Source: Ahrefs'}</span>
+      </div>
       <table><thead><tr>
-        <th>Page</th><th class="num">Traffic</th><th>Top KW</th><th class="num">Pos</th>
+        <th>Page</th><th class="num">${s.top_pages_source==='gsc'?'Clicks':'Traffic'}</th><th>${s.top_pages_source==='gsc'?'Avg Pos':'Top KW'}</th><th class="num">Pos</th>
       </tr></thead><tbody>
       ${(s.top_pages||[]).slice(0,10).map(p=>`<tr>
         <td style="font-size:10px;color:var(--text-2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(p.url||'/').replace('https://www.chasingbetter247.com.au','')}</td>
@@ -2248,7 +2274,15 @@ function renderSEO() {
         <td style="font-size:11px">${d.domain||'–'}</td>
         <td class="num">${d.domain_rating||'–'}</td>
         <td class="num" style="color:var(--muted)">${d.dofollow_links||0}</td>
-      </tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted)">No quality domains — run pull_ahrefs.py</td></tr>'}
+      </tr>`).join('')||`<tr><td colspan="3" style="padding:16px 12px">
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">
+          Ahrefs API not connected — referring domain data unavailable.<br>
+          <b style="color:var(--text-2)">Quick wins to build links now:</b><br>
+          <span style="font-size:11px">• True Local, Yelp AU, Yellow Pages AU — free dofollow directories<br>
+          • PerthNow + WA Today local business listings<br>
+          • AUS Fitness Industry Association (AFAC) member listing</span>
+        </div>
+      </td></tr>`}
       </tbody></table>
     </div>
     <div class="card">
@@ -2260,7 +2294,13 @@ function renderSEO() {
         <td style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">${(b.url_from||'').replace(/https?:\/\//,'')}</td>
         <td class="num">${b.domain_rating_source||'–'}</td>
         <td style="font-size:10px;color:var(--muted)">${(b.first_seen||'').slice(0,10)}</td>
-      </tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted)">No recent quality backlinks</td></tr>'}
+      </tr>`).join('')||`<tr><td colspan="3" style="padding:16px 12px">
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">
+          Ahrefs API not connected — backlink monitoring unavailable.<br>
+          <b style="color:var(--text-2)">Target: 2 quality backlinks/month.</b><br>
+          <span style="font-size:11px">Start with free directories (True Local, Yelp AU) — permanent dofollow links, 30-min effort each.</span>
+        </div>
+      </td></tr>`}
       </tbody></table>
     </div>
   </div>`;
@@ -2496,10 +2536,10 @@ function renderGAds() {
   ${newRecs.map(r=>`<tr>
     <td style="font-size:12px;font-weight:600">${r.keyword}</td>
     <td class="num" style="color:var(--muted)">${r.vol}/mo</td>
-    <td class="num">$${r.bid.replace('$','')}</td>
+    <td class="num">${r.bid}</td>
     <td><span style="font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;background:${r.priority==='High'?'#e8f5f4':'#f5f5f5'};color:${r.priority==='High'?'#3FA69A':'var(--muted)'}">${r.priority}</span></td>
     <td style="font-size:11px;color:var(--muted);max-width:280px">${r.reason}</td>
-  </tr>`).join('')}
+  </tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px">No recommendations — connect Ahrefs API for live keyword gap analysis.</td></tr>'}
   </tbody></table></div>`;
 
   // ── 3-week trend + campaign breakdown ────────────────────────────────────
@@ -2511,10 +2551,16 @@ function renderGAds() {
     </div>
     <div class="card">
       <div class="card-h">Campaign Breakdown</div>
-      <table><thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Conv</th><th class="num">CPA</th></tr></thead><tbody>
+      <table><thead><tr><th>Campaign</th><th>Location</th><th class="num">Spend</th><th class="num">Conv</th><th class="num">CPA</th></tr></thead><tbody>
       ${(()=>{
         if(ads.campaigns&&ads.campaigns.length){
-          return ads.campaigns.map(c=>`<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${c.name}</td><td class="num">${fmt(c.spend,'$2')}</td><td class="num">${c.conv}</td><td class="num ${c.cpa>50?'bad':'good'}">${fmt(c.cpa,'$2')}</td></tr>`).join('');
+          return ads.campaigns.map(c=>`<tr>
+            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${c.name}</td>
+            <td style="font-size:10px;color:var(--muted)">${c.location||'–'}</td>
+            <td class="num">${fmt(c.spend,'$2')}</td>
+            <td class="num ${c.conv>0?'good':''}">${c.conv||'–'}</td>
+            <td class="num ${c.conv>0&&c.cpa>50?'bad':c.conv>0?'good':''}">${c.conv>0?fmt(c.cpa,'$2'):'–'}</td>
+          </tr>`).join('');
         }
         const campMap={};
         kws.forEach(k=>{k.campaigns.forEach(camp=>{if(!campMap[camp])campMap[camp]={name:camp,spend:0,conv:0};campMap[camp].spend+=k.cost;campMap[camp].conv+=k.conv;});});
