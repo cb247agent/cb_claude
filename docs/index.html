@@ -324,7 +324,7 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "01 Jun 2026, 17:56",
+  "generated": "01 Jun 2026, 18:22",
   "report_period": "25 May \u2013 31 May 2026",
   "refresh_ts": "2026-06-01T03:31:36.978763Z",
   "status": {
@@ -3252,12 +3252,185 @@ window.DASHBOARD_DATA = {
   "agent_outputs": {
     "date": "2026-06-01",
     "has_outputs": true,
-    "scorecard": [],
-    "priorities": [],
-    "decisions": [],
-    "team": [],
-    "narrative": "",
-    "seasonal": "",
+    "scorecard": [
+      {
+        "metric": "SEO Health Score",
+        "value": "82/100",
+        "wow": "\u2192",
+        "status": "\ud83d\udfe2"
+      },
+      {
+        "metric": "Organic Traffic Value",
+        "value": "**$7,976/week**",
+        "wow": "+$635",
+        "status": "\ud83d\udfe2"
+      },
+      {
+        "metric": "Google Ads Saved (Cumulative YTD)",
+        "value": "**$0** (baseline)",
+        "wow": "\u2014",
+        "status": "\ud83d\udfe1"
+      },
+      {
+        "metric": "Organic vs Paid Ratio",
+        "value": "**80.3% organic**",
+        "wow": "+5pp",
+        "status": "\ud83d\udfe2"
+      },
+      {
+        "metric": "GBP Rating (Avg)",
+        "value": "**4.65 \u2b50**",
+        "wow": "\u2192",
+        "status": "\ud83d\udfe2"
+      },
+      {
+        "metric": "GBP Reviews (Total)",
+        "value": "**695 reviews**",
+        "wow": "+12",
+        "status": "\ud83d\udfe2"
+      },
+      {
+        "metric": "Traffic",
+        "value": "2,920 sessions",
+        "wow": "-24.5%",
+        "status": "\ud83d\udd34"
+      },
+      {
+        "metric": "Conversions",
+        "value": "493",
+        "wow": "-8.2%",
+        "status": "\ud83d\udfe1"
+      },
+      {
+        "metric": "Conversion Rate",
+        "value": "16.9%",
+        "wow": "+3pp",
+        "status": "\ud83d\udfe2"
+      },
+      {
+        "metric": "Google Ads CPA",
+        "value": "$9.02",
+        "wow": "-25% vs target",
+        "status": "\ud83d\udfe2"
+      }
+    ],
+    "priorities": [
+      {
+        "title": "Launch Kids Hub School Holiday Campaign",
+        "rag": "\ud83d\udfe1",
+        "why": "School holidays start 4 July (3 weeks). Parents actively planning NOW. CB247 is the ONLY gym in Malaga/Ellenbrook with Kids Hub.",
+        "who": "Ange (content), Shauna (social), Joanne (GBP posts), John (paid ads when Meta reinstates)",
+        "deadline": "Launch by Tuesday 3 June"
+      },
+      {
+        "title": "Pause Google Ads Brand Keywords (Save $200\u2013300/week)",
+        "rag": "\ud83d\udfe1",
+        "why": "Organic delivers 80% of search conversions at $0 cost. Paying for #1 ad when you're already #1 organic = wasted spend.",
+        "who": "John (Google Ads manager)",
+        "deadline": "Pause by Tuesday 3 June"
+      },
+      {
+        "title": "Create /reformer-pilates-perth Landing Page",
+        "rag": "\ud83d\udfe1",
+        "why": "CB247 HAS Reformer Pilates but NOT ranking for 40k vol keyword. Revo ranks #31. Massive opportunity \u2014 potential +$5k/mo organic value.",
+        "who": "Ange (content writer), Mark (dev for publishing + schema)",
+        "deadline": "Publish by Friday 6 June"
+      },
+      {
+        "title": "Counter Revo's Reformer Studio Launch",
+        "rag": "\ud83d\udfe1",
+        "why": "Revo just opened 22-machine Reformer studio at Ellenbrook. Direct threat. CB247 needs to reclaim narrative: \"We had it first. For less. With sauna + ice bath.\"",
+        "who": "Ange (ad copy), Shauna (social), John (paid ads when Meta reinstates)",
+        "deadline": "Launch campaign by Thursday 5 June"
+      },
+      {
+        "title": "Fix Meta Ads Account Restriction (0 Conversions from 666 Sessions)",
+        "rag": "\ud83d\udfe1",
+        "why": "666 paid social sessions delivered ZERO conversions this week. Either account restricted OR campaigns badly broken.",
+        "who": "Tia (account access) + John (campaign audit when access restored)",
+        "deadline": "Resolve by Wednesday 4 June"
+      }
+    ],
+    "decisions": [
+      {
+        "title": "Reduce Google Ads Budget by 50% and Reinvest in SEO?",
+        "recommendation": "- **Pause:** Brand keywords (save $200\u2013300/week) \u2014 CB247 already #1 organic\n- **Reduce 50%:** \"Gym Geo\" campaigns (save $85/week) \u2014 CB247 ranks #6\u20139 organically\n- **Increase:** \"Reformer Pilates Perth\" campaign ($100/week) \u2014 no organic coverage yet\n- **New Weekly Spend:** $560/week (down from $735)\n",
+        "question": "Approve 50% Google Ads budget reduction and SEO reinvestment?"
+      },
+      {
+        "title": "Meta Ads Account \u2014 Escalate or Pause?",
+        "recommendation": "- If account RESTRICTED: Escalate to Meta support urgently\n- If account LIVE: Audit campaigns, pause non-performers, relaunch with Kids Hub + FIFO + Reformer campaigns (3 campaigns prepared, $300/week total budget when ready)",
+        "question": "Do you have account access? Can you check restriction status?"
+      },
+      {
+        "title": "Approve \"Reformer Wars\" Campaign (Counter Revo Threat)?",
+        "recommendation": "- Launch immediate counter-campaign: \"Revo added Reformer. We've had it for a year. For less. Plus Sauna + Ice Bath + Kids Hub.\"\n- Channels: Facebook/Instagram (when Meta reinstates), TikTok, GBP posts, blog post\n- Budget: $500/week Facebook + $300/week Google (\"reformer pilates malaga/ellenbrook\") ",
+        "question": "Approve $800/week \"Reformer Wars\" campaign to neutralize Revo threat?"
+      }
+    ],
+    "team": [
+      {
+        "name": "Ange",
+        "role": "Content Manager",
+        "tasks": [
+          "Create Kids Hub school holiday campaign content pack (GBP posts, social captions, ad copy) \u2014 by Tue 3 Jun",
+          "Write /reformer-pilates-perth landing page (1,200 words, SEO-optimized) \u2014 by Fri 6 Jun",
+          "Draft \"Reformer Wars\" campaign copy (blog post, ad copy) \u2014 by Thu 5 Jun"
+        ]
+      },
+      {
+        "name": "Jane",
+        "role": "Operations Manager",
+        "tasks": [
+          "Coordinate Kids Hub staffing for school holiday campaign (4\u201317 Jul) \u2014 confirm capacity",
+          "Ensure Kids Hub visuals/photos ready for campaign launch (high-quality, permission-cleared)"
+        ]
+      },
+      {
+        "name": "John",
+        "role": "Paid Ads Manager",
+        "tasks": [
+          "Pause Google Ads brand keywords by Tue 3 Jun (save $200\u2013300/week)",
+          "Reduce \"Gym Geo\" campaigns 50% by Wed 4 Jun (save $85/week)",
+          "Reactivate \"Pilates\" campaign with $100/week budget targeting \"reformer pilates perth\" \u2014 by Thu 5 Jun"
+        ]
+      },
+      {
+        "name": "Mark",
+        "role": "Dev/Web Manager",
+        "tasks": [
+          "Publish /reformer-pilates-perth landing page by Fri 6 Jun (schema, internal links, mobile-optimized)",
+          "Quick homepage H1/meta fix for \"gym malaga\" (#6 \u2192 #3 target) \u2014 by Tue 3 Jun (30-min fix)"
+        ]
+      },
+      {
+        "name": "Agust & Ivan",
+        "role": "Personal Trainers",
+        "tasks": [
+          "FIFO member testimonial video needed \u2014 ice bath \u2192 sauna recovery story (shoot this week for FIFO campaign content)"
+        ]
+      },
+      {
+        "name": "Shauna",
+        "role": "Social Media Manager",
+        "tasks": [
+          "Launch Kids Hub school holiday social campaign by Tue 3 Jun (Instagram carousel + TikTok)",
+          "Post \"Winter Sauna Recovery\" reel by Wed 4 Jun (ice bath \u2192 sauna loop, 30sec vertical)",
+          "Launch \"Reformer Wars\" TikTok series by Thu 5 Jun (\"Revo copied our homework\" relatable humor angle)"
+        ]
+      },
+      {
+        "name": "Joanne",
+        "role": "Front Desk/GBP Manager",
+        "tasks": [
+          "Post GBP \"Winter Sauna + Ice Bath Recovery\" on Tue 3 Jun",
+          "Post GBP \"Kids Hub School Holidays Preview\" on Tue 10 Jun",
+          "Respond to all new reviews using templates (5 templates provided in content pack)"
+        ]
+      }
+    ],
+    "narrative": "Where we are:  \nCB247's organic SEO is now dominant \u2014 delivering 80% of search conversions at $0 cost, with an organic traffic value of $7,976/week vs. Google Ads spend of $735/week. We've gained 8 positions for \"malaga gyms\" (#10 \u2192 #2), entered rankings for \"best gyms perth\" (#8), and hold #1 positions across 14+ brand and local keywords. GBP metrics crush all competitors (4.65\u2605 avg vs. 4.3\u2605, 695 reviews vs. 566, 2\u00d7 more photos).\n\nWhat moved:  \nTraffic dropped 24.5% (3,866 \u2192 2,920 sessions) but conversion rate surged 3pp (13.9% \u2192 16.9%) \u2014 quality over quantity. Meta Ads delivered 666 sessions with 0 conversions (account restriction or broken campaigns). Revo launched a 22-machine Reformer studio at Ellenbrook (direct competitive threat). School holidays start in 3 weeks (4 July) \u2014 Kids Hu",
+    "seasonal": "### \u2705 ACTIVE NOW (Launched 1 June)\nWinter Push Campaign \u2014 \"Perth Winters Made for the Gym\"\n- Duration: Jun\u2013Aug 2026\n- Status: LAUNCHED THIS WEEK\n- Angle: Cold outside = warm inside. Sauna + Ice Bath recovery narrative.\n- Target: All ICPs \u2014 lean FIFO (home in winter) + Malaga Families (school routine)\n\n### \u26a0\ufe0f WITHIN 21 DAYS \u2014 ACTION REQUIRED\nWA School Holidays \u2014 4\u201317 July 2026\n- Campaign: \"Kids play. You train.\"\n- Timeline: 3 weeks away \u2014 launch campaign THIS WEEK\n- Priority: HIGH \u2014 Kids Hub is d",
     "raw": {
       "strategy": "# CB247 Weekly Executive Strategy\n**Week Ending:** 2026-06-01  \n**Prepared For:** Tia  \n**Prepared By:** CB247 Marketing Strategist\n\n---\n\n## 0. SEASONAL STATUS\n\n### \u2705 ACTIVE NOW (Launched 1 June)\n**Winter Push Campaign \u2014 \"Perth Winters Made for the Gym\"**\n- Duration: Jun\u2013Aug 2026\n- Status: LAUNCHED THIS WEEK\n- Angle: Cold outside = warm inside. Sauna + Ice Bath recovery narrative.\n- Target: All ICPs \u2014 lean FIFO (home in winter) + Malaga Families (school routine)\n\n### \u26a0\ufe0f WITHIN 21 DAYS \u2014 ACTION REQUIRED\n**WA School Holidays \u2014 4\u201317 July 2026**\n- **Campaign:** \"Kids play. You train.\"\n- **Timeline:** 3 weeks away \u2014 launch campaign THIS WEEK\n- **Priority:** HIGH \u2014 Kids Hub is differentiator vs all competitors\n- **ICP:** Malaga Families + Ellenbrook Locals\n- **Content:** Kids Hub photos/videos, family-friendly messaging, school holiday solution angle\n\n### \ud83d\udcc5 WITHIN 60 DAYS \u2014 PREP NOW\n- **Father's Day (7 Sep):** Brief due 17 Aug \u2014 gift memberships + PT sessions\n- **Summer Prep (Oct\u2013Nov):** \"Beach Season Starts Now\" campaign \u2014 body confidence + consistency\n\n---\n\n## 1. WEEKLY SCORECARD\n\n| Metric | Value | WoW | Status |\n|--------|-------|-----|--------|\n| **SEO Health Score** | 82/100 | \u2192 | \ud83d\udfe2 Strong |\n| **Organic Traffic Value** | **$7,976/week** | +$635 | \ud83d\udfe2 Growing |\n| **Google Ads Saved (Cumulative YTD)** | **$0** (baseline) | \u2014 | \ud83d\udfe1 Track starts this week |\n| **Organic vs Paid Ratio** | **80.3% organic** | +5pp | \ud83d\udfe2 Dominant |\n| **GBP Rating (Avg)** | **4.65 \u2b50** | \u2192 | \ud83d\udfe2 Best in market |\n| **GBP Reviews (Total)** | **695 reviews** | +12 | \ud83d\udfe2 +23% vs competitors |\n| **Traffic** | 2,920 sessions | -24.5% | \ud83d\udd34 Down |\n| **Conversions** | 493 | -8.2% | \ud83d\udfe1 Down but rate up |\n| **Conversion Rate** | 16.9% | +3pp | \ud83d\udfe2 Quality improving |\n| **Google Ads CPA** | $9.02 | -25% vs target | \ud83d\udfe2 Efficient |\n\n### Key Insights:\n- **Organic SEO is carrying 80% of search conversions** at $0 cost vs. paid $9.02 CPA\n- **Organic value ($7,976/week) = 10.8\u00d7 Google Ads spend ($735/week)**\n- **Traffic down",
       "performance": "# CB247 Weekly Performance Report\n**Week Ending:** 2026-06-01  \n**Report Generated:** 2026-06-01  \n**Data Sources:** GA4, GSC, Google Ads, Ahrefs, Apify\n\n---\n\n## 1. KPI DASHBOARD\n\n| Metric | This Week | Last Week | Target | RAG | Change |\n|--------|-----------|-----------|--------|-----|--------|\n| **Website Sessions** | 2,920 | 3,866 | 3,500 | \ud83d\udd34 | -24.5% |\n| **Conversions** | 493 | 537 | 500 | \ud83d\udfe1 | -8.2% |\n| **Conversion Rate** | 16.9% | 13.9% | 15.0% | \ud83d\udfe2 | +3.0pp |\n| **Organic Clicks (GSC)** | 1,805 | \u2014 | 1,200 | \ud83d\udfe2 | \u2014 |\n| **Organic Sessions (GA4)** | 931 | \u2014 | 800 | \ud83d\udfe2 | \u2014 |\n| **Avg. Position (GSC)** | 1.5 | \u2014 | 2.0 | \ud83d\udfe2 | \u2014 |\n| **Impressions (GSC)** | 7,263 | \u2014 | 6,000 | \ud83d\udfe2 | \u2014 |\n| **Google Ads Spend** | $735.24 | \u2014 | $800 | \ud83d\udfe2 | Under budget |\n| **Google Ads Conversions** | 81.5 | \u2014 | 70 | \ud83d\udfe2 | +16.4% |\n| **Cost Per Lead (CPA)** | $9.02 | \u2014 | $12.00 | \ud83d\udfe2 | 25% below target |\n| **Domain Rating** | 7 | \u2014 | 10 | \ud83d\udd34 | No change |\n| **Organic Keywords Ranking** | 100+ | \u2014 | 90 | \ud83d\udfe2 | \u2014 |\n\n**KEY",
@@ -3286,7 +3459,7 @@ window.DASHBOARD_DATA = {
   <div class="sidebar-brand">
     <div class="logo">Chasing<span>Better</span></div>
     <div class="sub">Marketing OS</div>
-    <div class="sub" style="margin-top:4px;color:rgba(255,255,255,.55);font-size:9px">WEEK: {_report_period}</div>
+    <div class="sub" style="margin-top:4px;color:rgba(255,255,255,.55);font-size:9px">WEEK: <span id="sidebar-week"></span></div>
   </div>
 
   <div class="sidebar-section">
@@ -5384,6 +5557,7 @@ function renderStatus() {
   $('system-dot').className = 'status-dot'+(allLive?'':' warn');
   $('refresh-label').textContent = 'Last refresh: '+D.refresh_ts;
   $('page-footer').innerHTML = `CB247 Marketing OS &nbsp;·&nbsp; Report period: <strong>${D.report_period}</strong> &nbsp;·&nbsp; Generated: ${D.generated} &nbsp;·&nbsp; <a href="https://cb247agent.github.io/cb_claude/">cb247agent.github.io/cb_claude</a>`;
+  if($('sidebar-week')) $('sidebar-week').textContent = D.report_period || '';
 }
 
 // ── Render: README / How It Works ────────────────────────────────────────────
