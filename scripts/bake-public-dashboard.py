@@ -1862,13 +1862,30 @@ function renderSEO() {
     </div>
     <div class="insight red">
       <div class="insight-label">Ranking Gap — Positions 11–20 Need Dedicated Pages</div>
-      <b>${p11_20.length} keywords</b> with 100+ monthly searches sit on page 2 (positions 11–20).
-      These keywords are invisible to 90%+ of searchers — page 2 CTR averages 0.5% vs page 1's 8–30%.
-      The fix is not tweaking existing pages; it's <b>building dedicated landing pages</b> for each.
+      <b>${p11_20.length} keyword${p11_20.length!==1?'s':''}</b> with 100+ monthly searches sit on page 2 (positions 11–20).
+      Page 2 CTR averages 0.5% — these keywords are generating impressions but near-zero clicks.
+      The fix is <b>dedicated landing pages</b>, not tweaking existing content.
       ${p11_20.length > 0
-        ? '<br><br>' + p11_20.slice(0,3).map(k=>`<div style="font-size:11px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)"><b>${k.keyword}</b> — pos #${k.position}, ${fmt(k.volume,'n')}/mo</div>`).join('')
-        : ''}
-      <br><b>Priority pages to build:</b> /kids-hub-malaga/ · /recovery/ · /sauna-ice-bath-malaga/
+        ? `<br><br><table style="width:100%;font-size:11px;margin-top:4px">
+            <thead><tr>
+              <th style="text-align:left;padding:4px 6px 4px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Keyword</th>
+              <th style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Pos</th>
+              <th style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Vol/mo</th>
+              <th style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Traffic</th>
+              <th style="text-align:left;padding:4px 0 4px 8px;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Page to build</th>
+            </tr></thead><tbody>
+            ${p11_20.map(k=>{
+              const slug = k.keyword.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+              return `<tr>
+                <td style="padding:4px 6px 4px 0;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">${k.keyword}</td>
+                <td style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04)">${posBadge(k.position)}</td>
+                <td style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04);color:var(--muted)">${fmt(k.volume,'n')}</td>
+                <td style="text-align:right;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04)">${fmt(k.traffic,'n')}</td>
+                <td style="padding:4px 0 4px 8px;border-bottom:1px solid rgba(0,0,0,.04);color:var(--teal);font-size:10px">/${slug}/</td>
+              </tr>`;
+            }).join('')}
+            </tbody></table>`
+        : '<br><br><span style="color:var(--muted);font-size:12px">No page-2 keywords found — run pull_ahrefs.py to load data.</span>'}
     </div>
     <div class="insight amber">
       <div class="insight-label">Authority Gap — Domain Rating vs Competitors</div>
