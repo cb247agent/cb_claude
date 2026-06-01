@@ -1415,9 +1415,15 @@ code{font-family:'SF Mono',Menlo,monospace;font-size:.85em;background:var(--bg);
 /* ── Insight / alert box ─────────────────────────── */
 .insight{border-radius:var(--radius);padding:14px 16px;margin-bottom:var(--gap);font-size:12.5px;line-height:1.6;border:1px solid var(--border);background:var(--card)}
 .insight.teal{background:var(--teal-mist);border-color:rgba(63,166,154,.25);border-left:3px solid var(--teal)}
+.insight.green{background:var(--teal-mist);border-color:rgba(63,166,154,.25);border-left:3px solid var(--teal)}
+.insight.red{background:#fff5f5;border-color:#fecaca;border-left:3px solid #ef4444}
+.insight.amber{background:#fffbeb;border-color:#fde68a;border-left:3px solid #f59e0b}
 .insight.neutral{background:#f9f9f9;border-left:3px solid var(--border-strong)}
-.insight.warn{background:#fafafa;border-left:3px solid var(--muted-2)}
+.insight.warn{background:#fffbeb;border-color:#fde68a;border-left:3px solid #f59e0b}
 .insight-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
+.insight.red .insight-label{color:#b91c1c}
+.insight.amber .insight-label{color:#92400e}
+.insight.teal .insight-label,.insight.green .insight-label{color:var(--teal-dim)}
 
 /* ── Tables ──────────────────────────────────────── */
 table{width:100%;border-collapse:collapse;font-size:12px}
@@ -1762,7 +1768,10 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
 
     <!-- ══ PAGE: META ADS ════════════════════════════════════════════ -->
     <div class="page" id="page-organic-social">
-      <h1>Organic Social</h1>
+      <div class="page-header">
+        <h1>Organic Social</h1>
+        <p>Instagram · Facebook · Google Business Profile organic performance</p>
+      </div>
       <div id="orgsocial-content"></div>
     </div>
 
@@ -1940,13 +1949,34 @@ const kpiCard = (icon,label,value,change,sub,colorClass='') => `
     ${change!==null?`<div class="kpi-change ${chgClass(change)}">${arrow(change)} ${fmtChg(change)} vs prior week</div>`:''}
     ${sub?`<div class="kpi-sub">${sub}</div>`:''}
   </div>`;
-const insightTypeMap = {'green':'teal','red':'warn','amber':'warn','blue':'neutral','teal':'teal'};
+const insightTypeMap = {'green':'teal','red':'red','amber':'amber','blue':'neutral','teal':'teal'};
 const insight = (type,label,text) => `
   <div class="insight ${insightTypeMap[type]||'neutral'}">
     <div class="insight-label">${label}</div>
     ${text}
   </div>`;
 const sectionTitle = t => `<div class="section-title">${t}</div>`;
+
+// ── Global shared helpers ──────────────────────────────────────────────────────
+function rankBadge(r) {
+  if (!r) return '';
+  if (r.includes('Above')) return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:1px 5px;border-radius:3px;font-weight:700">Above avg</span>';
+  if (r.includes('Below')) return '<span style="font-size:9px;background:#fff5f5;color:#ef4444;padding:1px 5px;border-radius:3px;font-weight:700">Below avg</span>';
+  return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">Average</span>';
+}
+function tierBadge(t) {
+  if (t==='star') return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:2px 7px;border-radius:3px;font-weight:700">⭐ Star</span>';
+  if (t==='good') return '<span style="font-size:9px;background:#fff8e1;color:#d97706;padding:2px 7px;border-radius:3px;font-weight:700">Good</span>';
+  if (t==='poor') return '<span style="font-size:9px;background:#fff5f5;color:#ef4444;padding:2px 7px;border-radius:3px;font-weight:700">Poor</span>';
+  return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:2px 7px;border-radius:3px">Average</span>';
+}
+function agentBrief(title, text) {
+  return `${sectionTitle('🤖 AI Brief — ' + title)}
+  <div class="insight teal mb">
+    <div class="insight-label">Agent priorities · This week's recommended actions</div>
+    ${text}
+  </div>`;
+}
 
 // ── Agent markdown renderer ────────────────────────────────────────────────────
 function formatAgentMd(text) {
@@ -2088,59 +2118,10 @@ function renderSEO() {
   const s = D.seo;
   const qw = s.quick_wins || [];
   const _ao_seo = D.raw_agent_outputs || {};
-
-  // ── SEO Brief Highlights — structured cards, not a raw dump ──────────────
-  let html = '';
   const _h = (_ao_seo.seo_highlights) || {};
-  if (_ao_seo.seo) {
-    const _wins    = _h.wins || [];
-    const _crits   = _h.critical || [];
-    const _actions = _h.top_actions || [];
-    const _ov      = _h.organic_value || '';
 
-    // Only render if we have something meaningful
-    if (_wins.length || _crits.length || _actions.length) {
-      html += `<div class="grid-2 mb" style="margin-bottom:20px">`;
-
-      // Critical issues
-      if (_crits.length) {
-        html += `<div class="insight red">
-          <div class="insight-label">⚠️ Critical Issues — ${_ao_seo.date}</div>
-          ${_crits.map(c=>`<div style="margin-bottom:8px"><strong>${c.title}</strong>
-            ${c.desc ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">${c.desc.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>` : ''}</div>`).join('')}
-        </div>`;
-      }
-
-      // Big wins
-      if (_wins.length) {
-        html += `<div class="insight teal">
-          <div class="insight-label">🟢 Big Wins This Week</div>
-          ${_wins.map(w=>`<div style="margin-bottom:6px;font-size:12px">✅ ${w}</div>`).join('')}
-          ${_ov ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08)"><strong>${_ov}</strong> organic traffic value</div>` : ''}
-        </div>`;
-      }
-
-      html += `</div>`;
-
-      // Top 3 actions
-      if (_actions.length) {
-        html += sectionTitle('🎯 Top Actions This Week — from SEO Agent');
-        html += `<div style="display:grid;gap:8px;margin-bottom:20px">
-          ${_actions.map((a,i)=>`
-          <div class="card" style="border-left:4px solid var(--teal);padding:14px 16px;display:flex;gap:14px;align-items:flex-start">
-            <span style="font-size:22px;flex-shrink:0;font-weight:800;color:var(--teal)">${i+1}</span>
-            <div>
-              <div style="font-weight:700;font-size:13px;margin-bottom:3px">${a.title}</div>
-              <div style="font-size:12px;color:var(--muted)">${a.desc}</div>
-            </div>
-          </div>`).join('')}
-        </div>`;
-      }
-    }
-  }
-
-  // ── KPI cards ───────────────────────────────────────────────────────────────
-  html += `<div class="kpi-grid cols-4 mb">
+  // ── 1. KPI cards — always first ──────────────────────────────────────────
+  let html = `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','SEO Health Score', s.health_score+'/100', null,
       s.health_score>=70?'Strong — maintain momentum':s.health_score>=40?'Building — keep publishing':'Early stage — focus on quick wins',
       s.health_score>=70?'green':s.health_score>=40?'amber':'red')}
@@ -2150,87 +2131,32 @@ function renderSEO() {
       `${s.tk_summary.top_3_count||0} in top 3 · ${s.tk_summary.total_keywords||0} total tracking`)}
   </div>`;
 
-  // ── Key observations ────────────────────────────────────────────────────────
+  // ── 2. Insight strip (red left, teal right) — always 2 cards ───────────────
   const topQW   = qw[0];
-  const p11_25  = s.gsc_p11_25 || [];   // GSC non-branded queries: positions 11-25
-  const p4_10   = s.gsc_p4_10  || [];   // GSC non-branded queries: positions 4-10
-  const top3kws = (s.keywords||[]).filter(k=>k.position<=3);
-  // Top-3 from GSC (branded clicks show what's already winning)
+  const p11_25  = s.gsc_p11_25 || [];
+  const p4_10   = s.gsc_p4_10  || [];
   const gsc_top3 = (s.gsc_queries||[]).filter(q=>q.position<=3);
   html += sectionTitle('Key Observations');
   html += `<div class="grid-2 mb">
-    <div class="insight teal">
-      <div class="insight-label">What's Working — Top 3 Positions</div>
-      CB247 ranks <b>top 3</b> for <b>${gsc_top3.length} queries</b> — these drive the most organic clicks with no ad spend.
-      ${gsc_top3.length > 0
-        ? '<br><br>' + gsc_top3.slice(0,5).map(q=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)"><span>${q.query}</span><span>${posBadge(q.position)} <span style="color:var(--muted)">${fmt(q.clicks,'n')} clicks</span></span></div>`).join('')
-        : '<br><br><span style="color:var(--muted);font-size:12px">No GSC data — run pull_gsc.py.</span>'}
-      <br><b>Action:</b> Protect these rankings. Add internal links from all new blog posts back to these pages. Never change URL slugs without 301 redirects.
-    </div>
-    <div class="insight amber">
-      <div class="insight-label">Quick Win — Non-Branded Queries in Positions 4–10</div>
-      <b>${p4_10.length} non-branded keyword${p4_10.length!==1?'s':''}</b> rank positions 4–10 in Google Search Console.
-      These queries get impressions but low CTR — a 2–3 rank improvement pushes them to page 1 top 5 and can 3–5× their clicks.
-      ${p4_10.length > 0
-        ? `<br><br><table style="width:100%;font-size:11px;margin-top:4px">
-            <thead><tr>
-              <th style="text-align:left;padding:3px 6px 3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Keyword</th>
-              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Pos</th>
-              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Impr</th>
-              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Clicks</th>
-              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">CTR</th>
-            </tr></thead><tbody>
-            ${p4_10.map(k=>`<tr>
-              <td style="padding:3px 6px 3px 0;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">${k.keyword}</td>
-              <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)">${posBadge(k.position)}</td>
-              <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04);color:var(--muted)">${fmt(k.impressions,'n')}</td>
-              <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)">${fmt(k.clicks,'n')}</td>
-              <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04);color:${k.ctr<3?'#ef4444':'var(--teal)'}">${k.ctr}%</td>
-            </tr>`).join('')}
-            </tbody></table>
-            <p style="font-size:10px;color:var(--muted);margin-top:6px"><b>Fix:</b> Add each keyword to the H1 + meta description of its ranking page. One internal link from homepage. Target: move each to top 3.</p>`
-        : '<br><br><span style="color:var(--muted);font-size:12px">No non-branded quick-win data in GSC.</span>'}
-    </div>
     <div class="insight red">
-      <div class="insight-label">Ranking Gap — Positions 11–25, Near-Zero Clicks</div>
-      <b>${p11_25.length} non-branded keyword${p11_25.length!==1?'s':''}</b> rank in positions 11–25 in Google Search Console.
-      Page 2+ CTR averages 0.5% — these queries show CB247 exists in Google's index for the topic,
-      but no searcher sees it. The fix is <b>dedicated landing pages</b>, not tweaking existing content.
+      <div class="insight-label">⚠️ Ranking Gap — Page 2+ Keywords Getting Near-Zero Clicks</div>
+      <b>${p11_25.length || 'Several'} non-branded keyword${p11_25.length!==1?'s':''}</b> rank positions 11–25.
+      Page 2 CTR averages 0.5% — these keywords exist in Google's index but no searcher ever sees them.
+      The fix is <b>dedicated landing pages</b> — one page per keyword, not tweaking existing content.
       ${p11_25.length > 0
-        ? `<br><br><table style="width:100%;font-size:11px;margin-top:4px">
-            <thead><tr>
-              <th style="text-align:left;padding:3px 6px 3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Keyword</th>
-              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Pos</th>
-              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Impr</th>
-              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Clicks</th>
-              <th style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">CTR</th>
-              <th style="text-align:left;padding:3px 0 3px 8px;border-bottom:1px solid rgba(0,0,0,.08);color:var(--muted);font-weight:600">Page to build</th>
-            </tr></thead><tbody>
-            ${p11_25.map(k=>{
-              const slug = k.keyword.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-              return `<tr>
-                <td style="padding:3px 6px 3px 0;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">${k.keyword}</td>
-                <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)">${posBadge(k.position)}</td>
-                <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04);color:var(--muted)">${fmt(k.impressions,'n')}</td>
-                <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04)">${fmt(k.clicks,'n')}</td>
-                <td style="text-align:right;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.04);color:#ef4444">${k.ctr}%</td>
-                <td style="padding:3px 0 3px 8px;border-bottom:1px solid rgba(0,0,0,.04);color:var(--teal);font-size:10px">/${slug}/</td>
-              </tr>`;
-            }).join('')}
-            </tbody></table>
-            <p style="font-size:10px;color:var(--muted);margin-top:6px">Source: Google Search Console 7-day data (25–31 May 2026) · Non-branded queries only</p>`
-        : '<br><br><span style="color:var(--muted);font-size:12px">No page-2+ non-branded keywords in GSC data. Connect Ahrefs API to see full keyword universe.</span>'}
+        ? `<br><br>${p11_25.slice(0,5).map(k=>{const slug=k.keyword.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');return`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-weight:600">${k.keyword}</span><span>${posBadge(k.position)} <span style="color:var(--muted);font-size:10px">→ /${slug}/</span></span></div>`}).join('')}
+          <p style="font-size:10px;color:var(--muted);margin-top:8px">Source: GSC 7-day · Non-branded only</p>`
+        : '<br><br><span style="color:var(--muted);font-size:12px">Connect Ahrefs API to see full keyword universe.</span>'}
+      <br><b>Authority gap:</b> CB247 DR ${s.domain_rating||'—'} · ${s.quality_refdoms_count||0} quality referring domains. Target: 2 new quality links/month via True Local, Yelp Australia.
     </div>
-    <div class="insight amber">
-      <div class="insight-label">Authority Gap — Domain Rating vs Competitors</div>
-      CB247's DR is <b>${s.domain_rating||'low'}</b>. Competitors outranking CB247 typically have DR 20–40+.
-      Domain Rating is a compound of the quality and quantity of backlinks —
-      it takes months to move, but <b>each quality link adds persistent SEO value</b>.
-      <br><br>
-      <div class="stat-row" style="margin-top:4px"><span class="stat-label">Quality referring domains</span><span class="stat-val">${s.quality_refdoms_count||0}</span></div>
-      <div class="stat-row"><span class="stat-label">Total referring domains</span><span class="stat-val">${s.total_refdoms||0}</span></div>
-      <br><b>Quick wins for backlinks:</b> Perth gym directories, Yellow Pages, True Local, local news sponsorship.
-      Target 2 new quality links per month.
+    <div class="insight teal">
+      <div class="insight-label">✅ What's Working — Top 3 Positions</div>
+      CB247 ranks <b>top 3</b> for <b>${gsc_top3.length} queries</b> — zero ad spend, high CTR.
+      ${gsc_top3.length > 0
+        ? '<br><br>' + gsc_top3.slice(0,5).map(q=>`<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(63,166,154,.1)"><span>${q.query}</span><span>${posBadge(q.position)} <span style="color:var(--muted)">${fmt(q.clicks,'n')} clicks</span></span></div>`).join('')
+        : '<br><br><span style="color:var(--muted);font-size:12px">No GSC data — run pull_gsc.py.</span>'}
+      ${p4_10.length > 0 ? `<br><b>Quick wins (pos 4–10):</b> ${p4_10.slice(0,3).map(k=>`<span style="font-weight:600">${k.keyword}</span> ${posBadge(k.position)}`).join(' · ')} — update H1 + meta to push these to top 3.` : ''}
+      <br><br><b>Protect these:</b> Add internal links from every new blog post back to these pages. Never change URL slugs without 301 redirects.
     </div>
   </div>`;
 
@@ -2339,15 +2265,29 @@ function renderSEO() {
     </div>
   </div>`;
 
-  // ── This week's SEO priorities ──────────────────────────────────────────────
-  html += insight('teal', "This Week's SEO Priorities",
-    (topQW
-      ? `<b>1. Quick win — "${topQW.keyword}" (pos #${topQW.position}, ${fmt(topQW.volume,'n')}/mo):</b> Add this keyword to the H1, meta title, and meta description of ${topQW.url||'its page'}. Add 1 internal link from the homepage or a high-traffic page. This single change can move a position-${topQW.position} keyword to top 5 within 2–4 weeks with no new content required.<br><br>`
-      : '<b>1. Run pull_ahrefs.py to load keyword data</b> — quick win opportunities require ranking data.<br><br>') +
-    `<b>2. Build the pages that don't exist yet:</b> Three high-value keywords have no dedicated page: "kids gym malaga" (CB247 is #2), "sauna ice bath malaga" (zero competition), "fifo gym perth" (position 9). Each needs a 500–800 word landing page — these are the three easiest top-3 rankings available right now.<br><br>
-     <b>3. Homepage title tag fix (30 minutes, high impact):</b> Change the CB247 Malaga page &lt;title&gt; to include "24/7 Gym Malaga WA" — the current title doesn't include the city and suburb, which is why Ryderwear is outranking CB247 for its own suburb keyword. This is a 30-minute WordPress edit with immediate ranking impact.<br><br>
-     <b>4. Internal linking pass:</b> After publishing any new blog post or page, add 3 internal links from existing pages pointing to it. Internal links distribute page authority and accelerate indexing. CB247's pages are isolated — they don't link to each other enough.<br><br>
-     <b>5. Two quality backlinks this month:</b> Submit CB247 to: (1) True Local — free Perth business directory, (2) Yelp Australia — high DA, free listing. These are permanent dofollow links that directly raise domain rating. One submission per week.`);
+  // ── 5. Agent Brief — wins + top actions from SEO brief ─────────────────────
+  const _wins    = _h.wins    || [];
+  const _crits   = _h.critical|| [];
+  const _actions = _h.top_actions || [];
+  const _ov      = _h.organic_value || '';
+  let briefText = '';
+  if (_wins.length) {
+    briefText += `<div style="margin-bottom:10px"><b>🟢 Big wins this week:</b><br>${_wins.map(w=>`✅ ${w}`).join('<br>')}</div>`;
+    if (_ov) briefText += `<div style="margin-bottom:10px">💰 Organic value: <b>${_ov}</b></div>`;
+  }
+  if (_actions.length) {
+    briefText += `<b>Top actions:</b><br>`;
+    briefText += _actions.map((a,i)=>`<div style="margin:6px 0;padding:8px 12px;background:rgba(63,166,154,.06);border-radius:4px;border-left:3px solid var(--teal)"><b>${i+1}. ${a.title}</b><br><span style="font-size:11px;color:var(--muted)">${a.desc}</span></div>`).join('');
+  }
+  if (!briefText) {
+    briefText = (topQW
+      ? `<b>1. Quick win — "${topQW.keyword}" (pos #${topQW.position}, ${fmt(topQW.volume,'n')}/mo):</b> Update H1, meta title, meta description on ${topQW.url||'its page'}. Add 1 internal link from homepage. Can move to top 5 in 2–4 weeks.<br><br>`
+      : '<b>1. Run pull_ahrefs.py</b> to load keyword data — quick win opportunities require ranking data.<br><br>') +
+      `<b>2. Build missing pages:</b> "kids gym malaga", "sauna ice bath malaga", "fifo gym perth" — each needs a 500–800 word dedicated landing page.<br><br>
+       <b>3. Homepage title tag fix:</b> Add "24/7 Gym Malaga WA" to &lt;title&gt; — 30-min WordPress edit, immediate ranking impact.<br><br>
+       <b>4. Two quality backlinks:</b> True Local + Yelp Australia — free directories, permanent dofollow links.`;
+  }
+  html += agentBrief('SEO Agent', briefText);
 
   $('seo-content').innerHTML = html;
 }
@@ -2377,6 +2317,33 @@ function renderGAds() {
     ${kpiCard('','Conversions',fmt(totalConv,'n'),null,`Blended CPA: ${fmt(blendedCPA,'$2')}`,(blendedCPA>50&&blendedCPA>0)?'red':'green')}
     ${kpiCard('','Malaga',fmt(malSpend||mal.spend,'$2'),null,`${malConv||mal.conv||0} conversions`)}
     ${kpiCard('','Ellenbrook',fmt(ellSpend||ell.spend,'$2'),null,`${ellConv||ell.conv||0} conversions`)}
+  </div>`;
+
+  // ── Insight strip ────────────────────────────────────────────────────────
+  const wasteKwsQuick = kws.filter(k=>k.clicks>=5&&k.conv===0&&k.cost>10);
+  const winnerKwTop   = [...kws].filter(k=>k.conv>0).sort((a,b)=>a.cost/a.conv-b.cost/b.conv)[0];
+  html += sectionTitle('Key Observations');
+  html += `<div class="grid-2 mb">
+    <div class="insight ${(blendedCPA>15&&blendedCPA>0)||wasteKwsQuick.length>0?'red':'amber'}">
+      <div class="insight-label">${blendedCPA>15&&blendedCPA>0?'⚠️ CPA Above Target — Review Campaigns':wasteKwsQuick.length>0?'⚠️ Budget Waste Detected — Pause These Keywords':'⚠️ Monitor — Account Stable'}</div>
+      ${blendedCPA>15&&blendedCPA>0
+        ? `Blended CPA is <b>${fmt(blendedCPA,'$2')}</b> — above the $15 target. Malaga: ${fmt(mal.cpa,'$2')} · Ellenbrook: ${fmt(ell.cpa,'$2')}. Review low-converting campaigns and pause underperformers.`
+        : wasteKwsQuick.length>0
+          ? `<b>${wasteKwsQuick.length} keyword${wasteKwsQuick.length>1?'s':''}</b> have 5+ clicks, 0 conversions, and $10+ spend this week. Total wasted: <b>$${wasteKwsQuick.reduce((s,k)=>s+k.cost,0).toFixed(2)}</b>. Pause these immediately and add as negative keywords.
+            <br><br>${wasteKwsQuick.slice(0,3).map(k=>`<div style="font-size:11px;padding:3px 0;border-bottom:1px solid rgba(239,68,68,.1)"><b>${k.keyword}</b> — ${k.clicks} clicks, $${k.cost} wasted</div>`).join('')}`
+          : `Account CPA (${fmt(blendedCPA,'$2')}) is within target. ${totalConv} conversions tracked at ${fmt(blendedCPA,'$2')} CPA. Continue current strategy.`
+      }
+    </div>
+    <div class="insight teal">
+      <div class="insight-label">✅ ${winnerKwTop?'Best Performing Keyword — Scale This':'Conversion Tracking Active'}</div>
+      ${winnerKwTop
+        ? `<b>"${winnerKwTop.keyword}"</b> — ${winnerKwTop.conv} conversions at <b>${fmt(winnerKwTop.cost/winnerKwTop.conv,'$2')} CPA</b> this week.
+          Top impression share: ${winnerKwTop.top_impr_pct}%. ${winnerKwTop.top_impr_pct<80?'Raise bid to increase visibility — this keyword is proving ROI.':'Bid is competitive. Maintain and protect budget allocation.'}
+          <br><br><b>SEO link:</b> As this keyword moves up organically, reduce bid progressively — reinvest savings into keywords with no organic coverage.`
+        : `${totalConv} conversions at ${fmt(blendedCPA,'$2')} CPA this week. Google Ads is active and tracking correctly.
+          <br><br>Strategy goal: reduce paid coverage for keywords ranking top 3 organically. Current organic value: ${fmt(D.seo.organic_value,'$')}/wk vs ${fmt(totalSpend,'$2')} ad spend.`
+      }
+    </div>
   </div>`;
 
   // ── Bidding Strategy Analysis ────────────────────────────────────────────
@@ -2637,19 +2604,18 @@ function renderGAds() {
   priorities.push(`<b>${priorities.length+1}. Add 3 new keywords this week:</b> "kids gym malaga", "sauna and ice bath perth", "fifo gym perth" — all uncontested by competitors, aligned with CB247's unique facilities.`);
   if (!allSmartBid) priorities.push(`<b>${priorities.length+1}. Switch to Smart Bidding:</b> Current manual CPC setup. Upgrade to Maximise Conversions with Target CPA = $25 to let Google's algorithm optimise in real-time.`);
 
-  html += insight('teal', "This Week's Google Ads Priorities",
-    priorities.join('<br><br>'));
-
-  // ── Paid Ads agent brief (pause/reduce/keep + Meta campaign briefs) ─────────
+  // ── Agent Brief ──────────────────────────────────────────────────────────
   const _ao_ads = D.raw_agent_outputs || {};
+  let adsAgentText = priorities.join('<br><br>');
   if (_ao_ads.has_outputs && _ao_ads.paid_ads) {
-    html += `<div style="margin-top:24px">
-      ${sectionTitle('🤖 Paid Ads Agent — ' + _ao_ads.date + ' (25 May – 31 May 2026)')}
-      <div class="card" style="padding:20px;font-size:12px;line-height:1.7;max-height:600px;overflow-y:auto">
+    adsAgentText += `<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(63,166,154,.2)">
+      <b>Full Paid Ads Agent Report — ${_ao_ads.date}</b><br>
+      <div style="font-size:12px;line-height:1.7;max-height:300px;overflow-y:auto;margin-top:8px">
         ${formatAgentMd(_ao_ads.paid_ads)}
       </div>
     </div>`;
   }
+  html += agentBrief('Paid Ads Agent', adsAgentText);
 
   $('gads-content').innerHTML = html;
 
@@ -2669,73 +2635,43 @@ function renderOrgSocial() {
   const gbp = m.gbp || {};
   const hashtags = os.trending_hashtags || [];
   const week = m.week || '25–31 May 2026';
-  const comps = os.competitors || {};
 
   function chg(v, suffix='%') {
     if (v == null) return '';
     const col = v > 0 ? 'color:#00c4b4' : 'color:#ef4444';
     return `<span style="font-size:10px;font-weight:600;${col}">${v > 0 ? '▲' : '▼'}${Math.abs(v)}${suffix} WoW</span>`;
   }
-  function rankBadge(r) {
-    if (!r) return '';
-    if (r.includes('Above')) return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:1px 5px;border-radius:3px;font-weight:700">Above avg</span>';
-    if (r.includes('Below')) return '<span style="font-size:9px;background:#fee2e2;color:#ef4444;padding:1px 5px;border-radius:3px;font-weight:700">Below avg</span>';
-    return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">Average</span>';
-  }
-  function tierBadge(t) {
-    if (t==='star')    return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:2px 7px;border-radius:3px;font-weight:700">⭐ Star</span>';
-    if (t==='good')    return '<span style="font-size:9px;background:#fff8e1;color:#d97706;padding:2px 7px;border-radius:3px;font-weight:700">Good</span>';
-    if (t==='poor')    return '<span style="font-size:9px;background:#fee2e2;color:#ef4444;padding:2px 7px;border-radius:3px;font-weight:700">Poor</span>';
-    return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:2px 7px;border-radius:3px">Average</span>';
-  }
 
   let html = '';
 
-  // ── KPI cards — week overview ─────────────────────────────────────────────
+  // ── 1. KPI cards — always first ──────────────────────────────────────────
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','IG Followers',fmt(ig.followers||0,'n'),ig.followers_chg,'Net +'+( ig.followers_balance||0)+' this week')}
+    ${kpiCard('','IG Followers',fmt(ig.followers||0,'n'),ig.followers_chg,'Net +'+(ig.followers_balance||0)+' this week')}
     ${kpiCard('','FB Followers',fmt(fb.followers||0,'n'),fb.followers_chg,'Net +'+(fb.community_acquired||0)+' acquired')}
-    ${kpiCard('','IG Avg Reach/Day',fmt(ig.avg_reach_per_day||0,'n'),ig.avg_reach_per_day_chg,'Views: '+(ig.views?(ig.views/1000).toFixed(0)+'K':'-'),'green')}
-    ${kpiCard('','GBP Actions',fmt(gbp.total_actions||0,'n'),gbp.actions_chg,'Website+Phone+Directions','red')}
+    ${kpiCard('','IG Avg Reach/Day',fmt(ig.avg_reach_per_day||0,'n'),ig.avg_reach_per_day_chg,'Views: '+(ig.views?(ig.views/1000).toFixed(0)+'K':'–'),'green')}
+    ${kpiCard('','GBP Actions',fmt(gbp.total_actions||0,'n'),gbp.actions_chg,'Website + Phone + Directions',(gbp.actions_chg||0)<0?'red':'')}
   </div>`;
 
-  // ── Critical observations ─────────────────────────────────────────────────
+  // ── 2. Insight strip — 2 cards only ──────────────────────────────────────
   html += sectionTitle('Key Observations — ' + week);
   html += `<div class="grid-2 mb">
     <div class="insight red">
-      <div class="insight-label" style="color:#ef4444">Facebook Organic — Critical Issue</div>
-      <b>FB interactions collapsed −90% WoW</b> (6 total interactions from 32,710 impressions).
-      That's a 0.02% engagement rate on 5,280 followers. Root cause: <b>only 1 post published</b> this week (down 75%),
-      and organic reach per post averages 183 — less than 3.5% of the follower base.
-      Facebook organic is not working. Repoint effort to Instagram and Stories.
-      <br><br><b>Competitor gap:</b> CB247 has 5,280 FB followers. Revo: 49,560 (9.4× more). World Gym: 51,590.
-      This is an existential gap — FB will not close it. Redirect budget and content to Instagram.
+      <div class="insight-label">⚠️ Facebook Organic — Critical: Not Worth the Effort</div>
+      <b>FB interactions collapsed −90% WoW</b> (6 total interactions from 32,710 impressions = 0.02% engagement).
+      Root cause: 1 post published (down 75%) with avg reach of 183 — less than 3.5% of 5,280 followers.
+      <br><br><b>Competitor gap:</b> CB247 5.3K followers. Revo: 49.6K (9.4×). World Gym: 51.6K.
+      Facebook organic cannot close this gap. <b>Post 1–2×/week for GBP signals only. Redirect all effort to Instagram Reels.</b>
+      <br><br><b>GBP signal drop:</b> Website clicks −49.7%, Search reach −42.8%, Total actions −33.1%. Post 1 GBP update + 3 photos this week.
     </div>
     <div class="insight teal">
-      <div class="insight-label">Instagram — Reels Are the Growth Engine</div>
-      <b>5 Reels published this week drove 93 likes, +45% vs prior</b> — far outperforming the 1 post published (9 interactions total).
-      Stories hit 54,680 impressions (+93.9% WoW) with avg reach per story of 804.
-      <b>The problem:</b> avg reel watch time is 4–8 seconds. Industry benchmark for good retention = 15s+.
-      The hook in the first 2 seconds is not holding attention.
-      <br><br><b>Action:</b> Lead every reel with a pattern interrupt — a bold on-screen text hook within 0.5 seconds.
-      "Would you do this for $11.95/week?" beats a slow gym walkthrough open every time.
-    </div>
-    <div class="insight red">
-      <div class="insight-label">Google Business Profile — All Signals Down</div>
-      <b>Website clicks −49.7%</b>, Google Search reach −42.8%, total actions −33.1%.
-      This is a broad signal drop, not a single metric anomaly. Likely causes:
-      (1) GBP post cadence dropped, (2) no new photos uploaded this week, (3) competitor listings moving up.
-      <b>3 reviews received this week</b> (4.33 star avg). One negative review mentions "issues with the gym" — reply publicly and professionally within 24h.
-      <br><br><b>Fix this week:</b> Post 1 GBP update, add 3 interior/facility photos, respond to all 3 reviews.
-    </div>
-    <div class="insight amber">
-      <div class="insight-label">Content Volume — Organic Reach Is a Volume Game</div>
-      CB247 published <b>1 post + 5 Reels this week</b>. Revo publishes 7 posts + 14 Reels/week.
-      The organic algorithm rewards consistency: accounts posting 7+ Reels/week receive up to 3× more
-      distribution than accounts posting 1–2. At 5 Reels/week CB247 is close, but posting cadence
-      dropped vs prior week (−66.7% posts, same Reels).
-      <br><br><b>Fix:</b> Maintain 5–7 Reels/week minimum. Batch-film on Sundays — 1 filming session
-      can produce 4–6 Reels (ice bath, sauna, class snippet, facility tour, member moment, hook clip).
+      <div class="insight-label">✅ Instagram Reels — Growth Engine, Fix the Hook</div>
+      <b>5 Reels this week drove 93 likes (+45% WoW)</b> — far outperforming all posts combined (9 interactions total).
+      Stories hit 54,680 impressions (+93.9% WoW), avg reach per story: 804.
+      <br><br><b>The one problem:</b> avg reel watch time = 4–8 sec. Benchmark = 15s+.
+      The hook in the first 2 seconds is not stopping the scroll.
+      <br><br><b>Fix:</b> Lead every reel with bold on-screen text within 0.5 sec.
+      "Would you do THIS for $11.95/week?" beats a slow gym walkthrough open every time.
+      Batch-film Sundays — 1 session = 4–6 Reels (sauna/ice bath/classes/member moment).
     </div>
   </div>`;
 
@@ -2893,13 +2829,12 @@ function renderOrgSocial() {
     </div>
   </div>`;
 
-  // ── This week's social priorities ────────────────────────────────────────
-  html += insight('teal', "This Week's Organic Social Priorities",
-    `<b>1. Publish 2 original branded Reels:</b> All top organic reels this week were reposts from other creators — 0 original CB247 branded content in the top 5. Priority: (1) ice bath/sauna reel with hook "The only gym in Malaga with THIS" and (2) a real member story with suburb name + "$11.95/week changed my routine." Original branded reels build equity; reposts do not.<br><br>
-     <b>2. Fix the hook — avg watch time is 4–8 seconds (benchmark: 15s+):</b> Lead every Reel with a bold on-screen text hook in the first 0.5 seconds before any music or movement. Example: "Would you do THIS for $11.95/week?" Pattern interrupts in the first frame = longer retention = more distribution.<br><br>
-     <b>3. Stop treating Facebook as a primary organic channel:</b> 6 interactions from 32,710 impressions = 0.02% rate. Post 1–2× per week max (for GBP signal only). Redirect all content effort to Instagram Reels. Facebook organic is not recoverable without significant paid support.<br><br>
-     <b>4. Respond to all 3 GBP reviews within 24h:</b> Including the 1 critical review — public replies signal to Google the listing is actively managed and directly affect local pack ranking. Template for critical: acknowledge, apologise, invite them to resolve offline. Never argue.<br><br>
-     <b>5. Post 1 GBP update today:</b> Winter Push is live — post "Perth winters made for the gym ❄️ Join from $11.95/week" to both GBP profiles with a warm facility photo (sauna, heated gym floor, or ice bath contrast). Each GBP post = free local SEO signal.`);
+  html += agentBrief('Social Agent',
+    `<b>1. Publish 2 original branded Reels:</b> All top reels this week were reposts — 0 original CB247 branded content in top 5. Priority: (1) ice bath/sauna reel with hook "The only gym in Malaga with THIS" and (2) real member story + "$11.95/week changed my routine."<br><br>
+     <b>2. Fix the hook — avg watch time 4–8 sec (benchmark 15s+):</b> Lead every Reel with bold on-screen text in the first 0.5 sec. "Would you do THIS for $11.95/week?" — pattern interrupt = longer retention = more distribution.<br><br>
+     <b>3. Stop treating Facebook as a primary channel:</b> 6 interactions from 32,710 impressions. Post 1–2×/week for GBP signal only. Redirect all effort to Instagram Reels.<br><br>
+     <b>4. Respond to all 3 GBP reviews within 24h:</b> For the critical review — acknowledge, apologise, invite offline. Never argue. Professional replies are visible to every prospective member.<br><br>
+     <b>5. Post 1 GBP update today:</b> "Perth winters made for the gym ❄️ From $11.95/week" to both profiles with a warm facility photo (sauna, heated gym floor, ice bath).`);
 
   $('orgsocial-content').innerHTML = html;
 }
@@ -2912,19 +2847,7 @@ function renderMeta() {
   const ellC  = meta.ell_cur     || {};
   const ads   = meta.active      || [];
   const week  = meta.week_label  || '25–31 May 2026';
-
-  function rankBadge(r) {
-    if (!r) return '';
-    if (r.includes('Above')) return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:1px 5px;border-radius:3px;font-weight:700">Above avg</span>';
-    if (r.includes('Below')) return '<span style="font-size:9px;background:#fee2e2;color:#ef4444;padding:1px 5px;border-radius:3px;font-weight:700">Below avg</span>';
-    return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">Average</span>';
-  }
-  function tierBadge(t) {
-    if (t==='star') return '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:2px 7px;border-radius:3px;font-weight:700">⭐ Star</span>';
-    if (t==='good') return '<span style="font-size:9px;background:#fff8e1;color:#d97706;padding:2px 7px;border-radius:3px;font-weight:700">Good</span>';
-    if (t==='poor') return '<span style="font-size:9px;background:#fee2e2;color:#ef4444;padding:2px 7px;border-radius:3px;font-weight:700">Poor</span>';
-    return '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:2px 7px;border-radius:3px">Average</span>';
-  }
+  // rankBadge and tierBadge are global helpers (defined above)
 
   // Derived totals
   const totalSpend   = (malC.spend||0) + (ellC.spend||0);
@@ -2944,42 +2867,34 @@ function renderMeta() {
     ${kpiCard('','Ellenbrook CPR',ellC.cpr?'$'+ellC.cpr:'–',null,ellC.ctr+'% CTR · $'+ellC.cpm+' CPM','green')}
   </div>`;
 
-  // ── Key observations ────────────────────────────────────────────────────────
+  // ── 2. Insight strip — 2 cards only (red + teal) ────────────────────────
+  const starAd = ads.find(a=>a.tier==='star');
+  const poorAds = ads.filter(a=>a.tier==='poor');
   html += sectionTitle('Key Observations — ' + week);
   html += `<div class="grid-2 mb">
-    <div class="insight red">
-      <div class="insight-label">Malaga Efficiency Declining — CPR Up 44% WoW</div>
-      Malaga CPR rose from <b>$0.27 → $0.39 (+44%)</b> week-on-week with the <b>same $281 spend</b>.
-      Clicks dropped −29.5% (912 → 643). This means the same budget is generating fewer results at a higher cost.
-      Root cause: ad fatigue on underperforming creatives. The Pilates Reel ($122 spend) drives the most impressions
-      but scores <b>Average across all three quality signals</b> — it's not converting.
-      <br><br><b>Action:</b> Pause lowest-performing ads. Shift budget to the proven creative immediately.
+    <div class="insight ${malC.cpr&&malP.cpr&&malC.cpr>malP.cpr?'red':'amber'}">
+      <div class="insight-label">⚠️ Malaga CPR ${malC.cpr&&malP.cpr&&malC.cpr>malP.cpr?'Rising — Ad Fatigue':'Monitor — Watch Weekly Trend'}</div>
+      ${malC.cpr&&malP.cpr&&malC.cpr>malP.cpr
+        ? `Malaga CPR rose from <b>$${malP.cpr} → $${malC.cpr} (+${((malC.cpr-malP.cpr)/malP.cpr*100).toFixed(0)}%)</b> WoW — same spend, fewer results.
+          Root cause: ad fatigue on underperforming creatives.
+          <br><br>${poorAds.length>0?`<b>Pause now:</b> ${poorAds.map(a=>`"${a.ad_name}"`).join(', ')} — Below average signal(s). Meta penalises delivery.`:'Refresh Average-tier ads — Meta quality signals degrade with frequency cap.'}
+          <br><br><b>Ellenbrook</b> CPR: $${ellC.cpr||'–'} · CTR: ${ellC.ctr||'–'}% — underinvested. Add $5–10/day and test 1 hyperlocal creative.`
+        : `Malaga CPR: <b>$${malC.cpr||'–'}</b> · Ellenbrook CPR: <b>$${ellC.cpr||'–'}</b>.
+          ${poorAds.length>0?`<b>⚠ ${poorAds.length} poor-tier ad${poorAds.length>1?'s':''}</b> detected — pause and refresh.`:'No poor-tier ads. Refresh Average-scoring ads every 3–4 weeks before signal decay.'}
+          <br><br>Total reach: ${fmt(totalReach,'n')} across both locations.`
+      }
     </div>
     <div class="insight teal">
-      <div class="insight-label">Star Creative — "Deep Heat. Deep Recovery" Must Be Scaled</div>
-      <b>"Deep heat. Deep recovery"</b> (sauna + massage post) is the <b>only ad with dual Above average signals</b>:
-      Above average engagement ranking AND Above average conversion rate ranking. No other active ad achieves this.
-      This recovery/wellness angle maps directly to CB247's sauna + ice bath differentiation — the strongest
-      competitive moat in the Malaga market.
-      <br><br><b>Action:</b> Scale budget from ~$49 → $100 this week. Create a matching organic Reel
-      using the same visual and messaging angle. Test a second variation: "Ice bath. Then sauna. $11.95/week."
-    </div>
-    <div class="insight amber">
-      <div class="insight-label">Ellenbrook — Fewer Ads, Better Efficiency</div>
-      Ellenbrook is running fewer ads than Malaga but with stronger CPR and CTR signals.
-      The location is underinvested — budget concentration in Malaga means Ellenbrook reach
-      is lower than its member growth potential justifies.
-      <br><br><b>Action:</b> Increase Ellenbrook daily budget by $5–10/day. Test 1 Ellenbrook-specific
-      creative: "Your neighbourhood gym, 24/7" — hyperlocal messaging performs better in suburban markets.
-    </div>
-    <div class="insight amber">
-      <div class="insight-label">Ad Quality Signals — Most Ads Are Average, Not Outstanding</div>
-      Across all active ads, only "Deep heat. Deep recovery" scores Above average on 2+ signals.
-      The remaining ads score Average or Below on at least one quality dimension.
-      Meta's algorithm distributes budget toward higher-quality ads — poor-scoring ads get progressively
-      worse delivery, compounding cost inefficiency over time.
-      <br><br><b>Action:</b> Retire any ad with a Below average signal. Refresh creative every 3–4 weeks
-      — Meta quality signals degrade with frequency cap and audience saturation.
+      <div class="insight-label">✅ ${starAd?'Star Creative — Scale Immediately':'Focus Budget on Top-Performing Ads'}</div>
+      ${starAd
+        ? `<b>"${starAd.ad_name}"</b> (${starAd.location}) is the <b>only ad with dual Above average signals</b> — engagement + conversion ranking.
+          This recovery/wellness angle = CB247's strongest moat (sauna + ice bath).
+          <br><br><b>Scale budget → $100/week on this ad.</b> Do NOT change the creative — Meta's algorithm has learned the audience.
+          Create a matching organic Reel: "Ice bath. Then sauna. $11.95/week." Test a second variation with the same angle.`
+        : `Blended CPR: <b>$${blendedCPR}</b> · Total results: ${totalResults||'–'}.
+          No star-tier ads currently. <b>Create new creatives</b> using the recovery/wellness angle — sauna + ice bath content maps to CB247's strongest competitive moat.
+          Test: "Ice bath. Then sauna. $11.95/week." · "Deep heat. Deep recovery."`
+      }
     </div>
   </div>`;
 
@@ -3100,12 +3015,12 @@ function renderMeta() {
   </div>`;
 
   // ── This week's Meta Ads priorities ────────────────────────────────────────
-  html += insight('teal', "This Week's Meta Ads Priorities",
-    `<b>1. Scale "Deep heat. Deep recovery" immediately:</b> The only ad with Above average engagement + conversion ranking. Raise daily budget from current level to $100/week total. Do NOT change the creative — Meta's algorithm has learned the audience. Small changes reset learning phase.<br><br>
-     <b>2. Pause worst-performing creative:</b> Any ad with a Below average signal on any ranking dimension should be paused today. Below average = Meta is penalising delivery and charging you more for worse placement. Reallocate budget to Star and Good-tier ads only.<br><br>
-     <b>3. Refresh Average-tier ads with new creative:</b> Ads scoring Average on all three signals are plateaued. Create 1 new Malaga ad and 1 new Ellenbrook ad using the recovery/wellness angle that's proving to work. Test: "Ice bath. Sauna. Reformer Pilates. $11.95/week. No lock-in."<br><br>
-     <b>4. Increase Ellenbrook budget by $5–10/day:</b> Ellenbrook is underinvested relative to its location potential. Add 1 hyperlocal Ellenbrook creative: "Your neighbourhood 24/7 gym" — suburb-name targeting consistently outperforms generic Perth-wide campaigns in suburban markets.<br><br>
-     <b>5. Set up Meta Pixel events if not done:</b> Contact form submission, location page visit (Malaga + Ellenbrook), scroll depth 75% on pricing page. Without pixel events, Meta can't optimise for conversions — you're paying for clicks, not members.`);
+  html += agentBrief('Meta Ads Agent',
+    `<b>1. Scale star creative immediately:</b> ${starAd?`"${starAd.ad_name}" is the only ad with dual Above average signals. Raise to $100/week total. Do NOT change the creative — Meta has learned the audience.`:'Create new ad using recovery/wellness angle (sauna + ice bath). This is CB247\'s strongest moat.'}<br><br>
+     <b>2. Pause worst-performing ads:</b> ${poorAds.length>0?`Pause now: ${poorAds.map(a=>`"${a.ad_name}"`).join(', ')}. Below average = Meta penalising delivery and charging more for worse placement.`:'No poor-tier ads currently. Retire any ad scoring Below average on any signal dimension.'}<br><br>
+     <b>3. Refresh Average-tier ads:</b> Create 1 new Malaga + 1 new Ellenbrook ad. Test: "Ice bath. Sauna. Reformer Pilates. $11.95/week. No lock-in."<br><br>
+     <b>4. Increase Ellenbrook budget $5–10/day:</b> Underinvested vs potential. Test: "Your neighbourhood 24/7 gym" — hyperlocal outperforms generic Perth-wide.<br><br>
+     <b>5. Set up Meta Pixel events:</b> Contact form submit + location page visits (Malaga + Ellenbrook) + 75% scroll on pricing page. Without events, Meta optimises for clicks — not members.`);
 
   $('meta-content').innerHTML = html;
 }
@@ -3126,80 +3041,45 @@ function renderGBP() {
     ${kpiCard('','GBP Actions (wk)', fmt(mc.total_actions||0,'n'), mc.actions_chg||null, 'Clicks + calls + directions', (mc.actions_chg||0)<0?'red':'green')}
   </div>`;
 
-  // ── Key observations ────────────────────────────────────────────────────────
+  // ── 2. Insight strip — 2 cards (red + teal) ──────────────────────────────
+  const gbpSignalsDown = (mc.actions_chg||0) < 0;
   html += sectionTitle('Key Observations — This Week');
   html += `<div class="grid-2 mb">
-    <div class="insight red">
-      <div class="insight-label">All GBP Signals Down This Week</div>
-      Three independent GBP metrics declined simultaneously — this is a <b>system-wide signal drop</b>, not a one-off.
-      <br><br>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0">
-        <div style="text-align:center;background:#fff5f5;border-radius:6px;padding:8px">
-          <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.website_chg||'–49.7'}%</div>
-          <div style="font-size:10px;color:var(--muted)">Website Clicks</div>
-        </div>
-        <div style="text-align:center;background:#fff5f5;border-radius:6px;padding:8px">
-          <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.reach_chg||'–23'}%</div>
-          <div style="font-size:10px;color:var(--muted)">Search Reach</div>
-        </div>
-        <div style="text-align:center;background:#fff5f5;border-radius:6px;padding:8px">
-          <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.actions_chg||'–33.1'}%</div>
-          <div style="font-size:10px;color:var(--muted)">Total Actions</div>
-        </div>
-      </div>
-      Root causes: GBP post cadence dropped, no new photos this week, competitor listings gaining ground.
-      <b>Fix today:</b> Post 1 GBP update, add 3 photos, respond to all open reviews within 24h.
-    </div>
-    <div class="insight amber">
-      <div class="insight-label">Photo Gap — Direct Impact on Local Pack Ranking</div>
-      Google uses photo quantity and recency as a local pack ranking signal.
-      <br><br>
-      <div style="margin:10px 0">
-        <div style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-            <span><b>Malaga</b></span><span>${mal.photos||0} / 100 photos</span>
+    <div class="insight ${gbpSignalsDown?'red':'amber'}">
+      <div class="insight-label">⚠️ ${gbpSignalsDown?'GBP Signals Down — System-Wide Drop':'GBP — Watch Weekly Trend'}</div>
+      ${gbpSignalsDown
+        ? `Three metrics declined simultaneously — <b>system-wide signal drop</b>, not a one-off.
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0">
+            <div style="text-align:center;background:rgba(239,68,68,.06);border-radius:6px;padding:8px">
+              <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.website_chg||'–49.7'}%</div>
+              <div style="font-size:10px;color:var(--muted)">Website Clicks</div>
+            </div>
+            <div style="text-align:center;background:rgba(239,68,68,.06);border-radius:6px;padding:8px">
+              <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.reach_chg||'–23'}%</div>
+              <div style="font-size:10px;color:var(--muted)">Search Reach</div>
+            </div>
+            <div style="text-align:center;background:rgba(239,68,68,.06);border-radius:6px;padding:8px">
+              <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.actions_chg||'–33.1'}%</div>
+              <div style="font-size:10px;color:var(--muted)">Total Actions</div>
+            </div>
           </div>
-          <div style="background:#f0f2f5;border-radius:3px;height:7px">
-            <div style="background:#f59e0b;width:${Math.min((mal.photos||0),100)}%;height:100%;border-radius:3px"></div>
-          </div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-            <span><b>Ellenbrook</b></span><span>${ell.photos||0} / 100 photos</span>
-          </div>
-          <div style="background:#f0f2f5;border-radius:3px;height:7px">
-            <div style="background:#f59e0b;width:${Math.min((ell.photos||0),100)}%;height:100%;border-radius:3px"></div>
-          </div>
-        </div>
-      </div>
-      <b>Action:</b> Batch upload 10 photos per location this week — sauna, ice bath, Kids Hub, gym floor, reception, classes.
-      A study of Google's local ranking signals shows listings with 100+ photos receive 520% more calls.
-    </div>
-    <div class="insight amber">
-      <div class="insight-label">Review Velocity — 3 Reviews This Week (4.33 ★)</div>
-      <b>3 reviews received this week</b> including at least 1 critical. Review velocity matters more than absolute count —
-      Google rewards listings receiving <b>consistent weekly reviews</b>, not just a high total.
-      <br><br>
-      <div class="stat-row" style="margin-top:8px"><span class="stat-label">Malaga reviews</span><span class="stat-val">${fmt(mal.reviews,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Ellenbrook reviews</span><span class="stat-val">${fmt(ell.reviews,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">This week's rating</span><span class="stat-val">${mc.star_rating||4.33} ★</span></div>
-      <br><b>Fix:</b> Respond to all 3 reviews today. For the critical review — acknowledge, apologise, invite offline.
-      Never argue. A professional reply is visible to every prospective member who reads it.
+          Root causes: GBP post cadence dropped, no new photos, competitor listings gaining ground.
+          <b>Fix today:</b> Post 1 GBP update + add 3 photos + respond to all open reviews within 24h.`
+        : `GBP actions: ${fmt(mc.total_actions||0,'n')} this week. Local pack rate: ${packRate}%.
+          Photos: Malaga ${mal.photos||0}/100 · Ellenbrook ${ell.photos||0}/100.
+          <b>Maintain cadence:</b> 1 GBP post/week + 5 photos/week per location.`
+      }
+      <br><br><b>Photo gap:</b> Malaga ${mal.photos||0}/100 · Ellenbrook ${ell.photos||0}/100. Listings with 100+ photos get 520% more calls. Upload 10 priority shots this week: sauna, ice bath, Kids Hub, gym floor, classes.
     </div>
     <div class="insight teal">
-      <div class="insight-label">Local Pack Presence — ${packRate}% Coverage</div>
+      <div class="insight-label">✅ Local Pack Presence — ${packRate}% Coverage · Reviews Strong</div>
       CB247 appears in the Google local 3-pack for <b>${packRate}% of tracked keywords</b>.
-      ${packKws ? `<br><br><b>Keywords in pack:</b> ${packKws}` : ''}
-      <br><br>
-      <b>What moves local pack rank:</b><br>
-      <div style="font-size:11px;line-height:1.8;margin-top:4px">
-        ① Review velocity (weekly new reviews) — weight: HIGH<br>
-        ② Photo quantity + recency — weight: HIGH<br>
-        ③ GBP post frequency — weight: MEDIUM<br>
-        ④ Website click-through from listing — weight: MEDIUM<br>
-        ⑤ Q&amp;A completeness — weight: LOW
-      </div>
-      CB247 is underperforming on signals ①②③ simultaneously this week.
+      ${packKws ? `<br><br><b>In pack:</b> ${packKws}` : ''}
+      <br><br><b>Review stats:</b>
+      <div class="stat-row" style="margin-top:4px"><span class="stat-label">Malaga</span><span class="stat-val">${stars(mal.rating)} · ${fmt(mal.reviews,'n')} reviews</span></div>
+      <div class="stat-row"><span class="stat-label">Ellenbrook</span><span class="stat-val">${stars(ell.rating)} · ${fmt(ell.reviews,'n')} reviews</span></div>
+      <br><b>Ranking signals (priority):</b> ① Review velocity · ② Photo recency · ③ Post frequency · ④ Listing clicks
+      <br>CB247 is strong on ratings but needs higher weekly review velocity (target: 5+/week/location).
     </div>
   </div>`;
 
@@ -3255,13 +3135,12 @@ function renderGBP() {
     respond to all reviews, post 1 GBP update, and upload 10 photos — these move local pack rank faster than waiting for review volume to grow.
   </p></div>`;
 
-  // ── This week's GBP priorities ──────────────────────────────────────────────
-  html += insight('teal', "This Week's GBP Priorities",
-    `<b>1. Respond to all 3 reviews today (including the critical one):</b> Critical review reply is public — every prospective member sees it. Template: "Thank you for your feedback. We're sorry your experience didn't meet expectations. Please contact us at reception@chasingbetter247.com.au so we can make this right." Do not argue, do not be defensive. Positive replies to negative reviews convert fence-sitters.<br><br>
-     <b>2. Post 1 GBP update today — Winter Push messaging:</b> "Perth winters were made for the gym ❄️ Train 24/7 from $11.95/week — no lock-in." Post to BOTH Malaga and Ellenbrook profiles. Use a warm-toned photo (sauna, heated gym, or people training). GBP posts have a 7-day half-life — post every Tuesday as standard cadence.<br><br>
-     <b>3. Batch upload 10 photos per location this week:</b> Malaga and Ellenbrook each need fresh photos this week. Priority shots: sauna room, ice bath, Kids Hub, gym floor during peak hour, reception desk, Reformer Pilates studio. Name files descriptively before uploading (e.g. "chasingbetter247-malaga-sauna.jpg") — filename keywords may influence image search.<br><br>
-     <b>4. Add 3 GBP Q&A entries:</b> Seed the Q&A section with the top 3 member questions: (1) "Do you have a kids area?" (2) "Can I freeze my membership if I work FIFO?" (3) "What's the cheapest gym membership?" Pre-answered Q&As appear in Google search results and directly reduce lost leads.<br><br>
-     <b>5. Set up weekly review-request protocol at reception:</b> Ask every new member sign-up verbally: "Would you mind leaving us a Google review? It really helps." QR code on desk linking direct to review page. Target: 5+ reviews per week per location. Consistent review velocity is the single biggest local pack ranking signal.`);
+  html += agentBrief('GBP Agent',
+    `<b>1. Respond to all reviews today (including any critical ones):</b> Critical replies are public — every prospective member sees them. Template: "Thank you for your feedback. We're sorry your experience didn't meet expectations. Please contact us at reception@chasingbetter247.com.au." Never argue.<br><br>
+     <b>2. Post 1 GBP update today — Winter Push:</b> "Perth winters were made for the gym ❄️ Train 24/7 from $11.95/week." Post to BOTH Malaga + Ellenbrook. Use warm facility photo (sauna/gym floor). GBP posts have 7-day half-life — post every Tuesday.<br><br>
+     <b>3. Upload 10 photos per location this week:</b> Priority: sauna, ice bath, Kids Hub, gym floor, reception, Reformer Pilates studio. Name files descriptively (e.g. "chasingbetter247-malaga-sauna.jpg"). 100+ photos = 520% more calls.<br><br>
+     <b>4. Add 3 Q&A entries:</b> (1) "Do you have a kids area?" (2) "Can I freeze my membership for FIFO?" (3) "What's the price?" Pre-answered Q&As appear directly in Google search results.<br><br>
+     <b>5. Weekly review-request protocol:</b> Ask every new member sign-up verbally + QR code on reception desk. Target: 5+ reviews/week/location. Review velocity = #1 local pack ranking signal.`);
 
   $('gbp-content').innerHTML = html;
 }
