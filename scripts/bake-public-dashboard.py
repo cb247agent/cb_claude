@@ -2411,21 +2411,22 @@ function renderGAds() {
     <div class="card">
       <div class="card-h">Bidding Health Check</div>
       ${(()=>{
+        const camps = ads.campaigns || [];
+        const convCamps = camps.filter(c=>c.conv>0);
+        const highCPA   = camps.filter(c=>c.conv>0&&c.cpa>25);
+        const lowClick  = camps.filter(c=>c.clicks<10&&c.spend>20);
         const checks = [];
-        const convKws = kws.filter(k=>k.conv>0);
-        const wstKws  = kws.filter(k=>k.clicks>=5&&k.conv===0&&k.cost>10);
-        const lowVis  = kws.filter(k=>k.top_impr_pct<60&&k.clicks>=5&&k.conv>0);
-        checks.push(`<div class="stat-row"><span class="stat-label">Converting keywords</span><span class="stat-val good">${convKws.length} / ${kws.length}</span></div>`);
-        checks.push(`<div class="stat-row"><span class="stat-label">Budget wasters</span><span class="stat-val ${wstKws.length>0?'bad':'good'}">${wstKws.length} keywords</span></div>`);
-        checks.push(`<div class="stat-row"><span class="stat-label">Low visibility (top% &lt;60)</span><span class="stat-val ${lowVis.length>0?'amber':''}">${lowVis.length} converting kws</span></div>`);
-        const brandKwZeroConv = kws.find(k=>k.keyword.toLowerCase().includes('chasing better')&&k.conv===0&&k.clicks>3);
-        if(brandKwZeroConv) checks.push(`<div class="stat-row"><span class="stat-label">Brand term not converting</span><span class="stat-val bad">⚠ Check tracking</span></div>`);
+        checks.push(`<div class="stat-row"><span class="stat-label">Active campaigns</span><span class="stat-val">${camps.length}</span></div>`);
+        checks.push(`<div class="stat-row"><span class="stat-label">Converting campaigns</span><span class="stat-val good">${convCamps.length} / ${camps.length}</span></div>`);
+        checks.push(`<div class="stat-row"><span class="stat-label">CPA above $25</span><span class="stat-val ${highCPA.length>0?'bad':'good'}">${highCPA.length} campaigns</span></div>`);
+        checks.push(`<div class="stat-row"><span class="stat-label">Total conversions</span><span class="stat-val good">${totalConv}</span></div>`);
+        checks.push(`<div class="stat-row"><span class="stat-label">Blended CPA</span><span class="stat-val ${blendedCPA>25?'bad':'good'}">${fmt(blendedCPA,'$2')}</span></div>`);
         return checks.join('');
       })()}
       <p style="font-size:11px;color:var(--muted);margin-top:10px">
         ${totalConv > 0
-          ? `${totalConv} conversions tracked this week at blended $${blendedCPA.toFixed(2)} CPA. Smart Bidding has enough signal to optimise.`
-          : 'Low conversion volume — Smart Bidding may be learning. Ensure conversion tracking fires correctly on the membership sign-up page.'}
+          ? `${totalConv} conversions tracked this week at ${fmt(blendedCPA,'$2')} blended CPA. Smart Bidding has enough conversion signal to optimise effectively.`
+          : 'Low conversion volume — Smart Bidding may still be learning. Ensure conversion tracking fires on the membership sign-up confirmation page.'}
       </p>
     </div>
     <div class="card">
@@ -2441,85 +2442,77 @@ function renderGAds() {
     </div>
   </div>`;
 
-  // ── Keyword Performance (Top 10 SEO-aligned) ─────────────────────────────
-  const SEO_TARGETS = [
-    'malaga gym','gym malaga','gym near me','gyms near me','gym in malaga',
-    'best gyms perth','fifo gym membership','gym with sauna and ice bath',
-    'reformer pilates','gym with kids club','ellenbrook gym','gyms in ellenbrook',
-    'gym with sauna','malaga fitness','24 hour gym','fitness centre','health club',
-    'gyms ellenbrook','ellenbrook fitness centre','gym with creche',
-  ];
-  function locBadge(locs) {
-    if (!locs||locs.length===0) return '–';
-    if (locs.length===2) return '<span style="font-size:9px;background:#e8f5f4;color:#3FA69A;padding:1px 5px;border-radius:3px">Both</span>';
-    return `<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${locs[0]}</span>`;
-  }
-  function recBadge(kw) {
-    const cpa = kw.conv>0?kw.cost/kw.conv:0;
-    if (kw.conv>0&&cpa<20)           return '<span style="font-size:10px;font-weight:700;color:#00c4b4">Scale</span>';
-    if (kw.conv>0)                   return '<span style="font-size:10px;font-weight:600;color:var(--text-2)">Maintain</span>';
-    if (kw.clicks>=5&&kw.conv===0&&kw.cost>10) return '<span style="font-size:10px;font-weight:700;color:#ef4444">Pause</span>';
-    if (kw.top_impr_pct<60&&kw.clicks>3)       return '<span style="font-size:10px;color:var(--teal)">Raise bid</span>';
+  // ── Campaign Performance ──────────────────────────────────────────────────
+  html += sectionTitle('Campaign Performance — Active Campaigns · ' + weekLabel);
+  html += `<div class="insight neutral mb" style="font-size:12px">
+    <b>SEO strategy link:</b> Goal — dominate paid while SEO builds. As each keyword cluster hits organic top 3, reduce campaign bid and reinvest budget into keywords with no organic coverage yet.
+  </div>`;
+  function campAction(c) {
+    if (c.conv>0 && c.cpa<15) return '<span style="font-size:10px;font-weight:700;color:#00c4b4">Scale ↑</span>';
+    if (c.conv>0 && c.cpa<30) return '<span style="font-size:10px;font-weight:600;color:var(--text-2)">Maintain</span>';
+    if (c.conv>0)              return '<span style="font-size:10px;color:#f59e0b">Review CPA</span>';
+    if (c.clicks>20)           return '<span style="font-size:10px;font-weight:700;color:#ef4444">Check Conv</span>';
     return '<span style="font-size:10px;color:var(--muted-2)">Monitor</span>';
   }
-  const seoKws   = kws.filter(k=>SEO_TARGETS.some(t=>k.keyword.toLowerCase().includes(t)||t.includes(k.keyword.toLowerCase()))).slice(0,10);
-  const top10Kws = seoKws.length>=5 ? seoKws : kws.slice(0,10);
-
-  html += sectionTitle('Keyword Performance — Top 10 SEO-Aligned · ' + weekLabel);
-  html += `<div class="insight neutral mb" style="font-size:12px">
-    <b>SEO strategy link:</b> These keywords mirror your organic ranking targets.
-    Goal: dominate paid while SEO builds → reduce bids as each keyword hits organic top 3 → reinvest in new keywords still outside top 3.
-  </div>`;
+  const campsSorted = [...(ads.campaigns||[])].sort((a,b)=>b.spend-a.spend);
   html += `<div class="card mb"><table><thead><tr>
-    <th>Keyword</th><th class="num">Clicks</th><th class="num">Impr</th><th class="num">CTR</th>
-    <th class="num">Avg CPC</th><th class="num">Spend</th><th class="num">Conv</th>
-    <th class="num">CPA</th><th class="num">Top Impr%</th><th>Location</th><th>Action</th>
+    <th>Campaign</th><th>Location</th><th class="num">Clicks</th>
+    <th class="num">Spend</th><th class="num">Conv</th><th class="num">CPA</th><th class="num">CTR</th><th>Action</th>
   </tr></thead><tbody>
-  ${top10Kws.map(kw=>{const cpa=kw.conv>0?Math.round(kw.cost/kw.conv*100)/100:0;return`<tr>
-    <td style="font-size:12px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${kw.keyword}</td>
-    <td class="num"><b>${kw.clicks}</b></td>
-    <td class="num" style="color:var(--muted)">${kw.impressions}</td>
-    <td class="num">${kw.ctr}%</td>
-    <td class="num" style="color:var(--muted)">$${kw.cpc}</td>
-    <td class="num">$${kw.cost}</td>
-    <td class="num ${kw.conv>0?'good':''}">${kw.conv||'–'}</td>
-    <td class="num ${cpa>50&&cpa>0?'bad':cpa>0?'good':''}">${cpa>0?'$'+cpa:'–'}</td>
-    <td class="num ${kw.top_impr_pct<60?'amber':''}">${kw.top_impr_pct}%</td>
-    <td>${locBadge(kw.locations)}</td>
-    <td>${recBadge(kw)}</td>
-  </tr>`}).join('')||'<tr><td colspan="11" style="color:var(--muted)">No keyword data</td></tr>'}
+  ${campsSorted.map(c=>{
+    const ctr = c.clicks>0?(c.conv/c.clicks*100).toFixed(1):0;
+    return`<tr>
+    <td style="font-size:12px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${c.name}</td>
+    <td><span style="font-size:9px;background:${c.location==='Ellenbrook'?'#e8f5f4':'#f0f2f5'};color:${c.location==='Ellenbrook'?'#3FA69A':'var(--muted)'};padding:1px 6px;border-radius:3px">${c.location||'–'}</span></td>
+    <td class="num"><b>${c.clicks}</b></td>
+    <td class="num">${fmt(c.spend,'$2')}</td>
+    <td class="num ${c.conv>0?'good':''}">${c.conv||'–'}</td>
+    <td class="num ${c.conv>0&&c.cpa>25?'bad':c.conv>0?'good':''}">${c.conv>0?fmt(c.cpa,'$2'):'–'}</td>
+    <td class="num" style="color:var(--muted)">${ctr}%</td>
+    <td>${campAction(c)}</td>
+  </tr>`;}).join('')||'<tr><td colspan="8" style="color:var(--muted);padding:16px">No campaign data</td></tr>'}
   </tbody></table></div>`;
 
-  // ── Winners vs Wasters ────────────────────────────────────────────────────
-  const winnerKws = [...kws].filter(k=>k.conv>0).sort((a,b)=>a.cost/a.conv-b.cost/b.conv).slice(0,8);
-  const wasteKws  = [...kws].filter(k=>k.clicks>=5&&k.conv===0&&k.cost>10).sort((a,b)=>b.cost-a.cost).slice(0,8);
+  // ── Best Campaigns + Location Head-to-Head ────────────────────────────────
+  const bestCamps = [...(ads.campaigns||[])].filter(c=>c.conv>0).sort((a,b)=>a.cpa-b.cpa);
   html += `<div class="grid-2 mb">
     <div class="card">
-      <div class="card-h" style="color:#00c4b4">Converting Keywords — Scale These</div>
-      <table><thead><tr><th>Keyword</th><th class="num">Conv</th><th class="num">CPA</th><th class="num">Spend</th><th class="num">Top%</th></tr></thead><tbody>
-      ${winnerKws.length?winnerKws.map(k=>{const cpa=Math.round(k.cost/k.conv*100)/100;return`<tr>
-        <td style="font-size:12px">${k.keyword}</td>
-        <td class="num good"><b>${k.conv}</b></td>
-        <td class="num good">$${cpa}</td>
-        <td class="num" style="color:var(--muted)">$${k.cost}</td>
-        <td class="num ${k.top_impr_pct<80?'amber':''}">${k.top_impr_pct}%</td>
-      </tr>`}).join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:12px">No conversions yet — check conversion tracking</td></tr>'}
+      <div class="card-h" style="color:#00c4b4">Top Campaigns — Best CPA</div>
+      <table><thead><tr><th>Campaign</th><th>Location</th><th class="num">Conv</th><th class="num">CPA</th><th class="num">Spend</th></tr></thead><tbody>
+      ${bestCamps.length?bestCamps.map(c=>`<tr>
+        <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</td>
+        <td style="font-size:10px;color:var(--muted)">${c.location||'–'}</td>
+        <td class="num good"><b>${c.conv}</b></td>
+        <td class="num good">${fmt(c.cpa,'$2')}</td>
+        <td class="num" style="color:var(--muted)">${fmt(c.spend,'$2')}</td>
+      </tr>`).join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:12px;padding:12px">No converting campaigns yet</td></tr>'}
       </tbody></table>
     </div>
     <div class="card">
-      <div class="card-h" style="color:#ef4444">Budget Wasters — Pause These</div>
-      <table><thead><tr><th>Keyword</th><th class="num">Clicks</th><th class="num">Wasted $</th><th class="num">Top%</th></tr></thead><tbody>
-      ${wasteKws.length?wasteKws.map(k=>`<tr>
-        <td style="font-size:12px">${k.keyword}</td>
-        <td class="num">${k.clicks}</td>
-        <td class="num bad">$${k.cost}</td>
-        <td class="num">${k.top_impr_pct}%</td>
-      </tr>`).join(''):'<tr><td colspan="4" style="color:var(--muted);font-size:12px">No wasted spend detected</td></tr>'}
+      <div class="card-h">Location Head-to-Head</div>
+      <table><thead><tr><th>Metric</th><th class="num">Malaga</th><th class="num">Ellenbrook</th><th class="num">Winner</th></tr></thead><tbody>
+      ${(()=>{
+        const m = mal, e = ell;
+        const rows = [
+          ['Spend',      fmt(m.spend,'$2'),  fmt(e.spend,'$2'),  m.spend>e.spend?'Malaga':'Ellenbrook'],
+          ['Conversions',m.conv,             e.conv,             m.conv>e.conv?'Malaga':'Ellenbrook'],
+          ['CPA',        m.cpa>0?fmt(m.cpa,'$2'):'–',  e.cpa>0?fmt(e.cpa,'$2'):'–',  m.cpa>0&&e.cpa>0?(m.cpa<e.cpa?'✅ Malaga':'✅ Ellenbrook'):'–'],
+          ['CTR',        m.ctr+'%',          e.ctr+'%',          m.ctr>e.ctr?'Malaga':'Ellenbrook'],
+        ];
+        return rows.map(([label,mv,ev,winner])=>`<tr>
+          <td style="font-size:12px;color:var(--muted)">${label}</td>
+          <td class="num" style="font-weight:600">${mv}</td>
+          <td class="num" style="font-weight:600">${ev}</td>
+          <td style="font-size:10px;color:var(--teal);font-weight:700">${winner}</td>
+        </tr>`).join('');
+      })()}
       </tbody></table>
-      ${wasteKws.length?`<p style="font-size:10px;color:#ef4444;margin-top:8px;padding:0 4px">
-        Total wasted: $${wasteKws.reduce((s,k)=>s+k.cost,0).toFixed(2)} this week →
-        pause in Google Ads and add as negative keywords
-      </p>`:''}
+      <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6">
+        ${ell.cpa>0&&mal.cpa>0?(ell.cpa<mal.cpa
+          ? `Ellenbrook converting at <b>${fmt(ell.cpa,'$2')} CPA</b> — ${Math.round((1-ell.cpa/mal.cpa)*100)}% cheaper than Malaga. Consider shifting budget toward Ellenbrook campaigns.`
+          : `Malaga converting at <b>${fmt(mal.cpa,'$2')} CPA</b> — ${Math.round((1-mal.cpa/ell.cpa)*100)}% cheaper than Ellenbrook. Prioritise Malaga budget this week.`)
+          : 'Review individual campaign CPAs above to determine budget allocation.'}
+      </p>
     </div>
   </div>`;
 
