@@ -1759,11 +1759,6 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
 
   <div class="sidebar-section">
     <div class="sidebar-section-label">Operations</div>
-    <div class="sidebar-item" data-page="website-manager" onclick="nav(this)">Website Manager</div>
-    <div class="sidebar-item" data-page="recommendations" onclick="nav(this)">
-      Recommendations
-      <span class="badge neutral" id="rec-badge">0</span>
-    </div>
     <div class="sidebar-item" data-page="action-tracker" onclick="nav(this)">
       Action Tracker
       <span class="badge neutral" id="tracker-badge">0</span>
@@ -1889,24 +1884,6 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
         <p>Approval flow — AI generates — Tia reviews — Angela QC — Tia posts GBP · Joanne posts social</p>
       </div>
       <div id="review-content"></div>
-    </div>
-
-    <!-- ══ PAGE: WEBSITE MANAGER ════════════════════════════════════ -->
-    <div class="page" id="page-website-manager">
-      <div class="page-header">
-        <h1>Website Manager</h1>
-        <p>Technical SEO health, page performance, dev tasks</p>
-      </div>
-      <div id="web-content"></div>
-    </div>
-
-    <!-- ══ PAGE: RECOMMENDATIONS ════════════════════════════════════ -->
-    <div class="page" id="page-recommendations">
-      <div class="page-header">
-        <h1>Recommendations</h1>
-        <p>Weekly AI-generated actions — review and assign</p>
-      </div>
-      <div id="rec-content"></div>
     </div>
 
     <!-- ══ PAGE: README ═════════════════════════════════════════════ -->
@@ -3840,73 +3817,6 @@ function renderContentReview() {
   if($('review-badge')) $('review-badge').textContent = pendingQC.length > 0 ? pendingQC.length : '';
 }
 
-// ── Render: Website Manager ───────────────────────────────────────────────────
-function renderWebsite() {
-  $('web-content').innerHTML = comingSoon(
-    'Website Manager',
-    'Technical SEO health, dev task queue, and broken backlink report will appear here once the Ahrefs API and Screaming Frog crawl are connected.',
-    ['Ahrefs API key configured in .env (pull_ahrefs.py)',
-     'Screaming Frog CLI installed (run_screaming_frog.py)',
-     'Site crawl run at least once to populate broken link data']
-  );
-}
-
-// ── Render: Recommendations ───────────────────────────────────────────────────
-function renderRecommendations() {
-  const REC_KEY = 'cb247-recommendations';
-  const OUTCOME_KEY = 'cb247-rec-outcomes';
-  const saved   = JSON.parse(localStorage.getItem(REC_KEY)||'{}');
-  const outcomes= JSON.parse(localStorage.getItem(OUTCOME_KEY)||'{}');
-
-  // ── Agent-generated priorities from this week's pipeline ─────────────────
-  const _ao_r = D.raw_agent_outputs || {};
-  let agentPriHtml = '';
-  if (_ao_r.has_outputs) {
-    const ao_this = D.agent_outputs || {};
-    if (ao_this.priorities && ao_this.priorities.length) {
-      const ragColor = r => r==='🔴'?'#ef4444':r==='💰'?'#f59e0b':'#3FA69A';
-      agentPriHtml = `
-        <div style="margin-bottom:28px">
-          <div class="section-title">🎯 This Week's Agent Priorities — ${_ao_r.date}</div>
-          <div style="display:grid;gap:10px">
-            ${ao_this.priorities.map((p,i)=>`
-              <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ${ragColor(p.rag)};border-radius:6px;padding:14px 16px">
-                <div style="font-weight:700;font-size:13px;margin-bottom:4px">${i+1}. ${p.title}</div>
-                ${p.why ? `<div style="font-size:11px;color:var(--muted-2);margin-bottom:6px">${p.why}</div>` : ''}
-                <div style="display:flex;gap:16px;font-size:11px;color:var(--muted)">
-                  ${p.who ? `<span>👤 ${p.who}</span>` : ''}
-                  ${p.deadline ? `<span>Due: ${p.deadline}</span>` : ''}
-                </div>
-              </div>`).join('')}
-          </div>
-        </div>`;
-    }
-    if (!agentPriHtml && _ao_r.strategy) {
-      agentPriHtml = `
-        <div style="margin-bottom:28px">
-          <div class="section-title">🤖 Strategist Agent — ${_ao_r.date}</div>
-          <div class="card" style="padding:20px;font-size:12px;line-height:1.7;max-height:500px;overflow-y:auto">
-            ${formatAgentMd(_ao_r.strategy)}
-          </div>
-        </div>`;
-    }
-  }
-
-  const recComingSoon = comingSoon(
-    'Weekly Recommendations',
-    'Auto-generated action cards with owner, impact estimate, and status tracking will appear here once the Strategist Agent pipeline is running weekly.',
-    ['Strategist Agent producing weekly-strategy-YYYY-MM-DD.md',
-     'Performance Agent producing performance-week-YYYY-MM-DD.md',
-     'Run: bash scripts/weekly-report.sh to generate this week\'s recommendations']
-  );
-
-  if($('rec-badge')) $('rec-badge').textContent = '';
-  $('rec-content').innerHTML = agentPriHtml + recComingSoon;
-}
-
-function updateRecBadge() {
-  if($('rec-badge')) $('rec-badge').textContent = '';
-}
 
 // ── Render: Status bar ────────────────────────────────────────────────────────
 function renderStatus() {
@@ -4519,8 +4429,6 @@ function init() {
   renderGBP();
   renderPlanner();
   renderContentReview();
-  renderWebsite();
-  renderRecommendations();
   renderTracker();
   renderReadme();
 
@@ -4531,7 +4439,6 @@ function init() {
 
   // Init review badge
   renderContentReview();
-  updateRecBadge();
 }
 
 document.addEventListener('DOMContentLoaded', init);
