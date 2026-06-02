@@ -17,6 +17,24 @@ api-keys.txt
 outputs/reports/financial-*
 state/*.json
 
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Backup files
+*.bak
+
+# Error logs
+state/data-refresh.err
+
+# Auto-generated context snapshots (rebuilt each session)
+context/*-context.json
+context/build_context.py
+
+# LaunchAgent plist (machine-specific)
+scripts/com.cb247.data-refresh.plist
+
 # System files
 .DS_Store
 node_modules/
