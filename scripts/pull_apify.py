@@ -46,17 +46,16 @@ APIFY_SERP_ACTOR_ID    = "nFJndFXA5zjCTuudP"              # Google Search Scrape
 APIFY_MAPS_ACTOR_ID    = "compass~crawler-google-places"   # Google Maps Scraper
 APIFY_TIKTOK_ACTOR_ID  = "clockworks~tiktok-scraper"        # TikTok hashtag/post scraper
 APIFY_IG_ACTOR_ID      = "apify~instagram-hashtag-scraper"  # Instagram hashtag scraper
-APIFY_REDDIT_ACTOR_ID  = "trudax~reddit-scraper"            # Reddit posts + comments
+APIFY_REDDIT_ACTOR_ID  = "apify/reddit-scraper"             # Reddit posts + comments (official actor, free tier)
 APIFY_TRENDS_ACTOR_ID  = "emastra~google-trends-scraper"    # Google Trends
-APIFY_FBADS_ACTOR_ID   = "curious_coder~facebook-ads-scraper"  # FB Ads Library
+APIFY_FBADS_ACTOR_ID   = "apify/facebook-ads-scraper"          # FB Ads Library (official actor)
 APIFY_BASE_URL         = "https://api.apify.com/v2"
 
 # Fitness hashtags to monitor for trending content ideas (feeds the SEO blog generator)
 SOCIAL_HASHTAGS = [
-    "gymtok", "fitnesstrends", "coldplunge", "75hard",
-    "fypfitness", "gymmotivation", "fitnessjourney",
+    "gymperth", "pertfitness", "coldplunge",   # 3 tags only — Perth-relevant + viral format
 ]
-SOCIAL_POSTS_PER_TAG = 15  # keep low to control Apify credit spend
+SOCIAL_POSTS_PER_TAG = 5   # 5 posts per tag (was 15) — enough signal, minimal cost
 
 
 # ─────────────────────────────────────────────
@@ -126,7 +125,7 @@ def _run_apify_actor(actor_id, payload, timeout_checks=90):
 # Pipeline 1: SERP — organic + local pack
 # ─────────────────────────────────────────────
 
-def run_apify_serp(query, max_results=10):
+def run_apify_serp(query, max_results=5):   # was 10 — top 5 results enough for rank tracking
     """
     Run Apify Google Search Scraper for a single query.
     Returns dict with 'organic' results and 'local_pack' results.
@@ -258,25 +257,14 @@ def search_serpapi(query, num_results=10):
 
 def run_serp_analysis():
     """Run SERP analysis for CB247 + competitor keywords. Returns organic + local pack per query."""
+    # CREDIT CONTROL: 5 keywords only — highest conversion intent + top competitor
+    # Full list previously was 14 keywords. Reduced to save Apify pay-per-event credits.
     keywords = [
-        # CB247 branded
-        "chasingbetter247",
-        "chasing better gym malaga",
-        # Core CB247 target keywords
-        "24/7 gym malaga perth",
-        "gym ellenbrook perth",
-        "sauna gym perth",
-        "kids gym malaga",
-        "reformer pilates perth",
-        "fifo gym membership perth",
-        "ice bath gym perth",
-        "bath house malaga",
-        "gym malaga family",
-        # Competitor branded
-        "revo fitness malaga",
-        "revo fitness ellenbrook",
-        "anytime fitness malaga",
-        "ryderwear gym malaga",
+        "gym malaga perth",           # highest-volume local target
+        "gym ellenbrook perth",        # second location
+        "reformer pilates perth",      # premium service differentiator
+        "revo fitness malaga",         # top competitor — must monitor
+        "fifo gym membership perth",   # unique CB247 angle
     ]
 
     results = []
@@ -317,16 +305,14 @@ def _check_cb247_in_local_pack(local_pack):
 # ─────────────────────────────────────────────
 
 # Locations to benchmark: CB247 + direct competitors
+# CREDIT CONTROL: 4 listings only (was 7). CB247 both locations + top 2 competitors.
 MAPS_TARGETS = [
-    # CB247 own listings
-    {"query": "ChasingBetter247 Malaga",           "type": "cb247",     "location": "Malaga"},
-    {"query": "ChasingBetter247 Ellenbrook WA",  "type": "cb247",     "location": "Ellenbrook"},
-    # Competitors
-    {"query": "Revo Fitness Malaga WA",          "type": "competitor","location": "Malaga"},
-    {"query": "Revo Fitness Ellenbrook WA",      "type": "competitor","location": "Ellenbrook"},
-    {"query": "Anytime Fitness Malaga WA",       "type": "competitor","location": "Malaga"},
-    {"query": "Ryderwear Gym Malaga WA",         "type": "competitor","location": "Malaga"},
-    {"query": "Snap Fitness Ellenbrook WA",      "type": "competitor","location": "Ellenbrook"},
+    # CB247 own listings — always needed
+    {"query": "ChasingBetter247 Malaga",       "type": "cb247",      "location": "Malaga"},
+    {"query": "ChasingBetter247 Ellenbrook WA","type": "cb247",      "location": "Ellenbrook"},
+    # Top competitor only — Revo is the #1 threat
+    {"query": "Revo Fitness Malaga WA",        "type": "competitor", "location": "Malaga"},
+    {"query": "Revo Fitness Ellenbrook WA",    "type": "competitor", "location": "Ellenbrook"},
 ]
 
 
@@ -598,13 +584,10 @@ def pull_social_trends():
 # Pipeline 4: Reddit Intel — r/Perth + r/fitness
 # ─────────────────────────────────────────────
 
-# Subreddits and search terms relevant to CB247's audience
+# CREDIT CONTROL: 3 searches only (was 6). Highest-signal subreddits for CB247.
 REDDIT_SEARCHES = [
     {"subreddit": "perth",   "query": "gym",          "label": "perth_gym"},
-    {"subreddit": "perth",   "query": "fitness",      "label": "perth_fitness"},
     {"subreddit": "perth",   "query": "cheap gym",    "label": "perth_cheap_gym"},
-    {"subreddit": "Fitness", "query": "sauna gym",    "label": "fitness_sauna"},
-    {"subreddit": "Fitness", "query": "ice bath",     "label": "fitness_ice_bath"},
     {"subreddit": "FIFO",    "query": "gym fitness",  "label": "fifo_gym"},
 ]
 
@@ -633,8 +616,8 @@ def pull_reddit_intel():
                         "method": "GET",
                     }
                 ],
-                "maxItems":          20,
-                "maxComments":       5,    # Top 5 comments per post
+                "maxItems":          10,   # was 20 — reduced for credit control
+                "maxComments":       3,    # Top 3 comments per post (was 5)
                 "skipComments":      False,
                 "proxy":             {"useApifyProxy": True},
             },
@@ -798,8 +781,7 @@ def pull_google_trends():
             "searchTerms": TRENDS_KEYWORDS,
             "geo":         "AU-WA",           # Western Australia
             "timeRange":   "today 3-m",       # Last 3 months
-            "category":    "0",               # All categories
-            "granularTimeResolution": False,
+            "category":    0,                 # All categories (integer, not string)
         },
         timeout_checks=60,
     )
@@ -1033,7 +1015,16 @@ def load_json(path):
 # ─────────────────────────────────────────────
 
 def main():
-    print("Pulling SERP + Maps + Social + Reddit + Trends + FB Ads via Apify...\n")
+    # ── Monday-only guard — Apify is pay-per-event, never run on routine refreshes ──
+    import sys as _sys
+    _force = "--force" in _sys.argv
+    _today_dow = datetime.now().weekday()   # 0=Monday
+    if _today_dow != 0 and not _force:
+        print("⏭  Apify skipped — only runs on Mondays (weekly pipeline).")
+        print("   To run manually: python3 scripts/pull_apify.py --force")
+        return None
+
+    print("Pulling SERP + Maps + Social + Reddit via Apify (Monday weekly run)...\n")
 
     # ── Pipeline 1: SERP (organic + local pack) ──
     print("--- Pipeline 1: SERP Analysis ---")
@@ -1088,19 +1079,40 @@ def main():
     # ── Local pack summary ──
     local_pack_summary = _summarise_local_pack(serp)
 
+    # ── Preserve previously-good data when actors fail (402/404) ──────
+    # If a field comes back None this run, keep the last known-good value
+    # rather than overwriting with null. This protects against cron runs
+    # where the subscription lapses or an actor is temporarily unavailable.
+    existing = {}
+    out_path = STATE_DIR / "apify-data.json"
+    if out_path.exists():
+        try:
+            existing = json.loads(out_path.read_text())
+        except Exception:
+            existing = {}
+
+    def keep_if_none(new_val, key):
+        """Return new_val if it has content, else fall back to existing."""
+        if new_val is not None:
+            return new_val
+        old = existing.get(key)
+        if old is not None:
+            print(f"  [preserve] {key}: actor returned None — keeping last known-good data")
+        return old
+
     result = {
         "date_pulled":         datetime.now().isoformat(),
-        "competitor_serp":     serp,
+        "competitor_serp":     serp if serp else existing.get("competitor_serp", []),
         "keyword_tracking":    keyword_tracking,
-        "local_pack_summary":  local_pack_summary,
-        "competitor_maps":     maps,
-        "social_trends":       social,
-        "reddit_intel":        reddit,
-        "google_trends":       trends,
-        "facebook_ads":        fb_ads,
+        "local_pack_summary":  local_pack_summary if local_pack_summary.get("pack_presence_rate") is not None
+                               else existing.get("local_pack_summary", local_pack_summary),
+        "competitor_maps":     keep_if_none(maps,   "competitor_maps"),
+        "social_trends":       keep_if_none(social, "social_trends"),
+        "reddit_intel":        keep_if_none(reddit, "reddit_intel"),
+        "google_trends":       keep_if_none(trends, "google_trends"),
+        "facebook_ads":        keep_if_none(fb_ads, "facebook_ads"),
     }
 
-    out_path = STATE_DIR / "apify-data.json"
     out_path.write_text(json.dumps(result, indent=2))
     print(f"\nSaved to {out_path}")
 
