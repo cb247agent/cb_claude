@@ -1135,17 +1135,17 @@ CONTENT_ITEMS = [
     {
         "id": "p3", "day": 2, "platform": "blog", "type": "SEO Blog Post",
         "title": "Blog — Best Gym Malaga",
-        "assignee": "John", "assigneeRole": "SEO Specialist",
+        "assignee": "AI", "assigneeRole": "Content Agent",
         "caption": "Targeting 'best gym Malaga' — 320 searches/month. H1: 'The Best Gym in Malaga? Here's Why 8,000 Members Chose CB247'. Full outline and keyword map ready.",
-        "instructions": "Target keyword: 'best gym malaga' (320/mo, KD 18). Secondary: 'gym malaga perth', 'cheap gym malaga'. Word count: 1,200–1,500 words. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities (list all: 24/7, Kids Hub, Sauna, Ice Bath, Reformer Pilates, Neon21) → H2: Pricing Comparison (CB247 vs Revo vs Anytime) → H2: Member Reviews → H2: FAQ → CTA: 'Join from $11.95/week'. Internal links: homepage, Malaga page, pricing page. Mark adds draft to WordPress as pending.",
+        "instructions": "AI drafts full post. Target keyword: 'best gym malaga' (320/mo, KD 18). Secondary: 'gym malaga perth', 'cheap gym malaga'. Word count: 1,200–1,500 words. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities (list all: 24/7, Kids Hub, Sauna, Ice Bath, Reformer Pilates, Neon21) → H2: Pricing Comparison (CB247 vs Revo vs Anytime) → H2: Member Reviews → H2: FAQ → CTA: 'Join from $11.95/week'. Internal links: homepage, Malaga page, pricing page. Angela reviews for brand voice. Mark publishes to WordPress.",
         "kw": "best gym malaga", "dueDate": "+2",
         "draftLink": "https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html",
-        "draftReviewers": "John (SEO), Jane (QC), Ange",
+        "draftReviewers": "Angela (Brand Manager / QC)",
     },
     {
         "id": "p4", "day": 2, "platform": "instagram", "type": "Instagram Post",
         "title": "Instagram — Kids Hub",
-        "assignee": "Shauna", "assigneeRole": "Content & Email Manager",
+        "assignee": "Shauna", "assigneeRole": "Assets Creator",
         "caption": "Train while the kids play. Our Kids Hub means no more 'I can't go to the gym today.' Tag a parent who needs this.",
         "instructions": "Static post or short Reel (15s). Show the Kids Hub space — colourful, safe, supervised. Caption hook: 'No babysitter? No problem.' Tag format: tag 3 local parent pages. Best time: Wednesday 9–11am (school drop-off window). Hashtags: #kidshub #gymperth #malagatribe #chasingbetter247",
         "kw": "kids gym malaga", "dueDate": "+2",
@@ -1177,17 +1177,17 @@ CONTENT_ITEMS = [
     {
         "id": "p8", "day": 8, "platform": "email", "type": "Email Newsletter",
         "title": "Weekly Email Newsletter",
-        "assignee": "Shauna", "assigneeRole": "Content & Email Manager",
+        "assignee": "AI", "assigneeRole": "Content Agent",
         "caption": "Member spotlight + this week's class timetable + sauna booking tip",
-        "instructions": "Subject line options (A/B test): A: 'This week at CB247 🏋️' / B: 'Your sauna booking tip + class times'. Structure: 1) Member spotlight (150 words, real story) → 2) This week's class timetable → 3) Sauna tip (e.g. 'Book Mon/Wed 6–7am — least busy') → 4) One referral nudge ('Bring a friend, 2 weeks free'). Send via Mailchimp. List segment: active members. Send time: Monday 6am.",
+        "instructions": "AI drafts full email. Subject line options (A/B test): A: 'This week at CB247 🏋️' / B: 'Your sauna booking tip + class times'. Structure: 1) Member spotlight (150 words, real story) → 2) This week's class timetable → 3) Sauna tip (e.g. 'Book Mon/Wed 6–7am — least busy') → 4) One referral nudge ('Bring a friend, 2 weeks free'). Angela reviews before send. Send via Mailchimp. List segment: active members. Send time: Monday 6am.",
         "kw": "", "dueDate": "+8",
     },
     {
         "id": "p9", "day": 9, "platform": "blog", "type": "SEO Blog Post",
         "title": "Blog — FIFO Gym Membership Perth",
-        "assignee": "Shauna", "assigneeRole": "Content & Email Manager",
+        "assignee": "AI", "assigneeRole": "Content Agent",
         "caption": "Targeting 'fifo gym perth' — 210 searches/month. FIFO freeze angle.",
-        "instructions": "Target keyword: 'fifo gym perth' (210/mo). Secondary: 'fifo gym membership', 'gym freeze perth'. Word count: 1,000–1,200 words. Angle: empathy-first — FIFO lifestyle is tough, gym should make it easier. Structure: H1: 'FIFO Gym Membership in Perth: Train Hard When You're Home' → H2: The FIFO Challenge → H2: What is a Gym Freeze? → H2: CB247 FIFO Freeze — How It Works → H2: Why CB247 is Perth's FIFO-Friendly Gym → FAQ → CTA. Tone: direct, no fluff, WA working-class voice. Shauna drafts, John reviews SEO, Mark publishes.",
+        "instructions": "AI drafts full post. Target keyword: 'fifo gym perth' (210/mo). Secondary: 'fifo gym membership', 'gym freeze perth'. Word count: 1,000–1,200 words. Angle: empathy-first — FIFO lifestyle is tough, gym should make it easier. Structure: H1: 'FIFO Gym Membership in Perth: Train Hard When You're Home' → H2: The FIFO Challenge → H2: What is a Gym Freeze? → H2: CB247 FIFO Freeze — How It Works → H2: Why CB247 is Perth's FIFO-Friendly Gym → FAQ → CTA. Tone: direct, no fluff, WA working-class voice. Angela reviews for brand voice, Mark publishes to WordPress.",
         "kw": "fifo gym membership perth", "dueDate": "+9",
     },
     {
@@ -1209,9 +1209,9 @@ CONTENT_ITEMS = [
     {
         "id": "p12", "day": 13, "platform": "instagram", "type": "Instagram Post",
         "title": "Community Post — Member Story",
-        "assignee": "Shauna", "assigneeRole": "Content & Email Manager",
+        "assignee": "Shauna", "assigneeRole": "Assets Creator",
         "caption": "Member story: how CB247 helped [member] hit their goal. Real stories, real results.",
-        "instructions": "Ask reception to nominate a member who has hit a milestone this month. Get written consent + photo. Format: carousel post (3–5 slides). Slide 1: Bold quote from member. Slides 2–3: Journey story in short paragraphs. Slide 4: Their goal and result. Slide 5: CTA — 'Start your story. $11.95/week, no lock-in.' Tag the member (if they consent). This type of post gets highest saves + shares.",
+        "instructions": "Shauna captures photo/video asset. AI writes the carousel copy and caption from the story notes. Ask reception to nominate a member who has hit a milestone this month. Get written consent + photo. Format: carousel post (3–5 slides). Slide 1: Bold quote from member. Slides 2–3: Journey story in short paragraphs. Slide 4: Their goal and result. Slide 5: CTA — 'Start your story. $11.95/week, no lock-in.' Tag the member (if they consent). Angela QCs before scheduling.",
         "kw": "", "dueDate": "+13",
     },
 ]
@@ -1227,8 +1227,12 @@ def generate_briefs(content_items):
         "Video Creator": "#fce7f3",
         "Social Media Manager": "#dcfce7",
         "Content & Email Manager": "#fef9c3",
+        "Assets Creator": "#fef9c3",
         "Web Developer": "#ede9fe",
         "QC Manager": "#fee2e2",
+        "Brand Manager": "#fee2e2",
+        "Content Agent": "#e0f2fe",
+        "Marketing Manager": "#f3e8ff",
     }
     platform_colors = {
         "gbp": ("#dcfce7", "#166534"),
@@ -1248,7 +1252,7 @@ def generate_briefs(content_items):
         kw_block = (f'<div class="section"><div class="label">Target Keyword</div>'
                     f'<div class="kw">{item["kw"]}</div></div>') if item.get("kw") else ""
 
-        reviewers = item.get("draftReviewers", "John, Jane, Ange")
+        reviewers = item.get("draftReviewers", "Angela (Brand Manager / QC)")
         draft_block = ""
         if item.get("draftLink"):
             dl = item["draftLink"]
@@ -1882,7 +1886,7 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
     <div class="page" id="page-content-review">
       <div class="page-header">
         <h1>Content Review</h1>
-        <p>Approval flow — Agent generates — Tia reviews — Jane QC — Joanne posts</p>
+        <p>Approval flow — AI generates — Tia reviews — Angela QC — Joanne posts</p>
       </div>
       <div id="review-content"></div>
     </div>
@@ -1959,7 +1963,7 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
       <div id="modal-draft-link-wrap" style="display:none;background:var(--teal-mist);border:1px solid rgba(63,166,154,.25);border-radius:4px;padding:14px 16px">
         <div class="modal-section-label" style="margin-bottom:8px">Draft — Ready for Review</div>
         <a href="#" target="_blank" class="brief-link" style="background:var(--teal);color:#fff;border-color:var(--teal)">Open Draft</a>
-        <div style="font-size:11px;color:var(--muted);margin-top:8px">Share with John (SEO), Jane (QC), and Ange for review</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">Share with Angela (Brand Manager) for QC review before publish</div>
       </div>
       <div class="modal-approval">
         <div class="modal-section-label" style="margin-bottom:10px">Approval Decision</div>
@@ -3311,16 +3315,16 @@ function comingSoon(title, what, needs) {
 const PLANNER_ITEMS = [
   {id:'p1',day:0,platform:'gbp',type:'GBP Post',title:'GBP Post — Sauna & Ice Bath',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.',instructions:'Post to both Malaga and Ellenbrook GBP profiles. Use a high-quality photo of the sauna or ice bath area. Best posting time: Tuesday 7–9am or Saturday 8am. Include the $11.95 price point and \'no lock-in\' in the first sentence for SEO. Tag location: Malaga.',kw:'sauna gym perth',dueDate:'+0'},
   {id:'p2',day:1,platform:'instagram',type:'Instagram Reel',title:'Reel — FIFO Lifestyle',assignee:'Agust',assigneeRole:'Video Creator',caption:'Fly in. Train hard. We get it. CB247\'s FIFO-friendly freeze means your membership works around your roster.',instructions:'30–45 second Reel. Open with a hook: \'Working FIFO? Your gym should work around you.\' Show the freeze feature on the app or website. Voiceover tone: direct, no-nonsense, WA working-class. End with CTA: \'Freeze. Resume. No questions asked.\' Hashtags: #fifo #fifoperth #gymperth #chasingbetter247',kw:'fifo gym perth',dueDate:'+1'},
-  {id:'p3',day:2,platform:'blog',type:'SEO Blog Post',title:'Blog — Best Gym Malaga',assignee:'John',assigneeRole:'SEO Specialist',caption:'Targeting "best gym Malaga" — 320 searches/month. H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247". Full outline and keyword map ready.',instructions:'Target keyword: "best gym malaga" (320/mo, KD 18). Secondary: "gym malaga perth", "cheap gym malaga". Word count: 1,200–1,500. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities → H2: Pricing Comparison → H2: Member Reviews → H2: FAQ → CTA. Internal links: homepage, Malaga page, pricing. Mark adds draft to WordPress as pending.\n\nDraft for review: https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html',kw:'best gym malaga',dueDate:'+2',draftLink:'https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html'},
-  {id:'p4',day:2,platform:'instagram',type:'Instagram Post',title:'Instagram — Kids Hub',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this.',instructions:'Static post or short Reel (15s). Show the Kids Hub space — colourful, safe, supervised. Caption hook: "No babysitter? No problem." Tag 3 local parent pages. Best time: Wednesday 9–11am. Hashtags: #kidshub #gymperth #malagatribe #chasingbetter247',kw:'kids gym malaga',dueDate:'+2'},
+  {id:'p3',day:2,platform:'blog',type:'SEO Blog Post',title:'Blog — Best Gym Malaga',assignee:'AI',assigneeRole:'Content Agent',caption:'Targeting "best gym Malaga" — 320 searches/month. H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247". Full outline and keyword map ready.',instructions:'AI drafts full post. Target keyword: "best gym malaga" (320/mo, KD 18). Secondary: "gym malaga perth", "cheap gym malaga". Word count: 1,200–1,500. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities → H2: Pricing Comparison → H2: Member Reviews → H2: FAQ → CTA. Internal links: homepage, Malaga page, pricing. Angela reviews for brand voice. Mark publishes to WordPress.\n\nDraft for review: https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html',kw:'best gym malaga',dueDate:'+2',draftLink:'https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html'},
+  {id:'p4',day:2,platform:'instagram',type:'Instagram Post',title:'Instagram — Kids Hub',assignee:'Shauna',assigneeRole:'Assets Creator',caption:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this.',instructions:'Shauna captures photo or short video of Kids Hub. AI writes caption. Show the Kids Hub space — colourful, safe, supervised. Caption hook: "No babysitter? No problem." Tag 3 local parent pages. Best time: Wednesday 9–11am. Angela QCs before Joanne schedules. Hashtags: #kidshub #gymperth #malagatribe #chasingbetter247',kw:'kids gym malaga',dueDate:'+2'},
   {id:'p5',day:4,platform:'tiktok',type:'TikTok Video',title:'TikTok — Ice Bath Reaction',assignee:'Ivan',assigneeRole:'Video Creator',caption:'First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247',instructions:'Reaction-style video. Film a member (with permission) doing their first ice bath — show genuine reaction. Ideal length: 20–30 seconds. Hook in first 2s: "Would you do this for $11.95/week?" Trending audio: check TikTok trending for Perth fitness. Tag @chasingbetter247. Raw, authentic > over-produced.',kw:'ice bath gym perth',dueDate:'+4'},
   {id:'p6',day:5,platform:'gbp',type:'GBP Post',title:'GBP Post — Reformer Pilates',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.',instructions:'Post to both GBP profiles. Use a class photo or studio shot. Emphasise "24/7 access" — key differentiator vs Revo. Include class booking CTA. Target: "reformer pilates perth", "pilates malaga". Post Friday morning to capture weekend bookings.',kw:'reformer pilates perth',dueDate:'+5'},
   {id:'p7',day:7,platform:'instagram',type:'Instagram Reel',title:'Reel — Gym Tour',assignee:'Agust',assigneeRole:'Video Creator',caption:'Never been to CB247? Here\'s what $11.95/week gets you. 👀 #gymtour #chasingbetter247',instructions:'60-second gym walkthrough Reel. Script: "$11.95 a week — here\'s what that actually gets you." Walk through: 24/7 weights → Reformer Pilates → CrossFit → Sauna → Ice Bath → Neon21 → Kids Hub. Voiceover with on-screen text. End card: website URL + price. Post Sunday evening for Monday motivation.',kw:'gym malaga perth',dueDate:'+7'},
-  {id:'p8',day:8,platform:'email',type:'Email Newsletter',title:'Weekly Email Newsletter',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Member spotlight + this week\'s class timetable + sauna booking tip',instructions:'Subject A/B test: A: "This week at CB247 🏋️" / B: "Your sauna booking tip + class times". Structure: 1) Member spotlight (150 words) → 2) Class timetable → 3) Sauna tip → 4) Referral nudge ("Bring a friend, 2 weeks free"). Send via Mailchimp. List: active members. Send time: Monday 6am.',kw:'',dueDate:'+8'},
-  {id:'p9',day:9,platform:'blog',type:'SEO Blog Post',title:'Blog — FIFO Gym Membership Perth',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Targeting "fifo gym perth" — 210 searches/month. FIFO freeze angle.',instructions:'Target: "fifo gym perth" (210/mo). Secondary: "fifo gym membership", "gym freeze perth". Word count: 1,000–1,200. Angle: empathy-first — FIFO lifestyle is tough, gym should make it easier. Structure: H1: "FIFO Gym Membership in Perth" → H2: The FIFO Challenge → H2: What is a Gym Freeze? → H2: CB247 FIFO Freeze → FAQ → CTA. Tone: direct, WA working-class. Shauna drafts → John reviews SEO → Mark publishes.',kw:'fifo gym membership perth',dueDate:'+9'},
+  {id:'p8',day:8,platform:'email',type:'Email Newsletter',title:'Weekly Email Newsletter',assignee:'AI',assigneeRole:'Content Agent',caption:'Member spotlight + this week\'s class timetable + sauna booking tip',instructions:'AI drafts full email. Subject A/B test: A: "This week at CB247 🏋️" / B: "Your sauna booking tip + class times". Structure: 1) Member spotlight (150 words) → 2) Class timetable → 3) Sauna tip → 4) Referral nudge ("Bring a friend, 2 weeks free"). Angela reviews before send. Send via Mailchimp. List: active members. Send time: Monday 6am.',kw:'',dueDate:'+8'},
+  {id:'p9',day:9,platform:'blog',type:'SEO Blog Post',title:'Blog — FIFO Gym Membership Perth',assignee:'AI',assigneeRole:'Content Agent',caption:'Targeting "fifo gym perth" — 210 searches/month. FIFO freeze angle.',instructions:'AI drafts full post. Target: "fifo gym perth" (210/mo). Secondary: "fifo gym membership", "gym freeze perth". Word count: 1,000–1,200. Angle: empathy-first — FIFO lifestyle is tough, gym should make it easier. Structure: H1: "FIFO Gym Membership in Perth" → H2: The FIFO Challenge → H2: What is a Gym Freeze? → H2: CB247 FIFO Freeze → FAQ → CTA. Tone: direct, WA working-class. Angela reviews brand voice. Mark publishes to WordPress.',kw:'fifo gym membership perth',dueDate:'+9'},
   {id:'p10',day:10,platform:'tiktok',type:'TikTok Video',title:'TikTok — Neon21 Tanning',assignee:'Ivan',assigneeRole:'Video Creator',caption:'You didn\'t know we had THIS at a $11.95/week gym 👀 #neon21 #gymsecrets',instructions:'Surprise-reveal style. Hook: "Things at CB247 people don\'t know about — Part 1". Feature: Neon21 tanning. Length: 15–20s. On-screen text: "Gym + tanning = $11.95/week??" Build curiosity — don\'t show feature in thumbnail. End: "Follow for Part 2" — drives follows for series.',kw:'',dueDate:'+10'},
   {id:'p11',day:11,platform:'gbp',type:'GBP Post',title:'GBP Post — Ellenbrook Special',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'Ellenbrook locals — your neighbourhood gym is here. 24/7 access, no lock-in, $11.95/week.',instructions:'Post ONLY to Ellenbrook GBP (not Malaga). Hyperlocal — use "Ellenbrook" 2–3 times. Photo: Ellenbrook location exterior or interior. Geo-tagged. Local keywords: "gym ellenbrook perth". Post Thursday morning.',kw:'gym ellenbrook perth',dueDate:'+11'},
-  {id:'p12',day:13,platform:'instagram',type:'Instagram Post',title:'Community Post — Member Story',assignee:'Shauna',assigneeRole:'Content & Email Manager',caption:'Member story: how CB247 helped [member] hit their goal. Real stories, real results.',instructions:'Ask reception to nominate a member who hit a milestone this month. Get written consent + photo. Format: carousel (3–5 slides). Slide 1: Bold quote. Slides 2–3: Journey story. Slide 4: Goal and result. Slide 5: CTA — "Start your story. $11.95/week, no lock-in." Tag the member if they consent. This format gets highest saves + shares.',kw:'',dueDate:'+13'},
+  {id:'p12',day:13,platform:'instagram',type:'Instagram Post',title:'Community Post — Member Story',assignee:'Shauna',assigneeRole:'Assets Creator',caption:'Member story: how CB247 helped [member] hit their goal. Real stories, real results.',instructions:'Shauna captures the member photo/video. AI writes all carousel copy and caption from story notes provided. Ask reception to nominate a member who hit a milestone. Get written consent + photo. Format: carousel (3–5 slides). Slide 1: Bold quote. Slides 2–3: Journey story. Slide 4: Goal and result. Slide 5: CTA — "Start your story. $11.95/week, no lock-in." Angela QCs before Joanne schedules.',kw:'',dueDate:'+13'},
 ];
 
 const PLANNER_STATUS_KEY = 'cb247-planner-status';
@@ -3503,7 +3507,7 @@ function renderPlanner() {
 function renderContentReview() {
   $('review-content').innerHTML = comingSoon(
     'Content Review',
-    'The Kanban approval board (Generated → Tia Approved → Jane QC → Scheduled → Published) activates once the Content Agent is generating weekly outputs.',
+    'The Kanban approval board (Generated → Tia Approved → Angela QC → Scheduled → Published) activates once the Content Agent is generating weekly outputs.',
     ['Content Agent pipeline producing weekly-content-YYYY-MM-DD.md',
      'Team roles confirmed in config/team-roles.json',
      'Social scheduler credentials connected (Metricool or Buffer)']
@@ -3848,33 +3852,43 @@ function renderReadme() {
         </ul>
       </div>
       <div class="team-card">
-        <div class="tc-name">Ange</div>
-        <div class="tc-role">Marketing Manager</div>
+        <div class="tc-name">Denver</div>
+        <div class="tc-role">Marketing Manager (COO)</div>
         <ul class="tc-tasks">
           <li>Strategic priorities this week</li>
-          <li>Campaign oversight</li>
+          <li>Campaign oversight + budget decisions</li>
           <li>Coordinates team execution</li>
-          <li>Reports outcomes back to tracker</li>
+          <li>Reports outcomes back to Tia</li>
         </ul>
       </div>
       <div class="team-card">
-        <div class="tc-name">John</div>
-        <div class="tc-role">SEO Specialist</div>
+        <div class="tc-name">Angela</div>
+        <div class="tc-role">Brand Manager (QC)</div>
         <ul class="tc-tasks">
-          <li>Receives SEO brief from agent</li>
-          <li>Writes/briefs content for keywords</li>
-          <li>Reviews blog drafts</li>
-          <li>Tracks ranking improvements</li>
-        </ul>
-      </div>
-      <div class="team-card">
-        <div class="tc-name">Jane</div>
-        <div class="tc-role">QC Manager</div>
-        <ul class="tc-tasks">
-          <li>Reviews all content before publish</li>
-          <li>Approves blog drafts</li>
+          <li>Reviews all AI-generated content</li>
+          <li>Approves blog drafts + email copy</li>
           <li>Checks brand voice compliance</li>
-          <li>Releases to Joanne for scheduling</li>
+          <li>Releases approved content to Joanne</li>
+        </ul>
+      </div>
+      <div class="team-card" style="border-left:3px solid #3FA69A">
+        <div class="tc-name" style="color:#3FA69A">AI (Content Agent)</div>
+        <div class="tc-role">Content & Copy</div>
+        <ul class="tc-tasks">
+          <li>Writes all blog drafts from SEO brief</li>
+          <li>Writes weekly email newsletter</li>
+          <li>Writes social captions + carousel copy</li>
+          <li>Generates content recommendations</li>
+        </ul>
+      </div>
+      <div class="team-card">
+        <div class="tc-name">Shauna</div>
+        <div class="tc-role">Assets Creator</div>
+        <ul class="tc-tasks">
+          <li>Photography — gym, facilities, members</li>
+          <li>Video shoots for Reels + TikTok</li>
+          <li>Captures member stories on camera</li>
+          <li>Provides raw assets to video editors</li>
         </ul>
       </div>
       <div class="team-card">
@@ -3882,7 +3896,7 @@ function renderReadme() {
         <div class="tc-role">Web Developer</div>
         <ul class="tc-tasks">
           <li>Executes technical SEO fixes</li>
-          <li>Publishes blog posts to WordPress</li>
+          <li>Publishes AI blog drafts to WordPress</li>
           <li>Builds new landing pages</li>
           <li>Title tag + meta optimisation</li>
         </ul>
@@ -3891,28 +3905,18 @@ function renderReadme() {
         <div class="tc-name">Joanne</div>
         <div class="tc-role">Social Media Manager</div>
         <ul class="tc-tasks">
-          <li>Schedules approved posts</li>
+          <li>Schedules Angela-approved posts</li>
           <li>Posts to GBP profiles</li>
           <li>Responds to reviews</li>
           <li>Manages content calendar</li>
         </ul>
       </div>
       <div class="team-card">
-        <div class="tc-name">Shauna</div>
-        <div class="tc-role">Content & Email</div>
-        <ul class="tc-tasks">
-          <li>Writes blog drafts from SEO brief</li>
-          <li>Writes weekly email newsletter</li>
-          <li>Creates social captions</li>
-          <li>Member spotlight stories</li>
-        </ul>
-      </div>
-      <div class="team-card">
         <div class="tc-name">Agust + Ivan</div>
-        <div class="tc-role">Video Creators</div>
+        <div class="tc-role">Video Editors</div>
         <ul class="tc-tasks">
-          <li>Produce Reels from agent scripts</li>
-          <li>TikTok content</li>
+          <li>Edit Reels from Shauna's raw footage</li>
+          <li>TikTok editing + captions overlay</li>
           <li>Gym walkthrough videos</li>
           <li>Member reaction content</li>
         </ul>
@@ -3939,14 +3943,14 @@ function renderReadme() {
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
           <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
-          <div class="loop-label">Team Creates</div>
-          <div class="loop-sub">Shauna / John /<br>Agust writes</div>
+          <div class="loop-label">AI + Assets</div>
+          <div class="loop-sub">AI writes copy<br>Shauna captures</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
-          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
-          <div class="loop-label">Jane Reviews</div>
-          <div class="loop-sub">QC pass /<br>request edits</div>
+          <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
+          <div class="loop-label">Angela QC</div>
+          <div class="loop-sub">Brand review /<br>approve / edit</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">

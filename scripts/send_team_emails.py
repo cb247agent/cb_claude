@@ -4,27 +4,28 @@ send_team_emails.py — Role-specific email delivery for CB247 Marketing OS.
 APPROVAL FLOW:
   1. weekly-report.sh calls send_weekly_report.py --recipient tia  (OS report, Tia reviews)
   2. Tia runs: python send_team_emails.py --approve  (sends all team emails)
-  3. OR individual: python send_team_emails.py --role jane
+  3. OR individual: python send_team_emails.py --role angela
 
 Emails sent (all Monday morning, after Tia approves):
-  Ange   → Strategic brief + KPI snapshot + decisions needed
-  Jane   → Full content pipeline for QC/approval
-  John   → SEO brief + ranking report + technical tasks
-  Mark   → Dev/technical task list with implementation details
-  Agust  → Reel scripts + video briefs
-  Ivan   → Reel scripts + video briefs
-  Shauna → Content calendar + captions + blog drafts
-  Joanne → APPROVED content only + posting schedule (after Jane approves)
+  Denver  → Strategic brief + KPI snapshot + decisions needed (Marketing Manager / COO)
+  Angela  → Full AI-generated content pipeline for QC/brand review (Brand Manager)
+  John    → SEO brief + ranking report + technical tasks
+  Mark    → Dev/technical task list with implementation details
+  Agust   → Reel edit briefs from Shauna's footage
+  Ivan    → Reel edit briefs from Shauna's footage
+  Shauna  → Assets shoot list (photo + video only — no writing tasks)
+  Joanne  → APPROVED content only + posting schedule (after Angela approves)
 
 Usage:
-  python scripts/send_team_emails.py --approve        # Send all team emails
-  python scripts/send_team_emails.py --role jane      # Send to Jane only
-  python scripts/send_team_emails.py --dry-run        # Print emails without sending
-  python scripts/send_team_emails.py --list           # List latest agent outputs
+  python scripts/send_team_emails.py --approve          # Send all team emails
+  python scripts/send_team_emails.py --role angela      # Send to Angela only
+  python scripts/send_team_emails.py --role denver      # Send to Denver only
+  python scripts/send_team_emails.py --dry-run          # Print emails without sending
+  python scripts/send_team_emails.py --list             # List latest agent outputs
 
 Requirements in .env:
   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
-  TEAM_EMAIL_ANGE, TEAM_EMAIL_JANE, TEAM_EMAIL_JOHN, TEAM_EMAIL_MARK
+  TEAM_EMAIL_ANGE, TEAM_EMAIL_ANGELA, TEAM_EMAIL_DENVER, TEAM_EMAIL_JOHN, TEAM_EMAIL_MARK
   TEAM_EMAIL_AGUST, TEAM_EMAIL_IVAN, TEAM_EMAIL_SHAUNA, TEAM_EMAIL_JOANNE
 """
 
@@ -57,14 +58,15 @@ SMTP_FROM = os.getenv("SMTP_FROM", os.getenv("SMTP_USER", ""))
 
 # ── Team emails ──
 TEAM = {
-    "ange":   os.getenv("TEAM_EMAIL_ANGE",   "ange@chasingbetter247.com.au"),
-    "jane":   os.getenv("TEAM_EMAIL_JANE",   "jane@chasingbetter247.com.au"),
-    "john":   os.getenv("TEAM_EMAIL_JOHN",   "john@chasingbetter247.com.au"),
-    "mark":   os.getenv("TEAM_EMAIL_MARK",   "mark@chasingbetter247.com.au"),
-    "agust":  os.getenv("TEAM_EMAIL_AGUST",  "agust@chasingbetter247.com.au"),
-    "ivan":   os.getenv("TEAM_EMAIL_IVAN",   "ivan@chasingbetter247.com.au"),
-    "shauna": os.getenv("TEAM_EMAIL_SHAUNA", "shauna@chasingbetter247.com.au"),
-    "joanne": os.getenv("TEAM_EMAIL_JOANNE", "joanne@chasingbetter247.com.au"),
+    "ange":    os.getenv("TEAM_EMAIL_ANGE",    "ange@chasingbetter247.com.au"),    # alias kept for legacy
+    "angela":  os.getenv("TEAM_EMAIL_ANGELA",  "angela@chasingbetter247.com.au"),  # Brand Manager / QC
+    "denver":  os.getenv("TEAM_EMAIL_DENVER",  "denver@chasingbetter247.com.au"),  # Marketing Manager (COO)
+    "john":    os.getenv("TEAM_EMAIL_JOHN",    "john@chasingbetter247.com.au"),
+    "mark":    os.getenv("TEAM_EMAIL_MARK",    "mark@chasingbetter247.com.au"),
+    "agust":   os.getenv("TEAM_EMAIL_AGUST",   "agust@chasingbetter247.com.au"),
+    "ivan":    os.getenv("TEAM_EMAIL_IVAN",    "ivan@chasingbetter247.com.au"),
+    "shauna":  os.getenv("TEAM_EMAIL_SHAUNA",  "shauna@chasingbetter247.com.au"),
+    "joanne":  os.getenv("TEAM_EMAIL_JOANNE",  "joanne@chasingbetter247.com.au"),
 }
 
 BRAND_COLOR = "#3FA69A"
@@ -308,10 +310,9 @@ def build_ange_email(paths):
     return subject, TEAM["ange"], html_email(subject, "Ange", "Brand Manager", content)
 
 
-def build_jane_email(paths):
-    """Jane (QC + Execution) — Full content pipeline for review."""
+def build_angela_email(paths):
+    """Angela (Brand Manager / QC) — All AI-generated content for brand review."""
     content = load_file(paths["content"]) if paths["content"] else ""
-    content_intel = load_file(paths["research"]) if paths["research"] else ""
 
     # Split content file into sections
     gbp_posts = extract_section(content, "GBP POSTS", 2000)
@@ -323,47 +324,48 @@ def build_jane_email(paths):
 
     body = f"""
 <div class="section">
-  <h2>Your Job This Week</h2>
+  <h2>Your Job This Week — Brand QC</h2>
   <div class="content-block" style="border-left-color:#856404;background:#fff8e1">
-    Review all content below. For each piece: ✅ Approve / ✏️ Edit / ❌ Reject.<br>
-    <strong>Deadline: Wednesday EOD</strong> — Joanne needs approved content Thursday.<br>
-    Reply to this email with changes, or edit the content doc directly.
+    All content below was drafted by the AI Content Agent. Review for brand voice, accuracy, and tone.<br>
+    For each piece: ✅ Approve / ✏️ Edit inline / ❌ Reject with reason.<br>
+    <strong>Deadline: Wednesday EOD</strong> — Joanne needs approved content by Thursday.<br>
+    Reply to this email with changes or approve directly.
   </div>
 </div>
 
 <div class="section">
   <h2>GBP Posts (4) — Google Business Profile</h2>
-  <div class="content-block"><pre>{gbp_posts or "See attached content file."}</pre></div>
+  <div class="content-block"><pre>{gbp_posts or "AI-generated content will appear here after the Monday pipeline runs."}</pre></div>
 </div>
 
 <div class="section">
-  <h2>Social Posts (5) — Instagram + TikTok</h2>
-  <div class="content-block"><pre>{social or "See attached content file."}</pre></div>
+  <h2>Social Captions (5) — Instagram + TikTok</h2>
+  <div class="content-block"><pre>{social or "AI-generated content will appear here after the Monday pipeline runs."}</pre></div>
 </div>
 
 <div class="section">
-  <h2>Reel Scripts (2) — For Agust + Ivan</h2>
-  <div class="content-block"><pre>{reels or "See attached content file."}</pre></div>
+  <h2>Reel Scripts (2) — For Agust + Ivan to edit</h2>
+  <div class="content-block"><pre>{reels or "AI-generated content will appear here after the Monday pipeline runs."}</pre></div>
 </div>
 
 <div class="section">
-  <h2>Blog Drafts (2) — For John + Shauna to complete</h2>
-  <div class="content-block"><pre>{blog or "See attached content file."}</pre></div>
+  <h2>Blog Drafts (2) — AI-written, needs brand voice check</h2>
+  <div class="content-block"><pre>{blog or "AI-generated blog drafts will appear here after the Monday pipeline runs."}</pre></div>
 </div>
 
 <div class="section">
-  <h2>Meta Ad Copy (3 variations) — When account reinstates</h2>
-  <div class="content-block"><pre>{meta_ads or "See attached content file."}</pre></div>
+  <h2>Meta Ad Copy (3 variations)</h2>
+  <div class="content-block"><pre>{meta_ads or "AI-generated ad copy will appear here after the Monday pipeline runs."}</pre></div>
 </div>
 
 <div class="section">
   <h2>Review Response Templates (5)</h2>
-  <div class="content-block"><pre>{reviews or "See attached content file."}</pre></div>
+  <div class="content-block"><pre>{reviews or "AI-generated review responses will appear here after the Monday pipeline runs."}</pre></div>
 </div>
 """
-    subject = f"CB247 Content Pipeline — Needs Your Review — {WEEK}"
+    subject = f"CB247 Content — Brand QC Review Needed — {WEEK}"
     note = "Once you approve, Tia will release the posting schedule to Joanne."
-    return subject, TEAM["jane"], html_email(subject, "Jane", "QC + Execution", body, note)
+    return subject, TEAM["angela"], html_email(subject, "Angela", "Brand Manager / QC", body, note)
 
 
 def build_john_email(paths):
@@ -506,40 +508,39 @@ def build_video_email(paths, name, role):
 
 
 def build_shauna_email(paths):
-    """Shauna (CB247 Content Creator) — Captions + blog drafts + schedule."""
-    content = load_file(paths["content"]) if paths["content"] else ""
-
-    social   = extract_section(content, "SOCIAL POSTS", 3000)
-    gbp      = extract_section(content, "GBP POSTS", 2000)
-    blog     = extract_section(content, "BLOG DRAFTS", 2000)
-
+    """Shauna (Assets Creator) — Photo and video shoot list for the week."""
     body = f"""
 <div class="section">
-  <h2>Your Content This Week</h2>
+  <h2>Your Assets Shoot List This Week</h2>
   <div class="content-block" style="border-left-color:#e83e8c;background:#fff0f6">
-    All content below is AI-drafted. Review + personalise before posting.
-    Jane needs to approve before anything goes live — she'll confirm by Wednesday.
+    Your role this week is <strong>capturing photo and video assets only</strong>.<br>
+    All captions, copy, and blog drafts are handled by the AI Content Agent.<br>
+    Once you've captured footage, pass raw files to Agust/Ivan for editing.
   </div>
 </div>
 
 <div class="section">
-  <h2>Social Captions (5) — Instagram + TikTok</h2>
-  <div class="content-block"><pre>{social or "See content file for social posts."}</pre></div>
+  <h2>Priority Shoots This Week</h2>
+  <div class="content-block">
+    <strong>1. Kids Hub (due Day 2)</strong><br>
+    Static photo or short 15s video. Colourful, safe, supervised feel. Morning light preferred. Hand off to Agust for Reel cut or post directly as static.<br><br>
+    <strong>2. Member Story — Milestone (due Day 13)</strong><br>
+    Nominate via reception. Get written consent + take portrait photo. Candid over posed. AI will write the carousel copy from the story you provide — just send notes to Tia/AI.<br><br>
+    <strong>3. General facility B-roll (ongoing)</strong><br>
+    Sauna, ice bath, reformer pilates studio, weights floor. 10–15 second clips, natural lighting. These feed into Reels and Ads edited by Agust/Ivan.
+  </div>
 </div>
 
 <div class="section">
-  <h2>GBP Posts (4) — Google Business Profile</h2>
-  <div class="content-block"><pre>{gbp or "See content file for GBP posts."}</pre></div>
-</div>
-
-<div class="section">
-  <h2>Blog Drafts (2) — Complete + publish with John</h2>
-  <div class="content-block"><pre>{blog or "See content file for blog drafts."}</pre></div>
+  <h2>Approvals</h2>
+  <div class="content-block">
+    All assets go to Angela for brand QC before Joanne schedules. Questions? Ask Tia or Angela.
+  </div>
 </div>
 """
-    subject = f"CB247 Content — Week of {WEEK}"
-    note = "Content pending Jane's approval (by Wednesday). Questions? Ask Jane or Tia."
-    return subject, TEAM["shauna"], html_email(subject, "Shauna", "Content Creator", body, note)
+    subject = f"CB247 Assets Shoot List — Week of {WEEK}"
+    note = "All writing tasks are now handled by AI. Your focus is photo + video capture only."
+    return subject, TEAM["shauna"], html_email(subject, "Shauna", "Assets Creator", body, note)
 
 
 def build_joanne_email(paths):
@@ -553,7 +554,7 @@ def build_joanne_email(paths):
 <div class="section">
   <h2>This Week's Posting Schedule</h2>
   <div class="content-block" style="border-left-color:#28a745;background:#f0fff4">
-    ✅ All content below has been approved by Jane.<br>
+    ✅ All content below has been approved by Angela (Brand Manager).<br>
     Post as scheduled — captions are copy-paste ready.
   </div>
 </div>
@@ -572,7 +573,7 @@ def build_joanne_email(paths):
 
 <div class="section">
   <h2>Approved Social Captions</h2>
-  <div class="content-block"><pre>{social or "Content pending Jane's approval — you'll receive an update."}</pre></div>
+  <div class="content-block"><pre>{social or "Content pending Angela's approval — you'll receive an update."}</pre></div>
 </div>
 
 <div class="section">
@@ -581,7 +582,7 @@ def build_joanne_email(paths):
 </div>
 """
     subject = f"CB247 Approved Posts — Week of {WEEK}"
-    note = "Approved by Jane. Post as scheduled. Questions → Tia."
+    note = "Approved by Angela (Brand Manager). Post as scheduled. Questions → Tia."
     return subject, TEAM["joanne"], html_email(subject, "Joanne", "Social Posting", body, note)
 
 
@@ -625,7 +626,7 @@ def send_email(subject, to_email, html_body, dry_run=False):
 def main():
     parser = argparse.ArgumentParser(description="CB247 team email delivery")
     parser.add_argument("--approve",  action="store_true", help="Send all team emails")
-    parser.add_argument("--role",     type=str, help="Send to one role: ange|jane|john|mark|agust|ivan|shauna|joanne")
+    parser.add_argument("--role",     type=str, help="Send to one role: angela|denver|ange|john|mark|agust|ivan|shauna|joanne")
     parser.add_argument("--dry-run",  action="store_true", help="Print without sending")
     parser.add_argument("--list",     action="store_true", help="List latest output files")
     parser.add_argument("--recipient", type=str, help="Alias for --role (used by weekly-report.sh)")
@@ -660,8 +661,9 @@ def main():
 
     # Build all emails
     builders = {
-        "ange":   lambda: build_ange_email(paths),
-        "jane":   lambda: build_jane_email(paths),
+        "angela": lambda: build_angela_email(paths),         # Brand Manager / QC (replaces Jane)
+        "denver": lambda: build_ange_email(paths),           # Marketing Manager (COO) — same brief as Ange
+        "ange":   lambda: build_ange_email(paths),           # Legacy alias for Angela/Ange
         "john":   lambda: build_john_email(paths),
         "mark":   lambda: build_mark_email(paths),
         "agust":  lambda: build_video_email(paths, "agust", "Video Editor"),
