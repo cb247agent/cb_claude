@@ -1418,9 +1418,9 @@ code{font-family:'SF Mono',Menlo,monospace;font-size:.85em;background:var(--bg);
 /* ── Layout ──────────────────────────────────────── */
 .app{display:flex;min-height:100vh}
 .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto}
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;position:sticky;top:0;z-index:50}
-.content{padding:28px;flex:1;max-width:1400px}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;position:sticky;top:0;z-index:50;flex-shrink:0}
+.content{padding:28px;max-width:1400px;width:100%;box-sizing:border-box;padding-bottom:60px}
 
 /* ── Sidebar ─────────────────────────────────────── */
 .sidebar-brand{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07)}
@@ -3516,7 +3516,7 @@ function renderPlanner() {
 
   // ── Kanban board ──────────────────────────────────────────────────────
   html += sectionTitle('Kanban Board');
-  html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px">`;
+  html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px;align-items:start">`;
 
   KANBAN_COLS.forEach(col => {
     const items = PLANNER_ITEMS.filter(item => (saved[item.id]||'Idea') === col.key);

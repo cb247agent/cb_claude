@@ -26,9 +26,9 @@ code{font-family:'SF Mono',Menlo,monospace;font-size:.85em;background:var(--bg);
 /* ── Layout ──────────────────────────────────────── */
 .app{display:flex;min-height:100vh}
 .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto}
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;position:sticky;top:0;z-index:50}
-.content{padding:28px;flex:1;max-width:1400px}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;position:sticky;top:0;z-index:50;flex-shrink:0}
+.content{padding:28px;max-width:1400px;width:100%;box-sizing:border-box;padding-bottom:60px}
 
 /* ── Sidebar ─────────────────────────────────────── */
 .sidebar-brand{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07)}
@@ -330,9 +330,9 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "02 Jun 2026, 17:27",
+  "generated": "02 Jun 2026, 17:55",
   "report_period": "26 May \u2013 1 Jun 2026",
-  "refresh_ts": "2026-06-02T09:27:42.946486Z",
+  "refresh_ts": "2026-06-02T09:55:33.384887Z",
   "status": {
     "ga4": "live",
     "gsc": "live",
@@ -348,36 +348,36 @@ window.DASHBOARD_DATA = {
     "week_label": "25May26-31May26"
   },
   "ga4": {
-    "sessions": 3036,
+    "sessions": 3059,
     "p_sessions": 3717,
-    "convs": 463,
+    "convs": 466,
     "p_convs": 505,
-    "users": 2339,
-    "new_users": 2030,
-    "conv_rate": 15.3,
+    "users": 2350,
+    "new_users": 2039,
+    "conv_rate": 15.2,
     "mob_share": 84,
-    "ses_chg": -18.3,
-    "conv_chg": -8.3,
+    "ses_chg": -17.7,
+    "conv_chg": -7.7,
     "sources": [
       {
         "label": "Organic Search",
-        "sessions": 989
+        "sessions": 993
       },
       {
         "label": "Paid Social",
-        "sessions": 645
+        "sessions": 647
       },
       {
         "label": "Direct",
-        "sessions": 507
+        "sessions": 510
       },
       {
         "label": "Cross-network",
-        "sessions": 486
+        "sessions": 489
       },
       {
         "label": "Paid Search",
-        "sessions": 248
+        "sessions": 249
       },
       {
         "label": "Organic Social",
@@ -387,13 +387,13 @@ window.DASHBOARD_DATA = {
     "top_pages": [
       {
         "path": "/",
-        "views": 4800,
-        "sessions": 2150
+        "views": 4832,
+        "sessions": 2162
       },
       {
         "path": "/reformer-pilates",
-        "views": 671,
-        "sessions": 324
+        "views": 677,
+        "sessions": 326
       },
       {
         "path": "/contact",
@@ -402,28 +402,28 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/group-fitness-timetable",
-        "views": 408,
-        "sessions": 190
+        "views": 417,
+        "sessions": 194
       },
       {
         "path": "/thank-you",
-        "views": 311,
-        "sessions": 154
+        "views": 313,
+        "sessions": 155
       },
       {
         "path": "/resources/post-workout-recovery",
-        "views": 296,
-        "sessions": 146
+        "views": 298,
+        "sessions": 147
       },
       {
         "path": "/personal-training",
-        "views": 255,
-        "sessions": 112
+        "views": 258,
+        "sessions": 115
       },
       {
         "path": "/neon21",
-        "views": 209,
-        "sessions": 75
+        "views": 213,
+        "sessions": 77
       },
       {
         "path": "/faqs",
@@ -432,8 +432,8 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/kids-hub",
-        "views": 203,
-        "sessions": 77
+        "views": 207,
+        "sessions": 78
       }
     ],
     "period": "26 May \u2013 1 Jun 2026"
@@ -4878,7 +4878,7 @@ function renderPlanner() {
 
   // ── Kanban board ──────────────────────────────────────────────────────
   html += sectionTitle('Kanban Board');
-  html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px">`;
+  html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px;align-items:start">`;
 
   KANBAN_COLS.forEach(col => {
     const items = PLANNER_ITEMS.filter(item => (saved[item.id]||'Idea') === col.key);
