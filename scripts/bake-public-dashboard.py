@@ -2628,20 +2628,53 @@ function renderGAds() {
     </div>
   </div>`;
 
-  // ── This Week's Google Ads Priorities ────────────────────────────────────
-  const topWinner    = kws.find(k => k.conv > 0);
-  const topWaster    = kws.find(k => k.clicks >= 5 && k.conv === 0 && k.cost > 10);
-  const highCTRNoConv = kws.find(k => k.ctr >= 20 && k.conv === 0 && k.clicks >= 3);
-  const organicTop3  = (D.seo && D.seo.keywords || []).filter(k => k.position <= 3).map(k => k.keyword.toLowerCase());
-  const overlapKws   = kws.filter(k => organicTop3.some(ok => ok.includes(k.keyword.toLowerCase()) || k.keyword.toLowerCase().includes(ok)));
+  // ── This Week's Google Ads Priorities (campaign-level data) ─────────────
+  const _camps       = ads.campaigns || [];
+  const _convCamps   = _camps.filter(c => c.conv > 0).sort((a,b) => a.cpa - b.cpa);
+  const _noConvCamps = _camps.filter(c => c.conv === 0 && c.spend > 0).sort((a,b) => b.spend - a.spend);
+  const _bestCamp    = _convCamps[0];
+  const _worstCamp   = _noConvCamps[0];
+  const _malCamps    = _camps.filter(c => (c.location||'').toLowerCase().includes('malaga'));
+  const _ellCamps    = _camps.filter(c => (c.location||'').toLowerCase().includes('ellenbrook'));
+  const _malConvTot  = _malCamps.reduce((s,c)=>s+c.conv,0);
+  const _ellConvTot  = _ellCamps.reduce((s,c)=>s+c.conv,0);
+  const _malSpendTot = _malCamps.reduce((s,c)=>s+c.spend,0);
+  const _ellSpendTot = _ellCamps.reduce((s,c)=>s+c.spend,0);
+  const _malCPA      = _malConvTot > 0 ? _malSpendTot / _malConvTot : null;
+  const _ellCPA      = _ellConvTot > 0 ? _ellSpendTot / _ellConvTot : null;
 
   const priorities = [];
-  if (topWinner) priorities.push(`<b>1. Scale winners:</b> "${topWinner.keyword}" converting at $${(topWinner.cost/topWinner.conv).toFixed(2)} CPA — well below $25 target. Increase campaign budget or set Target CPA = $25 to let Google spend more on this.`);
-  if (topWaster) priorities.push(`<b>${priorities.length+1}. Pause wasted spend:</b> "${topWaster.keyword}" spent $${topWaster.cost} with ${topWaster.clicks} clicks and zero conversions. Pause now and reallocate to winning keywords.`);
-  if (highCTRNoConv) priorities.push(`<b>${priorities.length+1}. Fix landing page:</b> "${highCTRNoConv.keyword}" has ${highCTRNoConv.ctr}% CTR (people are clicking) but 0 conversions. The landing page CTA is broken or the page doesn't match search intent.`);
-  if (overlapKws.length) priorities.push(`<b>${priorities.length+1}. Organic overlap:</b> "${overlapKws[0].keyword}" already ranks top 3 organically — pause the paid ad, watch organic clicks for 2 weeks, reinvest budget.`);
-  priorities.push(`<b>${priorities.length+1}. Add 3 new keywords this week:</b> "kids gym malaga", "sauna and ice bath perth", "fifo gym perth" — all uncontested by competitors, aligned with CB247's unique facilities.`);
-  if (!allSmartBid) priorities.push(`<b>${priorities.length+1}. Switch to Smart Bidding:</b> Current manual CPC setup. Upgrade to Maximise Conversions with Target CPA = $25 to let Google's algorithm optimise in real-time.`);
+  let _pn = 1;
+
+  if (_bestCamp) {
+    priorities.push(`<b>${_pn++}. Scale your best campaign:</b> <em>${_bestCamp.name}</em> is converting at <b>$${_bestCamp.cpa.toFixed(2)} CPA</b> with ${_bestCamp.conv} conversion${_bestCamp.conv!==1?'s':''} — your most efficient campaign this week. Increase its daily budget by 20–30% to capture more volume while CPA is below the $25 target.`);
+  }
+
+  if (_worstCamp) {
+    priorities.push(`<b>${_pn++}. Review non-converting campaign:</b> <em>${_worstCamp.name}</em> spent <b>$${_worstCamp.spend.toFixed(2)}</b> with 0 conversions. Check ad copy relevance, landing page alignment, and audience targeting. If no improvement in 7 days, pause and reallocate budget to converting campaigns.`);
+  }
+
+  if (_malCPA !== null && _ellCPA !== null) {
+    const _cheaperLoc = _malCPA < _ellCPA ? 'Malaga' : 'Ellenbrook';
+    const _cheaperCPA = Math.min(_malCPA, _ellCPA);
+    const _dearer     = _malCPA < _ellCPA ? 'Ellenbrook' : 'Malaga';
+    const _dearerCPA  = Math.max(_malCPA, _ellCPA);
+    priorities.push(`<b>${_pn++}. Shift budget toward ${_cheaperLoc}:</b> ${_cheaperLoc} CPA is <b>$${_cheaperCPA.toFixed(2)}</b> vs ${_dearer} at <b>$${_dearerCPA.toFixed(2)}</b>. Reallocate 15–20% of ${_dearer} budget to ${_cheaperLoc} campaigns to lower blended CPA without reducing total volume.`);
+  } else if (_malCPA !== null && _ellConvTot === 0 && _ellSpendTot > 0) {
+    priorities.push(`<b>${_pn++}. Ellenbrook conversion check:</b> Malaga is converting at <b>$${_malCPA.toFixed(2)} CPA</b> but Ellenbrook has <b>0 conversions</b> on $${_ellSpendTot.toFixed(2)} spend. Review Ellenbrook ad copy and landing page — ensure it mentions Ellenbrook specifically and shows the correct facilities.`);
+  } else if (_ellCPA !== null && _malConvTot === 0 && _malSpendTot > 0) {
+    priorities.push(`<b>${_pn++}. Malaga conversion check:</b> Ellenbrook is converting at <b>$${_ellCPA.toFixed(2)} CPA</b> but Malaga has <b>0 conversions</b> on $${_malSpendTot.toFixed(2)} spend. Review Malaga campaigns for landing page and audience alignment.`);
+  }
+
+  if (totalConv === 0 && totalSpend > 0) {
+    priorities.push(`<b>${_pn++}. Verify conversion tracking:</b> <b>$${totalSpend.toFixed(2)} spent</b> this week with 0 conversions recorded. Either tracking is broken (check Google Ads → Tools → Conversions) or the contact/join form isn't firing the pixel. Fix before running more spend.`);
+  }
+
+  priorities.push(`<b>${_pn++}. Expand keyword coverage:</b> Add "kids gym malaga", "sauna and ice bath perth", and "fifo gym perth" as exact-match keywords in relevant campaigns. These are uncontested by competitors and aligned with CB247's unique facilities — high conversion intent, low CPC.`);
+
+  if (_convCamps.length > 0 && _convCamps.every(c => c.cpa < 20)) {
+    priorities.push(`<b>${_pn++}. Test budget increase:</b> All converting campaigns are below $20 CPA — well within target. Run a 2-week test with 25% higher daily budgets across converting campaigns. Google's algorithm will allocate toward best-performing ad groups automatically.`);
+  }
 
   // ── Agent Brief ──────────────────────────────────────────────────────────
   const _ao_ads = D.raw_agent_outputs || {};
