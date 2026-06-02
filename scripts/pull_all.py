@@ -93,16 +93,10 @@ def run_all():
         results["ahrefs"] = f"error: {e}"
         log(f"Ahrefs pull failed: {e}", "FAIL")
 
-    # Apify SERP + Google Maps competitor benchmarking
-    print("\n--- Apify SERP + Maps ---")
-    try:
-        import pull_apify
-        data = pull_apify.main()
-        results["apify"] = "success" if data else "no_data"
-        log("Apify pull complete")
-    except Exception as e:
-        results["apify"] = f"error: {e}"
-        log(f"Apify pull failed: {e}", "FAIL")
+    # Apify SERP + Google Maps — EXCLUDED from routine refresh (pay-per-event, cost control)
+    # Apify runs ONLY as part of the Monday weekly pipeline (weekly-report.sh)
+    # To run manually: python scripts/pull_apify.py
+    results["apify"] = "skipped (weekly-only)"
 
     # Write last-refresh timestamp
     refresh_record = {
