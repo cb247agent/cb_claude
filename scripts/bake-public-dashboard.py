@@ -1119,7 +1119,7 @@ CONTENT_ITEMS = [
     {
         "id": "p1", "day": 0, "platform": "gbp", "type": "GBP Post",
         "title": "GBP Post — Sauna & Ice Bath",
-        "assignee": "Joanne", "assigneeRole": "Social Media Manager",
+        "assignee": "Tia", "assigneeRole": "Director",
         "caption": "Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.",
         "instructions": "Post to both Malaga and Ellenbrook GBP profiles. Use a high-quality photo of the sauna or ice bath area. Best posting time: Tuesday 7–9am or Saturday 8am. Include the $11.95 price point and 'no lock-in' in the first sentence for SEO. Tag location: Malaga.",
         "kw": "sauna gym perth", "dueDate": "+0",
@@ -1161,7 +1161,7 @@ CONTENT_ITEMS = [
     {
         "id": "p6", "day": 5, "platform": "gbp", "type": "GBP Post",
         "title": "GBP Post — Reformer Pilates",
-        "assignee": "Joanne", "assigneeRole": "Social Media Manager",
+        "assignee": "Tia", "assigneeRole": "Director",
         "caption": "24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.",
         "instructions": "Post to both GBP profiles. Use a class photo or studio shot. Emphasise '24/7 access' — this is a key differentiator vs Revo. Include class booking CTA. Target local pack keywords: 'reformer pilates perth', 'pilates malaga'. Post Friday morning to capture weekend bookings.",
         "kw": "reformer pilates perth", "dueDate": "+5",
@@ -1201,7 +1201,7 @@ CONTENT_ITEMS = [
     {
         "id": "p11", "day": 11, "platform": "gbp", "type": "GBP Post",
         "title": "GBP Post — Ellenbrook Special",
-        "assignee": "Joanne", "assigneeRole": "Social Media Manager",
+        "assignee": "Tia", "assigneeRole": "Director",
         "caption": "Ellenbrook locals — your neighbourhood gym is here. 24/7 access, no lock-in, $11.95/week.",
         "instructions": "Post ONLY to Ellenbrook GBP profile (not Malaga). Hyperlocal focus — use 'Ellenbrook' 2–3 times in the post. Photo: Ellenbrook location exterior or interior. Geo-tagged post. Mention Swan Valley proximity if relevant. Local keywords: 'gym ellenbrook perth'. Post Thursday morning.",
         "kw": "gym ellenbrook perth", "dueDate": "+11",
@@ -1886,7 +1886,7 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
     <div class="page" id="page-content-review">
       <div class="page-header">
         <h1>Content Review</h1>
-        <p>Approval flow — AI generates — Tia reviews — Angela QC — Joanne posts</p>
+        <p>Approval flow — AI generates — Tia reviews — Angela QC — Tia posts GBP · Joanne posts social</p>
       </div>
       <div id="review-content"></div>
     </div>
@@ -3313,17 +3313,17 @@ function comingSoon(title, what, needs) {
 // ── Render: Content Planner ───────────────────────────────────────────────────
 // ── Content Planner Items ─────────────────────────────────────────────────────
 const PLANNER_ITEMS = [
-  {id:'p1',day:0,platform:'gbp',type:'GBP Post',title:'GBP Post — Sauna & Ice Bath',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.',instructions:'Post to both Malaga and Ellenbrook GBP profiles. Use a high-quality photo of the sauna or ice bath area. Best posting time: Tuesday 7–9am or Saturday 8am. Include the $11.95 price point and \'no lock-in\' in the first sentence for SEO. Tag location: Malaga.',kw:'sauna gym perth',dueDate:'+0'},
+  {id:'p1',day:0,platform:'gbp',type:'GBP Post',title:'GBP Post — Sauna & Ice Bath',assignee:'Tia',assigneeRole:'Director',caption:'Recovery is part of training. Our Sauna + Ice Bath combo at ChasingBetter247 Malaga gives your body the reset it needs. $11.95/week, no lock-in.',instructions:'Post to both Malaga and Ellenbrook GBP profiles. Use a high-quality photo of the sauna or ice bath area. Best posting time: Tuesday 7–9am or Saturday 8am. Include the $11.95 price point and \'no lock-in\' in the first sentence for SEO. Tag location: Malaga.',kw:'sauna gym perth',dueDate:'+0'},
   {id:'p2',day:1,platform:'instagram',type:'Instagram Reel',title:'Reel — FIFO Lifestyle',assignee:'Agust',assigneeRole:'Video Creator',caption:'Fly in. Train hard. We get it. CB247\'s FIFO-friendly freeze means your membership works around your roster.',instructions:'30–45 second Reel. Open with a hook: \'Working FIFO? Your gym should work around you.\' Show the freeze feature on the app or website. Voiceover tone: direct, no-nonsense, WA working-class. End with CTA: \'Freeze. Resume. No questions asked.\' Hashtags: #fifo #fifoperth #gymperth #chasingbetter247',kw:'fifo gym perth',dueDate:'+1'},
   {id:'p3',day:2,platform:'blog',type:'SEO Blog Post',title:'Blog — Best Gym Malaga',assignee:'AI',assigneeRole:'Content Agent',caption:'Targeting "best gym Malaga" — 320 searches/month. H1: "The Best Gym in Malaga? Here\'s Why 8,000 Members Chose CB247". Full outline and keyword map ready.',instructions:'AI drafts full post. Target keyword: "best gym malaga" (320/mo, KD 18). Secondary: "gym malaga perth", "cheap gym malaga". Word count: 1,200–1,500. Structure: H1 → Intro (lead with price + facilities) → H2: What Makes a Great Gym in Malaga? → H2: CB247 Malaga Facilities → H2: Pricing Comparison → H2: Member Reviews → H2: FAQ → CTA. Internal links: homepage, Malaga page, pricing. Angela reviews for brand voice. Mark publishes to WordPress.\n\nDraft for review: https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html',kw:'best gym malaga',dueDate:'+2',draftLink:'https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html'},
   {id:'p4',day:2,platform:'instagram',type:'Instagram Post',title:'Instagram — Kids Hub',assignee:'Shauna',assigneeRole:'Assets Creator',caption:'Train while the kids play. Our Kids Hub means no more "I can\'t go to the gym today." Tag a parent who needs this.',instructions:'Shauna captures photo or short video of Kids Hub. AI writes caption. Show the Kids Hub space — colourful, safe, supervised. Caption hook: "No babysitter? No problem." Tag 3 local parent pages. Best time: Wednesday 9–11am. Angela QCs before Joanne schedules. Hashtags: #kidshub #gymperth #malagatribe #chasingbetter247',kw:'kids gym malaga',dueDate:'+2'},
   {id:'p5',day:4,platform:'tiktok',type:'TikTok Video',title:'TikTok — Ice Bath Reaction',assignee:'Ivan',assigneeRole:'Video Creator',caption:'First ice bath at CB247 😅❄️ Would you try this? #icebath #recovery #chasingbetter247',instructions:'Reaction-style video. Film a member (with permission) doing their first ice bath — show genuine reaction. Ideal length: 20–30 seconds. Hook in first 2s: "Would you do this for $11.95/week?" Trending audio: check TikTok trending for Perth fitness. Tag @chasingbetter247. Raw, authentic > over-produced.',kw:'ice bath gym perth',dueDate:'+4'},
-  {id:'p6',day:5,platform:'gbp',type:'GBP Post',title:'GBP Post — Reformer Pilates',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.',instructions:'Post to both GBP profiles. Use a class photo or studio shot. Emphasise "24/7 access" — key differentiator vs Revo. Include class booking CTA. Target: "reformer pilates perth", "pilates malaga". Post Friday morning to capture weekend bookings.',kw:'reformer pilates perth',dueDate:'+5'},
+  {id:'p6',day:5,platform:'gbp',type:'GBP Post',title:'GBP Post — Reformer Pilates',assignee:'Tia',assigneeRole:'Director',caption:'24/7 Reformer Pilates in Perth. Book your class at CB247 — Malaga & Ellenbrook.',instructions:'Post to both GBP profiles. Use a class photo or studio shot. Emphasise "24/7 access" — key differentiator vs Revo. Include class booking CTA. Target: "reformer pilates perth", "pilates malaga". Post Friday morning to capture weekend bookings.',kw:'reformer pilates perth',dueDate:'+5'},
   {id:'p7',day:7,platform:'instagram',type:'Instagram Reel',title:'Reel — Gym Tour',assignee:'Agust',assigneeRole:'Video Creator',caption:'Never been to CB247? Here\'s what $11.95/week gets you. 👀 #gymtour #chasingbetter247',instructions:'60-second gym walkthrough Reel. Script: "$11.95 a week — here\'s what that actually gets you." Walk through: 24/7 weights → Reformer Pilates → CrossFit → Sauna → Ice Bath → Neon21 → Kids Hub. Voiceover with on-screen text. End card: website URL + price. Post Sunday evening for Monday motivation.',kw:'gym malaga perth',dueDate:'+7'},
   {id:'p8',day:8,platform:'email',type:'Email Newsletter',title:'Weekly Email Newsletter',assignee:'AI',assigneeRole:'Content Agent',caption:'Member spotlight + this week\'s class timetable + sauna booking tip',instructions:'AI drafts full email. Subject A/B test: A: "This week at CB247 🏋️" / B: "Your sauna booking tip + class times". Structure: 1) Member spotlight (150 words) → 2) Class timetable → 3) Sauna tip → 4) Referral nudge ("Bring a friend, 2 weeks free"). Angela reviews before send. Send via Mailchimp. List: active members. Send time: Monday 6am.',kw:'',dueDate:'+8'},
   {id:'p9',day:9,platform:'blog',type:'SEO Blog Post',title:'Blog — FIFO Gym Membership Perth',assignee:'AI',assigneeRole:'Content Agent',caption:'Targeting "fifo gym perth" — 210 searches/month. FIFO freeze angle.',instructions:'AI drafts full post. Target: "fifo gym perth" (210/mo). Secondary: "fifo gym membership", "gym freeze perth". Word count: 1,000–1,200. Angle: empathy-first — FIFO lifestyle is tough, gym should make it easier. Structure: H1: "FIFO Gym Membership in Perth" → H2: The FIFO Challenge → H2: What is a Gym Freeze? → H2: CB247 FIFO Freeze → FAQ → CTA. Tone: direct, WA working-class. Angela reviews brand voice. Mark publishes to WordPress.',kw:'fifo gym membership perth',dueDate:'+9'},
   {id:'p10',day:10,platform:'tiktok',type:'TikTok Video',title:'TikTok — Neon21 Tanning',assignee:'Ivan',assigneeRole:'Video Creator',caption:'You didn\'t know we had THIS at a $11.95/week gym 👀 #neon21 #gymsecrets',instructions:'Surprise-reveal style. Hook: "Things at CB247 people don\'t know about — Part 1". Feature: Neon21 tanning. Length: 15–20s. On-screen text: "Gym + tanning = $11.95/week??" Build curiosity — don\'t show feature in thumbnail. End: "Follow for Part 2" — drives follows for series.',kw:'',dueDate:'+10'},
-  {id:'p11',day:11,platform:'gbp',type:'GBP Post',title:'GBP Post — Ellenbrook Special',assignee:'Joanne',assigneeRole:'Social Media Manager',caption:'Ellenbrook locals — your neighbourhood gym is here. 24/7 access, no lock-in, $11.95/week.',instructions:'Post ONLY to Ellenbrook GBP (not Malaga). Hyperlocal — use "Ellenbrook" 2–3 times. Photo: Ellenbrook location exterior or interior. Geo-tagged. Local keywords: "gym ellenbrook perth". Post Thursday morning.',kw:'gym ellenbrook perth',dueDate:'+11'},
+  {id:'p11',day:11,platform:'gbp',type:'GBP Post',title:'GBP Post — Ellenbrook Special',assignee:'Tia',assigneeRole:'Director',caption:'Ellenbrook locals — your neighbourhood gym is here. 24/7 access, no lock-in, $11.95/week.',instructions:'Post ONLY to Ellenbrook GBP (not Malaga). Hyperlocal — use "Ellenbrook" 2–3 times. Photo: Ellenbrook location exterior or interior. Geo-tagged. Local keywords: "gym ellenbrook perth". Post Thursday morning.',kw:'gym ellenbrook perth',dueDate:'+11'},
   {id:'p12',day:13,platform:'instagram',type:'Instagram Post',title:'Community Post — Member Story',assignee:'Shauna',assigneeRole:'Assets Creator',caption:'Member story: how CB247 helped [member] hit their goal. Real stories, real results.',instructions:'Shauna captures the member photo/video. AI writes all carousel copy and caption from story notes provided. Ask reception to nominate a member who hit a milestone. Get written consent + photo. Format: carousel (3–5 slides). Slide 1: Bold quote. Slides 2–3: Journey story. Slide 4: Goal and result. Slide 5: CTA — "Start your story. $11.95/week, no lock-in." Angela QCs before Joanne schedules.',kw:'',dueDate:'+13'},
 ];
 
@@ -3848,7 +3848,7 @@ function renderReadme() {
           <li>Maintains the Marketing OS</li>
           <li>Quality checks reports + data accuracy</li>
           <li>Delivers the weekly report to the team</li>
-          <li>Releases team emails after approval</li>
+          <li>Posts to both GBP profiles (Malaga + Ellenbrook)</li>
         </ul>
       </div>
       <div class="team-card lead">
@@ -3906,7 +3906,7 @@ function renderReadme() {
         <div class="tc-role">Social Media Manager</div>
         <ul class="tc-tasks">
           <li>Schedules Angela-approved posts</li>
-          <li>Posts to GBP profiles</li>
+          <li>Posts to Instagram + TikTok</li>
           <li>Responds to reviews</li>
           <li>Manages content calendar</li>
         </ul>
@@ -3955,8 +3955,14 @@ function renderReadme() {
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
           <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
+          <div class="loop-label">Tia Posts GBP</div>
+          <div class="loop-sub">Both locations<br>Malaga + Ellenbrook</div>
+        </div>
+        <div class="loop-arrow">+</div>
+        <div class="loop-node" style="min-width:100px">
+          <div class="loop-icon active-node"><div class="loop-icon-inner"></div></div>
           <div class="loop-label">Joanne Schedules</div>
-          <div class="loop-sub">Posts to GBP /<br>Instagram / TikTok</div>
+          <div class="loop-sub">Instagram /<br>TikTok</div>
         </div>
         <div class="loop-arrow">→</div>
         <div class="loop-node" style="min-width:100px">
