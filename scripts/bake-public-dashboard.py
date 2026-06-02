@@ -3351,7 +3351,7 @@ window.openPlannerModal = (id) => {
   $('modal-title').textContent = item.title;
 
   // Role color map
-  const roleColors = {'SEO Specialist':'#dbeafe','Video Creator':'#fce7f3','Social Media Manager':'#dcfce7','Content & Email Manager':'#fef9c3','Web Developer':'#ede9fe'};
+  const roleColors = {'SEO Specialist':'#f3f4f6','Video Creator':'#f3f4f6','Social Media Manager':'#f3f4f6','Content & Email Manager':'#f3f4f6','Web Developer':'#f3f4f6','Content Agent':'rgba(63,166,154,0.12)','Brand Manager':'#1a1a1a','Assets Creator':'#f3f4f6'};
   const rc = roleColors[item.assigneeRole]||'#f3f4f6';
   $('modal-meta').innerHTML = `
     <span class="chip">${item.assignee} <span style="font-size:10px;opacity:.7">· ${item.assigneeRole}</span></span>
@@ -3875,7 +3875,7 @@ function renderRecommendations() {
                 ${p.why ? `<div style="font-size:11px;color:var(--muted-2);margin-bottom:6px">${p.why}</div>` : ''}
                 <div style="display:flex;gap:16px;font-size:11px;color:var(--muted)">
                   ${p.who ? `<span>👤 ${p.who}</span>` : ''}
-                  ${p.deadline ? `<span>📅 ${p.deadline}</span>` : ''}
+                  ${p.deadline ? `<span>Due: ${p.deadline}</span>` : ''}
                 </div>
               </div>`).join('')}
           </div>
@@ -4393,12 +4393,12 @@ function renderTracker() {
 
   // Meeting minutes log
   const minutesHTML = minutes.length ? `
-    <div class="section-title" style="margin-top:24px">📋 Meeting History</div>
+    <div class="section-title" style="margin-top:24px">Meeting History</div>
     ${minutes.slice().reverse().map(m=>{
       const d = m.decisions_summary||{};
       return `<div class="meeting-log">
         <div class="meeting-log-header">
-          <span class="meeting-log-date">📅 ${m.date}</span>
+          <span class="meeting-log-date">${m.date}</span>
           <div class="meeting-log-pills">
             ${d.approved?`<span class="meet-pill meet-approved">${d.approved} approved</span>`:''}
             ${d.adjusted?`<span class="meet-pill meet-adjusted">${d.adjusted} adjusted</span>`:''}
@@ -4442,7 +4442,7 @@ function renderTracker() {
 
   const meetingCTA = `<div style="background:rgba(63,166,154,.08);border:1px solid rgba(63,166,154,.2);border-radius:var(--radius);padding:16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
     <div>
-      <div style="font-weight:700;font-size:13px;margin-bottom:3px">📋 After your Monday meeting</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:3px">After your Monday meeting</div>
       <div style="font-size:12px;color:var(--muted)">Record decisions → download JSON → drop in state/ → run import script</div>
     </div>
     <a href="meeting-minutes.html" target="_blank" style="background:var(--teal);color:#fff;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap">Open Meeting Minutes →</a>

@@ -330,9 +330,9 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "02 Jun 2026, 18:03",
+  "generated": "02 Jun 2026, 18:15",
   "report_period": "26 May \u2013 1 Jun 2026",
-  "refresh_ts": "2026-06-02T10:03:17.854159Z",
+  "refresh_ts": "2026-06-02T10:15:52.334920Z",
   "status": {
     "ga4": "live",
     "gsc": "live",
@@ -348,12 +348,12 @@ window.DASHBOARD_DATA = {
     "week_label": "25May26-31May26"
   },
   "ga4": {
-    "sessions": 3065,
+    "sessions": 3067,
     "p_sessions": 3717,
     "convs": 466,
     "p_convs": 505,
-    "users": 2357,
-    "new_users": 2046,
+    "users": 2358,
+    "new_users": 2047,
     "conv_rate": 15.2,
     "mob_share": 84,
     "ses_chg": -17.5,
@@ -361,7 +361,7 @@ window.DASHBOARD_DATA = {
     "sources": [
       {
         "label": "Organic Search",
-        "sessions": 994
+        "sessions": 995
       },
       {
         "label": "Paid Social",
@@ -373,7 +373,7 @@ window.DASHBOARD_DATA = {
       },
       {
         "label": "Cross-network",
-        "sessions": 489
+        "sessions": 491
       },
       {
         "label": "Paid Search",
@@ -387,8 +387,8 @@ window.DASHBOARD_DATA = {
     "top_pages": [
       {
         "path": "/",
-        "views": 4842,
-        "sessions": 2167
+        "views": 4845,
+        "sessions": 2169
       },
       {
         "path": "/reformer-pilates",
@@ -4713,7 +4713,7 @@ window.openPlannerModal = (id) => {
   $('modal-title').textContent = item.title;
 
   // Role color map
-  const roleColors = {'SEO Specialist':'#dbeafe','Video Creator':'#fce7f3','Social Media Manager':'#dcfce7','Content & Email Manager':'#fef9c3','Web Developer':'#ede9fe'};
+  const roleColors = {'SEO Specialist':'#f3f4f6','Video Creator':'#f3f4f6','Social Media Manager':'#f3f4f6','Content & Email Manager':'#f3f4f6','Web Developer':'#f3f4f6','Content Agent':'rgba(63,166,154,0.12)','Brand Manager':'#1a1a1a','Assets Creator':'#f3f4f6'};
   const rc = roleColors[item.assigneeRole]||'#f3f4f6';
   $('modal-meta').innerHTML = `
     <span class="chip">${item.assignee} <span style="font-size:10px;opacity:.7">· ${item.assigneeRole}</span></span>
@@ -5237,7 +5237,7 @@ function renderRecommendations() {
                 ${p.why ? `<div style="font-size:11px;color:var(--muted-2);margin-bottom:6px">${p.why}</div>` : ''}
                 <div style="display:flex;gap:16px;font-size:11px;color:var(--muted)">
                   ${p.who ? `<span>👤 ${p.who}</span>` : ''}
-                  ${p.deadline ? `<span>📅 ${p.deadline}</span>` : ''}
+                  ${p.deadline ? `<span>Due: ${p.deadline}</span>` : ''}
                 </div>
               </div>`).join('')}
           </div>
@@ -5755,12 +5755,12 @@ function renderTracker() {
 
   // Meeting minutes log
   const minutesHTML = minutes.length ? `
-    <div class="section-title" style="margin-top:24px">📋 Meeting History</div>
+    <div class="section-title" style="margin-top:24px">Meeting History</div>
     ${minutes.slice().reverse().map(m=>{
       const d = m.decisions_summary||{};
       return `<div class="meeting-log">
         <div class="meeting-log-header">
-          <span class="meeting-log-date">📅 ${m.date}</span>
+          <span class="meeting-log-date">${m.date}</span>
           <div class="meeting-log-pills">
             ${d.approved?`<span class="meet-pill meet-approved">${d.approved} approved</span>`:''}
             ${d.adjusted?`<span class="meet-pill meet-adjusted">${d.adjusted} adjusted</span>`:''}
@@ -5804,7 +5804,7 @@ function renderTracker() {
 
   const meetingCTA = `<div style="background:rgba(63,166,154,.08);border:1px solid rgba(63,166,154,.2);border-radius:var(--radius);padding:16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
     <div>
-      <div style="font-weight:700;font-size:13px;margin-bottom:3px">📋 After your Monday meeting</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:3px">After your Monday meeting</div>
       <div style="font-size:12px;color:var(--muted)">Record decisions → download JSON → drop in state/ → run import script</div>
     </div>
     <a href="meeting-minutes.html" target="_blank" style="background:var(--teal);color:#fff;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap">Open Meeting Minutes →</a>
