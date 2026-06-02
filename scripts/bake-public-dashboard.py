@@ -3776,7 +3776,7 @@ function renderReadme() {
           <div class="agent-box primary-agent">
             <div class="agent-num" style="background:var(--teal);color:#fff">09</div>
             <div class="agent-name">Strategist</div>
-            <div class="agent-desc">Reads ALL 8 agent outputs. Produces the single executive strategy document Tia reviews: seasonal status · weekly scorecard · top 5 priorities · decisions needed · one-line brief per team member</div>
+            <div class="agent-desc">Reads ALL 8 agent outputs. Produces the single executive strategy document Denver leads in the meeting: seasonal status · weekly scorecard · top 5 priorities · decisions needed · one-line brief per team member</div>
             <div class="agent-reads">Reads: ALL 8 agent outputs · seasonal-calendar.md</div>
             <div class="agent-out">→ weekly-strategy.md → this dashboard</div>
           </div>
@@ -3843,22 +3843,22 @@ function renderReadme() {
     <div class="team-flow">
       <div class="team-card lead">
         <div class="tc-name">Tia</div>
-        <div class="tc-role">Director</div>
+        <div class="tc-role">Director — OS Owner</div>
         <ul class="tc-tasks">
-          <li>Reviews Monday email + dashboard</li>
-          <li>Chairs marketing meeting</li>
+          <li>Maintains the Marketing OS</li>
+          <li>Quality checks reports + data accuracy</li>
           <li>Approves/adjusts/rejects recommendations</li>
           <li>Releases team emails after approval</li>
         </ul>
       </div>
-      <div class="team-card">
+      <div class="team-card lead">
         <div class="tc-name">Denver</div>
-        <div class="tc-role">Marketing Manager (COO)</div>
+        <div class="tc-role">COO — Decision Maker</div>
         <ul class="tc-tasks">
-          <li>Strategic priorities this week</li>
-          <li>Campaign oversight + budget decisions</li>
-          <li>Coordinates team execution</li>
-          <li>Reports outcomes back to Tia</li>
+          <li>Leads all marketing meetings</li>
+          <li>Final decision on strategy + spend</li>
+          <li>Sets weekly priorities for the team</li>
+          <li>Escalates outcomes + risks to Tia</li>
         </ul>
       </div>
       <div class="team-card">
