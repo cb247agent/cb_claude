@@ -1,9 +1,10 @@
 name: competitor-spy
-model: minimax/minimax-m2.7
 skills: competitor-ads-scraper, competitor-seo-scraper
-tools: Read, Write(outputs/research/**), WebSearch, WebFetch
+# Layer 2: reads compressed context only — state/ access is denied
+data_source: context/competitor-context.json
+tools: Read(context/competitor-context.json), Read(skills/**), Write(outputs/research/**), WebSearch, WebFetch
 Targets: Revo Fitness, Ryderwear Malaga, Anytime Fitness Perth,
   Snap Fitness WA, World Gym AU
 Research: FB Ads Library + Google SERP + competitor websites + GMB
 Output: outputs/research/competitor-full-analysis.md
-End: update state/status.json → print "COMPETITOR SPY COMPLETE"
+End: print "COMPETITOR SPY COMPLETE"

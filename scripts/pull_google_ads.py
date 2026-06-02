@@ -74,9 +74,14 @@ def pull_google_ads():
         _write_empty(skip_reason=str(e))
         return None
 
-    # --- Date range: last 7 days ---
-    end_date   = datetime.today().strftime("%Y-%m-%d")
-    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    # --- Date range: most recently completed Mon–Sun week ---
+    today = datetime.today()
+    # days_since_sunday: Mon=1, Tue=2, ..., Sat=6, Sun=0
+    days_since_sunday = (today.weekday() + 1) % 7
+    end   = today if days_since_sunday == 0 else today - timedelta(days=days_since_sunday)
+    start = end - timedelta(days=6)
+    end_date   = end.strftime("%Y-%m-%d")
+    start_date = start.strftime("%Y-%m-%d")
 
     query = f"""
         SELECT
@@ -194,7 +199,96 @@ def pull_google_ads():
     OUTPUT_FILE.write_text(json.dumps(output, indent=2))
     print(f"\n[Google Ads] Done — {len(all_campaigns)} campaigns total | ${round(gt_spend,2)} combined spend")
     print(f"[Google Ads] Saved to {OUTPUT_FILE}")
+
+    # ── Also write a weekly entry into ads-data.json (dashboard format) ──
+    _update_ads_data(output, start_date, end_date, all_campaigns, location_summaries, grand_totals)
+
     return output
+
+
+def _update_ads_data(output, start_date, end_date, all_campaigns, location_summaries, grand_totals):
+    """Merge current week data into ads-data.json (the format bake-public-dashboard reads)."""
+    ADS_FILE = STATE_DIR / "ads-data.json"
+
+    # Load existing ads-data.json or start fresh
+    if ADS_FILE.exists():
+        try:
+            existing = json.loads(ADS_FILE.read_text())
+        except Exception:
+            existing = {}
+    else:
+        existing = {}
+
+    # Build week label e.g. "25May26-01Jun26"
+    try:
+        s = datetime.strptime(start_date, "%Y-%m-%d")
+        e = datetime.strptime(end_date,   "%Y-%m-%d")
+        week_label = f"{s.strftime('%d%b%y')}-{e.strftime('%d%b%y')}"
+    except Exception:
+        week_label = f"{start_date}-{end_date}"
+
+    gt = grand_totals
+    gt_spend = gt["spend"]
+    gt_click = gt["clicks"]
+    gt_impr  = gt["impressions"]
+    gt_conv  = gt["conversions"]
+
+    mal_raw = location_summaries.get("Malaga") or {}
+    ell_raw = location_summaries.get("Ellenbrook") or {}
+
+    new_entry = {
+        "week_label":  week_label,
+        "date_start":  start_date,
+        "date_end":    end_date,
+        "combined": {
+            "spend":       round(gt_spend, 2),
+            "clicks":      gt_click,
+            "impressions": gt_impr,
+            "ctr":         round(gt_click / gt_impr * 100, 2) if gt_impr else 0,
+            "conv":        int(gt_conv),
+            "cpa":         round(gt_spend / gt_conv, 2) if gt_conv else 0,
+        },
+        "malaga": {
+            "spend":  mal_raw.get("spend", 0),
+            "clicks": mal_raw.get("clicks", 0),
+            "conv":   int(mal_raw.get("conversions", 0)),
+            "cpa":    mal_raw.get("cpl", 0),
+            "ctr":    mal_raw.get("ctr", 0),
+        },
+        "ellenbrook": {
+            "spend":  ell_raw.get("spend", 0),
+            "clicks": ell_raw.get("clicks", 0),
+            "conv":   int(ell_raw.get("conversions", 0)),
+            "cpa":    ell_raw.get("cpl", 0),
+            "ctr":    ell_raw.get("ctr", 0),
+        },
+        "campaigns": [
+            {
+                "name":    c.get("name", ""),
+                "spend":   c.get("spend", 0),
+                "clicks":  c.get("clicks", 0),
+                "conv":    int(c.get("conversions", 0)),
+                "cpa":     round(c["spend"] / c["conversions"], 2) if c.get("conversions") else 0,
+                "status":  c.get("status", ""),
+                "location": c.get("location", ""),
+            }
+            for c in all_campaigns
+        ],
+    }
+
+    # Prepend new entry; drop entries with same week_label (dedup); keep 8 weeks
+    google_ads_history = [w for w in (existing.get("google_ads") or []) if w.get("week_label") != week_label]
+    google_ads_history = [new_entry] + google_ads_history[:7]
+
+    ads_data = {
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "source":       "google-ads-api",
+        "google_ads":   google_ads_history,
+        "meta_ads":     existing.get("meta_ads") or [],
+    }
+
+    ADS_FILE.write_text(json.dumps(ads_data, indent=2))
+    print(f"[Google Ads] ads-data.json updated — week {week_label}, ${round(gt_spend,2)} combined")
 
 
 def _write_empty(skip_reason):

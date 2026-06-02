@@ -27,4 +27,4 @@ git push
 
 echo ""
 echo "✅ Deployed! Your dashboard will be live in ~1 minute at:"
-echo "   https://cb247agent.github.io/ChasingBetter/"
+echo "   https://cb247agent.github.io/cb_claude/"

@@ -1,8 +1,10 @@
 name: seo-agent
-model: minimax/minimax-m2.7
 skills: seo-site-audit, competitor-seo-scraper, seo-content-strategist, seo-reporting
-tools: Read, Write, WebFetch
+# Layer 2: reads compressed context only — state/ access is denied
+data_source: context/seo-context.json
+tools: Read(context/seo-context.json), Read(context/seo-targets-cb247.md), Read(context/seo-priorities-cb247.md), Read(context/brand-voice.md), Read(skills/**), Read(outputs/**), Write(outputs/seo/**), WebFetch
 context:
+  - context/seo-context.json
   - context/seo-targets-cb247.md
   - context/seo-priorities-cb247.md
   - context/brand-voice.md

@@ -44,9 +44,10 @@ run_agent() {
     local name="$1"
     local prompt="$2"
     local out="$3"
+    local tools="${4:-Read(context/**),Read(outputs/**),Write(outputs/**)}"
     log "  → Running $name..."
     if "$CLAUDE" \
-        --allowedTools "Read,Write,Bash,Glob,Grep" \
+        --allowedTools "$tools" \
         --model "${ANTHROPIC_MODEL:-claude-sonnet-4-5}" \
         --print \
         --output-format text \
@@ -87,6 +88,18 @@ log "Phase 1 complete."
 
 
 # ══════════════════════════════════════════════════════════════════
+# PHASE 1.5 — BUILD CONTEXT FILES (Python only, zero LLM, ~5 sec)
+# Compresses state/*.json into per-agent context files (~1-2k tokens each)
+# Agents in Phase 2 read ONLY these context files — not state/ directly
+# ══════════════════════════════════════════════════════════════════
+log ""
+log "─── PHASE 1.5: BUILD CONTEXT FILES ───"
+bash "$BASE_DIR/scripts/run-bake.sh" --context-only >> "$LOG" 2>&1 \
+    || fail "run-bake.sh context build had issues — agents will use stale context files"
+log "Phase 1.5 complete."
+
+
+# ══════════════════════════════════════════════════════════════════
 # PHASE 2 — AGENT PIPELINE  (~40 min, sequential)
 # ══════════════════════════════════════════════════════════════════
 log ""
@@ -98,12 +111,9 @@ log "Agent 1/9 — Research Agent"
 run_agent "research-agent" \
 "You are the CB247 Research Agent. Today is $DATE.
 
-Read these data files and synthesise the weekly market intelligence report:
-- state/apify-data.json        (SERP, Maps, social trends, Reddit, Google Trends, FB Ads)
-- state/reddit-intel.json      (Perth/fitness Reddit discussions)
-- state/google-trends.json     (trending topics in Perth/WA)
-- state/fb-ads-intel.json      (Revo + Anytime active Facebook ads)
-- context/seasonal-calendar.md (active campaigns, upcoming events, trigger rules)
+Read these files for all market intelligence data:
+- context/research-context.json  (competitor SERP positions, local pack, Revo/Anytime Facebook ads, Reddit intel, Google Trends, social trends — pre-compressed from live data)
+- context/seasonal-calendar.md   (active campaigns, upcoming events, trigger rules)
 
 Output a structured markdown report covering:
 1. SEASONAL ALERT — check context/seasonal-calendar.md: what is ACTIVE right now, what is within 21 days, what needs prep within 60 days. Flag if a campaign should be spawned this week.
@@ -116,7 +126,8 @@ Output a structured markdown report covering:
 
 Be specific. Use actual data from the files. No filler.
 Save to: outputs/research/weekly-research-$DATE.md" \
-"$OUTPUTS/research/weekly-research-$DATE.md"
+"$OUTPUTS/research/weekly-research-$DATE.md" \
+"Read(context/research-context.json),Read(context/seasonal-calendar.md),Write(outputs/research/**)"
 
 # ── Agent 2: Audience Intel ──
 log "Agent 2/9 — Audience Intel"
@@ -124,9 +135,8 @@ run_agent "audience-intel" \
 "You are the CB247 Audience Intel Agent. Today is $DATE.
 
 Read these files:
-- state/ga4-data.json           (who is converting: age, location, device)
-- state/reddit-intel.json       (pain points, language, competitor mentions)
-- outputs/research/weekly-research-$DATE.md (this week's market signals)
+- context/audience-context.json              (GA4: sessions, conversions by channel, top pages, device split — pre-compressed from live data)
+- outputs/research/weekly-research-$DATE.md  (market signals + Reddit language from Agent 1)
 
 CB247's 4 key ICPs:
 1. FIFO Workers — fly in/fly out, need flexible freeze, train hard in their weeks off
@@ -144,7 +154,8 @@ Output a structured markdown report covering:
 
 Be specific and data-driven.
 Save to: outputs/research/audience-weekly-$DATE.md" \
-"$OUTPUTS/research/audience-weekly-$DATE.md"
+"$OUTPUTS/research/audience-weekly-$DATE.md" \
+"Read(context/audience-context.json),Read(outputs/research/**),Write(outputs/research/**)"
 
 # ── Agent 3: Content Intel ──
 log "Agent 3/9 — Content Intel"
@@ -152,10 +163,8 @@ run_agent "content-intel" \
 "You are the CB247 Content Intel Agent. Today is $DATE.
 
 Read these files:
-- state/social-trends.json      (TikTok + Instagram top posts by engagement)
-- state/google-trends.json      (trending topics Perth/WA)
-- state/fb-ads-intel.json       (competitor FB ad creatives + messaging)
-- outputs/research/weekly-research-$DATE.md
+- context/content-intel-context.json         (TikTok + Instagram top posts by engagement, trending hashtags — pre-compressed from live data)
+- outputs/research/weekly-research-$DATE.md  (Google Trends, competitor ads intel from Agent 1)
 - outputs/research/audience-weekly-$DATE.md
 
 CB247 brand: health & fitness club in Perth (Malaga + Ellenbrook). Teal brand.
@@ -173,33 +182,37 @@ Output a structured markdown report covering:
 
 Be specific. Include actual hooks word-for-word. This feeds directly into content creation.
 Save to: outputs/research/content-intel-$DATE.md" \
-"$OUTPUTS/research/content-intel-$DATE.md"
+"$OUTPUTS/research/content-intel-$DATE.md" \
+"Read(context/content-intel-context.json),Read(outputs/research/**),Write(outputs/research/**)"
 
 # ── Agent 4: Performance ──
 log "Agent 4/9 — Performance Agent"
-run_agent "performance" \
-"You are the CB247 Performance Agent. Today is $DATE.
+"$CLAUDE" \
+    --allowedTools "Read(context/performance-context.json),Write(outputs/research/**)" \
+    --model "${ANTHROPIC_MODEL:-claude-sonnet-4-5}" \
+    --print \
+    --output-format text \
+    "You are the CB247 Performance Agent. Today is $DATE.
 
-Read these files:
-- state/ga4-data.json           (sessions, conversions, bounce rate, top pages)
-- state/gsc-data.json           (organic clicks, impressions, avg position, CTR)
-- state/google-ads-data.json    (spend, CPA, conversions, ROAS by campaign)
-- state/ahrefs-data.json        (domain rating, organic keywords, organic value)
-- state/apify-data.json         (local pack presence, Maps ratings)
+Read this file for all performance data:
+- context/performance-context.json  (GA4 sessions/conversions, GSC queries, Google Ads spend/CPA by campaign and location — pre-compressed from live data)
+
+KPI targets: Google CTR>4% | CPC<\$3 | Meta CPM<\$12 | CPL<\$25
 
 Output a structured markdown performance report covering:
 1. KPI DASHBOARD — Full table: metric | this week | last week | target | RAG status (🔴🟡🟢)
-   Include: sessions, conversions, organic clicks, avg position, ad spend, CPA, organic value ($)
+   Include: sessions, conversions, organic clicks, avg position, ad spend, CPA by location
 2. ORGANIC vs PAID RATIO — is SEO replacing Google Ads? Trend direction?
-3. ORGANIC VALUE — \$ equivalent traffic value this week vs last week
-4. WINS THIS WEEK — what worked well (specific, data-backed)
-5. ISSUES THIS WEEK — what needs attention (specific, data-backed)
-6. BUDGET RECOMMENDATION — based on organic coverage, what ad spend is still needed?
-7. FORECAST — if current SEO trajectory continues, when does organic cover X% of paid traffic?
+3. WINS THIS WEEK — what worked well (specific, data-backed)
+4. ISSUES THIS WEEK — what needs attention (specific, data-backed)
+5. BUDGET RECOMMENDATION — based on current CPA, what ad spend is still needed?
+6. 3 ACTIONS — one each for Organic, Paid, and Content
 
-Be precise. Every number must come from the data files.
+Be precise. Every number must come from context/performance-context.json.
 Save to: outputs/research/performance-week-$DATE.md" \
-"$OUTPUTS/research/performance-week-$DATE.md"
+    > "$OUTPUTS/research/performance-week-$DATE.md" 2>>"$LOG" \
+    && log "  ✅ performance complete → performance-week-$DATE.md" \
+    || log "  ⚠️  performance had issues — check $LOG"
 
 # ── Agent 5: SEO Agent (primary growth driver) ──
 log "Agent 5/9 — SEO Agent"
@@ -208,12 +221,9 @@ run_agent "seo-agent" \
 is to grow organic search and REDUCE Google Ads spend by replacing paid traffic with organic.
 
 Read these files:
-- state/ahrefs-data.json        (MAIN: rankings, WoW changes, keyword gap, organic value,
-                                  broken backlinks, target keyword tracker)
-- state/gsc-data.json           (clicks, impressions, CTR, avg position by query/page)
-- state/apify-data.json         (SERP local pack presence, competitor rankings)
-- state/google-trends.json      (trending topics Perth/WA)
+- context/seo-context.json               (Ahrefs: target keyword positions, WoW changes, keyword gap vs Revo/Anytime, broken backlinks, organic value \$/week; GSC: top queries + CTR + position; site crawl issues; local pack presence — pre-compressed from live data)
 - outputs/research/performance-week-$DATE.md
+- outputs/research/weekly-research-$DATE.md  (trending topics for content brief angles)
 
 CB247 target keywords (20 priority KWs tracked in ahrefs-data):
 gym malaga perth, 24/7 gym malaga, gym ellenbrook perth, 24/7 gym ellenbrook,
@@ -235,7 +245,8 @@ Output a structured markdown SEO report covering:
 
 Be actionable. Every recommendation must have a specific fix, not just 'improve this page'.
 Save to: outputs/seo/weekly-seo-brief-$DATE.md" \
-"$OUTPUTS/seo/weekly-seo-brief-$DATE.md"
+"$OUTPUTS/seo/weekly-seo-brief-$DATE.md" \
+"Read(context/seo-context.json),Read(outputs/research/**),Write(outputs/seo/**)"
 
 # ── Agent 6: Competitor Spy ──
 log "Agent 6/9 — Competitor Spy"
@@ -243,10 +254,9 @@ run_agent "competitor-spy" \
 "You are the CB247 Competitor Spy Agent. Today is $DATE.
 
 Read these files:
-- state/ahrefs-data.json        (keyword gap vs Revo + Anytime, their rankings)
-- state/apify-data.json         (Maps ratings/reviews, SERP positions, local pack)
-- state/fb-ads-intel.json       (Revo + Anytime + Snap active Facebook ads)
+- context/competitor-context.json          (SERP positions for each keyword, local pack presence, Maps ratings, Revo/Anytime/Snap Facebook ads — pre-compressed from live data)
 - outputs/research/weekly-research-$DATE.md
+- outputs/seo/weekly-seo-brief-$DATE.md    (keyword gap analysis from SEO agent)
 
 CB247 competitors: Revo Fitness (biggest threat), Anytime Fitness, Snap Fitness, Ryderwear Gym Malaga.
 
@@ -261,7 +271,8 @@ Output a structured markdown competitive intelligence report covering:
 
 Be competitive and specific. Name actual keywords, prices, and tactics.
 Save to: outputs/research/competitor-weekly-$DATE.md" \
-"$OUTPUTS/research/competitor-weekly-$DATE.md"
+"$OUTPUTS/research/competitor-weekly-$DATE.md" \
+"Read(context/competitor-context.json),Read(outputs/research/**),Read(outputs/seo/**),Write(outputs/research/**)"
 
 # ── Agent 7: Paid Ads ──
 log "Agent 7/9 — Paid Ads Agent"
@@ -271,9 +282,8 @@ Primary directive: REDUCE Google Ads spend as SEO takes over. Every dollar saved
 that are now covered by organic is a win.
 
 Read these files:
-- state/google-ads-data.json    (campaigns, spend, CPA, conversions by keyword/campaign)
-- state/ahrefs-data.json        (target keyword tracker — which KWs we rank #1-3 organically)
-- outputs/seo/weekly-seo-brief-$DATE.md    (Google Ads offset recommendations)
+- context/paid-ads-context.json             (Google Ads spend/CPA/conversions by campaign + location, current and prior week; which target keywords rank organically #1-3 — pre-compressed from live data)
+- outputs/seo/weekly-seo-brief-$DATE.md    (Google Ads offset recommendations from SEO agent)
 - outputs/research/audience-weekly-$DATE.md (ICP targeting brief)
 - outputs/research/content-intel-$DATE.md  (creative angles for Meta)
 
@@ -292,7 +302,8 @@ META ADS (prepared for reinstatement):
 
 Be specific: name exact campaigns, keyword groups, and dollar amounts.
 Save to: outputs/research/paid-ads-weekly-$DATE.md" \
-"$OUTPUTS/research/paid-ads-weekly-$DATE.md"
+"$OUTPUTS/research/paid-ads-weekly-$DATE.md" \
+"Read(context/paid-ads-context.json),Read(outputs/seo/**),Read(outputs/research/**),Write(outputs/research/**)"
 
 # ── Agent 8: Content Agent ──
 log "Agent 8/9 — Content Agent"
@@ -302,6 +313,7 @@ Generate a full week of READY-TO-PUBLISH content — the team should be able to 
 Content is SEO-led, ICP-driven, seasonally aware, and informed by viral trends.
 
 Read these files:
+- context/content-agent-context.json             (trending hashtags + top viral hooks — pre-compressed trend signals)
 - outputs/seo/weekly-seo-brief-$DATE.md          (keyword briefs, ranking data)
 - outputs/research/content-intel-$DATE.md         (viral hooks, formats, audio)
 - outputs/research/audience-weekly-$DATE.md       (ICP language, tone, pain points)
@@ -341,7 +353,8 @@ Generate ALL of the following — complete, copy-paste ready:
    Format: [Audience] [Headline] [Body 90 words] [CTA] [Format: image/video/carousel]
 
 Save EVERYTHING to: outputs/content/weekly-content-$DATE.md" \
-"$OUTPUTS/content/weekly-content-$DATE.md"
+"$OUTPUTS/content/weekly-content-$DATE.md" \
+"Read(context/content-agent-context.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(context/psychology-triggers.md),Read(outputs/**),Write(outputs/content/**)"
 
 # ── Agent 9: Strategist ──
 log "Agent 9/9 — Strategist"
@@ -389,7 +402,8 @@ Output a concise executive strategy document covering:
 5. WEEKLY NARRATIVE — 3 sentences: where we are, what moved, what matters most
 
 Save to: outputs/blueprints/weekly-strategy-$DATE.md" \
-"$OUTPUTS/blueprints/weekly-strategy-$DATE.md"
+"$OUTPUTS/blueprints/weekly-strategy-$DATE.md" \
+"Read(context/seasonal-calendar.md),Read(outputs/**),Write(outputs/blueprints/**)"
 
 log "Phase 2 complete — all 9 agents run."
 

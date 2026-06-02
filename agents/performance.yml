@@ -1,7 +1,8 @@
 name: performance
-model: minimax/minimax-m2.7
 skills: performance-dashboard
-tools: Read, Write(outputs/research/**), Write(state/**)
+# Layer 2: reads compressed context only — state/ access is denied
+data_source: context/performance-context.json
+tools: Read(context/performance-context.json), Write(outputs/research/**), Write(state/kpi_ledger.json)
 Runs: Weekly, post-campaign only
 KPI: Meta CPM<$12 CPC<$1.50 CPL<$25 | Google CTR>4% CPC<$3
 Output: outputs/research/performance-week-[N].md

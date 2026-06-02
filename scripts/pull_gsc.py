@@ -32,9 +32,9 @@ def pull_gsc():
     # Build the service with webmasters scope
     service = build("searchconsole", "v1", credentials=creds)
 
-    # Date range: last 28 days
-    end_date   = datetime.today().strftime("%Y-%m-%d")
-    start_date = (datetime.today() - timedelta(days=28)).strftime("%Y-%m-%d")
+    # Date range: last 7 days (matches GA4 + Google Ads weekly reporting window)
+    end_date   = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")   # yesterday = May 31
+    start_date = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")   # 7 days back = May 25
 
     output = {
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),

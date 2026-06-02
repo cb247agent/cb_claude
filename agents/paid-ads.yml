@@ -1,8 +1,10 @@
 name: paid-ads
-model: minimax/minimax-m2.7
 skills: meta-ads-optimizer, google-ads-optimizer, utm-standardizer
-tools: Read, Write(outputs/creatives/**), Write(state/**)
+# Layer 2: reads compressed context only — state/ access is denied
+data_source: context/paid-ads-context.json
+tools: Read(context/paid-ads-context.json), Read(context/psychology-triggers.md), Read(context/seasonal-calendar.md), Read(context/brand-voice.md), Read(context/research-competitors.md), Read(outputs/blueprints/**), Read(skills/**), Write(outputs/creatives/**), Write(state/kpi_ledger.json)
 context_files:
+  - context/paid-ads-context.json
   - context/psychology-triggers.md
   - context/seasonal-calendar.md
   - context/brand-voice.md

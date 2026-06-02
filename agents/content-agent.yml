@@ -3,15 +3,17 @@
 name: content-agent
 description: Generates all social media content for CB247
 version: 1.0
-model: minimax/minimax-m2.7
 
+# Layer 2: reads compressed context only — state/ access is denied
+data_source: context/content-agent-context.json
+tools: Read(context/content-agent-context.json), Read(context/brand-voice.md), Read(context/marketing-strategy.md), Read(context/psychology-triggers.md), Read(context/seasonal-calendar.md), Read(context/research-competitors.md), Read(outputs/**), Read(skills/**), Write(outputs/content/**)
 context_files:
+  - context/content-agent-context.json
   - context/brand-voice.md
   - context/marketing-strategy.md
   - context/psychology-triggers.md
   - context/seasonal-calendar.md
   - context/research-competitors.md
-  - context/strategy-pestle-swot.md
   - skills/content-writer/SKILL.md
   - skills/brand-guideline/SKILL.md
 

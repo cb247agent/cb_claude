@@ -1,7 +1,8 @@
 name: content-intel
-model: minimax/minimax-m2.7
 skills: viral-content-finder
-tools: Read, Write(outputs/research/**), WebSearch
+# Layer 2: reads compressed context only — state/ access is denied
+data_source: context/content-intel-context.json
+tools: Read(context/content-intel-context.json), Read(skills/**), Write(outputs/research/**), WebSearch
 Focus: Top fitness content AU — Instagram, Facebook, YouTube
   Extract: hooks, formats, caption length, emotion triggers
   Perth filter + @chasingbetter247 audit

@@ -9,7 +9,8 @@ secrets/
 .secrets
 api-keys.txt
 
-# Claude Code local settings
+# Claude Code local settings — contains API keys and auth tokens
+.claude/settings.json
 .claude/settings.local.json
 
 # Sensitive outputs

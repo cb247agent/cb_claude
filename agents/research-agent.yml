@@ -3,12 +3,14 @@
 name: research-agent
 description: Monitors competitors, trends, and market signals for CB247
 version: 1.0
-model: minimax/minimax-m2.7
 
+# Layer 2: reads compressed context only — state/ access is denied
+data_source: context/research-context.json
+tools: Read(context/research-context.json), Read(context/research-competitors.md), Read(context/strategy-pestle-swot.md), Read(context/seasonal-calendar.md), Read(outputs/**), Write(outputs/research/**), WebSearch, WebFetch
 context_files:
+  - context/research-context.json
   - context/research-competitors.md
   - context/strategy-pestle-swot.md
-  - CLAUDE.md
 
 output_folder: outputs/research/
 
