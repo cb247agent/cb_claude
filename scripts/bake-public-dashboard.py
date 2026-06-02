@@ -3847,7 +3847,7 @@ function renderReadme() {
         <ul class="tc-tasks">
           <li>Maintains the Marketing OS</li>
           <li>Quality checks reports + data accuracy</li>
-          <li>Approves/adjusts/rejects recommendations</li>
+          <li>Delivers the weekly report to the team</li>
           <li>Releases team emails after approval</li>
         </ul>
       </div>
