@@ -3442,60 +3442,176 @@ window.cycleFromModal = () => {
   renderPlanner();
 };
 
-function renderPlanner() {
-  let html = comingSoon(
-    'Content Planner',
-    'The automated 2-week content calendar will appear here once the Content Agent pipeline is connected. It will generate platform-specific content items, assign them to team members, and track approval status.',
-    ['Content Agent pipeline running weekly (weekly-content-YYYY-MM-DD.md)',
-     'Team member assignments configured in config/team-roles.json',
-     'Approval workflow wired to agent outputs']
-  );
+// ── Platform colours + icons ────────────────────────────────────────────────
+const PLAT_CFG = {
+  instagram: {bg:'#fce7f3',color:'#9d174d',icon:'📸',label:'Instagram'},
+  tiktok:    {bg:'#1a1a2e',color:'#fff',   icon:'🎵',label:'TikTok'},
+  blog:      {bg:'#dbeafe',color:'#1e40af',icon:'✍️',label:'Blog'},
+  email:     {bg:'#fef9c3',color:'#854d0e',icon:'📧',label:'Email'},
+  gbp:       {bg:'#dcfce7',color:'#166534',icon:'📍',label:'GBP'},
+  meta:      {bg:'#ede9fe',color:'#5b21b6',icon:'📢',label:'Meta Ad'},
+};
+const ASSIGNEE_CFG = {
+  'AI':     {bg:'#e0f2fe',color:'#0369a1'},
+  'Shauna': {bg:'#fef9c3',color:'#854d0e'},
+  'Tia':    {bg:'#e8f5f4',color:'#3FA69A'},
+  'Joanne': {bg:'#dcfce7',color:'#166534'},
+  'Angela': {bg:'#fee2e2',color:'#991b1b'},
+  'Agust':  {bg:'#fce7f3',color:'#9d174d'},
+  'Ivan':   {bg:'#fce7f3',color:'#9d174d'},
+};
+function platBadge(p) {
+  const c = PLAT_CFG[p] || {bg:'#f3f4f6',color:'var(--muted)',icon:'📄',label:p};
+  return `<span style="background:${c.bg};color:${c.color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">${c.icon} ${c.label}</span>`;
+}
+function assigneeBadge(a) {
+  const c = ASSIGNEE_CFG[a] || {bg:'#f3f4f6',color:'var(--muted)'};
+  return `<span style="background:${c.bg};color:${c.color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px">${a}</span>`;
+}
 
-  // ── SEO Content Briefs — pages to build from SEO agent ──────────────────────
+// ── KANBAN STATUS CONFIG ──────────────────────────────────────────────────────
+const KANBAN_COLS = [
+  {key:'Idea',       label:'💡 Idea',        color:'#e0f2fe', border:'#0ea5e9'},
+  {key:'In Progress',label:'🔧 In Progress', color:'#fef9c3', border:'#d97706'},
+  {key:'Angela QC',  label:'🔍 Angela QC',   color:'#fee2e2', border:'#ef4444'},
+  {key:'Scheduled',  label:'📅 Scheduled',   color:'#ede9fe', border:'#7c3aed'},
+  {key:'Published',  label:'✅ Published',   color:'#dcfce7', border:'#16a34a'},
+];
+
+function renderPlanner() {
+  const saved    = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
+  const approved = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
+
+  // ── Status counts for KPI bar ────────────────────────────────────────────
+  const counts = {};
+  KANBAN_COLS.forEach(c => counts[c.key] = 0);
+  PLANNER_ITEMS.forEach(item => {
+    const s = saved[item.id] || 'Idea';
+    counts[s] = (counts[s]||0) + 1;
+  });
+  const pendingQC  = counts['Angela QC'] || 0;
+  const scheduled  = counts['Scheduled'] || 0;
+  const published  = counts['Published'] || 0;
+  const totalItems = PLANNER_ITEMS.length;
+
+  let html = '';
+
+  // ── KPI bar ────────────────────────────────────────────────────────────
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Total Items', totalItems, null, 'In this 2-week plan')}
+    ${kpiCard('','Pending QC', pendingQC, null, 'Waiting for Angela review', pendingQC>0?'amber':'')}
+    ${kpiCard('','Scheduled', scheduled, null, 'Approved + in scheduler', scheduled>0?'green':'')}
+    ${kpiCard('','Published', published, null, 'Live this cycle', published>0?'green':'')}
+  </div>`;
+
+  // ── Approval flow reminder ───────────────────────────────────────────────
+  html += `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:11px;color:var(--text-2)">
+    <span style="font-weight:700;color:var(--teal)">Approval flow:</span>
+    AI drafts → <b>Tia</b> reviews → move to <b>In Progress</b> → <b>Angela QC</b> → <b>Joanne</b> schedules social · <b>Tia</b> posts GBP
+  </div>`;
+
+  // ── Kanban board ──────────────────────────────────────────────────────
+  html += sectionTitle('Kanban Board — Drag Status to Progress Items');
+  html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:28px;overflow-x:auto">`;
+
+  KANBAN_COLS.forEach(col => {
+    const items = PLANNER_ITEMS.filter(item => (saved[item.id]||'Idea') === col.key);
+    html += `<div style="background:${col.color};border-top:3px solid ${col.border};border-radius:6px;padding:10px;min-height:120px">
+      <div style="font-size:11px;font-weight:700;margin-bottom:10px;color:var(--text)">${col.label} <span style="font-size:10px;color:var(--muted);font-weight:400">(${items.length})</span></div>
+      ${items.map(item => {
+        const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'var(--muted)',icon:'📄'};
+        const ac = ASSIGNEE_CFG[item.assignee] || {bg:'#f3f4f6',color:'var(--muted)'};
+        return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border-radius:5px;padding:8px 10px;margin-bottom:8px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08);transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 3px 8px rgba(0,0,0,.15)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,.08)'">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px">
+            <span style="background:${pc.bg};color:${pc.color};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px">${pc.icon} ${item.platform.toUpperCase()}</span>
+            <span style="background:${ac.bg};color:${ac.color};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px">${item.assignee}</span>
+          </div>
+          <div style="font-size:11px;font-weight:600;line-height:1.3;margin-bottom:4px">${item.title}</div>
+          <div style="font-size:10px;color:var(--muted)">Day ${item.day} · Due ${item.dueDate}</div>
+        </div>`;
+      }).join('')}
+      ${items.length===0 ? `<div style="font-size:10px;color:var(--muted-2);text-align:center;padding:12px 0">Empty</div>` : ''}
+    </div>`;
+  });
+  html += `</div>`;
+
+  // ── 2-week calendar grid ──────────────────────────────────────────────
+  html += sectionTitle('2-Week Content Calendar');
+  const days = [...new Set(PLANNER_ITEMS.map(i=>i.day))].sort((a,b)=>a-b);
+  const today = new Date();
+  html += `<div style="overflow-x:auto;margin-bottom:28px"><table style="width:100%;border-collapse:collapse;min-width:700px">
+    <thead><tr style="background:var(--bg-2)">
+      ${days.map(d => {
+        const dt = new Date(today); dt.setDate(today.getDate()+d);
+        const dayStr = dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+        return `<th style="padding:8px 10px;font-size:11px;font-weight:700;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Day ${d}<br><span style="font-weight:400;color:var(--muted)">${dayStr}</span></th>`;
+      }).join('')}
+    </tr></thead>
+    <tbody><tr style="vertical-align:top">
+      ${days.map(d => {
+        const dayItems = PLANNER_ITEMS.filter(i=>i.day===d);
+        return `<td style="padding:8px 6px;border-right:1px solid var(--border);min-width:120px">
+          ${dayItems.map(item => {
+            const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'var(--muted)',icon:'📄'};
+            const st = saved[item.id] || 'Idea';
+            const stColor = st==='Published'?'#16a34a':st==='Scheduled'?'#7c3aed':st==='Angela QC'?'#ef4444':st==='In Progress'?'#d97706':'#0ea5e9';
+            return `<div onclick="openPlannerModal('${item.id}')" style="background:${pc.bg};border-left:3px solid ${pc.color};border-radius:4px;padding:6px 8px;margin-bottom:6px;cursor:pointer;font-size:10px">
+              <div style="font-weight:700;color:${pc.color};margin-bottom:2px">${pc.icon} ${item.type}</div>
+              <div style="font-weight:600;line-height:1.3;color:var(--text)">${item.title}</div>
+              <div style="margin-top:4px;display:flex;justify-content:space-between;align-items:center">
+                <span style="color:var(--muted);font-size:9px">${item.assignee}</span>
+                <span style="font-size:9px;font-weight:700;color:${stColor}">${st}</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </td>`;
+      }).join('')}
+    </tr></tbody>
+  </table></div>`;
+
+  // ── All items list ─────────────────────────────────────────────────────
+  html += sectionTitle('All Content Items — ' + totalItems + ' items this cycle');
+  html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
+    <th>Platform</th><th>Title</th><th>Assignee</th><th>Keyword</th><th class="num">Day</th><th>Status</th><th>Action</th>
+  </tr></thead><tbody>
+  ${PLANNER_ITEMS.map(item => {
+    const st = saved[item.id] || 'Idea';
+    const stColor = st==='Published'?'#16a34a':st==='Scheduled'?'#7c3aed':st==='Angela QC'?'#ef4444':st==='In Progress'?'#d97706':'#0ea5e9';
+    const nextSt = KANBAN_COLS[(KANBAN_COLS.findIndex(c=>c.key===st)+1) % KANBAN_COLS.length].key;
+    return `<tr>
+      <td>${platBadge(item.platform)}</td>
+      <td style="font-size:12px;font-weight:600;max-width:200px">${item.title}</td>
+      <td>${assigneeBadge(item.assignee)}</td>
+      <td style="font-size:10px;color:var(--muted)">${item.kw||'–'}</td>
+      <td class="num">${item.day}</td>
+      <td><span style="font-size:10px;font-weight:700;color:${stColor}">${st}</span></td>
+      <td style="white-space:nowrap">
+        <button onclick="openPlannerModal('${item.id}')" style="font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:var(--bg-2)">View</button>
+        <button onclick="advanceStatus('${item.id}')" style="font-size:10px;padding:3px 8px;border:1px solid var(--teal);border-radius:4px;cursor:pointer;background:rgba(63,166,154,.08);color:var(--teal);margin-left:4px">→ ${nextSt}</button>
+      </td>
+    </tr>`;
+  }).join('')}
+  </tbody></table></div>`;
+
+  // ── SEO Content Briefs ─────────────────────────────────────────────────
   const _ao_seo_p = D.raw_agent_outputs || {};
   const _seoBriefs = (_ao_seo_p.seo_highlights || {}).content_briefs || [];
   if (_seoBriefs.length) {
-    html += `<div style="margin-top:28px">
-      ${sectionTitle('📝 SEO Pages to Build — Content Briefs from SEO Agent (' + _ao_seo_p.date + ')')}
-      <div class="insight teal mb" style="margin-bottom:12px">
-        <div class="insight-label">What are these?</div>
-        The SEO agent identified these pages as the highest-value organic opportunities. Each brief includes H1, meta description, full outline, and internal link strategy. Assign to content team and dev to build.
-      </div>
-      <div style="display:grid;gap:12px">
+    html += `<div style="margin-top:8px">
+      ${sectionTitle('SEO Pages to Build — From SEO Agent')}
+      <div style="display:grid;gap:10px">
         ${_seoBriefs.map((b,i)=>`
-        <div class="card" style="border-left:4px solid var(--teal);padding:18px">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
-            <div>
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--teal);margin-bottom:4px">SEO Content Brief ${i+1}</div>
-              <div style="font-weight:700;font-size:15px">${b.title}</div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px">
-              ${b.url ? `<span style="background:rgba(63,166,154,0.1);color:var(--teal);padding:3px 8px;border-radius:4px;font-family:monospace">${b.url}</span>` : ''}
-              ${b.word_count ? `<span style="background:#f3f4f6;color:var(--muted);padding:3px 8px;border-radius:4px">${b.word_count} words</span>` : ''}
-            </div>
+        <div class="card" style="border-left:4px solid var(--teal);padding:16px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--teal);margin-bottom:4px">SEO Brief ${i+1}</div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:6px">${b.title}</div>
+          ${b.keyword?`<div style="font-size:11px;color:var(--muted)">🔑 ${b.keyword}</div>`:''}
+          ${b.why?`<div style="font-size:11px;color:var(--muted);margin-top:4px">💡 ${b.why}</div>`:''}
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            ${b.url?`<span style="background:rgba(63,166,154,.1);color:var(--teal);padding:2px 8px;border-radius:3px;font-size:10px;font-family:monospace">${b.url}</span>`:''}
+            ${b.word_count?`<span style="background:#f3f4f6;color:var(--muted);padding:2px 8px;border-radius:3px;font-size:10px">${b.word_count} words</span>`:''}
+            <span style="background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">Assign to AI → Angela QC → Mark publishes</span>
           </div>
-          ${b.why ? `<div style="font-size:12px;color:var(--muted);margin-bottom:10px;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:4px">💡 ${b.why}</div>` : ''}
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:10px">
-            ${b.keyword ? `<div><span style="font-weight:600;color:var(--muted);font-size:10px;text-transform:uppercase">Target Keyword</span><br>${b.keyword}</div>` : ''}
-            ${b.h1 ? `<div><span style="font-weight:600;color:var(--muted);font-size:10px;text-transform:uppercase">H1</span><br>${b.h1}</div>` : ''}
-          </div>
-          ${b.meta ? `<div style="font-size:11px;color:var(--muted);border:1px dashed var(--border);padding:8px 10px;border-radius:4px;margin-bottom:10px"><span style="font-weight:700">Meta:</span> ${b.meta}</div>` : ''}
-          ${b.cta ? `<div style="font-size:11px"><span style="font-weight:600">CTA:</span> ${b.cta}</div>` : ''}
         </div>`).join('')}
-      </div>
-    </div>`;
-  }
-
-  // ── Content Agent output (GBP posts, blogs, social, reels, templates, Meta ads) ──
-  const _ao_c = D.raw_agent_outputs || {};
-  if (_ao_c.has_outputs && _ao_c.content) {
-    html += `<div style="margin-top:32px">
-      ${sectionTitle('✍️ Content Agent Output — ' + _ao_c.date + ' (25 May – 31 May 2026)')}
-      <div style="background:rgba(63,166,154,0.06);border:1px solid rgba(63,166,154,.2);border-radius:8px;padding:14px;margin-bottom:12px;font-size:11px;color:var(--muted)">
-        Copy-paste ready content: GBP posts · Blog drafts · Social posts · Reel scripts · Review templates · Meta ad copy
-      </div>
-      <div class="card" style="padding:20px;font-size:12px;line-height:1.7;max-height:700px;overflow-y:auto">
-        ${formatAgentMd(_ao_c.content)}
       </div>
     </div>`;
   }
@@ -3503,16 +3619,180 @@ function renderPlanner() {
   $('planner-content').innerHTML = html;
 }
 
+// Advance a planner item to next status without opening modal
+window.advanceStatus = (id) => {
+  const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
+  const curr = saved[id] || 'Idea';
+  const idx = KANBAN_COLS.findIndex(c=>c.key===curr);
+  const next = KANBAN_COLS[(idx+1) % KANBAN_COLS.length].key;
+  saved[id] = next;
+  localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+  renderPlanner();
+};
+
 // ── Render: Content Review ────────────────────────────────────────────────────
 function renderContentReview() {
-  $('review-content').innerHTML = comingSoon(
-    'Content Review',
-    'The Kanban approval board (Generated → Tia Approved → Angela QC → Scheduled → Published) activates once the Content Agent is generating weekly outputs.',
-    ['Content Agent pipeline producing weekly-content-YYYY-MM-DD.md',
-     'Team roles confirmed in config/team-roles.json',
-     'Social scheduler credentials connected (Metricool or Buffer)']
-  );
-  if($('review-badge')) $('review-badge').textContent = '';
+  const saved    = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
+  const seo      = D.seo || {};
+  const gscQ     = seo.gsc_queries || [];
+  const gscPages = seo.top_pages   || [];
+  const meta     = (D.organic_social && D.organic_social.meta) || {};
+  const ads      = meta.active || [];
+  const mal      = meta.malaga_cur || {};
+  const ell      = meta.ell_cur    || {};
+
+  // Items marked Published or Scheduled
+  const published = PLANNER_ITEMS.filter(i => saved[i.id]==='Published');
+  const scheduled = PLANNER_ITEMS.filter(i => saved[i.id]==='Scheduled');
+  const pendingQC = PLANNER_ITEMS.filter(i => saved[i.id]==='Angela QC');
+
+  // Top performing GSC query
+  const topQuery = [...gscQ].sort((a,b)=>(b.clicks||0)-(a.clicks||0))[0];
+  const topPage  = [...gscPages].sort((a,b)=>(b.traffic||0)-(a.traffic||0))[0];
+
+  // Star ad from Meta
+  const starAd = ads.find(a=>a.tier==='star');
+  const poorAds = ads.filter(a=>a.tier==='poor');
+
+  let html = '';
+
+  // ── KPI bar ────────────────────────────────────────────────────────────
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Published', published.length, null, 'Items marked live this cycle', published.length>0?'green':'')}
+    ${kpiCard('','Pending QC', pendingQC.length, null, 'Waiting for Angela review', pendingQC.length>0?'amber':'')}
+    ${kpiCard('','Top Organic Query', topQuery?topQuery.query:'–', null, topQuery?topQuery.clicks+' clicks · pos '+topQuery.position:'No GSC data')}
+    ${kpiCard('','Star Ad', starAd?'✅ Found':'None', null, starAd?starAd.ad_name:'No star-tier ads this week', starAd?'green':'amber')}
+  </div>`;
+
+  // ── Performance loop reminder ─────────────────────────────────────────
+  html += `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:11px;color:var(--text-2)">
+    <span style="font-weight:700;color:var(--teal)">Review loop:</span>
+    Content goes live → <b>2 weeks</b> to gather data → review here → learnings feed next Content Planner cycle
+  </div>`;
+
+  // ── Section 1: Content items by status ───────────────────────────────
+  html += sectionTitle('Content Items — Current Status');
+  if (published.length === 0 && scheduled.length === 0 && pendingQC.length === 0) {
+    html += `<div class="card mb" style="padding:20px;text-align:center;color:var(--muted);font-size:13px">
+      No items published or scheduled yet. Use the <b>Content Planner</b> to advance items through the workflow.
+    </div>`;
+  } else {
+    const reviewGroups = [
+      {label:'✅ Published — check performance in 2 weeks', items: published, color:'#16a34a', bg:'#dcfce7'},
+      {label:'📅 Scheduled — going out soon', items: scheduled, color:'#7c3aed', bg:'#ede9fe'},
+      {label:'🔍 Waiting Angela QC', items: pendingQC, color:'#ef4444', bg:'#fee2e2'},
+    ];
+    reviewGroups.forEach(g => {
+      if (!g.items.length) return;
+      html += `<div class="card mb">
+        <div style="font-size:11px;font-weight:700;color:${g.color};background:${g.bg};padding:8px 12px;border-radius:4px;margin-bottom:12px">${g.label}</div>
+        <table><thead><tr>
+          <th>Platform</th><th>Title</th><th>Assignee</th><th style="font-size:10px">Caption preview</th><th>Action</th>
+        </tr></thead><tbody>
+        ${g.items.map(item=>`<tr>
+          <td>${platBadge(item.platform)}</td>
+          <td style="font-size:12px;font-weight:600">${item.title}</td>
+          <td>${assigneeBadge(item.assignee)}</td>
+          <td style="font-size:10px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.caption||'–'}</td>
+          <td><button onclick="advanceStatus('${item.id}')" style="font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:var(--bg-2)">Advance ›</button></td>
+        </tr>`).join('')}
+        </tbody></table>
+      </div>`;
+    });
+  }
+
+  // ── Section 2: Organic content performance (GSC) ──────────────────────
+  html += sectionTitle('Organic Content Performance — Google Search Console (7 days)');
+  html += `<div class="grid-2 mb">
+    <div class="card">
+      <div class="card-h">Top Queries by Clicks</div>
+      <table><thead><tr>
+        <th>Query</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">Pos</th><th style="font-size:10px">Signal</th>
+      </tr></thead><tbody>
+      ${gscQ.slice(0,10).map(q=>{
+        const signal = q.clicks>=50 ? '🟢 Strong' : q.clicks>=10 ? '🟡 Growing' : '🔴 Low';
+        const action = q.position>3&&q.position<=10 ? '⚡ Optimise H1' : q.position>10 ? '📄 Build page' : '🔒 Protect';
+        return `<tr>
+          <td style="font-size:11px">${q.query}</td>
+          <td class="num">${fmt(q.clicks,'n')}</td>
+          <td class="num">${q.ctr}%</td>
+          <td class="num">${posBadge(q.position)}</td>
+          <td style="font-size:9px;color:var(--muted)">${action}</td>
+        </tr>`;
+      }).join('')||'<tr><td colspan="5" style="color:var(--muted)">No GSC data</td></tr>'}
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-h">Top Pages by Traffic</div>
+      <table><thead><tr>
+        <th>Page</th><th class="num">Clicks</th><th class="num">Pos</th><th style="font-size:10px">Action</th>
+      </tr></thead><tbody>
+      ${gscPages.slice(0,10).map(p=>{
+        const url = (p.url||'/').replace('https://www.chasingbetter247.com.au','') || '/';
+        const action = (p.pos||99)<=3 ? 'Protect' : (p.pos||99)<=10 ? 'Optimise' : 'Build page';
+        return `<tr>
+          <td style="font-size:10px;color:var(--text-2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${url}</td>
+          <td class="num">${fmt(p.traffic,'n')}</td>
+          <td class="num">${posBadge(p.pos)}</td>
+          <td style="font-size:10px;color:var(--muted)">${action}</td>
+        </tr>`;
+      }).join('')||'<tr><td colspan="4" style="color:var(--muted)">No page data</td></tr>'}
+      </tbody></table>
+    </div>
+  </div>`;
+
+  // ── Section 3: Paid ad creative performance (Meta) ────────────────────
+  html += sectionTitle('Paid Ad Creative Performance — Meta Ads');
+  if (ads.length > 0) {
+    const sortedAds = [...ads].sort((a,b) => (b.tier==='star'?3:b.tier==='good'?2:b.tier==='poor'?0:1) - (a.tier==='star'?3:a.tier==='good'?2:a.tier==='poor'?0:1));
+    html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
+      <th>Creative</th><th>Location</th><th class="num">Spend</th><th class="num">CTR</th>
+      <th class="num">CPM</th><th class="num">Results</th><th>Tier</th><th style="font-size:10px">Verdict</th>
+    </tr></thead><tbody>
+    ${sortedAds.map(a=>{
+      const verdict = a.tier==='star' ? '🚀 Scale — raise budget 30%'
+        : a.tier==='good'  ? '✅ Keep — maintain budget'
+        : a.tier==='poor'  ? '⛔ Pause — below average signal'
+        : '⏸ Monitor — refresh in 2 weeks';
+      return `<tr style="${a.tier==='star'?'background:#f0fdf4':a.tier==='poor'?'background:#fff5f5':''}">
+        <td style="font-size:11px;max-width:180px;word-break:break-word">${a.ad_name}</td>
+        <td style="font-size:10px">${a.location||'–'}</td>
+        <td class="num">$${(a.spend||0).toFixed(2)}</td>
+        <td class="num ${(a.ctr||0)>=3?'good':(a.ctr||0)<1?'bad':''}">${a.ctr||'–'}%</td>
+        <td class="num">${a.cpm>0?'$'+a.cpm:'–'}</td>
+        <td class="num ${a.results>0?'good':''}">${a.results||'–'}</td>
+        <td>${tierBadge(a.tier)}</td>
+        <td style="font-size:10px;color:var(--text-2)">${verdict}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+  } else {
+    html += `<div class="card mb" style="padding:20px;color:var(--muted);font-size:13px;text-align:center">
+      No active Meta ad data. Upload Meta CSV files to <code>metaads/</code> folder and run <code>python3 scripts/bake-public-dashboard.py</code>.
+    </div>`;
+  }
+
+  // ── Section 4: What's working — learning summary ──────────────────────
+  html += sectionTitle('What\'s Working — Learnings for Next Cycle');
+  const topGscQ = gscQ.filter(q=>q.clicks>=5).slice(0,3);
+  const brandQ  = gscQ.filter(q=>['chasing better','chasingbetter'].some(b=>(q.query||'').toLowerCase().includes(b)));
+  const nonBrand = gscQ.filter(q=>!['chasing better','chasingbetter','cb247'].some(b=>(q.query||'').toLowerCase().includes(b)) && q.clicks>0);
+  html += `<div class="grid-2 mb">
+    <div class="insight teal">
+      <div class="insight-label">✅ What to repeat</div>
+      ${starAd ? `<b>Meta:</b> "${starAd.ad_name}" has dual Above Average signals — duplicate this angle and test a new variation.<br><br>` : ''}
+      ${topGscQ.length ? `<b>SEO:</b> Top queries — ${topGscQ.map(q=>`"${q.query}" (${q.clicks} clicks)`).join(', ')} — these pages are working. Add internal links from new content back to them.<br><br>` : ''}
+      ${nonBrand.length ? `<b>Non-brand traffic:</b> ${nonBrand.slice(0,3).map(q=>`"${q.query}"`).join(', ')} are generating organic clicks — expand with more content on these topics.` : 'Focus on building non-brand keyword content — currently most traffic is brand-name searches.'}
+    </div>
+    <div class="insight ${poorAds.length>0||nonBrand.length===0?'red':'amber'}">
+      <div class="insight-label">⚠️ What to fix or retire</div>
+      ${poorAds.length > 0 ? `<b>Meta:</b> ${poorAds.length} ad${poorAds.length>1?'s':''} with Below Average signals — <b>pause now</b>: ${poorAds.map(a=>`"${a.ad_name}"`).join(', ')}. Replace with new creative using the star ad angle.<br><br>` : '<b>Meta:</b> No poor-tier ads this week. Refresh any Average-tier ads every 3–4 weeks to prevent fatigue.<br><br>'}
+      ${brandQ.length > (gscQ.length * 0.7) ? `<b>SEO:</b> ${Math.round(brandQ.length/gscQ.length*100)}% of clicks are brand searches (people already know CB247). Build non-brand content to attract new audiences — "gym malaga", "reformer pilates perth", "kids gym malaga".` : '<b>SEO:</b> Good mix of brand and non-brand traffic. Keep publishing keyword-targeted content to grow non-brand share.'}
+    </div>
+  </div>`;
+
+  $('review-content').innerHTML = html;
+  if($('review-badge')) $('review-badge').textContent = pendingQC.length > 0 ? pendingQC.length : '';
 }
 
 // ── Render: Website Manager ───────────────────────────────────────────────────
