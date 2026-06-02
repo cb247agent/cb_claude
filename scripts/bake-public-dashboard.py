@@ -1966,11 +1966,12 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
         <div style="font-size:11px;color:var(--muted);margin-top:8px">Share with Angela (Brand Manager) for QC review before publish</div>
       </div>
       <div class="modal-approval">
-        <div class="modal-section-label" style="margin-bottom:10px">Approval Decision</div>
+        <div class="modal-section-label" style="margin-bottom:4px">Approval Decision</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:10px">Approved moves the card to the next stage. Rejected sends it back to Idea.</div>
         <div class="approval-btns">
-          <button class="appr-pill" id="apill-approved" onclick="setModalApproval('approved')">Approved</button>
+          <button class="appr-pill" id="apill-approved" onclick="setModalApproval('approved')">Approved — advance stage</button>
           <button class="appr-pill" id="apill-adjustment" onclick="setModalApproval('adjustment')">Needs Adjustment</button>
-          <button class="appr-pill" id="apill-rejected" onclick="setModalApproval('rejected')">Rejected</button>
+          <button class="appr-pill" id="apill-rejected" onclick="setModalApproval('rejected')">Rejected — back to Idea</button>
         </div>
         <div id="modal-notes-wrap" style="display:none">
           <div class="modal-section-label" style="margin-bottom:4px">Notes / Adjustment Instructions</div>
@@ -3365,9 +3366,13 @@ window.openPlannerModal = (id) => {
     ? `<div><div class="modal-section-label">Target Keyword</div><span class="chip" style="font-size:12px">${item.kw}</span></div>`
     : '';
 
-  // Status pill
+  // Status pill + cycle button label
   const sc = PLANNER_STATUS_COLORS[status]||'#f3f4f6';
   $('modal-status-pill').innerHTML = `<span style="background:${sc};border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700">${status}</span>`;
+  const _cidx = KANBAN_COLS.findIndex(c=>c.key===status);
+  const _cnext = KANBAN_COLS[Math.min(_cidx+1,KANBAN_COLS.length-1)].key;
+  $('modal-cycle-btn').textContent = 'Move to: ' + _cnext + ' →';
+  _pendingApproval = null;
 
   // Approval state
   _refreshApprovalPills(apprData.status||null);
@@ -3403,7 +3408,7 @@ window.closePlannerModal = () => {
 
 window.saveModalAndClose = () => {
   if(!_modalItemId) { closePlannerModal(); return; }
-  // Save approval
+  // Save notes
   const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
   const current = approval[_modalItemId]||{};
   approval[_modalItemId] = {...current, notes: $('modal-notes').value};
@@ -3412,13 +3417,46 @@ window.saveModalAndClose = () => {
   renderPlanner();
 };
 
+// _pendingApproval tracks what the user has selected before saving
+let _pendingApproval = null;
+
 window.setModalApproval = (val) => {
   if(!_modalItemId) return;
+  _pendingApproval = val;
+  _refreshApprovalPills(val);
+  $('modal-notes-wrap').style.display = (val==='adjustment'||val==='rejected') ? 'block' : 'none';
+
+  // Apply status change immediately based on decision:
+  // Approved  → advance to next stage
+  // Rejected  → send back to Idea
+  // Adjustment → stay in current stage (just flag it)
+  const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
+  const curr = saved[_modalItemId]||'Idea';
+  let newStatus = curr;
+  if(val==='approved') {
+    const idx = KANBAN_COLS.findIndex(c=>c.key===curr);
+    const lastIdx = KANBAN_COLS.length - 1;
+    newStatus = KANBAN_COLS[Math.min(idx+1, lastIdx)].key;
+  } else if(val==='rejected') {
+    newStatus = 'Idea';
+  }
+  if(newStatus !== curr) {
+    saved[_modalItemId] = newStatus;
+    localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+    // Update status pill in modal to reflect new position
+    const sc = PLANNER_STATUS_COLORS[newStatus]||'#f3f4f6';
+    $('modal-status-pill').innerHTML = `<span style="background:${sc};border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700">${newStatus}</span>`;
+    // Update cycle button label
+    const nextIdx = KANBAN_COLS.findIndex(c=>c.key===newStatus);
+    const nextStage = KANBAN_COLS[Math.min(nextIdx+1,KANBAN_COLS.length-1)].key;
+    $('modal-cycle-btn').textContent = 'Move to: ' + nextStage + ' →';
+    renderPlanner();
+  }
+
+  // Also save approval decision to storage
   const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
   approval[_modalItemId] = {...(approval[_modalItemId]||{}), status: val};
   localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(approval));
-  _refreshApprovalPills(val);
-  $('modal-notes-wrap').style.display = (val==='adjustment'||val==='rejected') ? 'block' : 'none';
 };
 
 function _refreshApprovalPills(val) {
@@ -3433,12 +3471,15 @@ window.cycleFromModal = () => {
   if(!_modalItemId) return;
   const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
   const curr = saved[_modalItemId]||'Idea';
-  const next = PLANNER_STATUSES[(PLANNER_STATUSES.indexOf(curr)+1)%PLANNER_STATUSES.length];
+  const idx = KANBAN_COLS.findIndex(c=>c.key===curr);
+  const next = KANBAN_COLS[(idx+1)%KANBAN_COLS.length].key;
   saved[_modalItemId] = next;
   localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
-  // Update pill in modal
   const sc = PLANNER_STATUS_COLORS[next]||'#f3f4f6';
   $('modal-status-pill').innerHTML = `<span style="background:${sc};border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700">${next}</span>`;
+  const nextIdx = KANBAN_COLS.findIndex(c=>c.key===next);
+  const nextStage = KANBAN_COLS[Math.min(nextIdx+1,KANBAN_COLS.length-1)].key;
+  $('modal-cycle-btn').textContent = 'Move to: ' + nextStage + ' →';
   renderPlanner();
 };
 
