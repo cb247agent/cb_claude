@@ -38,6 +38,16 @@ bash scripts/run-refresh.sh           # Scheduled data refresh
 **Context files** (`context/*.md`) — Brand voice, strategy, research. Read on every session start.
 **Hooks** (`.claude/settings.json`) — `PostToolUse` hook fires on every `Write`; if the target path matches `outputs/*.md` and doesn't already end in `-final.md`, it triggers the `report-formatter` skill to generate a McKinsey-style executive report saved as `[filename]-final.md`.
 
+## Dashboard Design Standards (MANDATORY)
+
+**Any work on `bake-public-dashboard.py`, `docs/index.html`, or any dashboard UI must follow `context/design-standards.md` and `skills/dashboard-design/SKILL.md`.**
+
+Rules in brief:
+- **Three colours only**: teal `#3FA69A`, black `#0d0d0d`/`#1a1a1a`, white `#fff`, and gray scale. No blues, pinks, yellows, purples, reds, or other greens.
+- **No emojis** in any UI element (columns, buttons, badges, labels, titles). Allowed only in content copy.
+- **Kanban must fit screen**: `grid-template-columns:repeat(5,1fr); align-items:start`. Main area: `height:100vh; overflow-y:auto`. Content: `padding-bottom:60px`.
+- Full spec: `context/design-standards.md`
+
 ## Agent Catalog
 | Agent | Purpose |
 |-------|---------|

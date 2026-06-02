@@ -79,6 +79,13 @@
       "triggers": ["/meeting prepare", "/meeting record", "/meeting actions", "meeting workflow", "management meeting", "meeting minutes"],
       "description": "Management meeting workflow: recommendations, minutes, action tracking",
       "skill": "skills/meeting-workflow/SKILL.md"
+    },
+    "dashboard-design": {
+      "triggers": ["bake-public-dashboard", "docs/index.html", "kanban", "dashboard", "fix design", "update dashboard", "adjust layout", "add page", "build page", "colour", "color", "badge", "card layout", "modal", "html ui", "design standards", "no emoji", "brand colour", "fit screen"],
+      "description": "Enforces CB247 dashboard design standards: teal/black/white only, no emojis, kanban fits screen. Auto-activates on all dashboard and UI work.",
+      "skill": "skills/dashboard-design/SKILL.md",
+      "context": "context/design-standards.md",
+      "priority": "HIGH — overrides all other colour/layout decisions"
     }
   }
 }
