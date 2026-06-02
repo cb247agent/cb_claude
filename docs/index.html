@@ -330,9 +330,9 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "02 Jun 2026, 17:20",
+  "generated": "02 Jun 2026, 17:27",
   "report_period": "26 May \u2013 1 Jun 2026",
-  "refresh_ts": "2026-06-02T09:20:50.753550Z",
+  "refresh_ts": "2026-06-02T09:27:42.946486Z",
   "status": {
     "ga4": "live",
     "gsc": "live",
@@ -348,20 +348,20 @@ window.DASHBOARD_DATA = {
     "week_label": "25May26-31May26"
   },
   "ga4": {
-    "sessions": 3032,
+    "sessions": 3036,
     "p_sessions": 3717,
     "convs": 463,
     "p_convs": 505,
-    "users": 2335,
-    "new_users": 2027,
+    "users": 2339,
+    "new_users": 2030,
     "conv_rate": 15.3,
     "mob_share": 84,
-    "ses_chg": -18.4,
+    "ses_chg": -18.3,
     "conv_chg": -8.3,
     "sources": [
       {
         "label": "Organic Search",
-        "sessions": 985
+        "sessions": 989
       },
       {
         "label": "Paid Social",
@@ -373,7 +373,7 @@ window.DASHBOARD_DATA = {
       },
       {
         "label": "Cross-network",
-        "sessions": 485
+        "sessions": 486
       },
       {
         "label": "Paid Search",
@@ -381,14 +381,14 @@ window.DASHBOARD_DATA = {
       },
       {
         "label": "Organic Social",
-        "sessions": 136
+        "sessions": 137
       }
     ],
     "top_pages": [
       {
         "path": "/",
-        "views": 4796,
-        "sessions": 2147
+        "views": 4800,
+        "sessions": 2150
       },
       {
         "path": "/reformer-pilates",
@@ -402,8 +402,8 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/group-fitness-timetable",
-        "views": 406,
-        "sessions": 189
+        "views": 408,
+        "sessions": 190
       },
       {
         "path": "/thank-you",
@@ -426,14 +426,14 @@ window.DASHBOARD_DATA = {
         "sessions": 75
       },
       {
+        "path": "/faqs",
+        "views": 207,
+        "sessions": 97
+      },
+      {
         "path": "/kids-hub",
         "views": 203,
         "sessions": 77
-      },
-      {
-        "path": "/faqs",
-        "views": 201,
-        "sessions": 95
       }
     ],
     "period": "26 May \u2013 1 Jun 2026"
@@ -4692,7 +4692,7 @@ const PLANNER_ITEMS = [
 const PLANNER_STATUS_KEY = 'cb247-planner-status';
 const PLANNER_APPROVAL_KEY = 'cb247-planner-approval';
 const PLANNER_STATUSES = ['Idea','Scheduled','Published'];
-const PLANNER_STATUS_COLORS = {Idea:'#dbeafe',Scheduled:'#fef9c3',Published:'#dcfce7'};
+const PLANNER_STATUS_COLORS = {Idea:'#f3f4f6',Scheduled:'rgba(63,166,154,.1)',Published:'rgba(63,166,154,.15)'};
 
 // ── Planner Modal ─────────────────────────────────────────────────────────────
 let _modalItemId = null;
@@ -4806,38 +4806,38 @@ window.cycleFromModal = () => {
 
 // ── Platform colours + icons ────────────────────────────────────────────────
 const PLAT_CFG = {
-  instagram: {bg:'#fce7f3',color:'#9d174d',icon:'📸',label:'Instagram'},
-  tiktok:    {bg:'#1a1a2e',color:'#fff',   icon:'🎵',label:'TikTok'},
-  blog:      {bg:'#dbeafe',color:'#1e40af',icon:'✍️',label:'Blog'},
-  email:     {bg:'#fef9c3',color:'#854d0e',icon:'📧',label:'Email'},
-  gbp:       {bg:'#dcfce7',color:'#166534',icon:'📍',label:'GBP'},
-  meta:      {bg:'#ede9fe',color:'#5b21b6',icon:'📢',label:'Meta Ad'},
+  instagram: {bg:'rgba(63,166,154,.12)',color:'#3FA69A',label:'Instagram'},
+  tiktok:    {bg:'#1a1a1a',            color:'#fff',   label:'TikTok'},
+  blog:      {bg:'#f3f4f6',            color:'#111',   label:'Blog'},
+  email:     {bg:'#f3f4f6',            color:'#111',   label:'Email'},
+  gbp:       {bg:'rgba(63,166,154,.12)',color:'#3FA69A',label:'GBP'},
+  meta:      {bg:'#f3f4f6',            color:'#111',   label:'Meta Ad'},
 };
 const ASSIGNEE_CFG = {
-  'AI':     {bg:'#e0f2fe',color:'#0369a1'},
-  'Shauna': {bg:'#fef9c3',color:'#854d0e'},
-  'Tia':    {bg:'#e8f5f4',color:'#3FA69A'},
-  'Joanne': {bg:'#dcfce7',color:'#166534'},
-  'Angela': {bg:'#fee2e2',color:'#991b1b'},
-  'Agust':  {bg:'#fce7f3',color:'#9d174d'},
-  'Ivan':   {bg:'#fce7f3',color:'#9d174d'},
+  'AI':     {bg:'rgba(63,166,154,.15)',color:'#2d8a80'},
+  'Shauna': {bg:'#f3f4f6',            color:'#444'},
+  'Tia':    {bg:'#3FA69A',            color:'#fff'},
+  'Joanne': {bg:'#f3f4f6',            color:'#444'},
+  'Angela': {bg:'#1a1a1a',            color:'#fff'},
+  'Agust':  {bg:'#f3f4f6',            color:'#444'},
+  'Ivan':   {bg:'#f3f4f6',            color:'#444'},
 };
 function platBadge(p) {
-  const c = PLAT_CFG[p] || {bg:'#f3f4f6',color:'var(--muted)',icon:'📄',label:p};
-  return `<span style="background:${c.bg};color:${c.color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">${c.icon} ${c.label}</span>`;
+  const c = PLAT_CFG[p] || {bg:'#f3f4f6',color:'#444',label:p};
+  return `<span style="background:${c.bg};color:${c.color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap;letter-spacing:.3px">${c.label.toUpperCase()}</span>`;
 }
 function assigneeBadge(a) {
-  const c = ASSIGNEE_CFG[a] || {bg:'#f3f4f6',color:'var(--muted)'};
+  const c = ASSIGNEE_CFG[a] || {bg:'#f3f4f6',color:'#444'};
   return `<span style="background:${c.bg};color:${c.color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px">${a}</span>`;
 }
 
 // ── KANBAN STATUS CONFIG ──────────────────────────────────────────────────────
 const KANBAN_COLS = [
-  {key:'Idea',       label:'💡 Idea',        color:'#e0f2fe', border:'#0ea5e9'},
-  {key:'In Progress',label:'🔧 In Progress', color:'#fef9c3', border:'#d97706'},
-  {key:'Angela QC',  label:'🔍 Angela QC',   color:'#fee2e2', border:'#ef4444'},
-  {key:'Scheduled',  label:'📅 Scheduled',   color:'#ede9fe', border:'#7c3aed'},
-  {key:'Published',  label:'✅ Published',   color:'#dcfce7', border:'#16a34a'},
+  {key:'Idea',       label:'Idea',        color:'#f9fafb', border:'#d1d5db'},
+  {key:'In Progress',label:'In Progress', color:'#f9fafb', border:'#3FA69A'},
+  {key:'Angela QC',  label:'Angela QC',   color:'#f9fafb', border:'#1a1a1a'},
+  {key:'Scheduled',  label:'Scheduled',   color:'#f9fafb', border:'#3FA69A'},
+  {key:'Published',  label:'Published',   color:'rgba(63,166,154,.06)', border:'#3FA69A'},
 ];
 
 function renderPlanner() {
@@ -4867,32 +4867,36 @@ function renderPlanner() {
   </div>`;
 
   // ── Approval flow reminder ───────────────────────────────────────────────
-  html += `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:11px;color:var(--text-2)">
+  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:11px;color:var(--text-2)">
     <span style="font-weight:700;color:var(--teal)">Approval flow:</span>
-    AI drafts → <b>Tia</b> reviews → move to <b>In Progress</b> → <b>Angela QC</b> → <b>Joanne</b> schedules social · <b>Tia</b> posts GBP
+    <span>AI drafts</span><span style="color:var(--muted)">→</span>
+    <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
+    In Progress<span style="color:var(--muted)">→</span>
+    <b>Angela QC</b><span style="color:var(--muted)">→</span>
+    <b>Joanne</b> schedules social &amp; <b>Tia</b> posts GBP
   </div>`;
 
   // ── Kanban board ──────────────────────────────────────────────────────
-  html += sectionTitle('Kanban Board — Drag Status to Progress Items');
-  html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:28px;overflow-x:auto">`;
+  html += sectionTitle('Kanban Board');
+  html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px">`;
 
   KANBAN_COLS.forEach(col => {
     const items = PLANNER_ITEMS.filter(item => (saved[item.id]||'Idea') === col.key);
-    html += `<div style="background:${col.color};border-top:3px solid ${col.border};border-radius:6px;padding:10px;min-height:120px">
-      <div style="font-size:11px;font-weight:700;margin-bottom:10px;color:var(--text)">${col.label} <span style="font-size:10px;color:var(--muted);font-weight:400">(${items.length})</span></div>
+    html += `<div style="background:${col.color};border-top:3px solid ${col.border};border-radius:6px;padding:8px;min-height:100px">
+      <div style="font-size:10px;font-weight:700;margin-bottom:8px;color:var(--text);text-transform:uppercase;letter-spacing:.5px">${col.label} <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(${items.length})</span></div>
       ${items.map(item => {
-        const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'var(--muted)',icon:'📄'};
-        const ac = ASSIGNEE_CFG[item.assignee] || {bg:'#f3f4f6',color:'var(--muted)'};
-        return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border-radius:5px;padding:8px 10px;margin-bottom:8px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08);transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 3px 8px rgba(0,0,0,.15)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,.08)'">
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px">
-            <span style="background:${pc.bg};color:${pc.color};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px">${pc.icon} ${item.platform.toUpperCase()}</span>
+        const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
+        const ac = ASSIGNEE_CFG[item.assignee] || {bg:'#f3f4f6',color:'#444'};
+        return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-radius:4px;padding:7px 8px;margin-bottom:6px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#3FA69A'" onmouseout="this.style.borderColor='var(--border-color,#e5e7eb)'">
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="background:${pc.bg};color:${pc.color};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;letter-spacing:.3px">${item.platform.toUpperCase()}</span>
             <span style="background:${ac.bg};color:${ac.color};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px">${item.assignee}</span>
           </div>
-          <div style="font-size:11px;font-weight:600;line-height:1.3;margin-bottom:4px">${item.title}</div>
-          <div style="font-size:10px;color:var(--muted)">Day ${item.day} · Due ${item.dueDate}</div>
+          <div style="font-size:10px;font-weight:600;line-height:1.35;margin-bottom:3px;color:var(--text)">${item.title}</div>
+          <div style="font-size:9px;color:var(--muted)">Day ${item.day} · ${item.dueDate}</div>
         </div>`;
       }).join('')}
-      ${items.length===0 ? `<div style="font-size:10px;color:var(--muted-2);text-align:center;padding:12px 0">Empty</div>` : ''}
+      ${items.length===0 ? `<div style="font-size:10px;color:var(--muted);text-align:center;padding:16px 0;border:1px dashed var(--border);border-radius:4px">—</div>` : ''}
     </div>`;
   });
   html += `</div>`;
@@ -4914,11 +4918,11 @@ function renderPlanner() {
         const dayItems = PLANNER_ITEMS.filter(i=>i.day===d);
         return `<td style="padding:8px 6px;border-right:1px solid var(--border);min-width:120px">
           ${dayItems.map(item => {
-            const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'var(--muted)',icon:'📄'};
+            const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
             const st = saved[item.id] || 'Idea';
-            const stColor = st==='Published'?'#16a34a':st==='Scheduled'?'#7c3aed':st==='Angela QC'?'#ef4444':st==='In Progress'?'#d97706':'#0ea5e9';
-            return `<div onclick="openPlannerModal('${item.id}')" style="background:${pc.bg};border-left:3px solid ${pc.color};border-radius:4px;padding:6px 8px;margin-bottom:6px;cursor:pointer;font-size:10px">
-              <div style="font-weight:700;color:${pc.color};margin-bottom:2px">${pc.icon} ${item.type}</div>
+            const stColor = st==='Published'?'#3FA69A':st==='Scheduled'?'#3FA69A':st==='Angela QC'?'#111':st==='In Progress'?'#3FA69A':'#999';
+            return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-left:3px solid #3FA69A;border-radius:4px;padding:6px 8px;margin-bottom:6px;cursor:pointer;font-size:10px">
+              <div style="font-weight:700;color:#3FA69A;margin-bottom:2px;text-transform:uppercase;font-size:9px;letter-spacing:.4px">${item.type}</div>
               <div style="font-weight:600;line-height:1.3;color:var(--text)">${item.title}</div>
               <div style="margin-top:4px;display:flex;justify-content:space-between;align-items:center">
                 <span style="color:var(--muted);font-size:9px">${item.assignee}</span>
@@ -4938,7 +4942,7 @@ function renderPlanner() {
   </tr></thead><tbody>
   ${PLANNER_ITEMS.map(item => {
     const st = saved[item.id] || 'Idea';
-    const stColor = st==='Published'?'#16a34a':st==='Scheduled'?'#7c3aed':st==='Angela QC'?'#ef4444':st==='In Progress'?'#d97706':'#0ea5e9';
+    const stColor = st==='Published'?'#3FA69A':st==='Scheduled'?'#3FA69A':st==='Angela QC'?'#111':st==='In Progress'?'#3FA69A':'#999';
     const nextSt = KANBAN_COLS[(KANBAN_COLS.findIndex(c=>c.key===st)+1) % KANBAN_COLS.length].key;
     return `<tr>
       <td>${platBadge(item.platform)}</td>
@@ -4966,12 +4970,12 @@ function renderPlanner() {
         <div class="card" style="border-left:4px solid var(--teal);padding:16px">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--teal);margin-bottom:4px">SEO Brief ${i+1}</div>
           <div style="font-weight:700;font-size:14px;margin-bottom:6px">${b.title}</div>
-          ${b.keyword?`<div style="font-size:11px;color:var(--muted)">🔑 ${b.keyword}</div>`:''}
-          ${b.why?`<div style="font-size:11px;color:var(--muted);margin-top:4px">💡 ${b.why}</div>`:''}
+          ${b.keyword?`<div style="font-size:11px;color:var(--muted)">Keyword: ${b.keyword}</div>`:''}
+          ${b.why?`<div style="font-size:11px;color:var(--muted);margin-top:4px">Why: ${b.why}</div>`:''}
           <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
             ${b.url?`<span style="background:rgba(63,166,154,.1);color:var(--teal);padding:2px 8px;border-radius:3px;font-size:10px;font-family:monospace">${b.url}</span>`:''}
             ${b.word_count?`<span style="background:#f3f4f6;color:var(--muted);padding:2px 8px;border-radius:3px;font-size:10px">${b.word_count} words</span>`:''}
-            <span style="background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">Assign to AI → Angela QC → Mark publishes</span>
+            <span style="background:#f3f4f6;color:#444;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">AI drafts → Angela QC → Mark publishes</span>
           </div>
         </div>`).join('')}
       </div>
@@ -5040,9 +5044,9 @@ function renderContentReview() {
     </div>`;
   } else {
     const reviewGroups = [
-      {label:'✅ Published — check performance in 2 weeks', items: published, color:'#16a34a', bg:'#dcfce7'},
-      {label:'📅 Scheduled — going out soon', items: scheduled, color:'#7c3aed', bg:'#ede9fe'},
-      {label:'🔍 Waiting Angela QC', items: pendingQC, color:'#ef4444', bg:'#fee2e2'},
+      {label:'Published — check performance in 2 weeks', items: published, color:'#3FA69A', bg:'rgba(63,166,154,.08)'},
+      {label:'Scheduled — going out soon', items: scheduled, color:'#3FA69A', bg:'rgba(63,166,154,.05)'},
+      {label:'Waiting Angela QC', items: pendingQC, color:'#111', bg:'#f9fafb'},
     ];
     reviewGroups.forEach(g => {
       if (!g.items.length) return;
