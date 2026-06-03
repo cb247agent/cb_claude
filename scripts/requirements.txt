@@ -19,3 +19,8 @@ python-dotenv
 # SEO site crawler (run_site_crawl.py — Screaming Frog replacement)
 beautifulsoup4>=4.12.0
 lxml>=5.0.0
+
+# Adjustment server (scripts/adjustment-server.py)
+flask>=3.0.0
+flask-cors>=4.0.0
+anthropic>=0.25.0

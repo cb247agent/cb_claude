@@ -1970,8 +1970,9 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
           <button class="appr-pill" id="apill-rejected" onclick="setModalApproval('rejected')">Rejected — back to Idea</button>
         </div>
         <div id="modal-notes-wrap" style="display:none">
-          <div class="modal-section-label" style="margin-bottom:4px">Notes / Adjustment Instructions</div>
-          <textarea class="modal-notes" id="modal-notes" placeholder="Describe adjustments needed..."></textarea>
+          <div class="modal-section-label" style="margin-bottom:4px">Adjustment Instructions</div>
+          <textarea class="modal-notes" id="modal-notes" placeholder="Describe exactly what needs to change — e.g. &quot;Soften the headline, remove the price comparison in paragraph 3&quot;"></textarea>
+          <div id="modal-adjust-status" style="display:none;margin-top:8px;padding:10px 14px;border-radius:4px;font-size:12px;font-weight:500;line-height:1.5"></div>
         </div>
       </div>
     </div>
@@ -1979,7 +1980,7 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
       <a class="brief-link" id="modal-brief-link" href="#" target="_blank">View Brief</a>
       <div style="display:flex;gap:8px">
         <button class="btn-ghost" onclick="closePlannerModal()">Close</button>
-        <button class="btn-teal" onclick="saveModalAndClose()">Save</button>
+        <button class="btn-teal" id="modal-save-btn" onclick="saveModalAndClose()">Save</button>
       </div>
     </div>
   </div>
@@ -3394,6 +3395,12 @@ window.openPlannerModal = (id) => {
     }
   }
 
+  // Reset action button + status panel on every open
+  const _sb = $('modal-save-btn');
+  if(_sb) { _sb.textContent = 'Save'; _sb.disabled = false; }
+  const _st = $('modal-adjust-status');
+  if(_st) _st.style.display = 'none';
+
   $('planner-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 };
@@ -3406,14 +3413,79 @@ window.closePlannerModal = () => {
 
 window.saveModalAndClose = () => {
   if(!_modalItemId) { closePlannerModal(); return; }
-  // Save notes
+
+  const notes = ($('modal-notes').value || '').trim();
+
+  // Always persist notes + approval decision to localStorage
   const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
   const current = approval[_modalItemId]||{};
-  approval[_modalItemId] = {...current, notes: $('modal-notes').value};
+  approval[_modalItemId] = {...current, notes, status: _pendingApproval||current.status};
   localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(approval));
+
+  // If "Needs Adjustment" was selected and there are notes + a draft link, auto-apply
+  if(_pendingApproval === 'adjustment' && notes) {
+    const item = PLANNER_ITEMS.find(x => x.id === _modalItemId);
+    if(item && item.draftLink) {
+      _applyAdjustmentViaServer(item, notes);
+      return; // don't close yet — wait for server response
+    }
+  }
+
   closePlannerModal();
   renderPlanner();
 };
+
+async function _applyAdjustmentViaServer(item, notes) {
+  const statusEl  = $('modal-adjust-status');
+  const saveBtn   = $('modal-save-btn');
+
+  // Show loading state
+  statusEl.style.display     = 'block';
+  statusEl.style.background  = 'rgba(63,166,154,.08)';
+  statusEl.style.color       = '#3FA69A';
+  statusEl.style.border      = '1px solid rgba(63,166,154,.25)';
+  statusEl.textContent       = 'Applying adjustment to draft — this takes 15–30 seconds...';
+  if(saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Applying...'; }
+
+  try {
+    const res = await fetch('http://localhost:5055/apply-adjustment', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({
+        itemId:    item.id,
+        notes,
+        draftLink: item.draftLink,
+        title:     item.title
+      }),
+      signal: AbortSignal.timeout(120000)   // 2-minute timeout
+    });
+
+    const data = await res.json();
+
+    if(res.ok) {
+      statusEl.style.background = '#dcfce7';
+      statusEl.style.color      = '#166534';
+      statusEl.style.border     = '1px solid #bbf7d0';
+      statusEl.innerHTML        = `<b>Done.</b> Adjustment applied and pushed to GitHub — <span style="font-family:monospace;font-size:11px">${data.file}</span>. The live draft will update in ~60 seconds.`;
+      if(saveBtn) saveBtn.textContent = 'Done';
+      setTimeout(() => { closePlannerModal(); renderPlanner(); }, 3000);
+    } else {
+      throw new Error(data.error || 'Server returned an error');
+    }
+
+  } catch(err) {
+    // Server not running, or network error — save locally and show instructions
+    statusEl.style.background = '#fef9c3';
+    statusEl.style.color      = '#92400e';
+    statusEl.style.border     = '1px solid #fde68a';
+    statusEl.innerHTML =
+      `<b>Adjustment saved.</b> To auto-apply, start the server in a terminal:<br>` +
+      `<code style="display:block;background:#fff;padding:5px 8px;border-radius:3px;margin-top:6px;font-size:11px">` +
+      `python scripts/adjustment-server.py</code>`;
+    if(saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Close'; }
+    setTimeout(() => { closePlannerModal(); renderPlanner(); }, 5000);
+  }
+}
 
 // _pendingApproval tracks what the user has selected before saving
 let _pendingApproval = null;
@@ -3423,6 +3495,25 @@ window.setModalApproval = (val) => {
   _pendingApproval = val;
   _refreshApprovalPills(val);
   $('modal-notes-wrap').style.display = (val==='adjustment'||val==='rejected') ? 'block' : 'none';
+
+  // Update Save button label to reflect the action
+  const saveBtn = $('modal-save-btn');
+  if(saveBtn) {
+    if(val === 'adjustment') {
+      saveBtn.textContent = 'Apply Adjustment';
+      saveBtn.title = 'Saves notes and applies the adjustment to the blog draft automatically';
+    } else if(val === 'approved') {
+      saveBtn.textContent = 'Approve & Advance';
+    } else if(val === 'rejected') {
+      saveBtn.textContent = 'Reject & Reset';
+    } else {
+      saveBtn.textContent = 'Save';
+    }
+  }
+
+  // Reset status feedback if user changes their mind
+  const statusEl = $('modal-adjust-status');
+  if(statusEl) statusEl.style.display = 'none';
 
   // Apply status change immediately based on decision:
   // Approved  → advance to next stage
