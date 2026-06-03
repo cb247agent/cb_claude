@@ -30,7 +30,6 @@ state/data-refresh.err
 
 # Auto-generated context snapshots (rebuilt each session)
 context/*-context.json
-context/build_context.py
 
 # LaunchAgent plist (machine-specific)
 scripts/com.cb247.data-refresh.plist
