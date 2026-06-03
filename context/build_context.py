@@ -146,19 +146,33 @@ def build_seo():
             ],
         }
 
-    if sf:
-        ctx["site_crawl"] = {
-            "date_crawled": sf.get("date_crawled"),
-            "summary": sf.get("summary"),
-            "issues": [
+    # Site Audit — prefer Ahrefs Site Audit (Monday cron) over Screaming Frog
+    site_audit = (ahrefs or {}).get("site_audit") if ahrefs else None
+    if site_audit:
+        ctx["site_audit"] = {
+            "source":        "ahrefs",
+            "crawl_date":    site_audit.get("crawl_date"),
+            "health_score":  site_audit.get("health_score"),
+            "pages_crawled": site_audit.get("pages_crawled"),
+            "errors":        site_audit.get("errors"),
+            "warnings":      site_audit.get("warnings"),
+            "notices":       site_audit.get("notices"),
+            "top_issues":    (site_audit.get("top_issues") or [])[:10],
+        }
+    elif sf:
+        # Fallback: Screaming Frog manual crawl
+        ctx["site_audit"] = {
+            "source":     "screaming_frog",
+            "crawl_date": sf.get("date_crawled"),
+            "summary":    sf.get("summary"),
+            "top_issues": [
                 {
-                    "name": i.get("name"),
-                    "priority": i.get("priority"),
-                    "count": i.get("count"),
+                    "name":        i.get("name"),
+                    "priority":    i.get("priority"),
+                    "count":       i.get("count"),
                     "description": i.get("description"),
-                    "affected_urls": i.get("affected_urls", [])[:5],
                 }
-                for i in sf.get("issues", [])
+                for i in sf.get("issues", [])[:10]
             ],
         }
 

@@ -42,6 +42,10 @@ COMPETITORS = [
     "anytimefitness.com.au",
 ]
 
+# Ahrefs Site Audit project ID (from app.ahrefs.com/site-audit/{ID}/overview)
+# Separate API — does NOT consume Site Explorer units. Runs on Monday schedule.
+SITE_AUDIT_PROJECT_ID = "9812033"
+
 # ── 20 CB247 priority keywords to track every week ──
 TARGET_KEYWORDS = [
     "gym malaga perth",
@@ -453,6 +457,82 @@ def add_wow_to_target_keywords(tracked_result, prev_positions):
 
 
 # ─────────────────────────────────────────────
+# Site Audit (separate API — no unit cost)
+# ─────────────────────────────────────────────
+
+def pull_site_audit():
+    """
+    Pull the latest Ahrefs Site Audit crawl for project 9812033.
+    Site Audit uses a different API surface and does NOT consume
+    Site Explorer row units — safe to call even when rate-limited.
+
+    Returns: {
+      crawl_id, crawl_date, health_score,
+      pages_crawled, issues_by_type, top_issues[]
+    }
+    """
+    # Step 1: get the latest crawl for this project
+    crawls = fetch_json(f"site-audit/get-crawls", {
+        "project_id": SITE_AUDIT_PROJECT_ID,
+    })
+
+    if not crawls:
+        print("  WARN: Could not fetch Site Audit crawl list", file=sys.stderr)
+        return None
+
+    # Latest crawl is first in list
+    crawl_list = crawls.get("crawls") or []
+    if not crawl_list:
+        print("  WARN: No Site Audit crawls found", file=sys.stderr)
+        return None
+
+    latest = crawl_list[0]
+    crawl_id = latest.get("crawl_id") or latest.get("id")
+    crawl_date = latest.get("finished_at") or latest.get("created_at")
+    print(f"  Site Audit: crawl {crawl_id} ({crawl_date})")
+
+    # Step 2: overview — health score + page counts
+    overview = fetch_json("site-audit/get-overview", {
+        "crawl_id": crawl_id,
+    })
+
+    # Step 3: issues list — top 50 by severity
+    issues_data = fetch_json("site-audit/get-all-issues", {
+        "crawl_id": crawl_id,
+        "limit":    50,
+    })
+
+    # Normalise issue list
+    raw_issues = []
+    if issues_data:
+        raw_issues = issues_data.get("issues") or issues_data.get("data") or []
+
+    top_issues = []
+    for issue in raw_issues[:20]:
+        top_issues.append({
+            "name":        issue.get("name") or issue.get("type"),
+            "priority":    issue.get("priority") or issue.get("severity"),
+            "count":       issue.get("count") or issue.get("pages_count"),
+            "description": issue.get("description"),
+        })
+
+    ov = overview or {}
+    ov_data = ov.get("overview") or ov  # API sometimes nests under "overview"
+
+    return {
+        "crawl_id":       crawl_id,
+        "crawl_date":     crawl_date,
+        "health_score":   ov_data.get("health_score"),
+        "pages_crawled":  ov_data.get("pages_crawled") or ov_data.get("crawled"),
+        "issues_total":   ov_data.get("issues_total") or len(raw_issues),
+        "errors":         ov_data.get("errors"),
+        "warnings":       ov_data.get("warnings"),
+        "notices":        ov_data.get("notices"),
+        "top_issues":     top_issues,
+    }
+
+
+# ─────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────
 
@@ -504,6 +584,9 @@ def main():
     target_positions           = pull_target_keyword_positions(current_kws)
     target_positions           = add_wow_to_target_keywords(target_positions, prev_positions)
     result["target_keyword_positions"] = target_positions
+
+    print("--- Site Audit (Monday crawl — no unit cost) ---")
+    result["site_audit"]       = pull_site_audit()
 
     # ── Save current as "previous" for next week's WoW comparison ──
     prev_snapshot_path = STATE_DIR / "ahrefs-prev.json"
@@ -577,6 +660,19 @@ def _print_summary(result):
     bb = result.get("broken_backlinks", {})
     if bb and "backlinks" in (bb or {}):
         print(f"\n  Broken backlinks: {len(bb['backlinks'])} reclaim opportunities")
+
+    # Site audit
+    sa = result.get("site_audit") or {}
+    if sa.get("health_score") is not None:
+        print(f"\n  Site Audit [{sa.get('crawl_date','')[:10]}]:")
+        print(f"    Health score   : {sa.get('health_score')}/100")
+        print(f"    Pages crawled  : {sa.get('pages_crawled', '–')}")
+        print(f"    Errors         : {sa.get('errors', '–')}  "
+              f"Warnings: {sa.get('warnings', '–')}  "
+              f"Notices: {sa.get('notices', '–')}")
+        if sa.get("top_issues"):
+            print(f"    Top issue      : {sa['top_issues'][0].get('name')} "
+                  f"({sa['top_issues'][0].get('count')} pages)")
 
     print("=" * 60)
 
