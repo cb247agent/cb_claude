@@ -159,6 +159,29 @@ Do NOT save the draft until the humanizer pass is complete.
 
 ---
 
+## Compliance Check (MANDATORY — runs after humanizer, before saving)
+
+Every blog draft must be checked through the compliance-checker skill (`skills/compliance-checker/SKILL.md`) before it is saved or committed.
+
+**When to run:** After the humanizer pass is complete. Before writing the HTML file to `docs/blog-drafts/`.
+
+**How to run it:** Review the full draft against the compliance-checker rules and produce a compliance report saved to `outputs/research/compliance-review-[blog-slug]-[YYYY-MM-DD].md`.
+
+**What to check (minimum):**
+1. Scientific claims — is every statistic cited with real author/journal/year? No fabricated stats.
+2. "Only" / "first" / "unique" claims — verify or soften to "one of Perth's few..."
+3. Competitor pricing comparisons — must be flagged `[verify]` or removed if unverified
+4. Pricing claims — `$11.95/week`, no lock-in, no joining fee — accurate as of session date?
+5. Health disclaimers — any content showing exercise or making fitness benefit claims must include: *"Consult your doctor before starting any new fitness program."*
+6. Before/after or results claims — must include: *"Results vary. Individual circumstances affect outcomes."*
+7. TGA red flags — "heals", "cures", "treats", "burns fat", "lose Xkg" — reword or remove.
+
+**Output:** Save to `outputs/research/compliance-review-[blog-slug]-YYYY-MM-DD.md` using the template in `skills/compliance-checker/SKILL.md`.
+
+**Do NOT commit the blog HTML without a compliance report saved.**
+
+---
+
 ## Featured Image (MANDATORY — real CB247 photo, not AI-generated)
 
 Every blog must include one real photograph from the CB247 image library. Do NOT use stock photos, AI-generated images, or external CDN images.
@@ -236,8 +259,12 @@ Before finalizing the blog draft:
 - [ ] At least 2 real, cited scientific facts in the body + a ## SOURCES section
 - [ ] No fabricated stats — every number verified or flagged [verify]
 - [ ] Opens with a current TikTok/IG/X fitness trend hook, positioned credibly
-- [ ] Health claims flagged for compliance-checker review
 - [ ] Humanizer pass completed — no em dashes, no AI vocabulary words, no rule-of-three clusters, no promotional puffery, voice matches CB247 calibration above
+- [ ] **Compliance check run** — report saved to `outputs/research/compliance-review-[slug]-YYYY-MM-DD.md`
+- [ ] No "only gym" / "unique" claims without verification
+- [ ] No unverified competitor pricing comparisons
+- [ ] Doctor disclaimer present if content shows or recommends exercise
+- [ ] No TGA-prohibited language (heals, cures, treats, burns fat, lose X kg)
 
 ---
 
