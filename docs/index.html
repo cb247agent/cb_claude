@@ -330,9 +330,9 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "03 Jun 2026, 22:36",
+  "generated": "03 Jun 2026, 22:38",
   "report_period": "27 May \u2013 2 Jun 2026",
-  "refresh_ts": "2026-06-03T14:36:31.100762Z",
+  "refresh_ts": "2026-06-03T14:38:05.249599Z",
   "status": {
     "ga4": "live",
     "gsc": "live",
@@ -348,36 +348,36 @@ window.DASHBOARD_DATA = {
     "week_label": "25May26-31May26"
   },
   "ga4": {
-    "sessions": 3190,
+    "sessions": 3202,
     "p_sessions": 3586,
     "convs": 493,
     "p_convs": 526,
-    "users": 2438,
-    "new_users": 2122,
-    "conv_rate": 15.5,
+    "users": 2445,
+    "new_users": 2128,
+    "conv_rate": 15.4,
     "mob_share": 84,
-    "ses_chg": -11.0,
+    "ses_chg": -10.7,
     "conv_chg": -6.3,
     "sources": [
       {
         "label": "Organic Search",
-        "sessions": 1060
+        "sessions": 1064
       },
       {
         "label": "Paid Social",
-        "sessions": 629
+        "sessions": 630
       },
       {
         "label": "Direct",
-        "sessions": 540
+        "sessions": 542
       },
       {
         "label": "Cross-network",
-        "sessions": 526
+        "sessions": 527
       },
       {
         "label": "Paid Search",
-        "sessions": 280
+        "sessions": 282
       },
       {
         "label": "Organic Social",
@@ -387,23 +387,23 @@ window.DASHBOARD_DATA = {
     "top_pages": [
       {
         "path": "/",
-        "views": 5021,
-        "sessions": 2261
+        "views": 5040,
+        "sessions": 2270
       },
       {
         "path": "/reformer-pilates",
-        "views": 728,
-        "sessions": 353
+        "views": 730,
+        "sessions": 354
       },
       {
         "path": "/contact",
-        "views": 486,
-        "sessions": 246
+        "views": 488,
+        "sessions": 247
       },
       {
         "path": "/group-fitness-timetable",
-        "views": 431,
-        "sessions": 205
+        "views": 435,
+        "sessions": 206
       },
       {
         "path": "/thank-you",
@@ -422,8 +422,8 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/faqs",
-        "views": 227,
-        "sessions": 106
+        "views": 229,
+        "sessions": 107
       },
       {
         "path": "/neon21",
@@ -4796,7 +4796,7 @@ async function _applyAdjustmentViaServer(item, notes) {
     statusEl.innerHTML =
       `<b>Adjustment saved.</b> To auto-apply, start the server in a terminal:<br>` +
       `<code style="display:block;background:#fff;padding:5px 8px;border-radius:3px;margin-top:6px;font-size:11px">` +
-      `python scripts/adjustment-server.py</code>`;
+      `python3 scripts/adjustment-server.py</code>`;
     if(saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Close'; }
     setTimeout(() => { closePlannerModal(); renderPlanner(); }, 5000);
   }

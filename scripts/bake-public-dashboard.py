@@ -3481,7 +3481,7 @@ async function _applyAdjustmentViaServer(item, notes) {
     statusEl.innerHTML =
       `<b>Adjustment saved.</b> To auto-apply, start the server in a terminal:<br>` +
       `<code style="display:block;background:#fff;padding:5px 8px;border-radius:3px;margin-top:6px;font-size:11px">` +
-      `python scripts/adjustment-server.py</code>`;
+      `python3 scripts/adjustment-server.py</code>`;
     if(saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Close'; }
     setTimeout(() => { closePlannerModal(); renderPlanner(); }, 5000);
   }
