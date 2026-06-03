@@ -137,24 +137,85 @@ Every blog MUST include both of the following. These are non-negotiable quality 
 
 ---
 
+## Humanizer Pass (MANDATORY — runs before saving)
+
+Every blog draft must be processed through the humanizer skill (`~/.claude/skills/humanizer/SKILL.md`) before it is saved to `outputs/`.
+
+**How to run it:** After writing the full draft, pass the entire body through the humanizer as a final edit step. The humanizer will:
+1. Scan for all 30 AI-writing patterns (em dashes, rule-of-three, significance inflation, -ing padding, promotional language, boldface overuse, etc.)
+2. Write a draft rewrite
+3. Do a second audit pass ("what still reads AI-generated?")
+4. Deliver the final clean version
+
+**CB247 voice calibration for the humanizer:**
+- Tone: direct, no-fluff, slightly irreverent — like a fit mate giving advice, not a wellness brand press release
+- Sentence rhythm: short punchy lines mixed with longer ones. Not uniform.
+- No corporate fitness clichés ("transform your life", "journey", "elevate your performance")
+- Contractions are fine — "you're", "it's", "we've"
+- First-person brand voice is OK: "At CB247, we..." not "CB247 is committed to..."
+- Perth/WA vernacular welcome — "swing", "arvo", "footy season"
+
+Do NOT save the draft until the humanizer pass is complete.
+
+---
+
+## Featured Image (MANDATORY — real CB247 photo, not AI-generated)
+
+Every blog must include one real photograph from the CB247 image library. Do NOT use stock photos, AI-generated images, or external CDN images.
+
+**Image library location:** `CB_Marketing/Image/`
+
+**Available photos (check for new additions each time):**
+
+| File | What it shows | Best used for |
+|------|--------------|---------------|
+| `ChasingBetterGym_1.jpeg` | Full gym floor — neon "YOU VS YOU" sign, dumbbell rack, dark moody lighting | Facility/overview posts, Malaga gym posts |
+| `ChasingBetterGym_2.jpg` | Two members fist-bumping, CB247 branded shirt, community feel | Community, membership, culture posts |
+| `097A3839.jpg` | Outdoor bench press with CB247 branded plates, action angle | Training tips, outdoor/functional content |
+| `P1033719-SA.jpg` | Multiple members training, dark floor, teal neon diamond light | General gym atmosphere, group/busy gym feel |
+
+**Rules:**
+1. Pick the image that best matches the blog topic and ICP
+2. Copy it to `docs/images/` with a descriptive slug name (e.g. `cb247-gym-malaga.jpeg`)
+3. Reference it with a relative path: `../images/filename.jpeg` (from `docs/blog-drafts/`)
+4. Place it directly after the H1 — before the trend hook
+5. Use this HTML block:
+
+```html
+<div class="featured-img-wrap">
+  <img
+    src="../images/[filename]"
+    alt="[descriptive alt text including CB247 and location]"
+    class="featured-img"
+  >
+  <p class="featured-img-caption">[Short, punchy caption — 1 line max. Brand voice.]</p>
+</div>
+```
+
+6. The CSS for `.featured-img`, `.featured-img-wrap`, and `.featured-img-caption` is already in the blog HTML template — do not add it again.
+
+**Do NOT save the HTML draft without a real photo included.**
+
+---
+
 ## Output
 
 **Save to:** `outputs/blogs/seo-blog-YYYY-MM-DD.md`
 
 The output file should include:
 1. Front matter (YAML)
-2. Blog body (PAS structure)
+2. Blog body (PAS structure — humanizer-processed)
 3. Internal linking suggestions (2-3 links to other CB247 pages)
 4. Featured image prompt (for Higgsfield generation)
 5. Performance tracking notes
 
 ---
 
-## Featured Image Prompt Template
+## Featured Image — Real Photos Only
 
-```
-Professional fitness photography, [topic description], teal (#3FA69A) and white color scheme, CB247 gym branding visible, [location: Malaga/Ellenbrook gym setting], motivational mood, clean modern aesthetic, natural lighting, wide shot showing [specific feature: equipment/facility/class], high resolution, marketing material style
-```
+Use a real CB247 photo from `CB_Marketing/Image/`. See the **Featured Image (MANDATORY)** section above for the full image library, selection rules, and HTML block.
+
+AI-generated images are not used in CB247 blogs. The brand direction calls for real members, real spaces, authentic moments — not renders or stock photography.
 
 ---
 
@@ -168,13 +229,15 @@ Before finalizing the blog draft:
 - [ ] Location-specific content where applicable
 - [ ] Primary keyword used naturally 2-3x
 - [ ] Clear CTA in opening and closing
-- [ ] Featured image prompt included
+- [ ] Real CB247 photo included from `CB_Marketing/Image/` — copied to `docs/images/`, placed after H1, correct HTML block used
+- [ ] No stock photos, no AI-generated images, no external CDN images
 - [ ] No corporate language (no "leverage", "utilize", "synergy")
 - [ ] Brand voice consistent with context/brand-voice.md
 - [ ] At least 2 real, cited scientific facts in the body + a ## SOURCES section
 - [ ] No fabricated stats — every number verified or flagged [verify]
 - [ ] Opens with a current TikTok/IG/X fitness trend hook, positioned credibly
 - [ ] Health claims flagged for compliance-checker review
+- [ ] Humanizer pass completed — no em dashes, no AI vocabulary words, no rule-of-three clusters, no promotional puffery, voice matches CB247 calibration above
 
 ---
 
