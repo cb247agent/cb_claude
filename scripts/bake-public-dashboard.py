@@ -3517,6 +3517,9 @@ const KANBAN_COLS = [
   {key:'Published',  label:'Published',   color:'rgba(63,166,154,.06)', border:'#3FA69A'},
 ];
 
+// Calendar week offset — 0 = current week, 1 = next week, etc.
+let _calWeekOffset = 0;
+
 function renderPlanner() {
   const saved    = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
   const approved = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
@@ -3626,39 +3629,77 @@ function renderPlanner() {
   });
   html += `</div>`;
 
-  // ── 2-week calendar grid ──────────────────────────────────────────────
-  html += sectionTitle('2-Week Content Calendar');
-  const days = [...new Set(PLANNER_ITEMS.map(i=>i.day))].sort((a,b)=>a-b);
-  const today = new Date();
-  html += `<div style="overflow-x:auto;margin-bottom:28px"><table style="width:100%;border-collapse:collapse;min-width:700px">
-    <thead><tr style="background:var(--bg-2)">
-      ${days.map(d => {
-        const dt = new Date(today); dt.setDate(today.getDate()+d);
-        const dayStr = dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
-        return `<th style="padding:8px 10px;font-size:11px;font-weight:700;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap">Day ${d}<br><span style="font-weight:400;color:var(--muted)">${dayStr}</span></th>`;
+  // ── Mon-Sun calendar grid with week navigation ───────────────────────
+  html += sectionTitle('Weekly Content Calendar');
+
+  // Find Monday of the current week
+  const _calToday = new Date(); _calToday.setHours(0,0,0,0);
+  const _dow = _calToday.getDay(); // 0=Sun,1=Mon..6=Sat
+  const _daysToMon = _dow === 0 ? -6 : 1 - _dow;
+  const _thisMonday = new Date(_calToday);
+  _thisMonday.setDate(_calToday.getDate() + _daysToMon);
+
+  // Displayed week start/end
+  const _wkStart = new Date(_thisMonday);
+  _wkStart.setDate(_thisMonday.getDate() + _calWeekOffset * 7);
+  const _wkEnd = new Date(_wkStart);
+  _wkEnd.setDate(_wkStart.getDate() + 6);
+
+  const _wkLabel = _wkStart.toLocaleDateString('en-AU',{day:'numeric',month:'short'}) + ' – ' + _wkEnd.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+  const _DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  // Count items in this week
+  const _wkItemCount = PLANNER_ITEMS.filter(item => {
+    const d = new Date(_calToday); d.setDate(_calToday.getDate()+item.day); d.setHours(0,0,0,0);
+    return d >= _wkStart && d <= _wkEnd;
+  }).length;
+
+  html += `<div style="margin-bottom:28px">
+
+    <!-- Week nav bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap">
+      <button onclick="if(_calWeekOffset>0){_calWeekOffset--;renderPlanner()}" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:${_calWeekOffset===0?'var(--muted)':'var(--text)'};font-size:12px;font-weight:600;cursor:${_calWeekOffset===0?'default':'pointer'};opacity:${_calWeekOffset===0?'.4':'1'}" ${_calWeekOffset===0?'disabled':''}>&#8592; Prev</button>
+      <div style="text-align:center">
+        <div style="font-size:14px;font-weight:700;color:var(--text)">${_wkLabel}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${_wkItemCount} item${_wkItemCount!==1?'s':''} scheduled this week</div>
+      </div>
+      <button onclick="_calWeekOffset++;renderPlanner()" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid #3FA69A;border-radius:4px;background:rgba(63,166,154,.08);color:#3FA69A;font-size:12px;font-weight:600;cursor:pointer">Next &#8594;</button>
+    </div>
+
+    <!-- 7-column Mon-Sun grid -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:700px;overflow-x:auto">
+      ${_DOW.map((dayName, i) => {
+        const _colDate = new Date(_wkStart);
+        _colDate.setDate(_wkStart.getDate() + i);
+        _colDate.setHours(0,0,0,0);
+        const _isToday = _colDate.getTime() === _calToday.getTime();
+        const _colItems = PLANNER_ITEMS.filter(item => {
+          const d = new Date(_calToday); d.setDate(_calToday.getDate()+item.day); d.setHours(0,0,0,0);
+          return d.getTime() === _colDate.getTime();
+        });
+        const _colDateStr = _colDate.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+        return `<div style="background:#f9fafb;border:1px solid ${_isToday?'#3FA69A':'var(--border)'};border-radius:6px;overflow:hidden">
+          <div style="padding:7px 8px;background:${_isToday?'rgba(63,166,154,.08)':'var(--bg)'};border-bottom:2px solid ${_isToday?'#3FA69A':'var(--border)'}">
+            <div style="font-size:10px;font-weight:700;color:${_isToday?'#3FA69A':'var(--text-2)'};text-transform:uppercase;letter-spacing:.05em">${dayName}${_isToday?' ·&nbsp;Today':''}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:1px">${_colDateStr}</div>
+          </div>
+          <div style="padding:5px">
+            ${_colItems.map(item => {
+              const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444',border:'#ccc'};
+              const st = saved[item.id] || 'Idea';
+              const stColor = st==='Published'?'#3FA69A':st==='Scheduled'?'#3FA69A':st==='Angela QC'?'#111':st==='In Progress'?'#3FA69A':'#999';
+              return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${pc.border};border-radius:4px;padding:6px 7px;margin-bottom:5px;cursor:pointer;font-size:10px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 6px rgba(0,0,0,.09)'" onmouseout="this.style.boxShadow='none'">
+                <div style="font-size:8px;font-weight:700;background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};padding:1px 5px;border-radius:2px;display:inline-block;margin-bottom:4px;letter-spacing:.3px">${item.platform.toUpperCase()}</div>
+                <div style="font-weight:600;line-height:1.3;color:var(--text);margin-bottom:3px;font-size:10px">${item.title}</div>
+                <div style="font-size:9px;font-weight:700;color:${stColor}">${st}</div>
+              </div>`;
+            }).join('')}
+            ${_colItems.length===0 ? `<div style="height:36px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:4px;font-size:10px;color:var(--muted-2)">—</div>` : ''}
+          </div>
+        </div>`;
       }).join('')}
-    </tr></thead>
-    <tbody><tr style="vertical-align:top">
-      ${days.map(d => {
-        const dayItems = PLANNER_ITEMS.filter(i=>i.day===d);
-        return `<td style="padding:8px 6px;border-right:1px solid var(--border);min-width:120px">
-          ${dayItems.map(item => {
-            const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
-            const st = saved[item.id] || 'Idea';
-            const stColor = st==='Published'?'#3FA69A':st==='Scheduled'?'#3FA69A':st==='Angela QC'?'#111':st==='In Progress'?'#3FA69A':'#999';
-            return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${pc.border||'#3FA69A'};border-radius:4px;padding:6px 8px;margin-bottom:6px;cursor:pointer;font-size:10px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 6px rgba(0,0,0,.09)'" onmouseout="this.style.boxShadow='none'">
-              <div style="font-weight:700;color:${pc.color||'#3FA69A'};margin-bottom:2px;text-transform:uppercase;font-size:9px;letter-spacing:.4px">${item.type}</div>
-              <div style="font-weight:600;line-height:1.3;color:var(--text)">${item.title}</div>
-              <div style="margin-top:4px;display:flex;justify-content:space-between;align-items:center">
-                <span style="background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px">${item.platform.toUpperCase()}</span>
-                <span style="font-size:9px;font-weight:700;color:${stColor}">${st}</span>
-              </div>
-            </div>`;
-          }).join('')}
-        </td>`;
-      }).join('')}
-    </tr></tbody>
-  </table></div>`;
+    </div>
+  </div>`;
 
   // ── All items list ─────────────────────────────────────────────────────
   html += sectionTitle('All Content Items — ' + totalItems + ' items this cycle');
