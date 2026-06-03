@@ -330,9 +330,9 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "03 Jun 2026, 22:19",
+  "generated": "03 Jun 2026, 22:25",
   "report_period": "27 May \u2013 2 Jun 2026",
-  "refresh_ts": "2026-06-03T14:19:26.633409Z",
+  "refresh_ts": "2026-06-03T14:25:38.962281Z",
   "status": {
     "ga4": "live",
     "gsc": "live",
@@ -348,20 +348,20 @@ window.DASHBOARD_DATA = {
     "week_label": "25May26-31May26"
   },
   "ga4": {
-    "sessions": 3183,
+    "sessions": 3190,
     "p_sessions": 3586,
-    "convs": 491,
+    "convs": 493,
     "p_convs": 526,
-    "users": 2434,
-    "new_users": 2118,
-    "conv_rate": 15.4,
+    "users": 2438,
+    "new_users": 2122,
+    "conv_rate": 15.5,
     "mob_share": 84,
-    "ses_chg": -11.2,
-    "conv_chg": -6.7,
+    "ses_chg": -11.0,
+    "conv_chg": -6.3,
     "sources": [
       {
         "label": "Organic Search",
-        "sessions": 1056
+        "sessions": 1060
       },
       {
         "label": "Paid Social",
@@ -373,11 +373,11 @@ window.DASHBOARD_DATA = {
       },
       {
         "label": "Cross-network",
-        "sessions": 524
+        "sessions": 526
       },
       {
         "label": "Paid Search",
-        "sessions": 279
+        "sessions": 280
       },
       {
         "label": "Organic Social",
@@ -387,8 +387,8 @@ window.DASHBOARD_DATA = {
     "top_pages": [
       {
         "path": "/",
-        "views": 5006,
-        "sessions": 2253
+        "views": 5021,
+        "sessions": 2261
       },
       {
         "path": "/reformer-pilates",
@@ -397,13 +397,13 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/contact",
-        "views": 484,
-        "sessions": 245
+        "views": 486,
+        "sessions": 246
       },
       {
         "path": "/group-fitness-timetable",
-        "views": 429,
-        "sessions": 204
+        "views": 431,
+        "sessions": 205
       },
       {
         "path": "/thank-you",
@@ -417,8 +417,8 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/personal-training",
-        "views": 292,
-        "sessions": 128
+        "views": 298,
+        "sessions": 129
       },
       {
         "path": "/faqs",
@@ -432,8 +432,8 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/kids-hub",
-        "views": 217,
-        "sessions": 83
+        "views": 219,
+        "sessions": 84
       }
     ],
     "period": "27 May \u2013 2 Jun 2026"
@@ -4853,53 +4853,10 @@ function renderPlanner() {
 
   let html = '';
 
-  // ── Intro / How-to-use panel ─────────────────────────────────────────────
-  html += `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:22px 26px;margin-bottom:22px">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
-
-      <!-- Left: what it is + workflow -->
-      <div style="flex:1;min-width:280px">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">What is the Content Planner?</div>
-        <p style="font-size:12px;color:var(--text-2);line-height:1.7;margin:0 0 14px">
-          Your 2-week publishing schedule for every CB247 channel — blogs, Instagram, TikTok, GBP posts, and emails.
-          Each card is one piece of content. Click any card to view the brief, leave notes, or approve it.
-        </p>
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">How to use it</div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          ${[
-            ['1','AI or creator drafts content','Card starts in Idea column'],
-            ['2','Tia reviews the brief','Click card → read instructions → move to In Progress'],
-            ['3','Angela QC','Move card to Angela QC once draft is ready for review'],
-            ['4','Joanne schedules social, Tia posts GBP','Move to Scheduled once approved'],
-            ['5','Mark publishes blogs to WordPress','Move to Published when live'],
-          ].map(([n,label,sub])=>`<div style="display:flex;align-items:flex-start;gap:10px">
-            <span style="flex-shrink:0;width:18px;height:18px;background:#3FA69A;color:#fff;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${n}</span>
-            <div>
-              <span style="font-size:12px;font-weight:600;color:var(--text)">${label}</span>
-              <span style="font-size:11px;color:var(--muted);margin-left:6px">${sub}</span>
-            </div>
-          </div>`).join('')}
-        </div>
-      </div>
-
-      <!-- Right: colour legend -->
-      <div style="flex-shrink:0;min-width:200px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">Content Type Colours</div>
-        <div style="display:flex;flex-direction:column;gap:7px">
-          ${Object.entries(PLAT_CFG).map(([key,c])=>`
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${c.border};flex-shrink:0"></span>
-            <span style="display:inline-block;background:${c.bg};color:${c.color};border:1px solid ${c.border};font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.3px">${c.label.toUpperCase()}</span>
-          </div>`).join('')}
-        </div>
-        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Tip</div>
-          <div style="font-size:11px;color:var(--text-2);line-height:1.6">Click any card to open its brief, approval buttons, and notes. Use the <b>→ Move</b> button in the list below to advance a card without opening it.</div>
-        </div>
-      </div>
-
-    </div>
-  </div>`;
+  // ── Page intro ────────────────────────────────────────────────────────
+  html += `<p style="font-size:12.5px;color:var(--text-2);line-height:1.7;margin:0 0 20px">
+    Your 2-week publishing schedule for every CB247 channel — blogs, Instagram, TikTok, GBP posts, and emails. Each card is one piece of content moving from draft to published.
+  </p>`;
 
   // ── KPI bar ────────────────────────────────────────────────────────────
   html += `<div class="kpi-grid cols-4 mb">
@@ -4921,6 +4878,16 @@ function renderPlanner() {
 
   // ── Kanban board ──────────────────────────────────────────────────────
   html += sectionTitle('Kanban Board');
+  html += `<div style="background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">What it is</div>
+      <div style="font-size:11px;color:var(--text-2);line-height:1.6">All content items grouped by workflow stage — Idea, In Progress, Angela QC, Scheduled, and Published. Card colour shows the platform type.</div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">How to use it</div>
+      <div style="font-size:11px;color:var(--text-2);line-height:1.6">Click any card to open its brief, read the instructions, leave notes, and approve or reject it. Cards advance one stage at a time through the approval flow.</div>
+    </div>
+  </div>`;
   html += `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:28px;align-items:start">`;
 
   KANBAN_COLS.forEach(col => {
@@ -4946,6 +4913,16 @@ function renderPlanner() {
 
   // ── Mon-Sun calendar grid with week navigation ───────────────────────
   html += sectionTitle('Weekly Content Calendar');
+  html += `<div style="background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">What it is</div>
+      <div style="font-size:11px;color:var(--text-2);line-height:1.6">A Monday-to-Sunday view of what is scheduled each day across all channels. Today's column is highlighted. Empty days show gaps in the plan.</div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">How to use it</div>
+      <div style="font-size:11px;color:var(--text-2);line-height:1.6">Use Prev and Next to browse weeks. Click any card to open the brief. Content scheduled beyond this week appears in future weeks — keep clicking Next.</div>
+    </div>
+  </div>`;
 
   // Find Monday of the current week
   const _calToday = new Date(); _calToday.setHours(0,0,0,0);
@@ -5018,6 +4995,16 @@ function renderPlanner() {
 
   // ── All items list ─────────────────────────────────────────────────────
   html += sectionTitle('All Content Items — ' + totalItems + ' items this cycle');
+  html += `<div style="background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">What it is</div>
+      <div style="font-size:11px;color:var(--text-2);line-height:1.6">A flat list of every content item in this cycle — platform, title, assignee, target keyword, day, and current status all in one place.</div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">How to use it</div>
+      <div style="font-size:11px;color:var(--text-2);line-height:1.6">Click View to open the full brief. Use the arrow button (→ Stage) to advance a card to the next stage without opening it — useful for bulk updates.</div>
+    </div>
+  </div>`;
   html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
     <th>Platform</th><th>Title</th><th>Assignee</th><th>Keyword</th><th class="num">Day</th><th>Status</th><th>Action</th>
   </tr></thead><tbody>
