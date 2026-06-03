@@ -76,14 +76,22 @@ if not API_KEY or API_KEY.startswith("#") or len(API_KEY) < 10:
     API_KEY = ""
 
 
-def fetch_json(endpoint, params=None):
+def fetch_json(endpoint, params=None, _delay=1.5):
+    """Fetch JSON from Ahrefs API v3. Adds a small delay between calls to avoid
+    Cloudflare burst-rate limiting (429 HTML response)."""
     if not API_KEY:
         return None
+    import time
+    time.sleep(_delay)
     url     = f"{BASE_URL}/{endpoint}"
     headers = {"Authorization": f"Bearer {API_KEY}"}
     params  = params or {}
     try:
         r = requests.get(url, headers=headers, params=params, timeout=30)
+        # Cloudflare block returns HTML 429 — detect and treat as transient
+        if r.status_code == 429 and "<html" in r.text[:50].lower():
+            print(f"  WARN: Cloudflare rate limit on [{endpoint}] — wait a few minutes and retry", file=sys.stderr)
+            return None
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -462,73 +470,54 @@ def add_wow_to_target_keywords(tracked_result, prev_positions):
 
 def pull_site_audit():
     """
-    Pull the latest Ahrefs Site Audit crawl for project 9812033.
-    Site Audit uses a different API surface and does NOT consume
-    Site Explorer row units — safe to call even when rate-limited.
+    Pull Ahrefs Site Audit overview for project 9812033.
 
-    Returns: {
-      crawl_id, crawl_date, health_score,
-      pages_crawled, issues_by_type, top_issues[]
-    }
+    Uses site-audit/projects endpoint — FREE (0 units), always works.
+    Returns health score + error/warning/notice counts from the latest crawl.
+
+    Detailed issue list (specific URLs per issue) requires site-audit/issues
+    which costs 50 units — pulled separately by import_site_audit.py when
+    units are available, or via manual CSV export from the Ahrefs web app.
     """
-    # Step 1: get the latest crawl for this project
-    crawls = fetch_json(f"site-audit/get-crawls", {
-        "project_id": SITE_AUDIT_PROJECT_ID,
-    })
+    projects = fetch_json("site-audit/projects", {})
 
-    if not crawls:
-        print("  WARN: Could not fetch Site Audit crawl list", file=sys.stderr)
+    if not projects:
+        print("  WARN: Could not fetch Site Audit projects", file=sys.stderr)
         return None
 
-    # Latest crawl is first in list
-    crawl_list = crawls.get("crawls") or []
-    if not crawl_list:
-        print("  WARN: No Site Audit crawls found", file=sys.stderr)
+    # Find the CB247 project by ID
+    healthscores = projects.get("healthscores") or []
+    project = next(
+        (p for p in healthscores if str(p.get("project_id")) == SITE_AUDIT_PROJECT_ID),
+        None
+    )
+
+    if not project:
+        # Fallback: find by target URL
+        project = next(
+            (p for p in healthscores if "chasingbetter" in (p.get("target_url") or "")),
+            None
+        )
+
+    if not project:
+        print(f"  WARN: CB247 project {SITE_AUDIT_PROJECT_ID} not found in Site Audit", file=sys.stderr)
         return None
 
-    latest = crawl_list[0]
-    crawl_id = latest.get("crawl_id") or latest.get("id")
-    crawl_date = latest.get("finished_at") or latest.get("created_at")
-    print(f"  Site Audit: crawl {crawl_id} ({crawl_date})")
-
-    # Step 2: overview — health score + page counts
-    overview = fetch_json("site-audit/get-overview", {
-        "crawl_id": crawl_id,
-    })
-
-    # Step 3: issues list — top 50 by severity
-    issues_data = fetch_json("site-audit/get-all-issues", {
-        "crawl_id": crawl_id,
-        "limit":    50,
-    })
-
-    # Normalise issue list
-    raw_issues = []
-    if issues_data:
-        raw_issues = issues_data.get("issues") or issues_data.get("data") or []
-
-    top_issues = []
-    for issue in raw_issues[:20]:
-        top_issues.append({
-            "name":        issue.get("name") or issue.get("type"),
-            "priority":    issue.get("priority") or issue.get("severity"),
-            "count":       issue.get("count") or issue.get("pages_count"),
-            "description": issue.get("description"),
-        })
-
-    ov = overview or {}
-    ov_data = ov.get("overview") or ov  # API sometimes nests under "overview"
+    crawl_date = project.get("date", "")[:10]
+    health_score = project.get("health_score")
+    print(f"  Site Audit [{crawl_date}]: health score {health_score}/100")
 
     return {
-        "crawl_id":       crawl_id,
-        "crawl_date":     crawl_date,
-        "health_score":   ov_data.get("health_score"),
-        "pages_crawled":  ov_data.get("pages_crawled") or ov_data.get("crawled"),
-        "issues_total":   ov_data.get("issues_total") or len(raw_issues),
-        "errors":         ov_data.get("errors"),
-        "warnings":       ov_data.get("warnings"),
-        "notices":        ov_data.get("notices"),
-        "top_issues":     top_issues,
+        "crawl_date":    crawl_date,
+        "health_score":  health_score,
+        "pages_crawled": project.get("total"),
+        "errors":        project.get("urls_with_errors"),
+        "warnings":      project.get("urls_with_warnings"),
+        "notices":       project.get("urls_with_notices"),
+        "status":        project.get("status"),
+        # Detailed top_issues populated by import_site_audit.py (costs units to fetch via API)
+        "top_issues":    [],
+        "note": "Detailed issues: run python3 scripts/import_site_audit.py after exporting from ahrefs.com/site-audit",
     }
 
 
