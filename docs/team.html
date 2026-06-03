@@ -9,9 +9,9 @@
 :root {
   --teal: #3FA69A; --teal-dark: #2d8a7e; --teal-light: #e8f5f4;
   --bg: #F0F2F5; --card: #fff; --text: #1a1a2e; --muted: #6b7280;
-  --border: #e5e7eb; --red: #ef4444; --green: #22c55e;
-  --amber: #f59e0b; --yellow: #eab308; --blue: #3b82f6;
-  --purple: #8b5cf6; --pink: #ec4899;
+  --border: #e5e7eb; --red: #ef4444; --green: #3FA69A;
+  --amber: #9ca3af; --yellow: #eab308; --blue: #3b82f6;
+  --purple: #374151; --pink: #ec4899;
   --radius: 10px; --shadow: 0 1px 4px rgba(0,0,0,0.08); --gap: 16px;
 }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
@@ -69,16 +69,16 @@ nav h1 span { color: #7ee8e0; }
 .task-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
 .task-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
-.badge-cat-SEO        { background: #dcfce7; color: #16a34a; }
+.badge-cat-SEO        { background: #e5e7eb; color: #3FA69A; }
 .badge-cat-GBP        { background: #d1fae5; color: #059669; }
-.badge-cat-Google\ Ads { background: #dbeafe; color: #1d4ed8; }
-.badge-cat-Content    { background: #ede9fe; color: #7c3aed; }
+.badge-cat-Google\ Ads { background: #e5e7eb; color: #1d4ed8; }
+.badge-cat-Content    { background: #f3f4f6; color: #7c3aed; }
 .badge-cat-Technical  { background: #f3f4f6; color: #374151; }
-.badge-cat-Meta\ Ads  { background: #fce7f3; color: #be185d; }
-.badge-p-Critical { background: #fee2e2; color: #dc2626; }
-.badge-p-High     { background: #fef3c7; color: #d97706; }
+.badge-cat-Meta\ Ads  { background: #f3f4f6; color: #be185d; }
+.badge-p-Critical { background: #e5e7eb; color: #374151; }
+.badge-p-High     { background: #fef3c7; color: #6b7280; }
 .badge-p-Medium   { background: #fefce8; color: #ca8a04; }
-.badge-p-Low      { background: #dbeafe; color: #2563eb; }
+.badge-p-Low      { background: #e5e7eb; color: #2563eb; }
 .badge-assign { background: #f3f4f6; color: #374151; }
 
 .task-actions { display: flex; gap: 8px; align-items: center; margin-top: 0; }
@@ -112,9 +112,9 @@ footer { text-align: center; font-size: 11px; color: var(--muted); padding: 20px
 <nav>
   <h1>ChasingBetter<span>247</span></h1>
   <div class="nav-links">
-    <a href="index.html">📊 Dashboard</a>
-    <a href="team.html" class="active">✅ Actions</a>
-    <a href="planner.html">📅 Planner</a>
+    <a href="index.html">Dashboard</a>
+    <a href="team.html" class="active">Actions</a>
+    <a href="planner.html">Planner</a>
   </div>
 </nav>
 
@@ -266,7 +266,7 @@ function render() {
 
   // Progress by category
   const cats = ['GBP','SEO','Content','Technical','Google Ads'];
-  const catColors = { GBP:'#22c55e', SEO:'#3FA69A', Content:'#8b5cf6', Technical:'#6b7280', 'Google Ads':'#3b82f6' };
+  const catColors = { GBP:'#3FA69A', SEO:'#3FA69A', Content:'#374151', Technical:'#6b7280', 'Google Ads':'#3b82f6' };
   let prog = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:12px;">Progress by Category</div>';
   cats.forEach(c => {
     const catTasks = TASKS.filter(t => t.cat === c);
@@ -309,7 +309,7 @@ function render() {
           <div class="task-meta">
             <span class="badge badge-cat-${t.cat}">${t.cat}</span>
             <span class="badge badge-p-${t.priority}">${t.priority}</span>
-            <span class="badge badge-assign">👤 ${t.assign}</span>
+            <span class="badge badge-assign">${t.assign}</span>
           </div>
           ${t.note ? `<div class="task-note">💡 ${t.note}</div>` : ''}
         </div>

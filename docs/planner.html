@@ -9,8 +9,8 @@
 :root {
   --teal: #3FA69A; --teal-dark: #2d8a7e; --teal-light: #e8f5f4;
   --bg: #F0F2F5; --card: #fff; --text: #1a1a2e; --muted: #6b7280;
-  --border: #e5e7eb; --red: #ef4444; --green: #22c55e;
-  --amber: #f59e0b; --blue: #3b82f6; --purple: #8b5cf6;
+  --border: #e5e7eb; --red: #ef4444; --green: #3FA69A;
+  --amber: #9ca3af; --blue: #3b82f6; --purple: #374151;
   --pink: #ec4899; --orange: #f97316;
   --radius: 10px; --shadow: 0 1px 4px rgba(0,0,0,0.08); --gap: 16px;
 }
@@ -57,7 +57,7 @@ nav h1 span { color: #7ee8e0; }
   position: relative;
 }
 .content-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
-.content-item.channel-gbp      { border-top-color: #22c55e; }
+.content-item.channel-gbp      { border-top-color: #3FA69A; }
 .content-item.channel-instagram { border-top-color: var(--pink); }
 .content-item.channel-tiktok   { border-top-color: #000; }
 .content-item.channel-blog     { border-top-color: var(--teal); }
@@ -70,11 +70,11 @@ nav h1 span { color: #7ee8e0; }
 .item-assign { font-size: 10px; color: var(--muted); }
 .status-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; cursor: pointer; border: none; }
 .status-idea      { background: #f3f4f6; color: #374151; }
-.status-draft     { background: #fef3c7; color: #d97706; }
-.status-review    { background: #dbeafe; color: #1d4ed8; }
+.status-draft     { background: #fef3c7; color: #6b7280; }
+.status-review    { background: #e5e7eb; color: #1d4ed8; }
 .status-approved  { background: #d1fae5; color: #065f46; }
-.status-scheduled { background: #ede9fe; color: #5b21b6; }
-.status-published { background: #dcfce7; color: #14532d; }
+.status-scheduled { background: #f3f4f6; color: #374151; }
+.status-published { background: #e5e7eb; color: #14532d; }
 
 /* DETAIL MODAL */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
@@ -119,16 +119,16 @@ footer { text-align: center; font-size: 11px; color: var(--muted); padding: 20px
 <nav>
   <h1>ChasingBetter<span>247</span></h1>
   <div class="nav-links">
-    <a href="index.html">📊 Dashboard</a>
-    <a href="team.html">✅ Actions</a>
-    <a href="planner.html" class="active">📅 Planner</a>
+    <a href="index.html">Dashboard</a>
+    <a href="team.html">Actions</a>
+    <a href="planner.html" class="active">Planner</a>
   </div>
 </nav>
 
 <!-- LEGEND -->
 <div class="legend">
   <span class="legend-title">Channels:</span>
-  <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>GBP Post</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#3FA69A"></span>GBP Post</div>
   <div class="legend-item"><span class="legend-dot" style="background:#ec4899"></span>Instagram</div>
   <div class="legend-item"><span class="legend-dot" style="background:#000"></span>TikTok</div>
   <div class="legend-item"><span class="legend-dot" style="background:#3FA69A"></span>Blog</div>
@@ -200,14 +200,14 @@ function isToday(d) {
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const STATUSES = ['Idea','Draft','In Review','Approved','Scheduled','Published'];
 const CHANNEL_COLORS = {
-  'GBP Post': '#22c55e', 'Instagram': '#ec4899', 'TikTok': '#111827',
+  'GBP Post': '#3FA69A', 'Instagram': '#ec4899', 'TikTok': '#111827',
   'Blog': '#3FA69A', 'Email': '#3b82f6', 'Google Ads': '#f97316',
 };
 
 // 2 weeks of content (14 days)
 const CONTENT = [
   // WEEK 1
-  { id:'w1d1a', day:0, channel:'GBP Post',   title:'Value post — $11.95/wk vs competitors', location:'Both', format:'Post / Update', assign:'Content Creator', hook:'Perth\'s best value gym — here\'s what you get for $11.95/week', copy:`ChasingBetter247 — Perth's best value gym 💪\n\n✅ 24/7 access\n✅ Sauna + ice bath recovery\n✅ Kids Hub creche\n✅ Reformer Pilates\n✅ No lock-in contract\n\nAll of this for just $11.95/week in Malaga and Ellenbrook.\n\nOther gyms charge more and give you less. We're different. 💚\n\n👉 Sign up at chasingbetter247.com.au`, cta:'Sign Up button → membership page', status:'Idea' },
+  { id:'w1d1a', day:0, channel:'GBP Post',   title:'Value post — $11.95/wk vs competitors', location:'Both', format:'Post / Update', assign:'Content Creator', hook:'Perth\'s best value gym — here\'s what you get for $11.95/week', copy:`ChasingBetter247 — Perth's best value gym 💪\n\n24/7 access\nSauna + ice bath recovery\nKids Hub creche\nReformer Pilates\nNo lock-in contract\n\nAll of this for just $11.95/week in Malaga and Ellenbrook.\n\nOther gyms charge more and give you less. We're different. 💚\n\n👉 Sign up at chasingbetter247.com.au`, cta:'Sign Up button → membership page', status:'Idea' },
   { id:'w1d2a', day:1, channel:'Instagram',  title:'Reel — cold plunge / ice bath recovery routine', location:'Malaga', format:'Reel / Video', assign:'Content Creator', hook:'POV: you just finished your hardest session and the ice bath is waiting', copy:`POV: recovery done right 🧊\n\nSauna → ice bath → repeat.\n\nIncluded in your $11.95/week membership at CB247 Malaga.\n\nNot just a gym. A full recovery centre. 💪\n\n#gym #icebach #recovery #pertgym #chasingbetter247`, cta:'Link in bio → membership', status:'Idea' },
   { id:'w1d2b', day:1, channel:'TikTok',     title:"'Why I switched to CB247' POV", location:'Both', format:'Reel / Video', assign:'Content Creator', hook:'I was paying $15/week for less. Then I found CB247.', copy:`Story format:\n1. "I was paying $15/week at [Anytime/Snap]"\n2. "Then I walked into ChasingBetter247"\n3. Show: sauna, ice bath, gym floor, Kids Hub\n4. "Same price. 10x the facilities"\n5. "No lock-in either"\n\nEnd card: chasingbetter247.com.au`, cta:'Visit chasingbetter247.com.au', status:'Idea' },
   { id:'w1d3a', day:2, channel:'Blog',        title:"Blog: 'Best Gym in Malaga 2026'", location:'Malaga', format:'Article', assign:'SEO Specialist', hook:'Targets: best gym malaga, gym malaga, 24/7 gym malaga', copy:`Full draft: outputs/seo/blog-best-gym-malaga-2026-05-30.md\n\nPublish at: /blog/best-gym-in-malaga-perth\n\nTargets keyword 'Malaga Gym' — currently paying $137/week in Google Ads for this term. Once ranked #1-3 organically, pause the ad campaign.`, cta:'Internal links → /malaga and membership page', status:'Draft' },
@@ -217,7 +217,7 @@ const CONTENT = [
   { id:'w1d6a', day:5, channel:'Instagram',  title:'Saturday energy post — member in gym', location:'Both', format:'Static Image', assign:'Front Desk', hook:'Real members, real results — no stock photos', copy:`Saturday sessions hit different 💪\n\nThe gym is yours. The sauna is waiting. The community is here.\n\nCB247 — open 24/7 in Malaga and Ellenbrook.\n\n#gym #saturday #fitness #perthgym #chasingbetter247 #gymlife`, cta:'Link in bio', status:'Idea' },
 
   // WEEK 2
-  { id:'w2d1a', day:7, channel:'GBP Post',   title:'Member challenge event post', location:'Both', format:'Event', assign:'Content Creator', hook:'Join our June member challenge', copy:`JUNE MEMBER CHALLENGE 🏆\n\nWe're kicking off a 30-day challenge at CB247.\n\n✅ 4 sessions per week\n✅ 1 recovery session (sauna or ice bath)\n✅ Track your progress at reception\n\nPrize: 1 month free membership for the winner.\n\nStarts 1 June. Sign up at reception or DM us.\n\nChasingBetter247 — Malaga + Ellenbrook`, cta:'Learn More button → landing page', status:'Idea' },
+  { id:'w2d1a', day:7, channel:'GBP Post',   title:'Member challenge event post', location:'Both', format:'Event', assign:'Content Creator', hook:'Join our June member challenge', copy:`JUNE MEMBER CHALLENGE 🏆\n\nWe're kicking off a 30-day challenge at CB247.\n\n4 sessions per week\n1 recovery session (sauna or ice bath)\nTrack your progress at reception\n\nPrize: 1 month free membership for the winner.\n\nStarts 1 June. Sign up at reception or DM us.\n\nChasingBetter247 — Malaga + Ellenbrook`, cta:'Learn More button → landing page', status:'Idea' },
   { id:'w2d1b', day:7, channel:'Instagram',  title:'Reel — 75 Hard at CB247', location:'Malaga', format:'Reel / Video', assign:'Content Creator', hook:'Starting 75 Hard? Our 24/7 gym makes it easy', copy:`Starting 75 Hard? ✅\n\nCB247 is open 24/7.\n\nNo excuses. No "the gym was closed." Just you and the work.\n\nMalaga + Ellenbrook. $11.95/week. No lock-in.\n\n#75hard #gym #perth #chasingbetter247 #24hrgym #fitness`, cta:'Link in bio', status:'Idea' },
   { id:'w2d2a', day:8, channel:'TikTok',     title:"'Gym tour' walk-through video", location:'Ellenbrook', format:'Reel / Video', assign:'Content Creator', hook:'Come with me to my gym — $11.95/week gets you all of this', copy:`Walk-through format:\n- Entry / reception\n- Gym floor (equipment zones)\n- Group fitness room\n- Kids Hub\n- Sauna\n- Ice bath\n- "All of this for $11.95/week"\n- "No lock-in. 24/7 access."\n\nEnd: "CB247 Ellenbrook — link in bio"`, cta:'chasingbetter247.com.au', status:'Idea' },
   { id:'w2d4a', day:10, channel:'GBP Post',  title:'FIFO Freeze offer post', location:'Both', format:'Offer', assign:'Content Creator', hook:'FIFO workers — freeze your membership while you\'re away', copy:`FIFO workers — this one's for you. 🦺\n\nOur FIFO Freeze lets you pause your CB247 membership while you're on swing.\n\nNo fees. No hassle. No losing your spot.\n\nJust freeze when you leave. Resume when you're back.\n\n$11.95/week at CB247 Malaga + Ellenbrook.\n\nThe only gym built for your roster.`, cta:'Sign Up → membership page', status:'Idea' },
@@ -260,7 +260,7 @@ function render() {
   const statuses = {};
   STATUSES.forEach(s => statuses[s] = 0);
   weekItems.forEach(c => { const st = getStatus(c.id); statuses[st] = (statuses[st]||0)+1; });
-  const statusColors = { 'Idea':'#6b7280','Draft':'#d97706','In Review':'#2563eb','Approved':'#065f46','Scheduled':'#5b21b6','Published':'#14532d' };
+  const statusColors = { 'Idea':'#6b7280','Draft':'#6b7280','In Review':'#2563eb','Approved':'#065f46','Scheduled':'#374151','Published':'#14532d' };
   document.getElementById('summaryRow').innerHTML = STATUSES.map(s => `
     <div class="sum-card" style="border-top-color:${statusColors[s]}">
       <div class="sum-num" style="color:${statusColors[s]}">${statuses[s]}</div>
@@ -286,7 +286,7 @@ function render() {
         <div class="item-channel">${item.channel}</div>
         <div class="item-title">${item.title}</div>
         <div class="item-footer">
-          <span class="item-assign">👤 ${item.assign.split(' ')[0]}</span>
+          <span class="item-assign">${item.assign.split(' ')[0]}</span>
           <button class="status-badge ${statusClass(st)}" onclick="event.stopPropagation();cycleStatus('${item.id}')">${st}</button>
         </div>
       </div>`;

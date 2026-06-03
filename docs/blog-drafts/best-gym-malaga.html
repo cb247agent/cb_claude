@@ -7,69 +7,68 @@
 <meta name="description" content="Comparing gyms in Malaga? CB247, Revo, Ryderwear &amp; World Gym compared on price, facilities &amp; flexibility. Find the best 24/7 gym in Malaga from $11.95/wk.">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,sans-serif;background:#f9fafb;color:#1a1a2e;line-height:1.75;font-size:16px}
-.review-bar{background:#1a1a2e;color:#fff;padding:11px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:200}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,sans-serif;background:#f4f4f4;color:#0d0d0d;line-height:1.75;font-size:16px}
+.review-bar{background:#0d0d0d;color:#fff;padding:11px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:200}
 .rb-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px}
 .rb-tag{background:#3FA69A;color:#fff;border-radius:99px;padding:3px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .rb-pill{border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700;display:none}
 .rb-pill.show{display:inline-block}
-.s-approved{background:#dcfce7;color:#166534}
-.s-adjustment{background:#fef9c3;color:#92400e}
-.s-rejected{background:#fee2e2;color:#991b1b}
+.s-approved{background:#3FA69A;color:#fff}
+.s-adjustment{background:#e5e7eb;color:#374151}
+.s-rejected{background:#374151;color:#fff}
 .rb-btns{display:flex;gap:8px}
 .rb-btn{border:none;border-radius:99px;padding:6px 16px;font-size:11px;font-weight:700;cursor:pointer}
 .btn-approve{background:#3FA69A;color:#fff}
-.btn-adjust{background:#fef9c3;color:#92400e;border:1px solid #fde68a}
-.btn-reject{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
-.review-notes{background:#fffbeb;border-bottom:2px solid #fde68a;padding:12px 24px;display:none}
+.btn-adjust{background:#e5e7eb;color:#374151;border:1px solid #d1d5db}
+.btn-reject{background:#374151;color:#fff;border:none}
+.review-notes{background:#f9fafb;border-bottom:2px solid #e5e7eb;padding:12px 24px;display:none}
 .review-notes.show{display:block}
-.review-notes label{font-size:12px;font-weight:700;color:#92400e;display:block;margin-bottom:6px}
-.review-notes textarea{width:100%;max-width:640px;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:64px}
+.review-notes label{font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px}
+.review-notes textarea{width:100%;max-width:640px;border:1px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:64px}
 .review-notes textarea:focus{outline:none;border-color:#3FA69A}
-.save-btn{background:#1a1a2e;color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px}
-.saved-flash{font-size:11px;color:#16a34a;font-weight:600;margin-left:10px;display:none}
-.draft-banner{background:#fffbeb;border-bottom:1px solid #fde68a;padding:8px 24px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.data-badge{background:#dbeafe;color:#1e40af;border-radius:99px;padding:2px 10px;font-size:10px;font-weight:700}
+.save-btn{background:#0d0d0d;color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px}
+.saved-flash{font-size:11px;color:#3FA69A;font-weight:600;margin-left:10px;display:none}
+.draft-banner{background:#f3f4f6;border-bottom:1px solid #e5e7eb;padding:8px 24px;font-size:12px;color:#374151;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.data-badge{background:#e5e7eb;color:#374151;border-radius:99px;padding:2px 10px;font-size:10px;font-weight:700}
 .blog-outer{max-width:760px;margin:0 auto;padding:48px 24px 100px}
 .front-matter{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px 22px;margin-bottom:32px;font-size:12px}
 .fm-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:8px}
 .fm-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .fm-chip{border-radius:6px;padding:3px 10px;font-weight:700;font-size:11px}
-.fm-kw{background:#dbeafe;color:#1e40af}
-.fm-icp{background:#fce7f3;color:#9d174d}
-.fm-loc{background:#dcfce7;color:#166534}
-.fm-week{background:#ede9fe;color:#5b21b6}
+.fm-kw{background:#0d0d0d;color:#fff}
+.fm-icp{background:#e5e7eb;color:#374151}
+.fm-loc{background:#3FA69A;color:#fff}
+.fm-week{background:#f3f4f6;color:#374151}
 .fm-data{background:#f3f4f6;color:#374151}
 .fm-title{font-size:14px;font-weight:700;margin-bottom:10px}
 .fm-meta{font-size:11px;color:#6b7280;line-height:1.7}
-.fm-compliance{background:#fee2e2;border-radius:6px;padding:6px 10px;font-size:11px;color:#991b1b;font-weight:600;margin-top:10px}
+.fm-compliance{background:#0d0d0d;border-radius:6px;padding:6px 10px;font-size:11px;color:#fff;font-weight:600;margin-top:10px}
 .blog-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .btag{border-radius:99px;padding:3px 12px;font-size:11px;font-weight:700}
-h1{font-size:34px;font-weight:800;line-height:1.2;color:#1a1a2e;margin-bottom:22px}
+h1{font-size:34px;font-weight:800;line-height:1.2;color:#0d0d0d;margin-bottom:22px}
 .pas-label{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-radius:4px;padding:2px 8px;margin-bottom:10px}
-.pas-p{background:#fee2e2;color:#991b1b}
-.pas-a{background:#fef9c3;color:#854d0e}
-.pas-s{background:#dcfce7;color:#166534}
-h2{font-size:22px;font-weight:700;color:#1a1a2e;margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid #f0f2f5}
-h3{font-size:16px;font-weight:700;color:#1a1a2e;margin:22px 0 8px}
+.pas-p{background:#e5e7eb;color:#374151}
+.pas-a{background:#d1d5db;color:#0d0d0d}
+.pas-s{background:#3FA69A;color:#fff}
+h2{font-size:22px;font-weight:700;color:#0d0d0d;margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid #e5e7eb}
+h3{font-size:16px;font-weight:700;color:#0d0d0d;margin:22px 0 8px}
 p{margin-bottom:16px;color:#374151;font-size:15px;line-height:1.8}
-.trend-hook{background:#f0fdf4;border-left:4px solid #3FA69A;padding:18px 20px;margin-bottom:28px;border-radius:0 10px 10px 0}
+.trend-hook{background:#fff;border-left:4px solid #3FA69A;padding:18px 20px;margin-bottom:28px;border-radius:0 10px 10px 0}
 .trend-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#3FA69A;margin-bottom:8px}
 .trend-hook p{margin:0;font-style:italic}
-.science-callout{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin:18px 0;font-size:13px;color:#78350f;line-height:1.7}
-.science-callout::before{content:'🔬 ';font-size:14px}
+.science-callout{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;margin:18px 0;font-size:13px;color:#374151;line-height:1.7}
 .competitor-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin-bottom:14px}
 .competitor-card h3{margin:0 0 8px;font-size:15px}
 .competitor-card p{margin:0;font-size:13px;color:#374151;line-height:1.7}
-.competitor-card .verdict{font-size:12px;font-weight:700;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f0f2f5}
+.competitor-card .verdict{font-size:12px;font-weight:700;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb}
 table{width:100%;border-collapse:collapse;margin:20px 0;font-size:13px}
-th{background:#1a1a2e;color:#fff;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+th{background:#0d0d0d;color:#fff;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
 td{padding:10px 12px;border-bottom:1px solid #e5e7eb;color:#374151}
 tr:hover td{background:#f9fafb}
-.cb-row td{background:#f0fdf4;font-weight:700;color:#166534}
-.tick{color:#16a34a}
-.cross{color:#dc2626}
-.cta-block{background:#1a1a2e;border-radius:12px;padding:32px;text-align:center;margin:40px 0}
+.cb-row td{background:rgba(63,166,154,.08);font-weight:700;color:#0d0d0d}
+.tick{color:#3FA69A}
+.cross{color:#9ca3af}
+.cta-block{background:#0d0d0d;border-radius:12px;padding:32px;text-align:center;margin:40px 0}
 .cta-block p{color:rgba(255,255,255,.7);font-size:14px;margin-bottom:0}
 .cta-price{display:block;font-size:38px;font-weight:800;color:#3FA69A;margin:10px 0}
 .cta-btn{display:inline-block;background:#3FA69A;color:#fff;text-decoration:none;border-radius:99px;padding:14px 36px;font-size:15px;font-weight:700;margin-top:18px}
@@ -80,10 +79,10 @@ tr:hover td{background:#f9fafb}
 .int-links{border-top:1px solid #e5e7eb;padding-top:18px;margin-top:28px}
 .int-links strong{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;display:block;margin-bottom:8px}
 .int-links a{color:#3FA69A;text-decoration:none;font-weight:600;margin-right:16px;font-size:13px}
-.seo-note{background:#fffbeb;border:1px dashed #fde68a;border-radius:6px;padding:7px 12px;font-size:11px;color:#92400e;margin:10px 0}
-.seo-note::before{content:'🔍 SEO: ';font-weight:700}
-.data-note{background:#eff6ff;border:1px dashed #bfdbfe;border-radius:6px;padding:7px 12px;font-size:11px;color:#1e40af;margin:10px 0}
-.data-note::before{content:'📊 Data source: ';font-weight:700}
+.seo-note{background:#f9fafb;border:1px dashed #d1d5db;border-radius:6px;padding:7px 12px;font-size:11px;color:#374151;margin:10px 0}
+.seo-note::before{content:'SEO: ';font-weight:700}
+.data-note{background:#f9fafb;border:1px dashed #d1d5db;border-radius:6px;padding:7px 12px;font-size:11px;color:#374151;margin:10px 0}
+.data-note::before{content:'Data: ';font-weight:700}
 .blog-footer{text-align:center;font-size:11px;color:#9ca3af;padding:24px;border-top:1px solid #e5e7eb;margin-top:40px}
 @media(max-width:600px){h1{font-size:26px}table{font-size:12px}.cta-price{font-size:28px}}
 @media print{.review-bar,.review-notes,.draft-banner,.seo-note,.data-note,.front-matter .fm-compliance{display:none!important}}
@@ -98,9 +97,9 @@ tr:hover td{background:#f9fafb}
     <span class="rb-pill" id="rb-pill"></span>
   </div>
   <div class="rb-btns">
-    <button class="rb-btn btn-approve" onclick="setStatus('approved')">✅ Approve</button>
-    <button class="rb-btn btn-adjust" onclick="setStatus('adjustment')">🔄 Needs Adjustment</button>
-    <button class="rb-btn btn-reject" onclick="setStatus('rejected')">❌ Reject</button>
+    <button class="rb-btn btn-approve" onclick="setStatus('approved')">Approve</button>
+    <button class="rb-btn btn-adjust" onclick="setStatus('adjustment')">Needs Adjustment</button>
+    <button class="rb-btn btn-reject" onclick="setStatus('rejected')">Reject</button>
   </div>
 </div>
 <div class="review-notes" id="review-notes">
@@ -111,12 +110,12 @@ tr:hover td{background:#f9fafb}
 </div>
 
 <div class="draft-banner">
-  <strong>📝 DRAFT</strong>
+  <strong>DRAFT</strong>
   Generated via seo-blog-generator skill · 31 May 2026 ·
-  <span class="data-badge">📊 GSC: gym malaga pos 3.4, 117 imp</span>
-  <span class="data-badge">📊 Ahrefs: vol 200, KD 3</span>
-  <span class="data-badge">🌐 Competitor pages scraped live</span>
-  · <a href="https://cb247agent.github.io/cb_claude/briefs/p3.html" style="color:#92400e;font-weight:700">View Brief →</a>
+  <span class="data-badge">GSC: gym malaga pos 3.4, 117 imp</span>
+  <span class="data-badge">Ahrefs: vol 200, KD 3</span>
+  <span class="data-badge">Competitor pages scraped live</span>
+  · <a href="https://cb247agent.github.io/cb_claude/briefs/p3.html" style="color:#3FA69A;font-weight:700">View Brief →</a>
 </div>
 
 <div class="blog-outer">
@@ -125,17 +124,17 @@ tr:hover td{background:#f9fafb}
     <div class="fm-label">Content Brief — Reviewers: John (SEO) · Jane (QC) · Ange</div>
     <div class="fm-title">Gym in Malaga: The Honest Comparison</div>
     <div class="fm-row">
-      <span class="fm-chip fm-kw">🎯 gym malaga (200/mo, pos 9, KD 3)</span>
-      <span class="fm-chip fm-icp">👤 ICP: Newcomer + Price-conscious</span>
-      <span class="fm-chip fm-loc">📍 Malaga</span>
-      <span class="fm-chip fm-week">📅 Week 3 — Competitor Comparison</span>
+      <span class="fm-chip fm-kw">gym malaga (200/mo, pos 9, KD 3)</span>
+      <span class="fm-chip fm-icp">ICP: Newcomer + Price-conscious</span>
+      <span class="fm-chip fm-loc">Malaga</span>
+      <span class="fm-chip fm-week">Week 3 — Competitor Comparison</span>
     </div>
     <div class="fm-row">
-      <span class="fm-chip fm-data">📊 GSC data</span>
-      <span class="fm-chip fm-data">📊 Ahrefs data</span>
-      <span class="fm-chip fm-data">📊 SERP data</span>
-      <span class="fm-chip fm-data">🌐 WebFetch: Revo + Ryderwear + World Gym</span>
-      <span class="fm-chip fm-data">📱 social-trends.json</span>
+      <span class="fm-chip fm-data">GSC data</span>
+      <span class="fm-chip fm-data">Ahrefs data</span>
+      <span class="fm-chip fm-data">SERP data</span>
+      <span class="fm-chip fm-data">WebFetch: Revo + Ryderwear + World Gym</span>
+      <span class="fm-chip fm-data">social-trends.json</span>
     </div>
     <div class="fm-meta">
       <strong>Meta (155 chars):</strong> "Comparing gyms in Malaga? CB247, Revo, Ryderwear &amp; World Gym compared on price, facilities &amp; flexibility. Find the best 24/7 gym in Malaga from $11.95/wk."<br>
@@ -143,36 +142,35 @@ tr:hover td{background:#f9fafb}
       <strong>Trend hook:</strong> #fitnessjourney — #1 in social-trends.json, 50M+ views on TikTok<br>
       <strong>Competitor data:</strong> All facts sourced from live page scrape 31 May 2026
     </div>
-    <div class="fm-compliance">⚠️ Health claims present — run compliance-checker skill before publishing</div>
+    <div class="fm-compliance">Health claims present — run compliance-checker skill before publishing</div>
   </div>
 
   <div class="blog-tags">
-    <span class="btag" style="background:#dbeafe;color:#1e40af">Gym Malaga</span>
-    <span class="btag" style="background:#f3f4f6;color:#374151">Competitor Comparison</span>
-    <span class="btag" style="background:#dcfce7;color:#166534">Newcomer Guide</span>
+    <span class="btag" style="background:#0d0d0d;color:#fff">Gym Malaga</span>
+    <span class="btag" style="background:#e5e7eb;color:#374151">Competitor Comparison</span>
+    <span class="btag" style="background:#3FA69A;color:#fff">Newcomer Guide</span>
   </div>
 
   <h1>Gym in Malaga:<br>The Honest Comparison</h1>
 
   <div class="trend-hook">
-    <div class="trend-label">📱 Trending: #fitnessjourney · #75hard · #coldplunge (social-trends.json, 31 May 2026)</div>
-    <p>The #fitnessjourney trend is everywhere right now — 50 million views on TikTok and counting. People in Malaga are starting. They're comparing gyms. And they're getting stuck because nobody gives them a straight answer about what you actually get where.</p>
+    <div class="trend-label">Trending: #fitnessjourney · #75hard · #coldplunge (social-trends.json, 31 May 2026)</div>
+    <p>#fitnessjourney has 50 million views on TikTok right now. A lot of those are people at the start, trying to pick somewhere to train. If you're in Malaga, that decision is harder than it should be. Nobody publishes their prices, and every gym says the same things about community and results.</p>
   </div>
 
   <div class="data-note">Keyword: "gym malaga" — position 3.4 (GSC), 117 impressions, 5 clicks this month. "malaga gym" position 9 (Ahrefs), volume 200/mo, KD 3. Source: gsc-data.json + ahrefs-data.json</div>
 
   <span class="pas-label pas-p">P — Problem</span>
-  <p>Four gyms are competing for your membership in Malaga right now: Revo Fitness, Ryderwear Gym, World Gym, and ChasingBetter247. Each one claims to be the right choice. So which one actually is — and what does the data say?</p>
-  <p>We went to each gym's website this week and pulled the real facts. Here's the honest comparison.</p>
+  <p>Four gyms in Malaga are competing for the same members: Revo, Ryderwear, World Gym, and CB247. We pulled their websites this week and compared what each one actually offers.</p>
 
-  <h2>Why Picking the Wrong Gym Costs You More Than Money</h2>
+  <h2>What a bad gym choice actually costs you</h2>
   <span class="pas-label pas-a">A — Agitate</span>
 
-  <p>Lock into a 12-month contract at the wrong place and you're paying whether you go or not. Choose somewhere that doesn't have what you need — a kids area, recovery facilities, variety — and motivation fades within weeks.</p>
+  <p>Lock into a 12-month contract at the wrong place and you're paying whether you go or not. Pick somewhere that's missing what you need (kids supervision, recovery facilities, class variety) and motivation goes within weeks.</p>
 
-  <div class="science-callout">A 2017 study in the <em>Journal of the American Osteopathic Association</em> (Yorks et al.) found that people who trained in a supportive group environment reported <strong>26% less stress</strong> and significantly higher quality of life than those who trained alone. Where you train shapes whether you stick with it.</div>
+  <div class="science-callout">A 2017 study (Yorks et al., <em>Journal of the American Osteopathic Association</em>) found that people training in group environments reported <strong>26% less stress</strong> and better quality of life than those training solo. Not a small difference.</div>
 
-  <h2>The 4 Gyms in Malaga — What Each One Actually Gives You</h2>
+  <h2>The 4 gyms in Malaga: what you actually get</h2>
   <span class="pas-label pas-s">S — Solution</span>
 
   <div class="data-note">SERP source: apify-data.json — "24/7 gym malaga perth": Ryderwear #1, Snap #2, World Gym #3, Anytime #4, CB247 #6. Competitor data from WebFetch live scrape, 31 May 2026.</div>
@@ -180,28 +178,28 @@ tr:hover td{background:#f9fafb}
   <div class="competitor-card">
     <h3>Revo Fitness Malaga</h3>
     <p>2,000 sqm. 10 squat racks. 13 Reformer Pilates beds. Evolt 360 body scanner, massage chairs, BLACKROLL recovery. Staffed Mon–Thu 9am–8pm, Fri 9am–4pm, Sat–Sun 9am–1pm. Strong for serious lifters and pilates members.</p>
-    <div class="verdict">❌ No Kids Hub &nbsp;·&nbsp; ❌ No sauna &nbsp;·&nbsp; ❌ No ice bath &nbsp;·&nbsp; 💰 Price not published</div>
+    <div class="verdict">No Kids Hub &nbsp;·&nbsp; No sauna &nbsp;·&nbsp; No ice bath &nbsp;·&nbsp; Price not published</div>
   </div>
 
   <div class="competitor-card">
-    <h3>Ryderwear Gym Malaga <span style="font-size:11px;background:#fef9c3;color:#92400e;border-radius:4px;padding:2px 6px;font-weight:700">Currently ranks #1 for "24/7 gym malaga"</span></h3>
+    <h3>Ryderwear Gym Malaga <span style="font-size:11px;background:#e5e7eb;color:#374151;border-radius:4px;padding:2px 6px;font-weight:700">Currently ranks #1 for "24/7 gym malaga"</span></h3>
     <p>1,650 sqm. Infrared saunas. Reformer pilates. Massage chairs. On-site Ryderwear apparel store. No lock-in contracts. Staffed Mon–Fri 8am–9pm, Sat–Sun 9am–5pm. Strong recovery setup for lifters.</p>
-    <div class="verdict">❌ No Kids Hub &nbsp;·&nbsp; ✅ Infrared sauna &nbsp;·&nbsp; ❌ No ice bath &nbsp;·&nbsp; 💰 Price not published</div>
+    <div class="verdict">No Kids Hub &nbsp;·&nbsp; Infrared sauna &nbsp;·&nbsp; No ice bath &nbsp;·&nbsp; Price not published</div>
   </div>
 
   <div class="competitor-card">
-    <h3>World Gym Malaga <span style="font-size:11px;background:#f3f4f6;color:#374151;border-radius:4px;padding:2px 6px;font-weight:700">4.2/5 · 559 reviews</span></h3>
-    <p>Olympic lifting platforms, group fitness, barbell café, pro shop. 4.2/5 from 559 Google reviews — strong community reputation. Good for serious strength training and people who like a structured big-name gym environment.</p>
-    <div class="verdict">❌ No Kids Hub &nbsp;·&nbsp; ⚠️ Sauna (FAQ only) &nbsp;·&nbsp; ❌ No ice bath &nbsp;·&nbsp; 💰 Price not published</div>
+    <h3>World Gym Malaga <span style="font-size:11px;background:#e5e7eb;color:#374151;border-radius:4px;padding:2px 6px;font-weight:700">4.2/5 · 559 reviews</span></h3>
+    <p>Olympic lifting platforms, group fitness, barbell café, pro shop. 4.2/5 from 559 Google reviews. Suits people who want a well-known setup focused on strength.</p>
+    <div class="verdict">No Kids Hub &nbsp;·&nbsp; Sauna (FAQ only) &nbsp;·&nbsp; No ice bath &nbsp;·&nbsp; Price not published</div>
   </div>
 
   <div class="competitor-card" style="border-color:#3FA69A;border-width:2px">
-    <h3>ChasingBetter247 Malaga ⭐</h3>
-    <p>24/7 access. Full weights floor. Reformer Pilates. ChasingRX functional training. Yoga. Spin. <strong>Kids Hub</strong> (supervised during staffed hours). <strong>Sauna</strong>. <strong>Ice Bath</strong>. Neon21 tanning. FIFO freeze — pause your membership any time, no fees. <strong>$11.95/week, no lock-in.</strong></p>
-    <div class="verdict" style="color:#166534;border-color:#86efac">✅ Kids Hub &nbsp;·&nbsp; ✅ Sauna &nbsp;·&nbsp; ✅ Ice Bath (only in Malaga) &nbsp;·&nbsp; ✅ Price published &nbsp;·&nbsp; ✅ FIFO freeze</div>
+    <h3>ChasingBetter247 Malaga</h3>
+    <p>24/7 access. Full weights floor. Reformer Pilates. ChasingRX functional training. Yoga. Spin. <strong>Kids Hub</strong> (supervised during staffed hours). <strong>Sauna</strong>. <strong>Ice Bath</strong>. Neon21 tanning. FIFO freeze (pause any time, no fees). <strong>$11.95/week, no lock-in.</strong></p>
+    <div class="verdict" style="color:#3FA69A;border-color:#3FA69A">Kids Hub &nbsp;·&nbsp; Sauna &nbsp;·&nbsp; Ice Bath (only in Malaga) &nbsp;·&nbsp; Price published &nbsp;·&nbsp; FIFO freeze</div>
   </div>
 
-  <h2>Side-by-Side: The Full Picture</h2>
+  <h2>Side by side</h2>
 
   <table>
     <thead>
@@ -220,15 +218,15 @@ tr:hover td{background:#f9fafb}
     </tbody>
   </table>
 
-  <p>CB247 is the only gym in Malaga with an ice bath. The only one with a Kids Hub. The only one publishing its price upfront. And if you're FIFO, the only one built around your roster.</p>
+  <p>CB247 is the only gym in Malaga with an ice bath, the only one with a Kids Hub, and the only one that publishes its price upfront. FIFO workers: it's also the only one with a freeze option built around your roster.</p>
 
-  <h2>If You're New to the Gym — Read This</h2>
+  <h2>If you're starting out</h2>
 
-  <p>When you're just starting, you don't know what kind of training you'll stick with. A gym with only a weights floor is a gamble. CB247 gives you the variety to find what works — reformer pilates, group classes, functional training, yoga — all at the same price.</p>
+  <p>When you're new, you don't know what you'll actually stick with. A gym with only a weights floor is a gamble. CB247 has reformer pilates, group classes, functional training, and yoga all under the same membership. Try them until something clicks.</p>
 
-  <div class="science-callout">A 2022 review in the <em>British Journal of Sports Medicine</em> (Momma et al.) found that just 30–60 minutes of strength training per week is linked to a <strong>10–20% reduction in all-cause mortality risk</strong>. You don't need to train like an athlete. You just need to start and keep going. The right environment makes that possible.</div>
+  <div class="science-callout">A 2022 review in the <em>British Journal of Sports Medicine</em> (Momma et al.) found that 30–60 minutes of strength training per week is linked to a <strong>10–20% reduction in all-cause mortality risk</strong>. That's not a huge time commitment. The science doesn't require six days a week. It mostly requires showing up consistently, and that's an environment problem as much as anything else.</div>
 
-  <p>At $11.95/week with no contract, there's no financial barrier to trying. Come in, have a look, try a class. If it's not for you, you can leave.</p>
+  <p>$11.95 a week, no contract, no joining fee. Come in, have a look. If it's not for you, leave. No hard sell.</p>
 
   <div class="cta-block">
     <p>24/7 access · Kids Hub · Sauna · Ice Bath · Reformer Pilates · No lock-in</p>
