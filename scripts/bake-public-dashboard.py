@@ -1891,7 +1891,7 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
     <div class="page" id="page-content-planner">
       <div class="page-header">
         <h1>Content Planner</h1>
-        <p>2-week content calendar — all channels</p>
+        <p>Plan, approve, and track every piece of content — blogs, Instagram, TikTok, GBP posts, and emails — across a 2-week rolling schedule. Move cards through the workflow as they progress from draft to published.</p>
       </div>
       <div id="planner-content"></div>
     </div>
@@ -1900,7 +1900,7 @@ window.DASHBOARD_DATA = __DASHBOARD_DATA__;
     <div class="page" id="page-content-review">
       <div class="page-header">
         <h1>Content Review</h1>
-        <p>Approval flow — AI generates — Tia reviews — Angela QC — Tia posts GBP · Joanne posts social</p>
+        <p>Review performance of published content — track what worked, what needs adjustment, and feed learnings back into the next planning cycle.</p>
       </div>
       <div id="review-content"></div>
     </div>
@@ -3483,12 +3483,12 @@ window.cycleFromModal = () => {
 
 // ── Platform colours + icons ────────────────────────────────────────────────
 const PLAT_CFG = {
-  instagram: {bg:'rgba(63,166,154,.12)',color:'#3FA69A',label:'Instagram'},
-  tiktok:    {bg:'#1a1a1a',            color:'#fff',   label:'TikTok'},
-  blog:      {bg:'#f3f4f6',            color:'#111',   label:'Blog'},
-  email:     {bg:'#f3f4f6',            color:'#111',   label:'Email'},
-  gbp:       {bg:'rgba(63,166,154,.12)',color:'#3FA69A',label:'GBP'},
-  meta:      {bg:'#f3f4f6',            color:'#111',   label:'Meta Ad'},
+  instagram: {bg:'#dbeafe', color:'#1d4ed8', border:'#3b82f6', label:'Instagram'},
+  tiktok:    {bg:'#fef2f2', color:'#991b1b', border:'#ef4444', label:'TikTok'},
+  blog:      {bg:'#fef9c3', color:'#854d0e', border:'#f59e0b', label:'Blog'},
+  email:     {bg:'#ecfdf5', color:'#166534', border:'#10b981', label:'Email'},
+  gbp:       {bg:'rgba(63,166,154,.15)', color:'#3FA69A', border:'#3FA69A', label:'GBP'},
+  meta:      {bg:'#ede9fe', color:'#5b21b6', border:'#8b5cf6', label:'Meta Ad'},
 };
 const ASSIGNEE_CFG = {
   'AI':     {bg:'rgba(63,166,154,.15)',color:'#2d8a80'},
@@ -3500,8 +3500,8 @@ const ASSIGNEE_CFG = {
   'Ivan':   {bg:'#f3f4f6',            color:'#444'},
 };
 function platBadge(p) {
-  const c = PLAT_CFG[p] || {bg:'#f3f4f6',color:'#444',label:p};
-  return `<span style="background:${c.bg};color:${c.color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap;letter-spacing:.3px">${c.label.toUpperCase()}</span>`;
+  const c = PLAT_CFG[p] || {bg:'#f3f4f6',color:'#444',border:'#ccc',label:p};
+  return `<span style="background:${c.bg};color:${c.color};border:1px solid ${c.border};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap;letter-spacing:.3px">${c.label.toUpperCase()}</span>`;
 }
 function assigneeBadge(a) {
   const c = ASSIGNEE_CFG[a] || {bg:'#f3f4f6',color:'#444'};
@@ -3535,6 +3535,54 @@ function renderPlanner() {
 
   let html = '';
 
+  // ── Intro / How-to-use panel ─────────────────────────────────────────────
+  html += `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:22px 26px;margin-bottom:22px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
+
+      <!-- Left: what it is + workflow -->
+      <div style="flex:1;min-width:280px">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">What is the Content Planner?</div>
+        <p style="font-size:12px;color:var(--text-2);line-height:1.7;margin:0 0 14px">
+          Your 2-week publishing schedule for every CB247 channel — blogs, Instagram, TikTok, GBP posts, and emails.
+          Each card is one piece of content. Click any card to view the brief, leave notes, or approve it.
+        </p>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">How to use it</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${[
+            ['1','AI or creator drafts content','Card starts in Idea column'],
+            ['2','Tia reviews the brief','Click card → read instructions → move to In Progress'],
+            ['3','Angela QC','Move card to Angela QC once draft is ready for review'],
+            ['4','Joanne schedules social, Tia posts GBP','Move to Scheduled once approved'],
+            ['5','Mark publishes blogs to WordPress','Move to Published when live'],
+          ].map(([n,label,sub])=>`<div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="flex-shrink:0;width:18px;height:18px;background:#3FA69A;color:#fff;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">${n}</span>
+            <div>
+              <span style="font-size:12px;font-weight:600;color:var(--text)">${label}</span>
+              <span style="font-size:11px;color:var(--muted);margin-left:6px">${sub}</span>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Right: colour legend -->
+      <div style="flex-shrink:0;min-width:200px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">Content Type Colours</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          ${Object.entries(PLAT_CFG).map(([key,c])=>`
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${c.border};flex-shrink:0"></span>
+            <span style="display:inline-block;background:${c.bg};color:${c.color};border:1px solid ${c.border};font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:.3px">${c.label.toUpperCase()}</span>
+          </div>`).join('')}
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Tip</div>
+          <div style="font-size:11px;color:var(--text-2);line-height:1.6">Click any card to open its brief, approval buttons, and notes. Use the <b>→ Move</b> button in the list below to advance a card without opening it.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>`;
+
   // ── KPI bar ────────────────────────────────────────────────────────────
   html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Total Items', totalItems, null, 'In this 2-week plan')}
@@ -3564,9 +3612,9 @@ function renderPlanner() {
       ${items.map(item => {
         const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
         const ac = ASSIGNEE_CFG[item.assignee] || {bg:'#f3f4f6',color:'#444'};
-        return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-radius:4px;padding:7px 8px;margin-bottom:6px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#3FA69A'" onmouseout="this.style.borderColor='var(--border-color,#e5e7eb)'">
+        return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${pc.border||'#ccc'};border-radius:4px;padding:7px 8px;margin-bottom:6px;cursor:pointer;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="background:${pc.bg};color:${pc.color};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;letter-spacing:.3px">${item.platform.toUpperCase()}</span>
+            <span style="background:${pc.bg};color:${pc.color};border:1px solid ${pc.border||'#ccc'};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;letter-spacing:.3px">${item.platform.toUpperCase()}</span>
             <span style="background:${ac.bg};color:${ac.color};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px">${item.assignee}</span>
           </div>
           <div style="font-size:10px;font-weight:600;line-height:1.35;margin-bottom:3px;color:var(--text)">${item.title}</div>
@@ -3598,11 +3646,11 @@ function renderPlanner() {
             const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
             const st = saved[item.id] || 'Idea';
             const stColor = st==='Published'?'#3FA69A':st==='Scheduled'?'#3FA69A':st==='Angela QC'?'#111':st==='In Progress'?'#3FA69A':'#999';
-            return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-left:3px solid #3FA69A;border-radius:4px;padding:6px 8px;margin-bottom:6px;cursor:pointer;font-size:10px">
-              <div style="font-weight:700;color:#3FA69A;margin-bottom:2px;text-transform:uppercase;font-size:9px;letter-spacing:.4px">${item.type}</div>
+            return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${pc.border||'#3FA69A'};border-radius:4px;padding:6px 8px;margin-bottom:6px;cursor:pointer;font-size:10px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 6px rgba(0,0,0,.09)'" onmouseout="this.style.boxShadow='none'">
+              <div style="font-weight:700;color:${pc.color||'#3FA69A'};margin-bottom:2px;text-transform:uppercase;font-size:9px;letter-spacing:.4px">${item.type}</div>
               <div style="font-weight:600;line-height:1.3;color:var(--text)">${item.title}</div>
               <div style="margin-top:4px;display:flex;justify-content:space-between;align-items:center">
-                <span style="color:var(--muted);font-size:9px">${item.assignee}</span>
+                <span style="background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px">${item.platform.toUpperCase()}</span>
                 <span style="font-size:9px;font-weight:700;color:${stColor}">${st}</span>
               </div>
             </div>`;
@@ -3698,6 +3746,37 @@ function renderContentReview() {
   const poorAds = ads.filter(a=>a.tier==='poor');
 
   let html = '';
+
+  // ── Intro / How-to-use panel ─────────────────────────────────────────────
+  html += `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:22px 26px;margin-bottom:22px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div style="flex:1;min-width:260px">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">What is Content Review?</div>
+        <p style="font-size:12px;color:var(--text-2);line-height:1.7;margin:0 0 14px">
+          Content Review is where the team checks performance after content goes live. Once an item is marked <b>Published</b> in the Content Planner, it appears here so you can see how it is tracking — clicks, impressions, and engagement — and decide what to do next.
+        </p>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Review workflow</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:flex-start;gap:10px"><span style="flex-shrink:0;width:18px;height:18px;background:#3FA69A;color:#fff;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">1</span><div><span style="font-size:12px;font-weight:600;color:var(--text)">Check what has been published</span><span style="font-size:11px;color:var(--muted);display:block;margin-top:1px">Items from the Content Planner marked Published appear in the table below</span></div></div>
+          <div style="display:flex;align-items:flex-start;gap:10px"><span style="flex-shrink:0;width:18px;height:18px;background:#3FA69A;color:#fff;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">2</span><div><span style="font-size:12px;font-weight:600;color:var(--text)">Review performance data</span><span style="font-size:11px;color:var(--muted);display:block;margin-top:1px">GSC shows organic clicks and position. Meta panel shows paid ad performance.</span></div></div>
+          <div style="display:flex;align-items:flex-start;gap:10px"><span style="flex-shrink:0;width:18px;height:18px;background:#3FA69A;color:#fff;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">3</span><div><span style="font-size:12px;font-weight:600;color:var(--text)">Approve or flag for adjustment</span><span style="font-size:11px;color:var(--muted);display:block;margin-top:1px">Open the item card and use the approval buttons</span></div></div>
+          <div style="display:flex;align-items:flex-start;gap:10px"><span style="flex-shrink:0;width:18px;height:18px;background:#3FA69A;color:#fff;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">4</span><div><span style="font-size:12px;font-weight:600;color:var(--text)">Feed learnings back into next cycle</span><span style="font-size:11px;color:var(--muted);display:block;margin-top:1px">What performed well becomes the brief for next fortnight</span></div></div>
+        </div>
+      </div>
+      <div style="flex-shrink:0;min-width:200px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">Who reviews what</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#3FA69A;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Tia</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">All content — final approval, GBP posts</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#1a1a1a;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Angela</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">Blog copy, captions, tone of voice</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#f3f4f6;color:#444;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Joanne</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">Scheduling, Instagram, TikTok timing</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#f3f4f6;color:#444;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Mark</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">WordPress blog publishing</span></div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text-2);line-height:1.6">
+          <b>2-week rule:</b> Content needs at least 2 weeks of data before drawing performance conclusions.
+        </div>
+      </div>
+    </div>
+  </div>`;
 
   // ── KPI bar ────────────────────────────────────────────────────────────
   html += `<div class="kpi-grid cols-4 mb">
