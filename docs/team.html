@@ -159,7 +159,9 @@ footer { text-align: center; font-size: 11px; color: var(--muted); padding: 20px
 <!-- TASK LIST -->
 <div id="taskList"></div>
 
-<footer>CB247 Marketing Agent · Progress saves in your browser · <a href="index.html" style="color:var(--teal)">← Back to Dashboard</a></footer>
+<footer>CB247 Marketing Agent &nbsp;·&nbsp; Page last updated: <span id="page-ts" style="color:var(--teal);font-weight:600"></span> &nbsp;·&nbsp; Progress saves in your browser &nbsp;·&nbsp; <a href="index.html" style="color:var(--teal)">← Back to Dashboard</a>
+<script>document.getElementById('page-ts').textContent=new Date(document.lastModified).toLocaleString('en-AU',{timeZone:'Australia/Perth',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})+'  AWST';</script>
+</footer>
 
 </div>
 

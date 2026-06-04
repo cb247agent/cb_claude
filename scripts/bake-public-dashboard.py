@@ -584,6 +584,16 @@ def build_data():
 
     now = datetime.now().strftime("%d %b %Y, %H:%M")
 
+    # ── Format last-refresh timestamp to Perth time (AWST UTC+8) ─────
+    _raw_ts = (refresh or {}).get("timestamp", "")
+    try:
+        from datetime import timezone as _tz, timedelta as _td
+        _utc_dt = datetime.fromisoformat(_raw_ts.replace("Z", "+00:00"))
+        _awst_dt = _utc_dt.astimezone(_tz(_td(hours=8)))
+        _refresh_ts_fmt = _awst_dt.strftime("%-d %b %Y, %H:%M AWST")
+    except Exception:
+        _refresh_ts_fmt = _raw_ts or now  # fallback to raw or now
+
     # ── GA4 ──────────────────────────────────────────────────────────
     ga4c = (ga4.get("current")  or {})
     ga4p = (ga4.get("previous") or {})
@@ -911,7 +921,7 @@ def build_data():
     return {
         "generated": now,
         "report_period": _report_period,
-        "refresh_ts": (refresh or {}).get("timestamp", now),
+        "refresh_ts": _refresh_ts_fmt,
         "status": status,
 
         # Meta Ads — top-level key for Overview KPI card

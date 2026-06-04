@@ -455,5 +455,11 @@ document.getElementById('meeting-date').value = new Date().toISOString().split('
 renderActions();
 updateCounts();
 </script>
+
+<footer style="text-align:center;font-size:11px;color:#aaa;padding:20px 0 8px">
+  CB247 Marketing Agent &nbsp;·&nbsp; Page last updated: <span id="page-ts" style="color:#3FA69A;font-weight:600"></span> &nbsp;·&nbsp; <a href="index.html" style="color:#3FA69A">← Back to Dashboard</a>
+  <script>document.getElementById('page-ts').textContent=new Date(document.lastModified).toLocaleString('en-AU',{timeZone:'Australia/Perth',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})+'  AWST';</script>
+</footer>
+
 </body>
 </html>
