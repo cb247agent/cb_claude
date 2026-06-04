@@ -991,12 +991,9 @@ def build_data():
             "history": [
                 {
                     "week_label": w.get("week_label", ""),
-                    "spend":  safe_float((w.get("combined") or {}).get("spend")),
-                    "clicks": safe_int((w.get("combined") or {}).get("clicks")),
-                    "impr":   safe_int((w.get("combined") or {}).get("impr")),
-                    "ctr":    safe_float((w.get("combined") or {}).get("ctr")),
-                    "cpm":    safe_float((w.get("combined") or {}).get("cpm")),
-                    "cpc":    safe_float((w.get("combined") or {}).get("cpc")),
+                    "combined":   dict(w.get("combined") or {}),
+                    "malaga":     dict(w.get("malaga") or {}),
+                    "ellenbrook": dict(w.get("ellenbrook") or {}),
                 }
                 for w in meta_ads_list[:4]
             ],
@@ -3172,54 +3169,81 @@ function renderMeta() {
   </div>`;
 
   // ── WoW comparison — Malaga ─────────────────────────────────────────────────
-  const malClicks = csvEmpty ? (paidMal.clicks||0) : (malC.clicks||0);
-  const malReach  = csvEmpty ? (paidMal.reach||0)  : (malC.reach||0);
-  const malImpr   = csvEmpty ? (paidMal.impr||0)   : (malC.impr||0);
+  const malClicks  = csvEmpty ? (paidMal.clicks||0) : (malC.clicks||0);
+  const malReach   = csvEmpty ? (paidMal.reach||0)  : (malC.reach||0);
+  const malImpr    = csvEmpty ? (paidMal.impr||0)   : (malC.impr||0);
+  // Prior week: use history[1].malaga when API data is the source
+  const prevHist   = (paid.history && paid.history[1]) || {};
+  const prevMal    = csvEmpty ? (prevHist.malaga || {}) : malP;
+  const prevWeek   = csvEmpty ? (prevHist.week_label || '–') : week;
+  const chg = (cur, prev) => prev > 0 ? ((cur - prev) / prev * 100).toFixed(1) + '%' : '–';
+  const chgClass = (cur, prev, lowerIsBetter=false) => {
+    if (!prev) return '';
+    return (lowerIsBetter ? cur < prev : cur > prev) ? 'good' : 'bad';
+  };
   html += sectionTitle('Malaga — Week-on-Week Comparison');
   html += `<div class="card mb"><table><thead><tr>
-    <th>Metric</th><th class="num">This Week (${dispWeek})</th><th class="num">Prior Week</th><th class="num">Change</th>
+    <th>Metric</th>
+    <th class="num">This week<br><span style="font-weight:400;font-size:10px">${dispWeek}</span></th>
+    <th class="num">Prior week<br><span style="font-weight:400;font-size:10px">${prevWeek}</span></th>
+    <th class="num">Change</th>
   </tr></thead><tbody>
-    <tr><td>Spend</td><td class="num">${fmt(malSpend,'$2')}</td><td class="num">$${(malP.spend||0).toFixed(2)}</td>
-      <td class="num">${malP.spend?((malSpend-malP.spend)/malP.spend*100).toFixed(1)+'%':'–'}</td></tr>
-    <tr><td>Clicks</td><td class="num">${fmt(malClicks,'n')}</td><td class="num">${fmt(malP.clicks||0,'n')}</td>
-      <td class="num ${malClicks<(malP.clicks||0)?'bad':'good'}">${malP.clicks?((malClicks-malP.clicks)/malP.clicks*100).toFixed(1)+'%':'–'}</td></tr>
-    <tr><td>Reach</td><td class="num">${fmt(malReach,'n')}</td><td class="num">${fmt(malP.reach||0,'n')}</td>
-      <td class="num">${malP.reach?((malReach-malP.reach)/malP.reach*100).toFixed(1)+'%':'–'}</td></tr>
-    <tr><td>Impressions</td><td class="num">${fmt(malImpr,'n')}</td><td class="num">–</td><td class="num">–</td></tr>
-    <tr><td>CPC</td><td class="num ${malCPC>0.5?'bad':'good'}">${malCPC?fmt(malCPC,'$2'):'–'}</td><td class="num">–</td><td class="num">–</td></tr>
-    <tr><td>CTR</td><td class="num">${malCTR||'–'}%</td><td class="num">–</td><td class="num">–</td></tr>
-    <tr><td>CPM</td><td class="num">$${malCPM||'–'}</td><td class="num">–</td><td class="num">–</td></tr>
+    <tr><td>Spend</td>
+      <td class="num">${fmt(malSpend,'$2')}</td>
+      <td class="num">${prevMal.spend?fmt(prevMal.spend,'$2'):'–'}</td>
+      <td class="num">${chg(malSpend, prevMal.spend)}</td></tr>
+    <tr><td>Clicks</td>
+      <td class="num">${fmt(malClicks,'n')}</td>
+      <td class="num">${prevMal.clicks?fmt(prevMal.clicks,'n'):'–'}</td>
+      <td class="num ${chgClass(malClicks, prevMal.clicks)}">${chg(malClicks, prevMal.clicks)}</td></tr>
+    <tr><td>Reach</td>
+      <td class="num">${fmt(malReach,'n')}</td>
+      <td class="num">${prevMal.reach?fmt(prevMal.reach,'n'):'–'}</td>
+      <td class="num">${chg(malReach, prevMal.reach)}</td></tr>
+    <tr><td>Impressions</td>
+      <td class="num">${fmt(malImpr,'n')}</td>
+      <td class="num">${prevMal.impr?fmt(prevMal.impr,'n'):'–'}</td>
+      <td class="num">${chg(malImpr, prevMal.impr)}</td></tr>
+    <tr><td>CTR</td>
+      <td class="num ${malCTR>=(prevMal.ctr||0)?'good':''}">${malCTR||'–'}%</td>
+      <td class="num">${prevMal.ctr||'–'}%</td>
+      <td class="num ${chgClass(malCTR, prevMal.ctr)}">${chg(malCTR, prevMal.ctr)}</td></tr>
+    <tr><td>CPM</td>
+      <td class="num">${malCPM?fmt(malCPM,'$2'):'–'}</td>
+      <td class="num">${prevMal.cpm?fmt(prevMal.cpm,'$2'):'–'}</td>
+      <td class="num ${chgClass(malCPM, prevMal.cpm, true)}">${chg(malCPM, prevMal.cpm)}</td></tr>
+    <tr><td>CPC</td>
+      <td class="num ${malCPC<=(prevMal.cpc||malCPC)?'good':''}">${malCPC?fmt(malCPC,'$2'):'–'}</td>
+      <td class="num">${prevMal.cpc?fmt(prevMal.cpc,'$2'):'–'}</td>
+      <td class="num ${chgClass(malCPC, prevMal.cpc, true)}">${chg(malCPC, prevMal.cpc)}</td></tr>
   </tbody></table></div>`;
 
   // ── Ad performance table ────────────────────────────────────────────────────
   html += sectionTitle('Active Ads — Performance · ' + dispWeek);
   html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
-    <th>Ad Creative</th><th>Location</th>
-    <th class="num">Spend</th><th class="num">Reach</th>
-    <th class="num">Impressions</th><th class="num">CTR</th><th class="num">CPM</th>
-    <th class="num">Clicks</th><th class="num">CPC</th>
-    <th>Quality</th><th>Engagement</th><th>Conv Rate</th><th>Tier</th>
+    <th>Ad Creative</th>
+    <th class="num">Spend</th>
+    <th class="num">Impressions</th>
+    <th class="num">Clicks</th>
+    <th class="num">Reach</th>
+    <th class="num">CTR</th>
+    <th class="num">CPM</th>
+    <th class="num">CPC</th>
   </tr></thead><tbody>
   ${activeAds.map(a=>{
-    const cpc = a.clicks>0 ? (a.spend/a.clicks).toFixed(2) : (a.cpc||'–');
-    const rowStyle = a.tier==='star' ? 'style="background:#f0fdf4"' : a.tier==='poor' ? 'style="background:#fff5f5"' : '';
     const adName = a.ad_name || a.name || '';
-    return `<tr ${rowStyle}>
-      <td style="font-size:11px;max-width:200px;word-break:break-word" title="${adName}">${adName.substring(0,60)}${adName.length>60?'…':''}</td>
-      <td><span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${a.location||'–'}</span></td>
+    const cpc = a.cpc || (a.clicks > 0 ? (a.spend / a.clicks) : 0);
+    return `<tr>
+      <td style="font-size:11.5px;max-width:260px;word-break:break-word">${adName}</td>
       <td class="num">${fmt(a.spend,'$2')}</td>
-      <td class="num">${fmt(a.reach||0,'n')}</td>
       <td class="num">${fmt(a.impr||a.impressions||0,'n')}</td>
-      <td class="num ${(a.ctr||0)>=3?'good':(a.ctr||0)<1?'bad':''}">${a.ctr||0}%</td>
-      <td class="num ${(a.cpm||0)>15?'bad':''}">${(a.cpm||0)>0?fmt(a.cpm,'$2'):'–'}</td>
       <td class="num">${fmt(a.clicks||0,'n')}</td>
-      <td class="num">${cpc!=='–'?'$'+cpc:'–'}</td>
-      <td>${rankBadge(a.quality)}</td>
-      <td>${rankBadge(a.eng_rank)}</td>
-      <td>${rankBadge(a.conv_rank)}</td>
-      <td>${tierBadge(a.tier)}</td>
+      <td class="num">${fmt(a.reach||0,'n')}</td>
+      <td class="num ${(a.ctr||0)>=3?'good':(a.ctr||0)<1?'bad':''}">${a.ctr||0}%</td>
+      <td class="num">${a.cpm?fmt(a.cpm,'$2'):'–'}</td>
+      <td class="num ${cpc>0&&cpc<0.4?'good':cpc>0.6?'bad':''}">${cpc?fmt(cpc,'$2'):'–'}</td>
     </tr>`;
-  }).join('')||'<tr><td colspan="13" style="color:var(--muted);padding:16px">No ad data available.</td></tr>'}
+  }).join('')||'<tr><td colspan="8" style="color:var(--muted);padding:16px">No ad data available.</td></tr>'}
   </tbody></table></div>`;
 
   // ── Location summary cards ────────────────────────────────────────────────
