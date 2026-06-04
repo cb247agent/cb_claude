@@ -577,6 +577,7 @@ def build_data():
     ga4      = load("ga4-data.json")
     gsc      = load("gsc-data.json")
     ads      = load("ads-data.json")
+    gads     = load("google-ads-data.json")   # separate API pull — has own generated_at
     apify    = load("apify-data.json")
     ahrefs   = load("ahrefs-data.json")
     refresh  = load("last-refresh.json")
@@ -584,15 +585,33 @@ def build_data():
 
     now = datetime.now().strftime("%d %b %Y, %H:%M")
 
-    # ── Format last-refresh timestamp to Perth time (AWST UTC+8) ─────
-    _raw_ts = (refresh or {}).get("timestamp", "")
-    try:
-        from datetime import timezone as _tz, timedelta as _td
-        _utc_dt = datetime.fromisoformat(_raw_ts.replace("Z", "+00:00"))
-        _awst_dt = _utc_dt.astimezone(_tz(_td(hours=8)))
-        _refresh_ts_fmt = _awst_dt.strftime("%-d %b %Y, %H:%M AWST")
-    except Exception:
-        _refresh_ts_fmt = _raw_ts or now  # fallback to raw or now
+    # ── Per-source timestamp helper (ISO UTC → Perth AWST readable) ───
+    from datetime import timezone as _tz, timedelta as _td
+    def _fmt_ts(iso_str):
+        """Convert ISO UTC timestamp to '4 Jun 2026, 15:57 AWST'. Returns 'No data' if blank."""
+        if not iso_str:
+            return "No data"
+        try:
+            _utc = datetime.fromisoformat(str(iso_str).replace("Z", "+00:00"))
+            _awst = _utc.astimezone(_tz(_td(hours=8)))
+            return _awst.strftime("%-d %b %Y, %H:%M AWST")
+        except Exception:
+            return str(iso_str)[:16]  # best-effort fallback
+
+    # ── Per-source timestamps (used to label each dashboard section) ──
+    # Sources: ga4/gsc from their own files; google_ads from google-ads-data.json (API pull);
+    # meta_ads from ads-data.json (written by pull_meta.py); gbp from apify-data.json
+    _ts = {
+        "ga4":        _fmt_ts((ga4   or {}).get("generated_at", "")),
+        "gsc":        _fmt_ts((gsc   or {}).get("generated_at", "")),
+        "google_ads": _fmt_ts((gads  or {}).get("generated_at", "")),
+        "meta_ads":   _fmt_ts((ads   or {}).get("generated_at", "")),
+        "gbp":        _fmt_ts((apify or {}).get("generated_at", "")),
+        "ahrefs":     _fmt_ts((ahrefs or {}).get("generated_at", "")),
+    }
+    # Global "last refresh" = most recent successful source pull
+    _all_raw = [s.get("generated_at","") for s in [ga4, gsc, gads, ads, apify] if s and s.get("generated_at")]
+    _refresh_ts_fmt = _fmt_ts(max(_all_raw)) if _all_raw else now
 
     # ── GA4 ──────────────────────────────────────────────────────────
     ga4c = (ga4.get("current")  or {})
@@ -922,6 +941,7 @@ def build_data():
         "generated": now,
         "report_period": _report_period,
         "refresh_ts": _refresh_ts_fmt,
+        "timestamps": _ts,
         "status": status,
 
         # Meta Ads — top-level key for Overview KPI card
@@ -4052,9 +4072,34 @@ function renderStatus() {
   const s = D.status;
   const allLive = Object.values(s).every(v=>v==='live'||v==='suspended');
   $('system-dot').className = 'status-dot'+(allLive?'':' warn');
-  $('refresh-label').textContent = 'Last refresh: '+D.refresh_ts;
-  $('page-footer').innerHTML = `CB247 Marketing OS &nbsp;·&nbsp; Report period: <strong>${D.report_period}</strong> &nbsp;·&nbsp; Generated: ${D.generated} &nbsp;·&nbsp; <a href="https://cb247agent.github.io/cb_claude/">cb247agent.github.io/cb_claude</a>`;
+  $('refresh-label').textContent = 'Latest data: '+D.refresh_ts;
+  $('page-footer').innerHTML = `CB247 Marketing OS &nbsp;·&nbsp; Report period: <strong>${D.report_period}</strong> &nbsp;·&nbsp; Built: ${D.generated} &nbsp;·&nbsp; <a href="https://cb247agent.github.io/cb_claude/">cb247agent.github.io/cb_claude</a>`;
   if($('sidebar-week')) $('sidebar-week').textContent = D.report_period || '';
+
+  // ── Inject per-source timestamps into each page subtitle ──────────
+  const ts = D.timestamps || {};
+  const badge = (label, t) => t && t !== 'No data'
+    ? ` <span style="font-size:11px;font-weight:500;color:var(--teal);background:rgba(63,166,154,.1);padding:2px 8px;border-radius:99px;margin-left:6px;white-space:nowrap">Data: ${t}</span>`
+    : ` <span style="font-size:11px;color:#ef4444;background:rgba(239,68,68,.08);padding:2px 8px;border-radius:99px;margin-left:6px">No data</span>`;
+
+  const pageTs = {
+    'page-seo':         ts.gsc,
+    'page-google-ads':  ts.google_ads,
+    'page-meta-ads':    ts.meta_ads,
+    'page-gbp':         ts.gbp,
+    'page-organic-social': ts.gsc,
+  };
+  // Overview: show the oldest source so users know the least-fresh data
+  const allTs = Object.values(ts).filter(t => t && t !== 'No data');
+  if (allTs.length) {
+    const oldest = allTs.sort()[0];
+    const ovEl = document.querySelector('#page-overview .page-header p');
+    if (ovEl) ovEl.innerHTML += badge('overview', oldest);
+  }
+  Object.entries(pageTs).forEach(([pageId, t]) => {
+    const el = document.querySelector('#' + pageId + ' .page-header p');
+    if (el) el.innerHTML += badge(pageId, t);
+  });
 }
 
 // ── Render: README / How It Works ────────────────────────────────────────────

@@ -330,9 +330,17 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "04 Jun 2026, 16:15",
+  "generated": "04 Jun 2026, 16:25",
   "report_period": "28 May \u2013 3 Jun 2026",
   "refresh_ts": "4 Jun 2026, 15:57 AWST",
+  "timestamps": {
+    "ga4": "4 Jun 2026, 14:52 AWST",
+    "gsc": "4 Jun 2026, 15:57 AWST",
+    "google_ads": "4 Jun 2026, 15:57 AWST",
+    "meta_ads": "4 Jun 2026, 15:57 AWST",
+    "gbp": "No data",
+    "ahrefs": "No data"
+  },
   "status": {
     "ga4": "live",
     "gsc": "live",
@@ -4856,9 +4864,34 @@ function renderStatus() {
   const s = D.status;
   const allLive = Object.values(s).every(v=>v==='live'||v==='suspended');
   $('system-dot').className = 'status-dot'+(allLive?'':' warn');
-  $('refresh-label').textContent = 'Last refresh: '+D.refresh_ts;
-  $('page-footer').innerHTML = `CB247 Marketing OS &nbsp;·&nbsp; Report period: <strong>${D.report_period}</strong> &nbsp;·&nbsp; Generated: ${D.generated} &nbsp;·&nbsp; <a href="https://cb247agent.github.io/cb_claude/">cb247agent.github.io/cb_claude</a>`;
+  $('refresh-label').textContent = 'Latest data: '+D.refresh_ts;
+  $('page-footer').innerHTML = `CB247 Marketing OS &nbsp;·&nbsp; Report period: <strong>${D.report_period}</strong> &nbsp;·&nbsp; Built: ${D.generated} &nbsp;·&nbsp; <a href="https://cb247agent.github.io/cb_claude/">cb247agent.github.io/cb_claude</a>`;
   if($('sidebar-week')) $('sidebar-week').textContent = D.report_period || '';
+
+  // ── Inject per-source timestamps into each page subtitle ──────────
+  const ts = D.timestamps || {};
+  const badge = (label, t) => t && t !== 'No data'
+    ? ` <span style="font-size:11px;font-weight:500;color:var(--teal);background:rgba(63,166,154,.1);padding:2px 8px;border-radius:99px;margin-left:6px;white-space:nowrap">Data: ${t}</span>`
+    : ` <span style="font-size:11px;color:#ef4444;background:rgba(239,68,68,.08);padding:2px 8px;border-radius:99px;margin-left:6px">No data</span>`;
+
+  const pageTs = {
+    'page-seo':         ts.gsc,
+    'page-google-ads':  ts.google_ads,
+    'page-meta-ads':    ts.meta_ads,
+    'page-gbp':         ts.gbp,
+    'page-organic-social': ts.gsc,
+  };
+  // Overview: show the oldest source so users know the least-fresh data
+  const allTs = Object.values(ts).filter(t => t && t !== 'No data');
+  if (allTs.length) {
+    const oldest = allTs.sort()[0];
+    const ovEl = document.querySelector('#page-overview .page-header p');
+    if (ovEl) ovEl.innerHTML += badge('overview', oldest);
+  }
+  Object.entries(pageTs).forEach(([pageId, t]) => {
+    const el = document.querySelector('#' + pageId + ' .page-header p');
+    if (el) el.innerHTML += badge(pageId, t);
+  });
 }
 
 // ── Render: README / How It Works ────────────────────────────────────────────
