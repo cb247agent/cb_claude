@@ -3168,60 +3168,25 @@ function renderMeta() {
     </div>
   </div>`;
 
-  // ── WoW comparison — Malaga ─────────────────────────────────────────────────
+  // ── Shared helpers for location comparison ───────────────────────────────────
   const malClicks  = csvEmpty ? (paidMal.clicks||0) : (malC.clicks||0);
   const malReach   = csvEmpty ? (paidMal.reach||0)  : (malC.reach||0);
   const malImpr    = csvEmpty ? (paidMal.impr||0)   : (malC.impr||0);
-  // Prior week: use history[1].malaga when API data is the source
+  const ellClicks  = csvEmpty ? (paidEll.clicks||0) : (ellC.clicks||0);
+  const ellReach   = csvEmpty ? (paidEll.reach||0)  : (ellC.reach||0);
+  const ellImpr    = csvEmpty ? (paidEll.impr||0)   : (ellC.impr||0);
   const prevHist   = (paid.history && paid.history[1]) || {};
-  const prevMal    = csvEmpty ? (prevHist.malaga || {}) : malP;
+  const prevMal    = csvEmpty ? (prevHist.malaga     || {}) : malP;
+  const prevEll    = csvEmpty ? (prevHist.ellenbrook || {}) : {};
   const prevWeek   = csvEmpty ? (prevHist.week_label || '–') : week;
   const chg = (cur, prev) => prev > 0 ? ((cur - prev) / prev * 100).toFixed(1) + '%' : '–';
-  const chgClass = (cur, prev, lowerIsBetter=false) => {
-    if (!prev) return '';
-    return (lowerIsBetter ? cur < prev : cur > prev) ? 'good' : 'bad';
-  };
-  html += sectionTitle('Malaga — Week-on-Week Comparison');
-  html += `<div class="card mb"><table><thead><tr>
-    <th>Metric</th>
-    <th class="num">This week<br><span style="font-weight:400;font-size:10px">${dispWeek}</span></th>
-    <th class="num">Prior week<br><span style="font-weight:400;font-size:10px">${prevWeek}</span></th>
-    <th class="num">Change</th>
-  </tr></thead><tbody>
-    <tr><td>Spend</td>
-      <td class="num">${fmt(malSpend,'$2')}</td>
-      <td class="num">${prevMal.spend?fmt(prevMal.spend,'$2'):'–'}</td>
-      <td class="num">${chg(malSpend, prevMal.spend)}</td></tr>
-    <tr><td>Clicks</td>
-      <td class="num">${fmt(malClicks,'n')}</td>
-      <td class="num">${prevMal.clicks?fmt(prevMal.clicks,'n'):'–'}</td>
-      <td class="num ${chgClass(malClicks, prevMal.clicks)}">${chg(malClicks, prevMal.clicks)}</td></tr>
-    <tr><td>Reach</td>
-      <td class="num">${fmt(malReach,'n')}</td>
-      <td class="num">${prevMal.reach?fmt(prevMal.reach,'n'):'–'}</td>
-      <td class="num">${chg(malReach, prevMal.reach)}</td></tr>
-    <tr><td>Impressions</td>
-      <td class="num">${fmt(malImpr,'n')}</td>
-      <td class="num">${prevMal.impr?fmt(prevMal.impr,'n'):'–'}</td>
-      <td class="num">${chg(malImpr, prevMal.impr)}</td></tr>
-    <tr><td>CTR</td>
-      <td class="num ${malCTR>=(prevMal.ctr||0)?'good':''}">${malCTR||'–'}%</td>
-      <td class="num">${prevMal.ctr||'–'}%</td>
-      <td class="num ${chgClass(malCTR, prevMal.ctr)}">${chg(malCTR, prevMal.ctr)}</td></tr>
-    <tr><td>CPM</td>
-      <td class="num">${malCPM?fmt(malCPM,'$2'):'–'}</td>
-      <td class="num">${prevMal.cpm?fmt(prevMal.cpm,'$2'):'–'}</td>
-      <td class="num ${chgClass(malCPM, prevMal.cpm, true)}">${chg(malCPM, prevMal.cpm)}</td></tr>
-    <tr><td>CPC</td>
-      <td class="num ${malCPC<=(prevMal.cpc||malCPC)?'good':''}">${malCPC?fmt(malCPC,'$2'):'–'}</td>
-      <td class="num">${prevMal.cpc?fmt(prevMal.cpc,'$2'):'–'}</td>
-      <td class="num ${chgClass(malCPC, prevMal.cpc, true)}">${chg(malCPC, prevMal.cpc)}</td></tr>
-  </tbody></table></div>`;
+  const chgCls = (cur, prev, low=false) => !prev ? '' : (low ? cur < prev : cur > prev) ? 'good' : 'bad';
 
   // ── Ad performance table ────────────────────────────────────────────────────
   html += sectionTitle('Active Ads — Performance · ' + dispWeek);
   html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
     <th>Ad Creative</th>
+    <th>Location</th>
     <th class="num">Spend</th>
     <th class="num">Impressions</th>
     <th class="num">Clicks</th>
@@ -3233,8 +3198,10 @@ function renderMeta() {
   ${activeAds.map(a=>{
     const adName = a.ad_name || a.name || '';
     const cpc = a.cpc || (a.clicks > 0 ? (a.spend / a.clicks) : 0);
+    const loc  = a.location || 'Both';
     return `<tr>
-      <td style="font-size:11.5px;max-width:260px;word-break:break-word">${adName}</td>
+      <td style="font-size:11.5px;max-width:220px;word-break:break-word">${adName}</td>
+      <td><span style="font-size:10px;background:#f0f2f5;color:var(--muted);padding:2px 7px;border-radius:99px;white-space:nowrap">${loc}</span></td>
       <td class="num">${fmt(a.spend,'$2')}</td>
       <td class="num">${fmt(a.impr||a.impressions||0,'n')}</td>
       <td class="num">${fmt(a.clicks||0,'n')}</td>
@@ -3243,35 +3210,58 @@ function renderMeta() {
       <td class="num">${a.cpm?fmt(a.cpm,'$2'):'–'}</td>
       <td class="num ${cpc>0&&cpc<0.4?'good':cpc>0.6?'bad':''}">${cpc?fmt(cpc,'$2'):'–'}</td>
     </tr>`;
-  }).join('')||'<tr><td colspan="8" style="color:var(--muted);padding:16px">No ad data available.</td></tr>'}
+  }).join('')||'<tr><td colspan="9" style="color:var(--muted);padding:16px">No ad data available.</td></tr>'}
   </tbody></table></div>`;
 
-  // ── Location summary cards ────────────────────────────────────────────────
-  const ellClicks = csvEmpty ? (paidEll.clicks||0) : (ellC.clicks||0);
-  const ellReach  = csvEmpty ? (paidEll.reach||0)  : (ellC.reach||0);
+  // ── Location Summary with WoW comparison ──────────────────────────────────
+  const locRow = (label, cur, prev, fmtStr, low=false) => `
+    <tr>
+      <td style="color:var(--muted);font-size:12px">${label}</td>
+      <td class="num" style="font-size:12px">${cur!==null&&cur!==undefined?fmt(cur,fmtStr):'–'}</td>
+      <td class="num" style="font-size:12px;color:var(--muted)">${prev?fmt(prev,fmtStr):'–'}</td>
+      <td class="num" style="font-size:11px"><span class="${chgCls(cur,prev,low)}">${chg(cur,prev)}</span></td>
+    </tr>`;
   html += sectionTitle('Location Summary');
   html += `<div class="grid-2 mb">
-    <div class="card">
-      <div class="card-h">Malaga — ${dispWeek}</div>
-      <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(malSpend,'$2')}</span></div>
-      <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(malClicks,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(malReach,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-val">${fmt(malImpr,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val ${malCTR>=3?'good':malCTR<1?'bad':''}">${malCTR||'–'}%</span></div>
-      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${malCPM?fmt(malCPM,'$2'):'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">CPC</span><span class="stat-val">${malCPC?fmt(malCPC,'$2'):'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">Active ads</span><span class="stat-val">${activeAds.filter(a=>(a.location||'').includes('Malaga')).length}</span></div>
+    <div class="card" style="padding:14px 16px">
+      <div class="card-h" style="margin-bottom:10px">Malaga</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px"></th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">${dispWeek}</th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">${prevWeek}</th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">Change</th>
+        </tr></thead>
+        <tbody>
+          ${locRow('Spend',    malSpend,  prevMal.spend,  '$2')}
+          ${locRow('Clicks',   malClicks, prevMal.clicks, 'n')}
+          ${locRow('Reach',    malReach,  prevMal.reach,  'n')}
+          ${locRow('Impr',     malImpr,   prevMal.impr,   'n')}
+          ${locRow('CTR',      malCTR,    prevMal.ctr,    'n')}
+          ${locRow('CPM',      malCPM,    prevMal.cpm,    '$2', true)}
+          ${locRow('CPC',      malCPC,    prevMal.cpc,    '$2', true)}
+        </tbody>
+      </table>
     </div>
-    <div class="card">
-      <div class="card-h">Ellenbrook — ${dispWeek}</div>
-      <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(ellSpend,'$2')}</span></div>
-      <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(ellClicks,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(ellReach,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-val">${fmt(paidEll.impr||0,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val ${ellCTR>=3?'good':ellCTR<1?'bad':''}">${ellCTR||'–'}%</span></div>
-      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${ellCPM?fmt(ellCPM,'$2'):'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">CPC</span><span class="stat-val">${ellCPC?fmt(ellCPC,'$2'):'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">Active ads</span><span class="stat-val">${activeAds.filter(a=>(a.location||'').includes('Ellenbrook')).length}</span></div>
+    <div class="card" style="padding:14px 16px">
+      <div class="card-h" style="margin-bottom:10px">Ellenbrook</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px"></th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">${dispWeek}</th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">${prevWeek}</th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">Change</th>
+        </tr></thead>
+        <tbody>
+          ${locRow('Spend',    ellSpend,  prevEll.spend,  '$2')}
+          ${locRow('Clicks',   ellClicks, prevEll.clicks, 'n')}
+          ${locRow('Reach',    ellReach,  prevEll.reach,  'n')}
+          ${locRow('Impr',     ellImpr,   prevEll.impr,   'n')}
+          ${locRow('CTR',      ellCTR,    prevEll.ctr,    'n')}
+          ${locRow('CPM',      ellCPM,    prevEll.cpm,    '$2', true)}
+          ${locRow('CPC',      ellCPC,    prevEll.cpc,    '$2', true)}
+        </tbody>
+      </table>
     </div>
   </div>`;
 
