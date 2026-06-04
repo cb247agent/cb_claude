@@ -23,7 +23,7 @@
     },
     "content-agent": {
       "yml": "agents/content-agent.yml",
-      "triggers": ["run content-agent", "generate content", "weekly content", "write posts", "content agent", "instagram", "facebook", "reel script"],
+      "triggers": ["run content-agent", "generate content", "weekly content", "write posts", "social post", "write post", "content agent", "reel script"],
       "description": "Social media content: weekly plans, reels, ad copy, competitor responses",
       "input_required": "context/brand-voice.md, context/research-competitors.md",
       "output": "outputs/content/"
@@ -37,7 +37,7 @@
     },
     "research-agent": {
       "yml": "agents/research-agent.yml",
-      "triggers": ["run research-agent", "research", "market research", "trend monitor", "pestle", "swot"],
+      "triggers": ["run research-agent", "market research", "trend monitor", "pestle", "swot"],
       "description": "Competitor monitor, fitness trends, PESTLE/SWOT updates",
       "input_required": "context/research-competitors.md, context/strategy-pestle-swot.md",
       "output": "outputs/research/"
@@ -58,7 +58,7 @@
     },
     "seo-agent": {
       "yml": "agents/seo-agent.yml",
-      "triggers": ["run seo-agent", "SEO audit", "SEO", "search engine", "keyword research", "SEO content", "seo agent"],
+      "triggers": ["run seo-agent", "search engine", "keyword research", "SEO content", "seo agent"],
       "description": "Site audit, competitor SEO gap analysis, content strategy, reporting",
       "input_required": "context/seo-targets-cb247.md, context/seo-priorities-cb247.md, context/brand-voice.md",
       "output": "outputs/seo/audits/, outputs/seo/competitors/, outputs/seo/content/, outputs/seo/reports/"
@@ -66,7 +66,7 @@
   },
   "skills": {
     "team-commands": {
-      "triggers": ["/blog", "/meeting prepare", "/meeting record", "/meeting actions", "/status", "/creative", "/performance review", "slash commands", "team commands", "non-technical"],
+      "triggers": ["/post", "/status", "/creative", "/performance review", "slash commands", "team commands", "non-technical"],
       "description": "User-facing slash commands for team members without technical expertise",
       "skill": "skills/team-commands/SKILL.md"
     },
@@ -80,12 +80,23 @@
       "description": "Management meeting workflow: recommendations, minutes, action tracking",
       "skill": "skills/meeting-workflow/SKILL.md"
     },
+    "seo-site-audit": {
+      "triggers": ["seo audit", "SEO audit", "site audit", "technical SEO", "crawl issues", "fix 404"],
+      "description": "Runs a targeted technical + on-page SEO audit on CB247 pages. Lighter than the full seo-agent pipeline — use for quick audits, fix lists, and single-page checks. For full keyword strategy + content briefs + reporting, say 'run seo-agent'.",
+      "skill": "skills/seo-site-audit/SKILL.md"
+    },
     "dashboard-design": {
       "triggers": ["bake-public-dashboard", "docs/index.html", "kanban", "dashboard", "fix design", "update dashboard", "adjust layout", "add page", "build page", "colour", "color", "badge", "card layout", "modal", "html ui", "design standards", "no emoji", "brand colour", "fit screen"],
       "description": "Enforces CB247 dashboard design standards: teal/black/white only, no emojis, kanban fits screen. Auto-activates on all dashboard and UI work.",
       "skill": "skills/dashboard-design/SKILL.md",
       "context": "context/design-standards.md",
       "priority": "HIGH — overrides all other colour/layout decisions"
+    },
+    "humanizer": {
+      "triggers": ["humanize", "make it sound human", "remove ai writing", "too ai", "sounds robotic", "natural language", "humanizer"],
+      "description": "Removes 30 AI-writing patterns from any text. Mandatory post-processing step for all blogs and social content. Installed at ~/.claude/skills/humanizer/SKILL.md",
+      "skill": "~/.claude/skills/humanizer/SKILL.md",
+      "priority": "MANDATORY — runs after every blog draft and content-agent output before saving"
     }
   }
 }

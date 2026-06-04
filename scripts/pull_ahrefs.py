@@ -75,10 +75,24 @@ if not API_KEY or API_KEY.startswith("#") or len(API_KEY) < 10:
     print("  → Get your key at https://ahrefs.com/api/")
     API_KEY = ""
 
+# Unit safety threshold — abort pull if fewer than this many units remain this month
+_UNIT_THRESHOLD = 5_000
+
+
+def _count_rows(data):
+    """Return the number of rows in a paginated API response, or None if not paginated."""
+    if not isinstance(data, dict):
+        return None
+    for key in ("keywords", "backlinks", "pages", "refdomains", "anchors", "healthscores"):
+        if key in data and isinstance(data[key], list):
+            return len(data[key])
+    return None
+
 
 def fetch_json(endpoint, params=None, _delay=1.5):
     """Fetch JSON from Ahrefs API v3. Adds a small delay between calls to avoid
-    Cloudflare burst-rate limiting (429 HTML response)."""
+    Cloudflare burst-rate limiting (429 HTML response).
+    Logs rows returned and units consumed (from x-api-units-cost-total-actual header)."""
     if not API_KEY:
         return None
     import time
@@ -93,21 +107,72 @@ def fetch_json(endpoint, params=None, _delay=1.5):
             print(f"  WARN: Cloudflare rate limit on [{endpoint}] — wait a few minutes and retry", file=sys.stderr)
             return None
         r.raise_for_status()
-        return r.json()
+        data  = r.json()
+        units = r.headers.get("x-api-units-cost-total-actual", "–")
+        rows  = _count_rows(data)
+        if rows is not None:
+            print(f"  [ahrefs] {endpoint}: {rows} rows, {units} units used")
+        else:
+            print(f"  [ahrefs] {endpoint}: {units} units used")
+        return data
     except Exception as e:
         print(f"Ahrefs API error [{endpoint}]: {e}", file=sys.stderr)
         return None
 
 
+def check_units():
+    """
+    Call the free /account/limits-and-usage endpoint (0 units consumed).
+    If remaining units < _UNIT_THRESHOLD, print a warning and return False.
+    Callers should exit without pulling if this returns False.
+    """
+    data = fetch_json("account/limits-and-usage", _delay=0)
+    if not data:
+        print("  WARN: Could not check unit balance — proceeding anyway", file=sys.stderr)
+        return True
+    # Ahrefs v3 returns nested structure — try common paths
+    inner    = data.get("limits_and_usage") or data.get("subscription") or data
+    api_info = inner.get("api_units") or inner
+    remaining = (
+        api_info.get("units_left_monthly") or
+        api_info.get("api_units_left")     or
+        api_info.get("units_remaining")    or
+        (api_info.get("monthly_limit", 0) - api_info.get("used", 0))
+        if ("monthly_limit" in api_info and "used" in api_info) else None
+    )
+    if remaining is not None:
+        print(f"  Ahrefs units remaining this month: {remaining:,}")
+        if remaining < _UNIT_THRESHOLD:
+            print(
+                f"  ⛔  ABORT: Only {remaining:,} units remaining — threshold is "
+                f"{_UNIT_THRESHOLD:,}. Skipping pull to preserve credits.",
+                file=sys.stderr,
+            )
+            return False
+    else:
+        print("  WARN: Could not parse unit balance from response — proceeding", file=sys.stderr)
+    return True
+
+
 # ─────────────────────────────────────────────
-# 1. Domain rating
+# 1. Domain rating (current + previous week — fetched once, reused by organic value)
 # ─────────────────────────────────────────────
 
 def pull_domain_rating():
-    return fetch_json("site-explorer/domain-rating", {
+    """
+    Fetch domain rating for TODAY and LAST_WEEK in a single function call.
+    Both results are reused by pull_organic_traffic_value() — no duplicate API calls.
+    Returns (current_dr, prev_dr) tuple.
+    """
+    current = fetch_json("site-explorer/domain-rating", {
         "target": SITE,
         "date":   TODAY,
     })
+    prev = fetch_json("site-explorer/domain-rating", {
+        "target": SITE,
+        "date":   LAST_WEEK,
+    })
+    return current, prev
 
 
 # ─────────────────────────────────────────────
@@ -120,7 +185,7 @@ def pull_organic_keywords():
         "target":   SITE,
         "country":  "au",
         "date":     TODAY,
-        "limit":    100,
+        "limit":    50,
         "order_by": "volume:desc",
         "select":   "keyword,best_position,best_position_url,volume,cpc,keyword_difficulty,sum_traffic",
     })
@@ -132,7 +197,7 @@ def pull_organic_keywords_last_week():
         "target":   SITE,
         "country":  "au",
         "date":     LAST_WEEK,
-        "limit":    100,
+        "limit":    50,
         "order_by": "volume:desc",
         "select":   "keyword,best_position,volume",
     })
@@ -206,22 +271,20 @@ def pull_top_pages():
     })
 
 
-def pull_organic_traffic_value():
+def pull_organic_traffic_value(current_dr=None, prev_dr=None):
     """
-    Pull the site-level organic traffic value ($ equivalent ad spend).
+    Extract site-level organic traffic value ($ equivalent ad spend) from pre-fetched
+    domain-rating data. Accepts already-fetched results from pull_domain_rating() to
+    avoid duplicate API calls. Falls back to fresh API calls only if data is not supplied.
     This is the core metric for the 'SEO replacing Google Ads' tracker.
     """
-    data = fetch_json("site-explorer/domain-rating", {
-        "target":  SITE,
-        "date":    TODAY,
-    })
-    last_week_data = fetch_json("site-explorer/domain-rating", {
-        "target":  SITE,
-        "date":    LAST_WEEK,
-    })
+    if current_dr is None:
+        current_dr = fetch_json("site-explorer/domain-rating", {"target": SITE, "date": TODAY})
+    if prev_dr is None:
+        prev_dr = fetch_json("site-explorer/domain-rating", {"target": SITE, "date": LAST_WEEK})
 
-    current  = (data or {}).get("domain_rating", {}) if data else {}
-    previous = (last_week_data or {}).get("domain_rating", {}) if last_week_data else {}
+    current  = (current_dr or {}).get("domain_rating", {}) if current_dr else {}
+    previous = (prev_dr    or {}).get("domain_rating", {}) if prev_dr    else {}
 
     curr_value = current.get("organic_traffic_value", 0) or 0
     prev_value = previous.get("organic_traffic_value", 0) or 0
@@ -251,7 +314,7 @@ def pull_backlinks():
     """Most recent backlinks pointing to the site."""
     return fetch_json("site-explorer/backlinks", {
         "target":   SITE,
-        "limit":    50,
+        "limit":    30,
         "order_by": "first_seen:desc",
         "select":   "url_from,url_to,domain_rating_source,first_seen,anchor",
     })
@@ -289,7 +352,7 @@ def pull_broken_backlinks():
 def pull_referring_domains():
     return fetch_json("site-explorer/refdomains", {
         "target":   SITE,
-        "limit":    50,
+        "limit":    30,
         "order_by": "domain_rating:desc",
         "select":   "domain,domain_rating,dofollow_links,links_to_target,first_seen,last_seen,traffic_domain",
     })
@@ -327,7 +390,7 @@ def pull_keyword_gap():
             "target":   competitor,
             "country":  "au",
             "date":     TODAY,
-            "limit":    100,
+            "limit":    50,
             "order_by": "volume:desc",
             "select":   "keyword,best_position,volume,keyword_difficulty",
         })
@@ -527,14 +590,21 @@ def pull_site_audit():
 
 def main():
     print("Pulling Ahrefs data (API v3)...\n")
+
+    # ── Unit safety gate (free endpoint — no units consumed) ──
+    print("--- Checking API unit balance ---")
+    if not check_units():
+        sys.exit(1)
+
     result = {
         "date_pulled": datetime.now().isoformat(),
         "site":        SITE,
     }
 
     # ── Core metrics ──
-    print("--- Domain Rating ---")
-    result["domain_rating"]    = pull_domain_rating()
+    print("--- Domain Rating (current + prev week — fetched once) ---")
+    current_dr, prev_dr        = pull_domain_rating()
+    result["domain_rating"]    = current_dr   # today's DR stored in output
 
     print("--- Organic Keywords (current week) ---")
     current_kws               = pull_organic_keywords()
@@ -548,7 +618,7 @@ def main():
     result["top_pages"]        = pull_top_pages()
 
     print("--- Organic Traffic Value ($) ---")
-    result["organic_value"]    = pull_organic_traffic_value()
+    result["organic_value"]    = pull_organic_traffic_value(current_dr, prev_dr)
 
     print("--- Backlinks (new) ---")
     result["backlinks"]        = pull_backlinks()

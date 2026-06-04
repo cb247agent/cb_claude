@@ -16,6 +16,15 @@ context_files:
   - context/research-competitors.md
   - skills/content-writer/SKILL.md
   - skills/brand-guideline/SKILL.md
+  - ~/.claude/skills/humanizer/SKILL.md
+
+# Humanizer post-processing: ALL content output (posts, reel scripts, ad copy) must be
+# run through the humanizer skill before saving. CB247 voice calibration:
+# - Short punchy sentences mixed with longer ones — no uniform rhythm
+# - No AI vocabulary: pivotal, vibrant, testament, landscape, showcase, delve, foster
+# - No em dashes, no rule-of-three, no promotional puffery
+# - Contractions OK. Perth/WA vernacular welcome (swing, arvo, footy season)
+# - Direct and slightly irreverent — fit mate giving advice, not a wellness brand
 
 output_folder: outputs/content/
 

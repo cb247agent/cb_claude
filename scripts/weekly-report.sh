@@ -15,8 +15,11 @@
 #   Phase 3  Outputs        bake reports + deploy dashboard (source of truth)
 #   Phase 4  Email Delivery Tia OS report ONLY — team emails held until Tia approves
 
-set -e
+# No set -e — agent failures are tracked in FAILED_AGENTS[], not script-killing.
+# Each phase uses explicit || handling so one failed pull/agent doesn't abort the run.
 BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PIPELINE_START=$(date +%s)
+FAILED_AGENTS=()
 
 # ── Load environment (API keys, credentials) — safe parser skips bad lines ──
 if [ -f "$BASE_DIR/.env" ]; then
@@ -29,6 +32,15 @@ fi
 
 PYTHON="$BASE_DIR/.venv/bin/python3.13"
 CLAUDE="/Users/tiachasingbetter/.local/bin/claude"
+
+# ── Model routing — Max subscription ──
+# Haiku:  lightweight extraction (audience intel, content intel)
+# Sonnet: standard analysis + writing (research, performance, seo, competitor, paid-ads)
+# Opus:   heavy synthesis + high-volume creative (content agent, strategist)
+MODEL_HAIKU="${ANTHROPIC_DEFAULT_HAIKU_MODEL:-claude-haiku-4-5}"
+MODEL_SONNET="${ANTHROPIC_DEFAULT_SONNET_MODEL:-claude-sonnet-4-5}"
+MODEL_OPUS="${ANTHROPIC_DEFAULT_OPUS_MODEL:-claude-opus-4-5}"
+
 LOG="$BASE_DIR/state/weekly-report.log"
 DATE=$(date '+%Y-%m-%d')
 OUTPUTS="$BASE_DIR/outputs"
@@ -36,27 +48,33 @@ STATE="$BASE_DIR/state"
 
 # ── Ensure output directories exist ──
 mkdir -p "$OUTPUTS/research" "$OUTPUTS/seo" "$OUTPUTS/content" \
-         "$OUTPUTS/blueprints" "$OUTPUTS/creatives"
+         "$OUTPUTS/blueprints" "$OUTPUTS/creatives" \
+         "$BASE_DIR/logs/agents"
 
 log()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG"; }
 fail() { log "ERROR: $1"; }
+
 run_agent() {
     local name="$1"
     local prompt="$2"
     local out="$3"
     local tools="${4:-Read(context/**),Read(outputs/**),Write(outputs/**)}"
-    log "  → Running $name..."
+    local model="${5:-$MODEL_SONNET}"
+    local agent_log="$BASE_DIR/logs/agents/$(date +%Y-%m-%d)-${name}.log"
+
+    log "  → [$model] Running $name..."
     if "$CLAUDE" \
         --allowedTools "$tools" \
-        --model "${ANTHROPIC_MODEL:-claude-sonnet-4-5}" \
+        --model "$model" \
         --print \
         --output-format text \
-        "$prompt" > "$out" 2>>"$LOG"; then
+        "$prompt" > "$out" 2>"$agent_log"; then
         log "  ✅ $name complete → $(basename "$out")"
         return 0
     else
-        log "  ⚠️  $name had issues — check $out"
-        return 1
+        FAILED_AGENTS+=("$name")
+        log "  ❌ $name FAILED — log: logs/agents/$(basename "$agent_log")"
+        return 0   # return 0 so pipeline continues — failure tracked in FAILED_AGENTS[]
     fi
 }
 
@@ -127,7 +145,8 @@ Output a structured markdown report covering:
 Be specific. Use actual data from the files. No filler.
 Save to: outputs/research/weekly-research-$DATE.md" \
 "$OUTPUTS/research/weekly-research-$DATE.md" \
-"Read(context/research-context.json),Read(context/seasonal-calendar.md),Write(outputs/research/**)"
+"Read(context/research-context.json),Read(context/seasonal-calendar.md),Write(outputs/research/**)" \
+"$MODEL_SONNET"
 
 # ── Agent 2: Audience Intel ──
 log "Agent 2/9 — Audience Intel"
@@ -155,7 +174,8 @@ Output a structured markdown report covering:
 Be specific and data-driven.
 Save to: outputs/research/audience-weekly-$DATE.md" \
 "$OUTPUTS/research/audience-weekly-$DATE.md" \
-"Read(context/audience-context.json),Read(outputs/research/**),Write(outputs/research/**)"
+"Read(context/audience-context.json),Read(outputs/research/**),Write(outputs/research/**)" \
+"$MODEL_HAIKU"
 
 # ── Agent 3: Content Intel ──
 log "Agent 3/9 — Content Intel"
@@ -183,16 +203,13 @@ Output a structured markdown report covering:
 Be specific. Include actual hooks word-for-word. This feeds directly into content creation.
 Save to: outputs/research/content-intel-$DATE.md" \
 "$OUTPUTS/research/content-intel-$DATE.md" \
-"Read(context/content-intel-context.json),Read(outputs/research/**),Write(outputs/research/**)"
+"Read(context/content-intel-context.json),Read(outputs/research/**),Write(outputs/research/**)" \
+"$MODEL_HAIKU"
 
 # ── Agent 4: Performance ──
 log "Agent 4/9 — Performance Agent"
-"$CLAUDE" \
-    --allowedTools "Read(context/performance-context.json),Write(outputs/research/**)" \
-    --model "${ANTHROPIC_MODEL:-claude-sonnet-4-5}" \
-    --print \
-    --output-format text \
-    "You are the CB247 Performance Agent. Today is $DATE.
+run_agent "performance" \
+"You are the CB247 Performance Agent. Today is $DATE.
 
 Read this file for all performance data:
 - context/performance-context.json  (GA4 sessions/conversions, GSC queries, Google Ads spend/CPA by campaign and location — pre-compressed from live data)
@@ -210,9 +227,9 @@ Output a structured markdown performance report covering:
 
 Be precise. Every number must come from context/performance-context.json.
 Save to: outputs/research/performance-week-$DATE.md" \
-    > "$OUTPUTS/research/performance-week-$DATE.md" 2>>"$LOG" \
-    && log "  ✅ performance complete → performance-week-$DATE.md" \
-    || log "  ⚠️  performance had issues — check $LOG"
+"$OUTPUTS/research/performance-week-$DATE.md" \
+"Read(context/performance-context.json),Write(outputs/research/**)" \
+"$MODEL_SONNET"
 
 # ── Agent 5: SEO Agent (primary growth driver) ──
 log "Agent 5/9 — SEO Agent"
@@ -246,7 +263,8 @@ Output a structured markdown SEO report covering:
 Be actionable. Every recommendation must have a specific fix, not just 'improve this page'.
 Save to: outputs/seo/weekly-seo-brief-$DATE.md" \
 "$OUTPUTS/seo/weekly-seo-brief-$DATE.md" \
-"Read(context/seo-context.json),Read(outputs/research/**),Write(outputs/seo/**)"
+"Read(context/seo-context.json),Read(outputs/research/**),Write(outputs/seo/**)" \
+"$MODEL_SONNET"
 
 # ── Agent 6: Competitor Spy ──
 log "Agent 6/9 — Competitor Spy"
@@ -272,7 +290,8 @@ Output a structured markdown competitive intelligence report covering:
 Be competitive and specific. Name actual keywords, prices, and tactics.
 Save to: outputs/research/competitor-weekly-$DATE.md" \
 "$OUTPUTS/research/competitor-weekly-$DATE.md" \
-"Read(context/competitor-context.json),Read(outputs/research/**),Read(outputs/seo/**),Write(outputs/research/**)"
+"Read(context/competitor-context.json),Read(outputs/research/**),Read(outputs/seo/**),Write(outputs/research/**)" \
+"$MODEL_SONNET"
 
 # ── Agent 7: Paid Ads ──
 log "Agent 7/9 — Paid Ads Agent"
@@ -303,7 +322,8 @@ META ADS (prepared for reinstatement):
 Be specific: name exact campaigns, keyword groups, and dollar amounts.
 Save to: outputs/research/paid-ads-weekly-$DATE.md" \
 "$OUTPUTS/research/paid-ads-weekly-$DATE.md" \
-"Read(context/paid-ads-context.json),Read(outputs/seo/**),Read(outputs/research/**),Write(outputs/research/**)"
+"Read(context/paid-ads-context.json),Read(outputs/seo/**),Read(outputs/research/**),Write(outputs/research/**)" \
+"$MODEL_SONNET"
 
 # ── Agent 8: Content Agent ──
 log "Agent 8/9 — Content Agent"
@@ -354,14 +374,23 @@ Generate ALL of the following — complete, copy-paste ready:
 
 Save EVERYTHING to: outputs/content/weekly-content-$DATE.md" \
 "$OUTPUTS/content/weekly-content-$DATE.md" \
-"Read(context/content-agent-context.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(context/psychology-triggers.md),Read(outputs/**),Write(outputs/content/**)"
+"Read(context/content-agent-context.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(context/psychology-triggers.md),Read(outputs/**),Write(outputs/content/**)" \
+"$MODEL_OPUS"
 
-# ── Agent 9: Strategist ──
+# ── Agent 9: Strategist — inject upstream failure context ──
 log "Agent 9/9 — Strategist"
+if [ ${#FAILED_AGENTS[@]} -gt 0 ]; then
+    FAILURE_NOTE="PIPELINE WARNING: The following agents failed this run and their outputs may be missing or incomplete: ${FAILED_AGENTS[*]}. Add a 'PIPELINE ISSUES' section at the top of your strategy document listing each failed agent and what data is therefore missing."
+else
+    FAILURE_NOTE="All 8 upstream agents completed successfully this run."
+fi
+
 run_agent "strategist" \
 "You are the CB247 Marketing Strategist. Today is $DATE.
 Synthesise ALL 8 agent outputs into ONE executive strategy document.
 This is the single source of truth Tia reviews before anything goes to the team.
+
+PIPELINE STATUS: $FAILURE_NOTE
 
 Read ALL of these:
 - outputs/research/weekly-research-$DATE.md
@@ -403,7 +432,8 @@ Output a concise executive strategy document covering:
 
 Save to: outputs/blueprints/weekly-strategy-$DATE.md" \
 "$OUTPUTS/blueprints/weekly-strategy-$DATE.md" \
-"Read(context/seasonal-calendar.md),Read(outputs/**),Write(outputs/blueprints/**)"
+"Read(context/seasonal-calendar.md),Read(outputs/**),Write(outputs/blueprints/**)" \
+"$MODEL_OPUS"
 
 log "Phase 2 complete — all 9 agents run."
 
@@ -455,16 +485,40 @@ log "Step 4b — How to release team emails after Tia approves:"
 log "    python scripts/send_team_emails.py --approve"
 log "    OR per-person: python scripts/send_team_emails.py --role jane"
 
+
+# ══════════════════════════════════════════════════════════════════
+# PHASE 5 — RUN LOG (structured JSON, zero LLM)
+# ══════════════════════════════════════════════════════════════════
+PIPELINE_END=$(date +%s)
+PIPELINE_DURATION=$((PIPELINE_END - PIPELINE_START))
+RUN_STATUS=$( [ ${#FAILED_AGENTS[@]} -eq 0 ] && echo "success" || echo "partial" )
+FAILED_CSV="$(IFS=,; echo "${FAILED_AGENTS[*]}")"
+
+log ""
+log "─── PHASE 5: WRITING RUN LOG ───"
+"$PYTHON" "$BASE_DIR/scripts/log_run.py" \
+    --business cb247 \
+    --status "$RUN_STATUS" \
+    --failed-agents "$FAILED_CSV" \
+    --duration-seconds "$PIPELINE_DURATION" \
+    | tee -a "$LOG"
+
 log ""
 log "================================================================"
 log "  CB247 MARKETING OS — RUN COMPLETE"
 log "================================================================"
+log "  Status    : $RUN_STATUS | Duration: ${PIPELINE_DURATION}s"
 log "  ✅ Data pulled    : GA4 + GSC + Google Ads + Ahrefs + Apify"
-log "  ✅ Agents run     : 9/9"
+if [ ${#FAILED_AGENTS[@]} -eq 0 ]; then
+    log "  ✅ Agents run     : 9/9"
+else
+    log "  ⚠️  Agents run     : $(( 9 - ${#FAILED_AGENTS[@]} ))/9 — failed: $FAILED_CSV"
+fi
 log "  ✅ Outputs baked  : HTML report + dashboard"
 log "  ✅ Dashboard live : https://cb247agent.github.io/cb_claude/"
 log "  📧 Tia notified   : OS report + approval prompt sent"
 log "  ⏸  Team emails   : HELD — awaiting Tia approval"
+log "  📋 Run log        : logs/last-run.json"
 log "================================================================"
 log "  Outputs:"
 log "    Research   : $OUTPUTS/research/weekly-research-$DATE.md"

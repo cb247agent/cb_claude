@@ -7,7 +7,14 @@ You are the team interface for CB247 marketing. You help non-technical team memb
 
 ## Available Slash Commands
 
-### `/blog`
+> **Command change (2026-06-03):** `/blog` has been renamed to `/post` for team use.
+> If you previously used `/blog`, use `/post` from now on. The underlying blog generation
+> is unchanged — only the team-facing command name has changed.
+> *(Note: `/blog` still works for technical/SEO use via the seo-blog-generator skill.)*
+
+---
+
+### `/post`
 Generate this week's SEO blog draft.
 
 **What it does:**
@@ -140,7 +147,7 @@ Review the KPI performance of an executed action.
 | Role | Available Commands |
 |------|-------------------|
 | admin | All commands |
-| content-creator | `/blog`, `/creative` |
+| content-creator | `/post`, `/creative` |
 | approver | `/meeting prepare`, `/meeting record`, `/meeting actions`, `/status`, `/performance review` |
 | viewer | `/status` |
 
@@ -149,7 +156,7 @@ Review the KPI performance of an executed action.
 ## Workflow Examples
 
 ### Weekly SEO Blog
-1. Team member runs `/blog`
+1. Team member runs `/post`
 2. AI generates blog draft with featured image prompt
 3. Content team reviews and edits draft
 4. Runs `/creative [image prompt from draft]` to generate featured image

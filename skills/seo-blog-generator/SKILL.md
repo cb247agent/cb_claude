@@ -175,6 +175,15 @@ Every blog draft must be checked through the compliance-checker skill (`skills/c
 5. Health disclaimers — any content showing exercise or making fitness benefit claims must include: *"Consult your doctor before starting any new fitness program."*
 6. Before/after or results claims — must include: *"Results vary. Individual circumstances affect outcomes."*
 7. TGA red flags — "heals", "cures", "treats", "burns fat", "lose Xkg" — reword or remove.
+8. **Add-on services** — The following are NOT included in base membership. Never describe them as included or standard. Each requires an extra fee:
+   - Sauna + ice bath (available at both Malaga and Ellenbrook)
+   - Kids Hub
+   - Reformer Pilates
+   - ChasingRX
+   - Yoga
+   - Spin
+9. **Competitor comparisons** — Never criticise competitors for "hidden costs" or "extra fees" — CB247 also charges extra for add-ons. Only compare on verified differentiators.
+10. **No pricing in blog body** — Pricing ($11.95/week) belongs in CTAs only, not editorial copy.
 
 **Output:** Save to `outputs/research/compliance-review-[blog-slug]-YYYY-MM-DD.md` using the template in `skills/compliance-checker/SKILL.md`.
 
@@ -265,6 +274,20 @@ Before finalizing the blog draft:
 - [ ] No unverified competitor pricing comparisons
 - [ ] Doctor disclaimer present if content shows or recommends exercise
 - [ ] No TGA-prohibited language (heals, cures, treats, burns fat, lose X kg)
+- [ ] Add-on services (sauna/ice bath, Kids Hub, Pilates, ChasingRX, yoga, spin) described as add-ons with extra fees — never "included"
+- [ ] No pricing in blog body (CTAs only)
+- [ ] No competitor comparisons about hidden costs or extra fees
+
+### Blog HTML Design Standard
+When generating the HTML file for `docs/blog-drafts/`, the page must match the live CB247 website design:
+- **Font:** Poppins (Google Fonts import) for headings; system sans-serif body
+- **Body text:** `#475467`, 16px/1.75 line-height
+- **Hero:** 420px, `linear-gradient(rgba(0,0,0,.48),rgba(0,0,0,.48))` over background image
+- **Article:** max-width 760px, padding 96px 32px 128px; page max-width 1280px
+- **Nav:** CB247 logo + nav links + Member Login + Sign Up buttons
+- **Logo URL:** `https://cdn.prod.website-files.com/65f906591b48de4de776d536/65f90da69102da8859d24b64_CB247-Logo.webp`
+- **Feature cards:** white bg, `#3FA69A` left border, subtle box-shadow
+- **Reference design:** `docs/blog-drafts/best-gym-malaga.html` — use as the template
 
 ---
 

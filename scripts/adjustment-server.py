@@ -15,6 +15,7 @@ Leave it running in a terminal while using the Content Planner dashboard.
 import re
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -30,7 +31,7 @@ CORS(app)  # Allow requests from GitHub Pages + localhost
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-def url_to_path(draft_url: str) -> Path | None:
+def url_to_path(draft_url: str) -> Optional[Path]:
     """Map a GitHub Pages URL to the local blog draft HTML file."""
     # https://cb247agent.github.io/cb_claude/blog-drafts/best-gym-malaga.html
     # → docs/blog-drafts/best-gym-malaga.html

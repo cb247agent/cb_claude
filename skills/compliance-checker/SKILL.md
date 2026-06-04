@@ -189,6 +189,25 @@ For every piece of content, ask:
 
 ---
 
+## CB247 Membership Structure — Add-Ons (CRITICAL)
+
+The following services are NOT included in the base CB247 membership. They require an extra fee on top of the base membership. **Flag any content that calls these "included", "standard", "part of membership", or implies no extra cost:**
+
+| Service | Correct Description |
+|---------|-------------------|
+| Sauna + ice bath | Add-on, extra fee. Available at both Malaga and Ellenbrook. |
+| Kids Hub | Add-on, extra fee. Supervised childminding during staffed hours. |
+| Reformer Pilates | Add-on, extra fee. |
+| ChasingRX | Add-on, extra fee. |
+| Yoga | Add-on, extra fee. |
+| Spin | Add-on, extra fee. |
+
+**What IS included in base membership:** 24/7 gym access, Neon21, general floor equipment, functional training area.
+
+**Competitor comparison rule:** Never criticise competitors for "hidden costs" or "add-on fees" in any published content — CB247 also charges extra for add-ons. Only compare on verifiable differentiators (e.g. Kids Hub, sauna, ice bath — which competitors don't have).
+
+---
+
 ## Common Fixes for CB247 Content
 
 | Issue | Fix |
@@ -199,6 +218,8 @@ For every piece of content, ask:
 | "Only gym with..." | → Verify first, or reword to "One of Perth's few gyms with..." |
 | No pricing disclaimer | → Add "$11.95/week. No lock-in. No signup fee." |
 | Unsubstantiated testimonial | → Add "Results vary" disclaimer |
+| "Sauna/ice bath/Kids Hub/Pilates/ChasingRX/yoga/spin included" | → "Available as an add-on — extra fee applies" |
+| "All included in one membership" | → Remove. List only what base membership actually covers. |
 
 ---
 

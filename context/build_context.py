@@ -27,23 +27,64 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATE = BASE_DIR / "state"
 CTX = BASE_DIR / "context"
 
+# Warn if a state file hasn't been refreshed within this many hours
+_STALE_THRESHOLD_HOURS = 4
+
+# Module-level tracker: populated by load(), consumed by save()
+# Maps state file stem → age_hours (or None if missing/unreadable)
+_file_ages: dict = {}
+
 
 def load(name):
     p = STATE / f"{name}.json"
     if not p.exists():
+        print(f"  WARN: state/{name}.json not found — context will skip this source")
+        _file_ages[name] = None
         return None
     try:
+        age_hours = (datetime.now().timestamp() - p.stat().st_mtime) / 3600
+        _file_ages[name] = age_hours
+        if age_hours > _STALE_THRESHOLD_HOURS:
+            print(f"  WARN: state/{name}.json is stale ({age_hours:.1f}h old) — run pull scripts to refresh")
         return json.loads(p.read_text())
     except Exception as e:
         print(f"  WARN: could not load {name}.json — {e}")
+        _file_ages[name] = None
         return None
 
 
-def save(name, data):
+def save(name, data, source_files: list = None):
+    """Write context file with _meta freshness block at top level (non-breaking).
+
+    _meta is a sibling to all existing data keys — agent interfaces unchanged.
+    source_files: list of state file stems this builder read (e.g. ["ga4-data", "gsc-data"]).
+    """
+    warnings = []
+    for f in (source_files or []):
+        age = _file_ages.get(f)
+        if age is None:
+            warnings.append(f"MISSING: state/{f}.json")
+        elif age > _STALE_THRESHOLD_HOURS:
+            warnings.append(f"STALE ({age:.1f}h): state/{f}.json")
+
+    output = {
+        "_meta": {
+            "agent":              name,
+            "built_at":           _now(),
+            "is_fresh":           len(warnings) == 0,
+            "staleness_warnings": warnings,
+            "source_files":       [f"state/{f}.json" for f in (source_files or [])],
+        },
+        **data,   # top-level keys preserved — agent interfaces unchanged
+    }
+
     out = CTX / f"{name}-context.json"
-    out.write_text(json.dumps(data, indent=2))
-    size = len(json.dumps(data)) // 4
-    print(f"  ✅ {name}-context.json (~{size} tokens)")
+    out.write_text(json.dumps(output, indent=2))
+    size = len(json.dumps(output)) // 4
+    icon = "✅" if not warnings else "⚠️ "
+    print(f"  {icon} {name}-context.json (~{size} tokens)")
+    for w in warnings:
+        print(f"     ↳ {w}")
 
 
 def build_performance():
@@ -86,7 +127,7 @@ def build_performance():
     if gads:
         ctx["google_ads_accounts"] = gads.get("accounts")
 
-    save("performance", ctx)
+    save("performance", ctx, ["ga4-data", "gsc-data", "ads-data", "google-ads-data"])
 
 
 def build_seo():
@@ -176,7 +217,7 @@ def build_seo():
             ],
         }
 
-    save("seo", ctx)
+    save("seo", ctx, ["ahrefs-data", "gsc-data", "screaming-frog-data", "apify-data"])
 
 
 def build_competitor():
@@ -211,7 +252,7 @@ def build_competitor():
             for p in social.get("top_posts", [])[:5]
         ]
 
-    save("competitor", ctx)
+    save("competitor", ctx, ["apify-data", "social-trends"])
 
 
 def build_content_intel():
@@ -234,7 +275,7 @@ def build_content_intel():
             for p in social.get("top_posts", [])[:10]
         ]
 
-    save("content-intel", ctx)
+    save("content-intel", ctx, ["social-trends"])
 
 
 def build_audience():
@@ -250,7 +291,7 @@ def build_audience():
         ctx["top_pages"] = ga4.get("top_pages", [])[:5]
         ctx["devices"] = ga4.get("devices")
 
-    save("audience", ctx)
+    save("audience", ctx, ["ga4-data"])
 
 
 def build_paid_ads():
@@ -304,7 +345,7 @@ def build_paid_ads():
             for kw in tkp.get("keywords", [])
         ]
 
-    save("paid-ads", ctx)
+    save("paid-ads", ctx, ["ads-data", "google-ads-data", "ahrefs-data"])
 
 
 def build_research():
@@ -344,7 +385,7 @@ def build_research():
             for p in social.get("top_posts", [])[:5]
         ]
 
-    save("research", ctx)
+    save("research", ctx, ["apify-data", "social-trends"])
 
 
 def build_content_agent():
@@ -368,7 +409,7 @@ def build_content_agent():
         "audience, competitor) for main data. This context provides trend signals only."
     )
 
-    save("content-agent", ctx)
+    save("content-agent", ctx, ["social-trends"])
 
 
 def _now():
