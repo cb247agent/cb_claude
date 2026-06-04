@@ -3,12 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FIFO Gym Membership Perth: Train on Your Roster — CB247 Draft</title>
-<meta name="description" content="FIFO workers in Perth: CB247 pauses your membership when you're on site. $11.95/week, 24/7 access, no lock-in, sauna, ice bath. Malaga and Ellenbrook.">
+<title>FIFO Gym Membership Perth: Train on Your Roster — CB247</title>
+<meta name="description" content="FIFO workers in Perth: CB247 pauses your membership when you're on site. No freeze fee, 24/7 access, sauna and ice bath at both Malaga and Ellenbrook.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,sans-serif;background:#f4f4f4;color:#0d0d0d;line-height:1.75;font-size:16px}
-.review-bar{background:#0d0d0d;color:#fff;padding:11px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:200}
+body{font-family:Arial,sans-serif;background:#fff;color:#475467;font-size:16px;line-height:24px}
+
+/* ── REVIEW BAR ── */
+.review-bar{background:#0d0d0d;color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:200}
 .rb-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px}
 .rb-tag{background:#3FA69A;color:#fff;border-radius:99px;padding:3px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .rb-pill{border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700;display:none}
@@ -20,7 +25,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,sans-serif;
 .rb-btn{border:none;border-radius:99px;padding:6px 16px;font-size:11px;font-weight:700;cursor:pointer}
 .btn-approve{background:#3FA69A;color:#fff}
 .btn-adjust{background:#e5e7eb;color:#374151;border:1px solid #d1d5db}
-.btn-reject{background:#374151;color:#fff;border:none}
+.btn-reject{background:#374151;color:#fff}
 .review-notes{background:#f9fafb;border-bottom:2px solid #e5e7eb;padding:12px 24px;display:none}
 .review-notes.show{display:block}
 .review-notes label{font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:6px}
@@ -28,70 +33,75 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,sans-serif;
 .review-notes textarea:focus{outline:none;border-color:#3FA69A}
 .save-btn{background:#0d0d0d;color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;margin-top:8px}
 .saved-flash{font-size:11px;color:#3FA69A;font-weight:600;margin-left:10px;display:none}
-.draft-banner{background:#f3f4f6;border-bottom:1px solid #e5e7eb;padding:8px 24px;font-size:12px;color:#374151;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.data-badge{background:#e5e7eb;color:#374151;border-radius:99px;padding:2px 10px;font-size:10px;font-weight:700}
-.blog-outer{max-width:760px;margin:0 auto;padding:48px 24px 100px}
-.front-matter{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px 22px;margin-bottom:32px;font-size:12px}
-.fm-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:8px}
-.fm-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.fm-chip{border-radius:6px;padding:3px 10px;font-weight:700;font-size:11px}
-.fm-kw{background:#0d0d0d;color:#fff}
-.fm-icp{background:#e5e7eb;color:#374151}
-.fm-loc{background:#3FA69A;color:#fff}
-.fm-week{background:#f3f4f6;color:#374151}
-.fm-data{background:#f3f4f6;color:#374151}
-.fm-title{font-size:14px;font-weight:700;margin-bottom:10px}
-.fm-meta{font-size:11px;color:#6b7280;line-height:1.7}
-.fm-compliance{background:#0d0d0d;border-radius:6px;padding:6px 10px;font-size:11px;color:#fff;font-weight:600;margin-top:10px}
-.blog-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.btag{border-radius:99px;padding:3px 12px;font-size:11px;font-weight:700}
-h1{font-size:34px;font-weight:800;line-height:1.2;color:#0d0d0d;margin-bottom:22px}
-.pas-label{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-radius:4px;padding:2px 8px;margin-bottom:10px}
-.pas-p{background:#e5e7eb;color:#374151}
-.pas-a{background:#d1d5db;color:#0d0d0d}
-.pas-s{background:#3FA69A;color:#fff}
-h2{font-size:22px;font-weight:700;color:#0d0d0d;margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid #e5e7eb}
-h3{font-size:16px;font-weight:700;color:#0d0d0d;margin:22px 0 8px}
-p{margin-bottom:16px;color:#374151;font-size:15px;line-height:1.8}
-ul{margin:0 0 16px 20px;color:#374151;font-size:15px;line-height:1.9}
-ul li{margin-bottom:4px}
-.trend-hook{background:#fff;border-left:4px solid #3FA69A;padding:18px 20px;margin-bottom:28px;border-radius:0 10px 10px 0}
-.trend-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#3FA69A;margin-bottom:8px}
-.trend-hook p{margin:0;font-style:italic}
-.science-callout{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:10px;padding:14px 18px;margin:18px 0;font-size:13px;color:#374151;line-height:1.7}
-.membership-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;margin-bottom:14px}
-.membership-card h3{margin:0 0 8px;font-size:15px}
-.membership-card p{margin:0;font-size:13px;color:#374151;line-height:1.7}
-.membership-card .detail{font-size:12px;font-weight:700;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb}
-.cta-block{background:#0d0d0d;border-radius:12px;padding:32px;text-align:center;margin:40px 0}
-.cta-block p{color:rgba(255,255,255,.7);font-size:14px;margin-bottom:0}
-.cta-price{display:block;font-size:38px;font-weight:800;color:#3FA69A;margin:10px 0}
-.cta-btn{display:inline-block;background:#3FA69A;color:#fff;text-decoration:none;border-radius:99px;padding:14px 36px;font-size:15px;font-weight:700;margin-top:18px}
-.cta-btn:hover{background:#2d7a70}
-.cta-sub{color:rgba(255,255,255,.45);font-size:12px;margin-top:10px!important}
-.sources{background:#f8f9fa;border-radius:10px;padding:16px 20px;margin:28px 0;font-size:12px;color:#6b7280;line-height:1.8}
-.sources strong{color:#374151;font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
-.int-links{border-top:1px solid #e5e7eb;padding-top:18px;margin-top:28px}
-.int-links strong{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;display:block;margin-bottom:8px}
-.int-links a{color:#3FA69A;text-decoration:none;font-weight:600;margin-right:16px;font-size:13px}
-.seo-note{background:#f9fafb;border:1px dashed #d1d5db;border-radius:6px;padding:7px 12px;font-size:11px;color:#374151;margin:10px 0}
-.seo-note::before{content:'SEO: ';font-weight:700}
-.data-note{background:#f9fafb;border:1px dashed #d1d5db;border-radius:6px;padding:7px 12px;font-size:11px;color:#374151;margin:10px 0}
-.data-note::before{content:'Data: ';font-weight:700}
-.blog-footer{text-align:center;font-size:11px;color:#9ca3af;padding:24px;border-top:1px solid #e5e7eb;margin-top:40px}
-.featured-img{width:100%;max-height:480px;object-fit:cover;border-radius:10px;display:block;margin-bottom:8px}
-.featured-img-wrap{margin-bottom:32px}
-.featured-img-caption{font-size:11px;color:#9ca3af;text-align:center;padding:4px 0 0}
-@media(max-width:600px){h1{font-size:26px}.cta-price{font-size:28px}.featured-img{max-height:260px}}
-@media print{.review-bar,.review-notes,.draft-banner,.seo-note,.data-note,.front-matter .fm-compliance{display:none!important}}
+
+/* ── NAV ── */
+.site-nav{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;height:72px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo img{height:36px;display:block}
+.nav-links{display:flex;align-items:center;gap:28px;list-style:none}
+.nav-links a{font-family:Arial,sans-serif;font-size:14px;color:#333;text-decoration:none;font-weight:500}
+.nav-links a:hover{color:#3FA69A}
+.nav-ctas{display:flex;gap:10px;align-items:center}
+.btn-login{font-size:14px;font-weight:600;color:#333;text-decoration:none;padding:8px 16px;border:1px solid #d1d5db;border-radius:8px}
+.btn-signup{font-size:14px;font-weight:600;color:#fff;background:#3FA69A;text-decoration:none;padding:8px 20px;border-radius:8px}
+.btn-signup:hover{background:#2d8a80}
+@media(max-width:768px){.nav-links{display:none}.site-nav{padding:0 20px}}
+
+/* ── HERO ── */
+.blog-hero{position:relative;height:420px;background-image:linear-gradient(rgba(0,0,0,.48),rgba(0,0,0,.48)),url('../images/ChasingBetterGym_1.jpeg');background-size:cover;background-position:center;display:flex;align-items:flex-end}
+.hero-inner{max-width:1280px;width:100%;margin:0 auto;padding:0 32px 48px}
+.hero-category{font-family:Arial,sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.7);margin-bottom:12px}
+.hero-title{font-family:'Poppins',sans-serif;font-size:56px;font-weight:300;color:#fff;line-height:68px;max-width:820px}
+@media(max-width:768px){.blog-hero{height:320px}.hero-title{font-size:34px;line-height:42px}}
+
+/* ── ARTICLE ── */
+.article-section{padding:96px 32px 128px}
+.article-inner{max-width:760px;margin:0 auto}
+h2{font-family:'Poppins',sans-serif;font-size:32px;font-weight:700;color:#475467;line-height:38px;margin:52px 0 16px}
+h3{font-family:'Poppins',sans-serif;font-size:20px;font-weight:600;color:#475467;margin:32px 0 10px}
+p{font-size:16px;line-height:28px;color:#475467;margin-bottom:20px}
+ul,ol{margin:0 0 20px 24px;color:#475467;font-size:16px;line-height:28px}
+li{margin-bottom:8px}
+strong{color:#333;font-weight:700}
+em{font-style:italic}
+a{color:#3FA69A;text-decoration:none}
+a:hover{text-decoration:underline}
+.lead{font-size:18px;line-height:32px;color:#475467;margin-bottom:32px}
+.science-block{border-left:3px solid #3FA69A;padding:18px 24px;margin:32px 0;background:#f9fafb;border-radius:0 8px 8px 0}
+.science-block p{margin:0;font-size:15px;line-height:26px;color:#475467}
+.feature-card{border:1px solid #e5e7eb;border-left:4px solid #3FA69A;border-radius:8px;padding:20px 24px;margin-bottom:16px;background:#fff}
+.feature-card h3{margin:0 0 8px;font-size:17px;color:#333}
+.feature-card p{margin:0;font-size:15px;line-height:26px}
+.feature-note{font-size:12px;font-weight:700;color:#3FA69A;margin-top:10px;padding-top:10px;border-top:1px solid #e5e7eb;text-transform:uppercase;letter-spacing:.04em}
+.cta-section{background:#1a1a1a;border-radius:12px;padding:48px 40px;text-align:center;margin:52px 0}
+.cta-section p{color:rgba(255,255,255,.7);margin-bottom:8px}
+.cta-heading{font-family:'Poppins',sans-serif;font-size:32px;font-weight:600;color:#fff;margin-bottom:16px;line-height:40px}
+.cta-btn{display:inline-block;background:#3FA69A;color:#fff;text-decoration:none;border-radius:8px;padding:14px 36px;font-size:16px;font-weight:600;font-family:'Poppins',sans-serif;margin-top:12px;transition:background .15s}
+.cta-btn:hover{background:#2d8a80;text-decoration:none}
+.cta-sub{color:rgba(255,255,255,.4);font-size:13px;margin-top:12px}
+.sources-block{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px 24px;margin:40px 0;font-size:13px;line-height:22px;color:#6b7280}
+.sources-block strong{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#475467;margin-bottom:10px}
+.disclaimer{font-size:12px;color:#9ca3af;text-align:center;padding:16px 0 0;border-top:1px solid #e5e7eb;margin-top:32px}
+
+/* ── FOOTER ── */
+.site-footer{background:#1a1a1a;color:rgba(255,255,255,.6);padding:48px 32px;margin-top:0}
+.footer-inner{max-width:1280px;margin:0 auto;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:32px}
+.footer-tagline{font-size:13px;color:rgba(255,255,255,.4);line-height:1.6;max-width:260px}
+.footer-links{display:flex;gap:48px;flex-wrap:wrap}
+.footer-col{min-width:120px}
+.footer-col-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.35);margin-bottom:12px}
+.footer-col a{display:block;color:rgba(255,255,255,.6);text-decoration:none;font-size:13px;margin-bottom:8px}
+.footer-col a:hover{color:#3FA69A}
+.footer-bottom{max-width:1280px;margin:32px auto 0;padding-top:24px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;color:rgba(255,255,255,.3)}
+@media print{.review-bar,.review-notes{display:none!important}}
 </style>
 </head>
 <body>
 
+<!-- ── REVIEW BAR ── -->
 <div class="review-bar">
   <div class="rb-meta">
-    <span class="rb-tag">Draft Review</span>
-    <span style="opacity:.8">Blog: FIFO Gym Membership Perth · Week 1 · Assignee: John (SEO)</span>
+    <span class="rb-tag">Draft</span>
+    <span style="opacity:.7;font-size:12px">FIFO Gym Membership Perth &nbsp;·&nbsp; Week 1</span>
     <span class="rb-pill" id="rb-pill"></span>
   </div>
   <div class="rb-btns">
@@ -101,175 +111,182 @@ ul li{margin-bottom:4px}
   </div>
 </div>
 <div class="review-notes" id="review-notes">
-  <label>Notes for John (what needs to change):</label>
-  <textarea id="review-text" placeholder="Describe adjustments needed..."></textarea>
-  <button class="save-btn" onclick="saveNote()">Save Notes</button>
+  <label>Adjustment notes (what needs to change):</label>
+  <textarea id="review-text" placeholder="Describe what needs to change..."></textarea>
+  <button class="save-btn" id="modal-save-btn" onclick="saveNote()">Save Notes</button>
   <span class="saved-flash" id="saved-flash">Saved</span>
 </div>
 
-<div class="draft-banner">
-  <strong>DRAFT</strong>
-  Generated via seo-blog-generator skill · 3 Jun 2026 ·
-  <span class="data-badge">KW: fifo gym membership perth</span>
-  <span class="data-badge">ICP: FIFO Worker</span>
-  <span class="data-badge">Week 1 — Fitness Tips</span>
-</div>
-
-<div class="blog-outer">
-
-  <div class="front-matter">
-    <div class="fm-label">Content Brief — Reviewers: John (SEO) · Jane (QC) · Ange</div>
-    <div class="fm-title">FIFO gym membership Perth: train on your roster</div>
-    <div class="fm-row">
-      <span class="fm-chip fm-kw">fifo gym membership perth</span>
-      <span class="fm-chip fm-icp">ICP: FIFO Worker</span>
-      <span class="fm-chip fm-loc">Malaga + Ellenbrook</span>
-      <span class="fm-chip fm-week">Week 1 — Fitness Tips / FIFO</span>
-    </div>
-    <div class="fm-row">
-      <span class="fm-chip fm-data">Brand voice</span>
-      <span class="fm-chip fm-data">Competitor data</span>
-      <span class="fm-chip fm-data">FIFO freeze feature</span>
-      <span class="fm-chip fm-data">Recovery science</span>
-    </div>
-    <div class="fm-meta">
-      <strong>Meta (155 chars):</strong> "FIFO workers in Perth: CB247 pauses your membership when you're on site. $11.95/week, 24/7 access, no lock-in, sauna &amp; ice bath. Malaga and Ellenbrook."<br>
-      <strong>Secondary KW:</strong> fifo friendly gym perth · gym fifo workers · 24/7 gym perth fifo · fifo freeze gym<br>
-      <strong>Trend hook:</strong> "Gym contract rage" — viral TikToks of FIFO workers paying for gyms they can't use while on site<br>
-      <strong>Science:</strong> Laukkanen et al. JAMA 2015 (sauna) · Momma et al. BJSM 2022 (strength training)
-    </div>
-    <div class="fm-compliance">Health claims present — run compliance-checker skill before publishing</div>
-  </div>
-
-  <div class="blog-tags">
-    <span class="btag" style="background:#0d0d0d;color:#fff">FIFO Perth</span>
-    <span class="btag" style="background:#e5e7eb;color:#374151">No Lock-in</span>
-    <span class="btag" style="background:#3FA69A;color:#fff">FIFO Freeze</span>
-  </div>
-
-  <h1>FIFO gym membership Perth:<br>train on your roster</h1>
-
-  <div class="featured-img-wrap">
-    <img
-      src="../images/cb247-gym-floor-night.jpg"
-      alt="Members training at ChasingBetter247 — 24/7 gym access, Malaga and Ellenbrook"
-      class="featured-img"
-    >
-    <p class="featured-img-caption">ChasingBetter247 — open when you land. Any hour.</p>
-  </div>
-
-  <div class="trend-hook">
-    <div class="trend-label">Trending: #gymcontract · #fifolife · #nolockin (TikTok / Reddit, Jun 2026)</div>
-    <p>There are thousands of TikToks right now from people posting about paying $60 a month for a gym they haven't used in six weeks. Some just forgot to cancel. A lot of them are FIFO. The gym kept charging while they were in the Pilbara. That's the deal most Perth gyms offer: pay whether you train or not.</p>
-  </div>
-
-  <div class="seo-note">Target keyword: "fifo gym membership perth" — low competition, high intent, underserved in Perth gym content. Secondary: "fifo friendly gym perth", "gym fifo workers", "fifo freeze gym perth".</div>
-
-  <span class="pas-label pas-p">P — Problem</span>
-
-  <p>Most Perth gyms weren't built with a FIFO roster in mind. They run 12-month contracts, charge admin fees for freezes, and if you want to cancel early, there's paperwork and sometimes a fee. On a 2/1 swing, that means you're paying for 52 weeks and training for roughly 34.</p>
-
-  <p>The maths is straightforward. The fix is not — unless the gym actually has a freeze option that works.</p>
-
-  <h2>What a bad gym contract actually costs a FIFO worker</h2>
-  <span class="pas-label pas-a">A — Agitate</span>
-
-  <p>Say you sign a standard contract at $15/week. You're on a 2-weeks-on, 1-week-off roster. You're home for about 17 weeks a year. The rest of the time, you're site. Most gyms charge a freeze fee of $5–$10 a week on top, or they don't offer it at all.</p>
-
-  <p>Best case: you pay $15/week for 52 weeks. That's $780. You use the gym for maybe 4 months. The other 8 months? Gone. You're not getting that money back, and you probably don't feel great about renewing.</p>
-
-  <p>The gym doesn't care about your roster. You do.</p>
-
-  <div class="science-callout">A 2022 review in the <em>British Journal of Sports Medicine</em> (Momma et al.) found that just 30–60 minutes of strength training per week is linked to a <strong>10–20% reduction in all-cause mortality risk</strong>. That's a small weekly commitment. The barrier to getting it done is rarely motivation — it's consistency, and consistency is an environment problem. If your gym situation creates friction, you stop going.</div>
-
-  <h2>How CB247's FIFO freeze actually works</h2>
-  <span class="pas-label pas-s">S — Solution</span>
-
-  <p>CB247 has a genuine FIFO freeze — not a "contact us to discuss options" freeze, not a "$5/week admin fee" freeze. You pause it when you fly out. You resume it when you're home. No fees. No paperwork trail.</p>
-
-  <p>You pay $11.95 a week when you're active. When you're not in Perth, it stops. That's it.</p>
-
-  <div class="membership-card" style="border-color:#3FA69A;border-width:2px">
-    <h3>CB247 FIFO membership — what you get</h3>
-    <p>24/7 gym access at Malaga and Ellenbrook. Full weights floor. Reformer Pilates. ChasingRX functional training. Yoga. Spin. <strong>Sauna.</strong> <strong>Ice bath</strong> (Malaga). Kids Hub during staffed hours. Neon21 tanning. No lock-in contract.</p>
-    <div class="detail" style="color:#3FA69A;border-color:#3FA69A">$11.95/week active &nbsp;·&nbsp; FIFO freeze (pause anytime, no fee) &nbsp;·&nbsp; Two locations &nbsp;·&nbsp; No joining fee</div>
-  </div>
-
-  <h2>Recovery: the part most FIFO workers don't bother with until they have to</h2>
-
-  <p>Physical work on site beats you up. Long shifts, heavy lifting, concrete, heat. By the time you get home, training feels like the last thing you need. The issue is that passive rest alone doesn't clear the fatigue load — particularly the inflammation from physical work. Heat does.</p>
-
-  <div class="science-callout">A landmark 2015 study by Laukkanen et al. in <em>JAMA Internal Medicine</em> found that sauna use 4–7 times per week was associated with around <strong>40% lower all-cause mortality risk</strong> compared to once a week. The researchers attributed this to cardiovascular conditioning and reduced systemic inflammation. For people doing physically demanding work, the recovery argument stacks up independently of any fitness goal [verify exact figures against original study before publishing].</div>
-
-  <p>CB247 Malaga has a sauna and an ice bath — rare in a $11.95/week gym. If you've just done a 2-week fly-in and your body needs to reset, that's where you go first, before you touch a barbell.</p>
-
-  <h2>What to look for in a FIFO gym membership in Perth</h2>
-
-  <p>Not all "flexible" gym memberships are the same. These are the things worth checking before you sign anything:</p>
-
-  <ul>
-    <li><strong>Is the freeze free?</strong> A $5–$10/week admin fee on a freeze is just a lower membership price. Not really a freeze.</li>
-    <li><strong>How do you activate and pause?</strong> If the answer is "call reception during business hours," that's a problem when you're flying out at 4am on a Sunday.</li>
-    <li><strong>Is there a minimum active period?</strong> Some gyms require you to be active for a minimum of 4 weeks before you can freeze. Read the fine print.</li>
-    <li><strong>Is 24/7 access actually 24/7?</strong> Some gyms staff only during peak hours and lock you out at night. That's not 24/7 access. CB247 runs 24/7 with keycard entry.</li>
-    <li><strong>Does the location suit your Perth base?</strong> If you live in Ellenbrook, driving 40 minutes to Malaga for a recovery session isn't sustainable. CB247 has both.</li>
+<!-- ── NAV ── -->
+<nav class="site-nav">
+  <a href="https://www.chasingbetter247.com.au" class="nav-logo">
+    <img src="https://cdn.prod.website-files.com/65f906591b48de4de776d536/65f90da69102da8859d24b64_CB247-Logo.webp" alt="ChasingBetter247">
+  </a>
+  <ul class="nav-links">
+    <li><a href="https://www.chasingbetter247.com.au/timetable">Timetable</a></li>
+    <li><a href="https://www.chasingbetter247.com.au/classes">Classes</a></li>
+    <li><a href="https://www.chasingbetter247.com.au/bookings">Bookings</a></li>
+    <li><a href="https://www.chasingbetter247.com.au/blog">Blog</a></li>
+    <li><a href="https://www.chasingbetter247.com.au/contact-us">Contact</a></li>
   </ul>
-
-  <p>$11.95 a week, no contract, FIFO freeze built in. Come in on your next home swing. Have a look around. If it doesn't suit, you haven't signed anything.</p>
-
-  <div class="cta-block">
-    <p>24/7 access · Sauna · Ice Bath · Reformer Pilates · Kids Hub · FIFO Freeze</p>
-    <span class="cta-price">$11.95/week</span>
-    <p>No joining fee. Pause when you're on site. Two locations: Malaga + Ellenbrook.</p>
-    <a class="cta-btn" href="https://chasingbetter247.com.au/memberships">Join CB247 — FIFO Freeze Included →</a>
-    <p class="cta-sub">No lock-in. No hard sell. Come in on your next home swing.</p>
+  <div class="nav-ctas">
+    <a href="https://www.chasingbetter247.com.au/member-login" class="btn-login">Member Login</a>
+    <a href="https://www.chasingbetter247.com.au/memberships" class="btn-signup">Sign Up</a>
   </div>
+</nav>
 
-  <div class="sources">
-    <strong>Sources</strong>
-    1. Momma H et al. "Muscle-strengthening activities are associated with lower risk and mortality in major non-communicable diseases." <em>British Journal of Sports Medicine</em>, 2022. doi:10.1136/bjsports-2021-105061<br>
-    2. Laukkanen T et al. "Association Between Sauna Bathing and Fatal Cardiovascular and All-Cause Mortality Events." <em>JAMA Internal Medicine</em>, 2015. doi:10.1001/jamainternmed.2014.8187<br>
-    <em>Note: Verify exact figures and mortality percentages against original studies before publishing. Flag for compliance-checker review — health benefit claims present.</em>
+<!-- ── HERO ── -->
+<div class="blog-hero">
+  <div class="hero-inner">
+    <div class="hero-category">Gym Guide &nbsp;·&nbsp; FIFO Perth</div>
+    <h1 class="hero-title">FIFO gym membership Perth: train on your roster</h1>
   </div>
-
-  <div class="int-links">
-    <strong>Internal linking suggestions</strong>
-    <a href="/memberships">CB247 memberships and pricing</a>
-    <a href="/blog/gym-malaga-comparison">Best gym in Malaga</a>
-    <a href="/facilities/recovery">Sauna and ice bath at CB247</a>
-  </div>
-
-  <div class="seo-note">Featured image prompt: Professional fitness photography, FIFO worker arriving at CB247 Malaga after a fly-in, casual gym gear, teal (#3FA69A) and white color scheme, early morning lighting, clean modern gym entry with keycard access visible, high resolution, documentary style.</div>
-
-  <p style="font-size:12px;color:#9ca3af;text-align:center;padding:0 24px 16px;max-width:760px;margin:0 auto">Always consult your doctor or healthcare professional before starting any new fitness or exercise program.</p>
-<div class="blog-footer">
-    seo-blog-generator skill · Draft · 3 Jun 2026 · Humanizer pass complete · Run compliance-checker before publishing
-  </div>
-
 </div>
+
+<!-- ── ARTICLE ── -->
+<section class="article-section">
+  <div class="article-inner">
+
+    <p class="lead">Most Perth gyms weren't built with a FIFO roster in mind. They run 12-month contracts, charge admin fees for freezes, and if you want to cancel early, there's paperwork. On a 2/1 swing, you end up paying for 52 weeks and training for roughly 34. CB247 has a genuine freeze built into every membership — no fee, no forms. This is what that actually looks like.</p>
+
+    <h2>What a bad gym contract actually costs a FIFO worker</h2>
+
+    <p>There are thousands of TikToks right now from people posting about paying $60 a month for a gym they haven't touched in six weeks. A lot of them are FIFO. The gym kept charging while they were in the Pilbara. That's the deal most Perth gyms offer: pay whether you train or not.</p>
+
+    <p>Say you sign a standard contract at $15 a week. On a 2-weeks-on, 1-week-off roster, you're home for about 17 weeks a year. A freeze that costs $5 to $10 a week isn't really a freeze. Best case, you're paying for a facility you use four months out of twelve. The other eight are gone.</p>
+
+    <div class="science-block">
+      <p>A 2022 review in the <em>British Journal of Sports Medicine</em> (Momma et al.) found that just 30–60 minutes of strength training per week is linked to a <strong>10–20% reduction in all-cause mortality risk</strong>. The barrier to consistency for FIFO workers isn't motivation — it's logistics. If your gym situation creates friction every swing, you stop going. That's an environment problem, not a willpower problem.</p>
+    </div>
+
+    <h2>How CB247's FIFO freeze actually works</h2>
+
+    <p>CB247 has a genuine FIFO freeze — not a "contact us to discuss options" freeze, not a "$5/week admin fee" freeze. You pause it when you fly out. You resume it when you're home. No fees, no paperwork, no minimum active period.</p>
+
+    <p>You pay for the weeks you're actually in Perth. When you're not here, it stops. That's it.</p>
+
+    <div class="feature-card">
+      <h3>Base membership — what's included at $11.95/week</h3>
+      <p>24/7 gym access via keycard at both Malaga and Ellenbrook. Full weights and cardio floor. Neon21 tanning. No lock-in contract. No joining fee. FIFO freeze built in — pause any time, no fee.</p>
+      <p style="margin-top:10px">Both locations are on the same membership. You can train at either without upgrading or paying extra.</p>
+      <div class="feature-note">Malaga &nbsp;·&nbsp; Ellenbrook &nbsp;·&nbsp; Same base membership &nbsp;·&nbsp; FIFO freeze included</div>
+    </div>
+
+    <div class="feature-card">
+      <h3>Sauna + ice bath — recovery add-on</h3>
+      <p>CB247 has a sauna and cold water ice bath at both Malaga and Ellenbrook. For members doing physically demanding work on site, the recovery argument is real — heat exposure and cold water immersion help clear the fatigue load that passive rest alone doesn't touch.</p>
+      <p style="margin-top:10px">Sauna + ice bath access is available as an add-on to your base membership. An extra fee applies. Ask at reception for current rates.</p>
+      <div class="feature-note">Malaga &nbsp;·&nbsp; Ellenbrook &nbsp;·&nbsp; Add-on &nbsp;·&nbsp; Extra fee applies</div>
+    </div>
+
+    <div class="feature-card">
+      <h3>Kids Hub — childminding add-on</h3>
+      <p>On-site supervised Kids Hub during staffed hours. If you've got kids and need to train without arranging separate childcare, this solves that. Kids Hub access is available as an add-on — an extra fee applies on top of the base membership. Hours vary by location; confirm at reception.</p>
+      <div class="feature-note">Add-on &nbsp;·&nbsp; Extra fee applies &nbsp;·&nbsp; Staffed hours only</div>
+    </div>
+
+    <div class="feature-card">
+      <h3>Classes — Reformer Pilates, ChasingRX, yoga, spin</h3>
+      <p>CB247 runs Reformer Pilates, ChasingRX functional training, yoga, and spin. These are available as add-ons to your base membership, each with a separate fee. You can pick what suits your training without committing to all of them.</p>
+      <div class="feature-note">Add-ons &nbsp;·&nbsp; Separate fee per class type &nbsp;·&nbsp; Ask at reception for rates</div>
+    </div>
+
+    <h2>What to look for in a FIFO gym membership in Perth</h2>
+
+    <p>Not all "flexible" gym memberships are the same. Worth checking before you sign anything:</p>
+
+    <ul>
+      <li><strong>Is the freeze free?</strong> A $5–$10/week admin fee on a freeze is just a lower membership price. Not a real freeze.</li>
+      <li><strong>How do you activate and pause?</strong> If the answer is "call reception during business hours," that's a problem when you're flying out at 4am on a Sunday.</li>
+      <li><strong>Is there a minimum active period?</strong> Some gyms require four weeks active before you can freeze. Read the fine print.</li>
+      <li><strong>Is 24/7 access actually 24/7?</strong> Some gyms staff only during peak hours and lock you out at night. CB247 runs keycard entry around the clock.</li>
+      <li><strong>Does the location suit your Perth base?</strong> If you live in Ellenbrook, a 40-minute drive to Malaga isn't sustainable. CB247 has both.</li>
+    </ul>
+
+    <h2>Recovery: the part most FIFO workers skip until they have to stop</h2>
+
+    <p>Physical work on site beats you up. Long shifts, heavy lifting, concrete, heat. By the time you're home, training feels like the last thing you need. The issue is that passive rest doesn't clear the inflammation load from physical work — heat does.</p>
+
+    <div class="science-block">
+      <p>A landmark 2015 study by Laukkanen et al. in <em>JAMA Internal Medicine</em> found that sauna use four to seven times per week was associated with significantly lower cardiovascular risk compared to once per week. The researchers attributed this partly to cardiovascular conditioning and reduced systemic inflammation. For people doing physically demanding work, the recovery case stacks up independently of any fitness goal. [Verify exact figures against original paper before publishing.]</p>
+    </div>
+
+    <p>No lock-in contract means you're not committing to anything long-term. Come in on your next home swing, have a look at the facility. If it fits your roster, join. If it doesn't, walk away — no hard sell.</p>
+
+    <!-- CTA -->
+    <div class="cta-section">
+      <p>24/7 access &nbsp;·&nbsp; No lock-in &nbsp;·&nbsp; FIFO freeze built in &nbsp;·&nbsp; No joining fee</p>
+      <div class="cta-heading">Start Your Free Trial at CB247</div>
+      <p>Pause when you fly out. Resume when you're home. No admin fee.</p>
+      <a class="cta-btn" href="https://www.chasingbetter247.com.au/memberships">Join CB247 — FIFO Freeze Included</a>
+      <p class="cta-sub">Malaga + Ellenbrook. Come in on your next home swing.</p>
+    </div>
+
+    <!-- Sources -->
+    <div class="sources-block">
+      <strong>Sources</strong>
+      1. Momma, H., Kawakami, R., Honda, T., &amp; Sawada, S.S. (2022). Muscle-strengthening activities are associated with lower risk and mortality in major non-communicable diseases. <em>British Journal of Sports Medicine</em>, 56(13), 755–763.<br><br>
+      2. Laukkanen, T., Khan, H., Zaccardi, F., &amp; Laukkanen, J.A. (2015). Association Between Sauna Bathing and Fatal Cardiovascular and All-Cause Mortality Events. <em>JAMA Internal Medicine</em>, 175(4), 542–548. [Verify exact figures before publishing.]
+    </div>
+
+    <p class="disclaimer">Always consult your doctor or healthcare professional before starting any new fitness or exercise program.</p>
+
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div>
+      <a href="https://www.chasingbetter247.com.au">
+        <img src="https://cdn.prod.website-files.com/65f906591b48de4de776d536/65f90da69102da8859d24b64_CB247-Logo.webp" alt="ChasingBetter247" style="height:32px;margin-bottom:12px;filter:brightness(0) invert(1);display:block">
+      </a>
+      <p class="footer-tagline">Malaga &amp; Ellenbrook, Perth WA<br>24/7 gym, classes, recovery &amp; more.<br>AlwaysBetter.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <div class="footer-col-label">Train</div>
+        <a href="https://www.chasingbetter247.com.au/classes">Classes</a>
+        <a href="https://www.chasingbetter247.com.au/timetable">Timetable</a>
+        <a href="https://www.chasingbetter247.com.au/personal-training">Personal Training</a>
+        <a href="https://www.chasingbetter247.com.au/reformer-pilates">Reformer Pilates</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-label">Membership</div>
+        <a href="https://www.chasingbetter247.com.au/memberships">Join Now</a>
+        <a href="https://www.chasingbetter247.com.au/memberships">FIFO Freeze</a>
+        <a href="https://www.chasingbetter247.com.au/kids-hub">Kids Hub</a>
+        <a href="https://www.chasingbetter247.com.au/recovery">Sauna &amp; Ice Bath</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-label">More</div>
+        <a href="https://www.chasingbetter247.com.au/blog">Blog</a>
+        <a href="https://www.chasingbetter247.com.au/contact-us">Contact</a>
+        <a href="https://www.chasingbetter247.com.au/careers">Careers</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 ChasingBetter247. All rights reserved.</span>
+    <span>reception@chasingbetter247.com.au</span>
+  </div>
+</footer>
 
 <script>
-function setStatus(s){
-  const pill=document.getElementById('rb-pill');
-  const notes=document.getElementById('review-notes');
-  pill.className='rb-pill show s-'+s;
-  pill.textContent=s.charAt(0).toUpperCase()+s.slice(1);
-  notes.className='review-notes'+(s==='adjustment'?' show':'');
-  localStorage.setItem('blog-fifo-status',s);
+const RK='cb247-review-fifo';
+function setStatus(val){
+  const d=JSON.parse(localStorage.getItem(RK)||'{}');d.status=val;localStorage.setItem(RK,JSON.stringify(d));
+  const lb={approved:'Approved',adjustment:'Needs Adjustment',rejected:'Rejected'};
+  const cl={approved:'s-approved',adjustment:'s-adjustment',rejected:'s-rejected'};
+  const p=document.getElementById('rb-pill');p.textContent=lb[val];p.className='rb-pill show '+cl[val];
+  document.getElementById('review-notes').className='review-notes'+(val==='adjustment'||val==='rejected'?' show':'');
 }
 function saveNote(){
-  const txt=document.getElementById('review-text').value;
-  localStorage.setItem('blog-fifo-note',txt);
-  const f=document.getElementById('saved-flash');
-  f.style.display='inline';
-  setTimeout(()=>f.style.display='none',2000);
+  const d=JSON.parse(localStorage.getItem(RK)||'{}');d.notes=document.getElementById('review-text').value;
+  localStorage.setItem(RK,JSON.stringify(d));
+  const f=document.getElementById('saved-flash');f.style.display='inline';setTimeout(()=>f.style.display='none',2500);
 }
-window.addEventListener('load',()=>{
-  const s=localStorage.getItem('blog-fifo-status');
-  const n=localStorage.getItem('blog-fifo-note');
-  if(s)setStatus(s);
-  if(n)document.getElementById('review-text').value=n;
-});
+(function(){const d=JSON.parse(localStorage.getItem(RK)||'{}');if(d.status)setStatus(d.status);if(d.notes)document.getElementById('review-text').value=d.notes;})();
 </script>
 </body>
 </html>
