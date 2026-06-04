@@ -330,7 +330,7 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "04 Jun 2026, 16:52",
+  "generated": "04 Jun 2026, 17:05",
   "report_period": "28 May \u2013 3 Jun 2026",
   "refresh_ts": "4 Jun 2026, 16:35 AWST",
   "timestamps": {
@@ -4031,110 +4031,55 @@ function renderMeta() {
   const week  = meta.week_label  || '25–31 May 2026';
   // rankBadge and tierBadge are global helpers (defined above)
 
-  // Derived totals (CSV-based — may be empty if no CSV exports present)
-  const totalSpend   = (malC.spend||0) + (ellC.spend||0);
-  const totalResults = (malC.results||0) + (ellC.results||0);
-  const totalReach   = (malC.reach||0) + (ellC.reach||0);
-  const blendedCPR   = totalResults > 0 ? (totalSpend / totalResults).toFixed(2) : '–';
-  const prevSpend    = (malP.spend||0);
-  const spendChg     = prevSpend > 0 ? ((totalSpend - prevSpend) / prevSpend * 100).toFixed(1) : null;
-
-  let html = '';
-
-  // ── Paid Meta Ads — Graph API data (always fresh) ──────────────────────────
+  // Graph API paid data — used as fallback when no CSV exports are present
   const paid     = D.meta || {};
-  const paidComb = paid.combined || {};
+  const paidComb = paid.combined   || {};
   const paidMal  = paid.malaga_paid || {};
   const paidEll  = paid.ell_paid   || {};
   const paidAds  = paid.top_ads    || [];
-  const paidHist = paid.history    || [];
-  if (paid.total_spend > 0 || paidComb.spend > 0) {
-    const pulledBadge = paid.data_pulled_at
-      ? `<span style="font-size:11px;font-weight:600;background:rgba(63,166,154,.12);color:var(--teal);padding:2px 10px;border-radius:99px;margin-left:8px">${paid.data_pulled_at}</span>`
-      : '';
-    html += `<div style="border:1.5px solid var(--teal);border-radius:10px;padding:16px 20px;margin-bottom:24px">
-      <div style="font-weight:700;font-size:14px;color:var(--teal);margin-bottom:12px">
-        Paid Meta Ads — Graph API${pulledBadge}
-      </div>
-      <div class="kpi-grid cols-4 mb" style="margin-bottom:12px">
-        ${kpiCard('','Total Spend',fmt(paidComb.spend||paid.total_spend,'$2'),null,paid.week_label||'Latest week')}
-        ${kpiCard('','Impressions',fmt(paidComb.impr,'n'),null,'CTR: '+(paidComb.ctr||0)+'%')}
-        ${kpiCard('','Clicks',fmt(paidComb.clicks,'n'),null,'CPC: '+fmt(paidComb.cpc,'$2'))}
-        ${kpiCard('','Reach',fmt(paidComb.reach,'n'),null,'CPM: '+fmt(paidComb.cpm,'$2'))}
-      </div>
-      <div class="grid-2" style="margin-bottom:12px">
-        <div class="card" style="padding:12px 16px">
-          <div class="card-h">Malaga</div>
-          <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(paidMal.spend,'$2')}</span></div>
-          <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-val">${fmt(paidMal.impr,'n')}</span></div>
-          <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(paidMal.clicks,'n')}</span></div>
-          <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val">${(paidMal.ctr||0)}%</span></div>
-          <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${fmt(paidMal.cpm,'$2')}</span></div>
-          <div class="stat-row"><span class="stat-label">CPC</span><span class="stat-val">${fmt(paidMal.cpc,'$2')}</span></div>
-          <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(paidMal.reach,'n')}</span></div>
-        </div>
-        <div class="card" style="padding:12px 16px">
-          <div class="card-h">Ellenbrook</div>
-          <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(paidEll.spend,'$2')}</span></div>
-          <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-val">${fmt(paidEll.impr,'n')}</span></div>
-          <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(paidEll.clicks,'n')}</span></div>
-          <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val">${(paidEll.ctr||0)}%</span></div>
-          <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${fmt(paidEll.cpm,'$2')}</span></div>
-          <div class="stat-row"><span class="stat-label">CPC</span><span class="stat-val">${fmt(paidEll.cpc,'$2')}</span></div>
-          <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(paidEll.reach,'n')}</span></div>
-        </div>
-      </div>
-      ${paidAds.length > 0 ? `
-      <div class="card" style="padding:12px 16px;margin-bottom:0">
-        <div class="card-h">Top Ads — ${paid.week_label||'Latest week'}</div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead><tr style="border-bottom:1px solid var(--border)">
-            <th style="text-align:left;padding:4px 6px;color:var(--muted);font-weight:600">Ad</th>
-            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">Spend</th>
-            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">Impr</th>
-            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">Clicks</th>
-            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">CTR</th>
-            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">CPC</th>
-          </tr></thead>
-          <tbody>
-          ${paidAds.map(a=>`<tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:5px 6px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.name||''}">${(a.name||'').substring(0,45)}${(a.name||'').length>45?'…':''}</td>
-            <td style="text-align:right;padding:5px 6px">${fmt(a.spend,'$2')}</td>
-            <td style="text-align:right;padding:5px 6px">${fmt(a.impr,'n')}</td>
-            <td style="text-align:right;padding:5px 6px">${fmt(a.clicks,'n')}</td>
-            <td style="text-align:right;padding:5px 6px">${a.ctr||0}%</td>
-            <td style="text-align:right;padding:5px 6px">${fmt(a.cpc,'$2')}</td>
-          </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>` : ''}
-    </div>`;
-  }
 
-  // ── KPI cards (CSV-based organic social — shows when CSV exports available) ──
+  // If no CSV data, override variables with Graph API figures
+  const csvEmpty = (malC.spend||0) + (ellC.spend||0) === 0;
+  const totalSpend   = csvEmpty ? (paidComb.spend  || paid.total_spend || 0) : (malC.spend||0) + (ellC.spend||0);
+  const totalResults = csvEmpty ? (paidComb.clicks || 0) : (malC.results||0) + (ellC.results||0);
+  const totalReach   = csvEmpty ? (paidComb.reach  || 0) : (malC.reach||0) + (ellC.reach||0);
+  const blendedCPR   = totalResults > 0 ? (totalSpend / totalResults).toFixed(2) : '–';
+  const prevSpend    = (malP.spend||0);
+  const spendChg     = prevSpend > 0 ? ((totalSpend - prevSpend) / prevSpend * 100).toFixed(1) : null;
+  const dispWeek     = csvEmpty ? (paid.week_label || week) : week;
+
+  // Per-location overrides from API when no CSV
+  const malSpend = csvEmpty ? (paidMal.spend||0) : (malC.spend||0);
+  const ellSpend = csvEmpty ? (paidEll.spend||0) : (ellC.spend||0);
+  const malCPC   = csvEmpty ? (paidMal.cpc  || 0) : (malC.cpr || 0);
+  const ellCPC   = csvEmpty ? (paidEll.cpc  || 0) : (ellC.cpr || 0);
+  const malCTR   = csvEmpty ? (paidMal.ctr  || 0) : (malC.ctr || 0);
+  const ellCTR   = csvEmpty ? (paidEll.ctr  || 0) : (ellC.ctr || 0);
+  const malCPM   = csvEmpty ? (paidMal.cpm  || 0) : (malC.cpm || 0);
+  const ellCPM   = csvEmpty ? (paidEll.cpm  || 0) : (ellC.cpm || 0);
+  const activeAds = csvEmpty ? paidAds : ads;
+
+  let html = '';
+
+  // ── KPI cards ──────────────────────────────────────────────────────────────
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Total Spend','$'+totalSpend.toFixed(2),spendChg?parseFloat(spendChg):null,'Both locations this week')}
-    ${kpiCard('','Total Results',totalResults||'–',null,'Link clicks / leads across all ads')}
-    ${kpiCard('','Malaga CPR',malC.cpr?'$'+malC.cpr:'–',null,'Prev: $'+(malP.cpr||'–')+' — '+(malC.cpr&&malP.cpr?(malC.cpr>malP.cpr?'⚠ worse this week':'improved'):''),malC.cpr&&malP.cpr?(malC.cpr>malP.cpr?'red':'green'):'')}
-    ${kpiCard('','Ellenbrook CPR',ellC.cpr?'$'+ellC.cpr:'–',null,ellC.ctr+'% CTR · $'+ellC.cpm+' CPM','green')}
+    ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),spendChg?parseFloat(spendChg):null,dispWeek+' · Both locations')}
+    ${kpiCard('','Clicks',fmt(totalResults,'n'),null,'Reach: '+fmt(totalReach,'n'))}
+    ${kpiCard('','Malaga CPC',malCPC?fmt(malCPC,'$2'):'–',null,fmt(malSpend,'$2')+' spend · '+malCTR+'% CTR')}
+    ${kpiCard('','Ellenbrook CPC',ellCPC?fmt(ellCPC,'$2'):'–',null,fmt(ellSpend,'$2')+' spend · '+ellCTR+'% CTR')}
   </div>`;
 
   // ── 2. Insight strip — 2 cards only (red + teal) ────────────────────────
-  const starAd = ads.find(a=>a.tier==='star');
-  const poorAds = ads.filter(a=>a.tier==='poor');
-  html += sectionTitle('Key Observations — ' + week);
+  const starAd  = activeAds.find(a=>a.tier==='star');
+  const poorAds = activeAds.filter(a=>a.tier==='poor');
+  html += sectionTitle('Key Observations — ' + dispWeek);
   html += `<div class="grid-2 mb">
-    <div class="insight ${malC.cpr&&malP.cpr&&malC.cpr>malP.cpr?'red':'amber'}">
-      <div class="insight-label">⚠️ Malaga CPR ${malC.cpr&&malP.cpr&&malC.cpr>malP.cpr?'Rising — Ad Fatigue':'Monitor — Watch Weekly Trend'}</div>
-      ${malC.cpr&&malP.cpr&&malC.cpr>malP.cpr
-        ? `Malaga CPR rose from <b>$${malP.cpr} → $${malC.cpr} (+${((malC.cpr-malP.cpr)/malP.cpr*100).toFixed(0)}%)</b> WoW — same spend, fewer results.
-          Root cause: ad fatigue on underperforming creatives.
-          <br><br>${poorAds.length>0?`<b>Pause now:</b> ${poorAds.map(a=>`"${a.ad_name}"`).join(', ')} — Below average signal(s). Meta penalises delivery.`:'Refresh Average-tier ads — Meta quality signals degrade with frequency cap.'}
-          <br><br><b>Ellenbrook</b> CPR: $${ellC.cpr||'–'} · CTR: ${ellC.ctr||'–'}% — underinvested. Add $5–10/day and test 1 hyperlocal creative.`
-        : `Malaga CPR: <b>$${malC.cpr||'–'}</b> · Ellenbrook CPR: <b>$${ellC.cpr||'–'}</b>.
-          ${poorAds.length>0?`<b>⚠ ${poorAds.length} poor-tier ad${poorAds.length>1?'s':''}</b> detected — pause and refresh.`:'No poor-tier ads. Refresh Average-scoring ads every 3–4 weeks before signal decay.'}
-          <br><br>Total reach: ${fmt(totalReach,'n')} across both locations.`
-      }
+    <div class="insight amber">
+      <div class="insight-label">⚠️ Malaga CPC — Monitor Weekly Trend</div>
+      Malaga CPC: <b>${malCPC?fmt(malCPC,'$2'):'–'}</b> · CTR: ${malCTR}% · CPM: ${fmt(malCPM,'$2')}.
+      ${poorAds.length>0?`<b>⚠ ${poorAds.length} poor-tier ad${poorAds.length>1?'s':''}</b> detected — pause and refresh.`:'Monitor ad fatigue — refresh creatives every 3–4 weeks before signal decay.'}
+      <br><br>Ellenbrook CPC: <b>${ellCPC?fmt(ellCPC,'$2'):'–'}</b> · CTR: ${ellCTR}% · Spend: ${fmt(ellSpend,'$2')} — underinvested. Add $5–10/day and test 1 hyperlocal creative.
+      <br><br>Total reach: ${fmt(totalReach,'n')} across both locations.
     </div>
     <div class="insight teal">
       <div class="insight-label">✅ ${starAd?'Star Creative — Scale Immediately':'Focus Budget on Top-Performing Ads'}</div>
@@ -4151,83 +4096,82 @@ function renderMeta() {
   </div>`;
 
   // ── WoW comparison — Malaga ─────────────────────────────────────────────────
+  const malClicks = csvEmpty ? (paidMal.clicks||0) : (malC.clicks||0);
+  const malReach  = csvEmpty ? (paidMal.reach||0)  : (malC.reach||0);
+  const malImpr   = csvEmpty ? (paidMal.impr||0)   : (malC.impr||0);
   html += sectionTitle('Malaga — Week-on-Week Comparison');
   html += `<div class="card mb"><table><thead><tr>
-    <th>Metric</th><th class="num">This Week (${week})</th><th class="num">Prior Week</th><th class="num">Change</th>
+    <th>Metric</th><th class="num">This Week (${dispWeek})</th><th class="num">Prior Week</th><th class="num">Change</th>
   </tr></thead><tbody>
-    <tr><td>Spend</td><td class="num">$${(malC.spend||0).toFixed(2)}</td><td class="num">$${(malP.spend||0).toFixed(2)}</td>
-      <td class="num ${Math.abs((malC.spend||0)-(malP.spend||0))<1?'':'flat'}">${malP.spend?((malC.spend-malP.spend)/malP.spend*100).toFixed(1)+'%':'–'}</td></tr>
-    <tr><td>Clicks</td><td class="num">${fmt(malC.clicks||0,'n')}</td><td class="num">${fmt(malP.clicks||0,'n')}</td>
-      <td class="num ${malC.clicks<malP.clicks?'bad':'good'}">${malP.clicks?((malC.clicks-malP.clicks)/malP.clicks*100).toFixed(1)+'%':'–'}</td></tr>
-    <tr><td>Reach</td><td class="num">${fmt(malC.reach||0,'n')}</td><td class="num">${fmt(malP.reach||0,'n')}</td>
-      <td class="num">${malP.reach?((malC.reach-malP.reach)/malP.reach*100).toFixed(1)+'%':'–'}</td></tr>
-    <tr><td>Results</td><td class="num">${malC.results||'–'}</td><td class="num">${malP.results||'–'}</td><td class="num">–</td></tr>
-    <tr><td>Cost per Result (CPR)</td>
-      <td class="num ${malC.cpr>malP.cpr?'bad':'good'}">$${malC.cpr||'–'}</td>
-      <td class="num">$${malP.cpr||'–'}</td>
-      <td class="num ${malC.cpr>malP.cpr?'bad':'good'}">${malC.cpr&&malP.cpr?((malC.cpr-malP.cpr)/malP.cpr*100).toFixed(1)+'%':'–'}</td></tr>
-    <tr><td>CTR</td><td class="num">${malC.ctr||'–'}%</td><td class="num">–</td><td class="num">–</td></tr>
-    <tr><td>CPM</td><td class="num">$${malC.cpm||'–'}</td><td class="num">–</td><td class="num">–</td></tr>
+    <tr><td>Spend</td><td class="num">${fmt(malSpend,'$2')}</td><td class="num">$${(malP.spend||0).toFixed(2)}</td>
+      <td class="num">${malP.spend?((malSpend-malP.spend)/malP.spend*100).toFixed(1)+'%':'–'}</td></tr>
+    <tr><td>Clicks</td><td class="num">${fmt(malClicks,'n')}</td><td class="num">${fmt(malP.clicks||0,'n')}</td>
+      <td class="num ${malClicks<(malP.clicks||0)?'bad':'good'}">${malP.clicks?((malClicks-malP.clicks)/malP.clicks*100).toFixed(1)+'%':'–'}</td></tr>
+    <tr><td>Reach</td><td class="num">${fmt(malReach,'n')}</td><td class="num">${fmt(malP.reach||0,'n')}</td>
+      <td class="num">${malP.reach?((malReach-malP.reach)/malP.reach*100).toFixed(1)+'%':'–'}</td></tr>
+    <tr><td>Impressions</td><td class="num">${fmt(malImpr,'n')}</td><td class="num">–</td><td class="num">–</td></tr>
+    <tr><td>CPC</td><td class="num ${malCPC>0.5?'bad':'good'}">${malCPC?fmt(malCPC,'$2'):'–'}</td><td class="num">–</td><td class="num">–</td></tr>
+    <tr><td>CTR</td><td class="num">${malCTR||'–'}%</td><td class="num">–</td><td class="num">–</td></tr>
+    <tr><td>CPM</td><td class="num">$${malCPM||'–'}</td><td class="num">–</td><td class="num">–</td></tr>
   </tbody></table></div>`;
 
   // ── Ad performance table ────────────────────────────────────────────────────
-  html += sectionTitle('Active Ads — Quality Ranking & Performance · ' + week);
+  html += sectionTitle('Active Ads — Performance · ' + dispWeek);
   html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
     <th>Ad Creative</th><th>Location</th>
     <th class="num">Spend</th><th class="num">Reach</th>
     <th class="num">Impressions</th><th class="num">CTR</th><th class="num">CPM</th>
-    <th class="num">Results</th><th class="num">CPR</th>
+    <th class="num">Clicks</th><th class="num">CPC</th>
     <th>Quality</th><th>Engagement</th><th>Conv Rate</th><th>Tier</th>
   </tr></thead><tbody>
-  ${ads.map(a=>{
-    const cpr = a.results>0 ? (a.spend/a.results).toFixed(2) : '–';
+  ${activeAds.map(a=>{
+    const cpc = a.clicks>0 ? (a.spend/a.clicks).toFixed(2) : (a.cpc||'–');
     const rowStyle = a.tier==='star' ? 'style="background:#f0fdf4"' : a.tier==='poor' ? 'style="background:#fff5f5"' : '';
+    const adName = a.ad_name || a.name || '';
     return `<tr ${rowStyle}>
-      <td style="font-size:11px;max-width:200px;word-break:break-word">${a.ad_name}</td>
-      <td><span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${a.location}</span></td>
-      <td class="num">$${a.spend.toFixed(2)}</td>
-      <td class="num">${fmt(a.reach,'n')}</td>
-      <td class="num">${fmt(a.impressions||0,'n')}</td>
-      <td class="num ${a.ctr>=3?'good':a.ctr<1?'bad':''}">${a.ctr}%</td>
-      <td class="num ${a.cpm>15?'bad':''}">${a.cpm>0?'$'+a.cpm:'–'}</td>
-      <td class="num ${a.results>0?'good':''}">${a.results||'–'}</td>
-      <td class="num ${a.results>0&&(a.spend/a.results)<0.5?'good':''}">${cpr!=='–'?'$'+cpr:'–'}</td>
+      <td style="font-size:11px;max-width:200px;word-break:break-word" title="${adName}">${adName.substring(0,60)}${adName.length>60?'…':''}</td>
+      <td><span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 5px;border-radius:3px">${a.location||'–'}</span></td>
+      <td class="num">${fmt(a.spend,'$2')}</td>
+      <td class="num">${fmt(a.reach||0,'n')}</td>
+      <td class="num">${fmt(a.impr||a.impressions||0,'n')}</td>
+      <td class="num ${(a.ctr||0)>=3?'good':(a.ctr||0)<1?'bad':''}">${a.ctr||0}%</td>
+      <td class="num ${(a.cpm||0)>15?'bad':''}">${(a.cpm||0)>0?fmt(a.cpm,'$2'):'–'}</td>
+      <td class="num">${fmt(a.clicks||0,'n')}</td>
+      <td class="num">${cpc!=='–'?'$'+cpc:'–'}</td>
       <td>${rankBadge(a.quality)}</td>
       <td>${rankBadge(a.eng_rank)}</td>
       <td>${rankBadge(a.conv_rank)}</td>
       <td>${tierBadge(a.tier)}</td>
     </tr>`;
-  }).join('')||'<tr><td colspan="13" style="color:var(--muted);padding:16px">No active ads — upload Meta CSV files to load ad data.</td></tr>'}
-  </tbody></table>
-  <div style="font-size:10px;color:var(--muted);margin-top:8px;padding:0 4px">
-    <b>Tier logic:</b> ⭐ Star = ≥2 Above average ranking signals. Good = 1 Above, no Below. Poor = any Below average signal. Average = remainder.
-    Meta's algorithm gives better placement and lower CPMs to higher-tier ads — poor-tier ads erode over time.
-  </div></div>`;
+  }).join('')||'<tr><td colspan="13" style="color:var(--muted);padding:16px">No ad data available.</td></tr>'}
+  </tbody></table></div>`;
 
   // ── Location summary cards ────────────────────────────────────────────────
+  const ellClicks = csvEmpty ? (paidEll.clicks||0) : (ellC.clicks||0);
+  const ellReach  = csvEmpty ? (paidEll.reach||0)  : (ellC.reach||0);
   html += sectionTitle('Location Summary');
   html += `<div class="grid-2 mb">
     <div class="card">
-      <div class="card-h">Malaga — ${week}</div>
-      <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">$${(malC.spend||0).toFixed(2)}</span></div>
-      <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(malC.clicks||0,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(malC.reach||0,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val ${(malC.ctr||0)>=3?'good':(malC.ctr||0)<1?'bad':''}">${malC.ctr||'–'}%</span></div>
-      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${malC.cpm?'$'+malC.cpm:'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">CPR</span><span class="stat-val ${malC.cpr&&malP.cpr?(malC.cpr>malP.cpr?'bad':'good'):''}">${malC.cpr?'$'+malC.cpr:'–'} <span style="font-size:10px;color:var(--muted)">(prev: $${malP.cpr||'–'})</span></span></div>
-      <div class="stat-row"><span class="stat-label">Results</span><span class="stat-val">${malC.results||'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">Active ads</span><span class="stat-val">${ads.filter(a=>a.location==='Malaga').length}</span></div>
+      <div class="card-h">Malaga — ${dispWeek}</div>
+      <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(malSpend,'$2')}</span></div>
+      <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(malClicks,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(malReach,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-val">${fmt(malImpr,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val ${malCTR>=3?'good':malCTR<1?'bad':''}">${malCTR||'–'}%</span></div>
+      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${malCPM?fmt(malCPM,'$2'):'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">CPC</span><span class="stat-val">${malCPC?fmt(malCPC,'$2'):'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">Active ads</span><span class="stat-val">${activeAds.filter(a=>(a.location||'').includes('Malaga')).length}</span></div>
     </div>
     <div class="card">
-      <div class="card-h">Ellenbrook — ${week}</div>
-      <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">$${(ellC.spend||0).toFixed(2)}</span></div>
-      <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(ellC.clicks||0,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(ellC.reach||0,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val ${(ellC.ctr||0)>=3?'good':(ellC.ctr||0)<1?'bad':''}">${ellC.ctr||'–'}%</span></div>
-      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${ellC.cpm?'$'+ellC.cpm:'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">CPR</span><span class="stat-val">${ellC.cpr?'$'+ellC.cpr:'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">Results</span><span class="stat-val">${ellC.results||'–'}</span></div>
-      <div class="stat-row"><span class="stat-label">Active ads</span><span class="stat-val">${ads.filter(a=>a.location==='Ellenbrook').length}</span></div>
+      <div class="card-h">Ellenbrook — ${dispWeek}</div>
+      <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(ellSpend,'$2')}</span></div>
+      <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(ellClicks,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(ellReach,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-val">${fmt(paidEll.impr||0,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val ${ellCTR>=3?'good':ellCTR<1?'bad':''}">${ellCTR||'–'}%</span></div>
+      <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${ellCPM?fmt(ellCPM,'$2'):'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">CPC</span><span class="stat-val">${ellCPC?fmt(ellCPC,'$2'):'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">Active ads</span><span class="stat-val">${activeAds.filter(a=>(a.location||'').includes('Ellenbrook')).length}</span></div>
     </div>
   </div>`;
 
