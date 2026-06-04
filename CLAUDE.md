@@ -116,11 +116,10 @@ Data lands in `state/ga4-data.json`, `state/gsc-data.json`, `state/google-ads-da
 
 ## Context Management
 
-**Model** (configured in `.claude/settings.json` — source of truth):
-- Default: `minimax/minimax-m2.7` via OpenRouter — standard analysis, writing, SEO, content, ads
-- Subagent: `google/gemini-3-flash-preview` via OpenRouter — fast extraction, audience intel, content intel
-- Heavy: `gemma4:31b-cloud` via Ollama at `localhost:11434` — high-volume creative, strategic synthesis
-- Set via `CLAUDE_CODE_SUBAGENT_MODEL` and model env vars in `.claude/settings.json`
+**Model** (Claude Max subscription — configured in `.claude/settings.json`):
+- Default (Sonnet): `claude-sonnet-4-5` — analysis, writing, SEO, competitor, paid ads, research
+- Lightweight (Haiku): `claude-haiku-4-5` — fast extraction (audience intel, content intel, subagents)
+- Heavy (Opus): `claude-opus-4-5` — high-volume creative generation and strategic synthesis
 
 **Token budget**: 0–60% normal | 60–75% summarize older context | 75–85% use /compact | 85%+ STOP and run /compact
 **Auto-compact**: Enabled (`autoCompact: true`), threshold at 70% context window.
