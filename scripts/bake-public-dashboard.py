@@ -656,8 +656,23 @@ def build_data():
             _gads_error_msg = "api_error"
 
     gads_list  = ads.get("google_ads") or []
-    latest_ads = gads_list[0] if gads_list else {}
-    prev_ads   = gads_list[1] if len(gads_list) > 1 else {}
+
+    # Find last week with real (non-zero) spend — used as fallback when API errors
+    _last_good_gads = next(
+        (w for w in gads_list if safe_float((w.get("combined") or {}).get("spend")) > 0),
+        None
+    )
+    _last_good_gads_label = _last_good_gads.get("week_label", "") if _last_good_gads else ""
+
+    # When API is errored, fall back to the last known-good week so the page
+    # shows real figures instead of misleading zeros.
+    if _gads_has_error and _last_good_gads:
+        _lg_idx    = next((i for i, w in enumerate(gads_list) if w is _last_good_gads), 0)
+        latest_ads = _last_good_gads
+        prev_ads   = gads_list[_lg_idx + 1] if len(gads_list) > _lg_idx + 1 else {}
+    else:
+        latest_ads = gads_list[0] if gads_list else {}
+        prev_ads   = gads_list[1] if len(gads_list) > 1 else {}
     combined   = latest_ads.get("combined") or {}
     p_combined = prev_ads.get("combined") or {}
     ads_spend  = safe_float(combined.get("spend"))
@@ -959,12 +974,32 @@ def build_data():
         "timestamps": _ts,
         "status": status,
 
-        # Meta Ads — top-level key for Overview KPI card
+        # Meta Ads — top-level key for Overview KPI card + full paid data for Meta Ads page
         "meta": {
             "total_spend":  meta_total_spend,
             "malaga_spend": meta_mal_spend,
             "ell_spend":    meta_ell_spend,
             "week_label":   meta_ads_latest.get("week_label", ""),
+            # Full Graph API paid data — used by renderMeta() when CSV exports are absent
+            "data_pulled_at": _fmt_ts(
+                (ads or {}).get("last_updated") or (ads or {}).get("generated_at", "")
+            ),
+            "combined":   dict(meta_combined),
+            "malaga_paid": dict(meta_ads_latest.get("malaga") or {}),
+            "ell_paid":    dict(meta_ads_latest.get("ellenbrook") or {}),
+            "top_ads":     (meta_ads_latest.get("ads") or [])[:10],
+            "history": [
+                {
+                    "week_label": w.get("week_label", ""),
+                    "spend":  safe_float((w.get("combined") or {}).get("spend")),
+                    "clicks": safe_int((w.get("combined") or {}).get("clicks")),
+                    "impr":   safe_int((w.get("combined") or {}).get("impr")),
+                    "ctr":    safe_float((w.get("combined") or {}).get("ctr")),
+                    "cpm":    safe_float((w.get("combined") or {}).get("cpm")),
+                    "cpc":    safe_float((w.get("combined") or {}).get("cpc")),
+                }
+                for w in meta_ads_list[:4]
+            ],
         },
 
         # GA4
@@ -990,6 +1025,9 @@ def build_data():
         # Google Ads
         "google_ads": {
             "api_status": _gads_error_msg or "ok",
+            # When api_status != "ok", figures below are from last_good_week (fallback)
+            "last_good_week": _last_good_gads_label,
+            "data_pulled_at": _fmt_ts((ads or {}).get("generated_at", "")),
             "spend": ads_spend, "p_spend": p_spend,
             "cpa": ads_cpa, "clicks": ads_clicks, "convs": ad_convs,
             "spend_chg": pct_change(ads_spend, p_spend),
@@ -998,7 +1036,7 @@ def build_data():
             "trend_labels": trend_labels, "trend_spend": trend_spend, "trend_cpa": trend_cpa,
             "campaigns": [{"name": c.get("name","")[:35], "spend": safe_float(c.get("spend")), "clicks": safe_int(c.get("clicks")), "conv": safe_int(c.get("conv")), "cpa": safe_float(c.get("cpa")), "location": c.get("location","")} for c in campaigns if safe_float(c.get("spend") or 0) > 0][:10],
             "keywords": [],
-            "week_label": _report_period,
+            "week_label": _last_good_gads_label if _gads_error_msg else _report_period,
             "csv_clicks": 0,
             "csv_cost": 0,
             "csv_conv": 0,
@@ -2465,14 +2503,15 @@ function renderGAds() {
   // ── API status banner ────────────────────────────────────────────────────
   let statusBanner = '';
   if (ads.api_status === 'rate_limited') {
+    const lastWeek = ads.last_good_week ? ` — week of <strong>${ads.last_good_week}</strong>` : '';
+    const pulledAt = ads.data_pulled_at ? `<span style="margin-left:8px;font-size:11px;background:rgba(146,64,14,.12);padding:2px 8px;border-radius:99px;font-weight:600">${ads.data_pulled_at}</span>` : '';
     statusBanner = `<div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:20px;line-height:1">⏳</span>
       <div>
-        <div style="font-weight:700;color:#92400e;margin-bottom:4px">Google Ads API — Pending access upgrade</div>
-        <div style="font-size:12.5px;color:#78350f;line-height:1.6">
-          The Google Ads API developer token is on <strong>Explorer level</strong> — a very low daily quota that's currently exhausted.<br>
-          Data shown below is a placeholder and does not reflect real spend or clicks.<br>
-          <strong>Fix:</strong> Go to Google Ads → Tools &amp; Settings → API Centre → Apply for Basic Access. Approves in 1–2 days.
+        <div style="font-weight:700;color:#92400e;margin-bottom:6px">Google Ads API — Pending access upgrade${pulledAt}</div>
+        <div style="font-size:12.5px;color:#78350f;line-height:1.7">
+          API quota exhausted (Explorer-level token). Figures below are the <strong>last known real data${lastWeek}</strong> — not zeros.<br>
+          They will auto-update once Basic Access is approved and the next pull runs.<br>
+          <strong>Action:</strong> Google Ads → Tools &amp; Settings → API Centre → Apply for Basic Access (1–2 days).
         </div>
       </div>
     </div>`;
@@ -3068,7 +3107,7 @@ function renderMeta() {
   const week  = meta.week_label  || '25–31 May 2026';
   // rankBadge and tierBadge are global helpers (defined above)
 
-  // Derived totals
+  // Derived totals (CSV-based — may be empty if no CSV exports present)
   const totalSpend   = (malC.spend||0) + (ellC.spend||0);
   const totalResults = (malC.results||0) + (ellC.results||0);
   const totalReach   = (malC.reach||0) + (ellC.reach||0);
@@ -3078,7 +3117,77 @@ function renderMeta() {
 
   let html = '';
 
-  // ── KPI cards ──────────────────────────────────────────────────────────────
+  // ── Paid Meta Ads — Graph API data (always fresh) ──────────────────────────
+  const paid     = D.meta || {};
+  const paidComb = paid.combined || {};
+  const paidMal  = paid.malaga_paid || {};
+  const paidEll  = paid.ell_paid   || {};
+  const paidAds  = paid.top_ads    || [];
+  const paidHist = paid.history    || [];
+  if (paid.total_spend > 0 || paidComb.spend > 0) {
+    const pulledBadge = paid.data_pulled_at
+      ? `<span style="font-size:11px;font-weight:600;background:rgba(63,166,154,.12);color:var(--teal);padding:2px 10px;border-radius:99px;margin-left:8px">${paid.data_pulled_at}</span>`
+      : '';
+    html += `<div style="border:1.5px solid var(--teal);border-radius:10px;padding:16px 20px;margin-bottom:24px">
+      <div style="font-weight:700;font-size:14px;color:var(--teal);margin-bottom:12px">
+        Paid Meta Ads — Graph API${pulledBadge}
+      </div>
+      <div class="kpi-grid cols-4 mb" style="margin-bottom:12px">
+        ${kpiCard('','Total Spend',fmt(paidComb.spend||paid.total_spend,'$2'),null,paid.week_label||'Latest week')}
+        ${kpiCard('','Impressions',fmt(paidComb.impr,'n'),null,'CTR: '+(paidComb.ctr||0)+'%')}
+        ${kpiCard('','Clicks',fmt(paidComb.clicks,'n'),null,'CPC: '+fmt(paidComb.cpc,'$2'))}
+        ${kpiCard('','Reach',fmt(paidComb.reach,'n'),null,'CPM: '+fmt(paidComb.cpm,'$2'))}
+      </div>
+      <div class="grid-2" style="margin-bottom:12px">
+        <div class="card" style="padding:12px 16px">
+          <div class="card-h">Malaga</div>
+          <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(paidMal.spend,'$2')}</span></div>
+          <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-val">${fmt(paidMal.impr,'n')}</span></div>
+          <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(paidMal.clicks,'n')}</span></div>
+          <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val">${(paidMal.ctr||0)}%</span></div>
+          <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${fmt(paidMal.cpm,'$2')}</span></div>
+          <div class="stat-row"><span class="stat-label">CPC</span><span class="stat-val">${fmt(paidMal.cpc,'$2')}</span></div>
+          <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(paidMal.reach,'n')}</span></div>
+        </div>
+        <div class="card" style="padding:12px 16px">
+          <div class="card-h">Ellenbrook</div>
+          <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(paidEll.spend,'$2')}</span></div>
+          <div class="stat-row"><span class="stat-label">Impressions</span><span class="stat-val">${fmt(paidEll.impr,'n')}</span></div>
+          <div class="stat-row"><span class="stat-label">Clicks</span><span class="stat-val">${fmt(paidEll.clicks,'n')}</span></div>
+          <div class="stat-row"><span class="stat-label">CTR</span><span class="stat-val">${(paidEll.ctr||0)}%</span></div>
+          <div class="stat-row"><span class="stat-label">CPM</span><span class="stat-val">${fmt(paidEll.cpm,'$2')}</span></div>
+          <div class="stat-row"><span class="stat-label">CPC</span><span class="stat-val">${fmt(paidEll.cpc,'$2')}</span></div>
+          <div class="stat-row"><span class="stat-label">Reach</span><span class="stat-val">${fmt(paidEll.reach,'n')}</span></div>
+        </div>
+      </div>
+      ${paidAds.length > 0 ? `
+      <div class="card" style="padding:12px 16px;margin-bottom:0">
+        <div class="card-h">Top Ads — ${paid.week_label||'Latest week'}</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 6px;color:var(--muted);font-weight:600">Ad</th>
+            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">Spend</th>
+            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">Impr</th>
+            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">Clicks</th>
+            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">CTR</th>
+            <th style="text-align:right;padding:4px 6px;color:var(--muted);font-weight:600">CPC</th>
+          </tr></thead>
+          <tbody>
+          ${paidAds.map(a=>`<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:5px 6px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.name||''}">${(a.name||'').substring(0,45)}${(a.name||'').length>45?'…':''}</td>
+            <td style="text-align:right;padding:5px 6px">${fmt(a.spend,'$2')}</td>
+            <td style="text-align:right;padding:5px 6px">${fmt(a.impr,'n')}</td>
+            <td style="text-align:right;padding:5px 6px">${fmt(a.clicks,'n')}</td>
+            <td style="text-align:right;padding:5px 6px">${a.ctr||0}%</td>
+            <td style="text-align:right;padding:5px 6px">${fmt(a.cpc,'$2')}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+    </div>`;
+  }
+
+  // ── KPI cards (CSV-based organic social — shows when CSV exports available) ──
   html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Total Spend','$'+totalSpend.toFixed(2),spendChg?parseFloat(spendChg):null,'Both locations this week')}
     ${kpiCard('','Total Results',totalResults||'–',null,'Link clicks / leads across all ads')}
