@@ -588,15 +588,15 @@ def build_data():
     # ── Per-source timestamp helper (ISO UTC → Perth AWST readable) ───
     from datetime import timezone as _tz, timedelta as _td
     def _fmt_ts(iso_str):
-        """Convert ISO UTC timestamp to '4 Jun 2026, 15:57 AWST'. Returns 'No data' if blank."""
+        """Convert ISO UTC timestamp to '01 June 2026'. Returns 'No data' if blank."""
         if not iso_str:
             return "No data"
         try:
             _utc = datetime.fromisoformat(str(iso_str).replace("Z", "+00:00"))
             _awst = _utc.astimezone(_tz(_td(hours=8)))
-            return _awst.strftime("%-d %b %Y, %H:%M AWST")
+            return _awst.strftime("%d %B %Y")
         except Exception:
-            return str(iso_str)[:16]  # best-effort fallback
+            return str(iso_str)[:10]  # best-effort fallback
 
     # ── Per-source timestamps (used to label each dashboard section) ──
     # Sources: ga4/gsc from their own files; google_ads from google-ads-data.json (API pull);
