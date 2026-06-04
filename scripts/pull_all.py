@@ -5,9 +5,15 @@ Usage: python pull_all.py
 """
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Fix: gRPC on macOS uses c-ares DNS resolver by default, which fails to resolve
+# Google API hostnames (googleads.googleapis.com, analyticsdata.googleapis.com)
+# in some network contexts. Force native macOS DNS resolver instead.
+os.environ.setdefault("GRPC_DNS_RESOLVER", "native")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATE_DIR = BASE_DIR / "state"
@@ -82,16 +88,12 @@ def run_all():
         results["meta_ads"] = f"error: {e}"
         log(f"Meta Ads pull failed: {e}", "FAIL")
 
-    # Ahrefs SEO data
-    print("\n--- Ahrefs SEO Data ---")
-    try:
-        import pull_ahrefs
-        data = pull_ahrefs.main()
-        results["ahrefs"] = "success" if data else "no_data"
-        log("Ahrefs pull complete")
-    except Exception as e:
-        results["ahrefs"] = f"error: {e}"
-        log(f"Ahrefs pull failed: {e}", "FAIL")
+    # Ahrefs SEO data — EXCLUDED from daily refresh (unit cost control)
+    # Ahrefs Lite plan: 100k units/month. Daily pulls would exhaust ~30k units/month on
+    # a site this size. SEO rankings don't change day-to-day — weekly cadence is sufficient.
+    # Ahrefs runs ONLY as part of the Monday weekly pipeline (weekly-report.sh Phase 1).
+    # To run manually: python scripts/pull_ahrefs.py
+    results["ahrefs"] = "skipped (weekly-only)"
 
     # Apify SERP + Google Maps — EXCLUDED from routine refresh (pay-per-event, cost control)
     # Apify runs ONLY as part of the Monday weekly pipeline (weekly-report.sh)

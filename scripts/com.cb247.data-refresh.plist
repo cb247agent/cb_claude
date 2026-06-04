@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.cb247.data-refresh</string>
+
+    <!-- Runs every 6 hours: 06:00, 12:00, 18:00, 00:00 AWST -->
+    <!-- Keeps context files and dashboard fresh between Monday full runs -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key><integer>6</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>12</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>18</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key><integer>0</integer>
+            <key>Minute</key><integer>0</integer>
+        </dict>
+    </array>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>cd /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing &amp;&amp; .venv/bin/python3.13 scripts/pull_all.py &amp;&amp; bash scripts/run-bake.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/data-refresh.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/data-refresh.err</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/tiachasingbetter</string>
+        <!-- Fix: gRPC c-ares DNS resolver fails in launchd context on macOS.
+             Force native OS DNS resolver for Google Ads + GA4 API calls. -->
+        <key>GRPC_DNS_RESOLVER</key>
+        <string>native</string>
+    </dict>
+
+    <!-- KeepAlive removed — StartCalendarInterval handles scheduling.
+         KeepAlive: SuccessfulExit: false caused an infinite restart loop
+         when pull_all.py failed (DNS errors), flooding macOS with crash dialogs. -->
+
+</dict>
+</plist>

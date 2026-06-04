@@ -33,8 +33,8 @@ state/data-refresh.err
 # Auto-generated context snapshots (rebuilt each session)
 context/*-context.json
 
-# LaunchAgent plist (machine-specific)
-scripts/com.cb247.data-refresh.plist
+# LaunchAgent plists — committed so DNS fix and schedule are tracked
+# !scripts/com.cb247.data-refresh.plist
 
 # System files
 .DS_Store
