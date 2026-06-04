@@ -330,7 +330,7 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "04 Jun 2026, 17:17",
+  "generated": "04 Jun 2026, 17:23",
   "report_period": "28 May \u2013 3 Jun 2026",
   "refresh_ts": "04 June 2026",
   "timestamps": {
@@ -851,15 +851,36 @@ window.DASHBOARD_DATA = {
       "cpa": 35.14,
       "clicks": 163,
       "conv": 9,
-      "ctr": 9.13
+      "ctr": 9.13,
+      "cpc": 1.94,
+      "impr": 1786
     },
     "ellenbrook": {
       "spend": 241.44000000000003,
       "cpa": 12.71,
       "clicks": 115,
       "conv": 19,
-      "ctr": 11.72
+      "ctr": 11.72,
+      "cpc": 2.1,
+      "impr": 981
     },
+    "p_malaga": {
+      "spend": 316.5800000000001,
+      "cpa": 52.76,
+      "clicks": 155,
+      "conv": 6,
+      "ctr": 6.55,
+      "cpc": 2.04
+    },
+    "p_ellenbrook": {
+      "spend": 295.64,
+      "cpa": 36.95,
+      "clicks": 137,
+      "conv": 8,
+      "ctr": 12.13,
+      "cpc": 2.16
+    },
+    "p_week_label": "11May26-17May26",
     "trend_labels": [
       "11May26-17May26",
       "18May26-24May26",
@@ -880,24 +901,33 @@ window.DASHBOARD_DATA = {
         "name": "Gym Geo",
         "spend": 276.12,
         "clicks": 163,
+        "impr": 1687,
         "conv": 23,
         "cpa": 12.01,
+        "ctr": 9.66,
+        "cpc": 1.69,
         "location": ""
       },
       {
         "name": "Malaga Gym",
         "spend": 153.17,
         "clicks": 66,
+        "impr": 660,
         "conv": 2,
         "cpa": 76.58,
+        "ctr": 10.0,
+        "cpc": 2.32,
         "location": ""
       },
       {
         "name": "Ellenbrook Gym",
         "spend": 128.39,
         "clicks": 49,
+        "impr": 420,
         "conv": 3,
         "cpa": 42.8,
+        "ctr": 11.67,
+        "cpc": 2.62,
         "location": ""
       }
     ],
@@ -3636,77 +3666,87 @@ function renderGAds() {
     </div>
   </div>`;
 
-  // ── Campaign Performance ──────────────────────────────────────────────────
-  html += sectionTitle('Campaign Performance — Active Campaigns · ' + weekLabel);
-  html += `<div class="insight neutral mb" style="font-size:12px">
-    <b>SEO strategy link:</b> Goal — dominate paid while SEO builds. As each keyword cluster hits organic top 3, reduce campaign bid and reinvest budget into keywords with no organic coverage yet.
-  </div>`;
-  function campAction(c) {
-    if (c.conv>0 && c.cpa<15) return '<span style="font-size:10px;font-weight:700;color:#00c4b4">Scale ↑</span>';
-    if (c.conv>0 && c.cpa<30) return '<span style="font-size:10px;font-weight:600;color:var(--text-2)">Maintain</span>';
-    if (c.conv>0)              return '<span style="font-size:10px;color:#f59e0b">Review CPA</span>';
-    if (c.clicks>20)           return '<span style="font-size:10px;font-weight:700;color:#ef4444">Check Conv</span>';
-    return '<span style="font-size:10px;color:var(--muted-2)">Monitor</span>';
-  }
+  // ── Campaign Performance (compact) ───────────────────────────────────────
+  html += sectionTitle('Active Campaigns · ' + weekLabel);
   const campsSorted = [...(ads.campaigns||[])].sort((a,b)=>b.spend-a.spend);
-  html += `<div class="card mb"><table><thead><tr>
-    <th>Campaign</th><th>Location</th><th class="num">Clicks</th>
-    <th class="num">Spend</th><th class="num">Conv</th><th class="num">CPA</th><th class="num">CTR</th><th>Action</th>
+  html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
+    <th>Campaign</th>
+    <th>Location</th>
+    <th class="num">Spend</th>
+    <th class="num">Clicks</th>
+    <th class="num">Impr</th>
+    <th class="num">Conv</th>
+    <th class="num">CPA</th>
+    <th class="num">CTR</th>
+    <th class="num">CPC</th>
   </tr></thead><tbody>
-  ${campsSorted.map(c=>{
-    const ctr = c.clicks>0?(c.conv/c.clicks*100).toFixed(1):0;
-    return`<tr>
-    <td style="font-size:12px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${c.name}</td>
-    <td><span style="font-size:9px;background:${c.location==='Ellenbrook'?'#e8f5f4':'#f0f2f5'};color:${c.location==='Ellenbrook'?'#3FA69A':'var(--muted)'};padding:1px 6px;border-radius:3px">${c.location||'–'}</span></td>
-    <td class="num"><b>${c.clicks}</b></td>
+  ${campsSorted.map(c=>`<tr>
+    <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${c.name}</td>
+    <td><span style="font-size:10px;background:${c.location==='Ellenbrook'?'rgba(63,166,154,.12)':'#f0f2f5'};color:${c.location==='Ellenbrook'?'var(--teal)':'var(--muted)'};padding:2px 7px;border-radius:99px;white-space:nowrap">${c.location||'Both'}</span></td>
     <td class="num">${fmt(c.spend,'$2')}</td>
+    <td class="num">${fmt(c.clicks,'n')}</td>
+    <td class="num">${c.impr?fmt(c.impr,'n'):'–'}</td>
     <td class="num ${c.conv>0?'good':''}">${c.conv||'–'}</td>
     <td class="num ${c.conv>0&&c.cpa>25?'bad':c.conv>0?'good':''}">${c.conv>0?fmt(c.cpa,'$2'):'–'}</td>
-    <td class="num" style="color:var(--muted)">${ctr}%</td>
-    <td>${campAction(c)}</td>
-  </tr>`;}).join('')||'<tr><td colspan="8" style="color:var(--muted);padding:16px">No campaign data</td></tr>'}
+    <td class="num">${c.ctr||'–'}%</td>
+    <td class="num">${c.cpc?fmt(c.cpc,'$2'):'–'}</td>
+  </tr>`).join('')||'<tr><td colspan="9" style="color:var(--muted);padding:16px">No campaign data</td></tr>'}
   </tbody></table></div>`;
 
-  // ── Best Campaigns + Location Head-to-Head ────────────────────────────────
-  const bestCamps = [...(ads.campaigns||[])].filter(c=>c.conv>0).sort((a,b)=>a.cpa-b.cpa);
+  // ── Location Summary with WoW ─────────────────────────────────────────────
+  const pMal = ads.p_malaga     || {};
+  const pEll = ads.p_ellenbrook || {};
+  const pWk  = ads.p_week_label || '–';
+  const gChg    = (cur, prev) => prev > 0 ? ((cur - prev) / prev * 100).toFixed(1) + '%' : '–';
+  const gChgCls = (cur, prev, low=false) => !prev ? '' : (low ? cur < prev : cur > prev) ? 'good' : 'bad';
+  const gLocRow = (label, cur, prev, fmtStr, low=false) => `
+    <tr>
+      <td style="color:var(--muted);font-size:12px">${label}</td>
+      <td class="num" style="font-size:12px">${cur!=null&&cur!==undefined?fmt(cur,fmtStr):'–'}</td>
+      <td class="num" style="font-size:12px;color:var(--muted)">${prev?fmt(prev,fmtStr):'–'}</td>
+      <td class="num" style="font-size:11px"><span class="${gChgCls(cur,prev,low)}">${gChg(cur,prev)}</span></td>
+    </tr>`;
+  html += sectionTitle('Location Summary');
   html += `<div class="grid-2 mb">
-    <div class="card">
-      <div class="card-h" style="color:#00c4b4">Top Campaigns — Best CPA</div>
-      <table><thead><tr><th>Campaign</th><th>Location</th><th class="num">Conv</th><th class="num">CPA</th><th class="num">Spend</th></tr></thead><tbody>
-      ${bestCamps.length?bestCamps.map(c=>`<tr>
-        <td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</td>
-        <td style="font-size:10px;color:var(--muted)">${c.location||'–'}</td>
-        <td class="num good"><b>${c.conv}</b></td>
-        <td class="num good">${fmt(c.cpa,'$2')}</td>
-        <td class="num" style="color:var(--muted)">${fmt(c.spend,'$2')}</td>
-      </tr>`).join(''):'<tr><td colspan="5" style="color:var(--muted);font-size:12px;padding:12px">No converting campaigns yet</td></tr>'}
-      </tbody></table>
+    <div class="card" style="padding:14px 16px">
+      <div class="card-h" style="margin-bottom:10px">Malaga</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px"></th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">${weekLabel}</th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">${pWk}</th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">Change</th>
+        </tr></thead>
+        <tbody>
+          ${gLocRow('Spend',   mal.spend,  pMal.spend,  '$2')}
+          ${gLocRow('Clicks',  mal.clicks, pMal.clicks, 'n')}
+          ${gLocRow('Impr',    mal.impr,   null,        'n')}
+          ${gLocRow('Conv',    mal.conv,   pMal.conv,   'n')}
+          ${gLocRow('CPA',     mal.cpa,    pMal.cpa,    '$2', true)}
+          ${gLocRow('CTR',     mal.ctr,    pMal.ctr,    'n')}
+          ${gLocRow('CPC',     mal.cpc,    pMal.cpc,    '$2', true)}
+        </tbody>
+      </table>
     </div>
-    <div class="card">
-      <div class="card-h">Location Head-to-Head</div>
-      <table><thead><tr><th>Metric</th><th class="num">Malaga</th><th class="num">Ellenbrook</th><th class="num">Winner</th></tr></thead><tbody>
-      ${(()=>{
-        const m = mal, e = ell;
-        const rows = [
-          ['Spend',      fmt(m.spend,'$2'),  fmt(e.spend,'$2'),  m.spend>e.spend?'Malaga':'Ellenbrook'],
-          ['Conversions',m.conv,             e.conv,             m.conv>e.conv?'Malaga':'Ellenbrook'],
-          ['CPA',        m.cpa>0?fmt(m.cpa,'$2'):'–',  e.cpa>0?fmt(e.cpa,'$2'):'–',  m.cpa>0&&e.cpa>0?(m.cpa<e.cpa?'✅ Malaga':'✅ Ellenbrook'):'–'],
-          ['CTR',        m.ctr+'%',          e.ctr+'%',          m.ctr>e.ctr?'Malaga':'Ellenbrook'],
-        ];
-        return rows.map(([label,mv,ev,winner])=>`<tr>
-          <td style="font-size:12px;color:var(--muted)">${label}</td>
-          <td class="num" style="font-weight:600">${mv}</td>
-          <td class="num" style="font-weight:600">${ev}</td>
-          <td style="font-size:10px;color:var(--teal);font-weight:700">${winner}</td>
-        </tr>`).join('');
-      })()}
-      </tbody></table>
-      <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6">
-        ${ell.cpa>0&&mal.cpa>0?(ell.cpa<mal.cpa
-          ? `Ellenbrook converting at <b>${fmt(ell.cpa,'$2')} CPA</b> — ${Math.round((1-ell.cpa/mal.cpa)*100)}% cheaper than Malaga. Consider shifting budget toward Ellenbrook campaigns.`
-          : `Malaga converting at <b>${fmt(mal.cpa,'$2')} CPA</b> — ${Math.round((1-mal.cpa/ell.cpa)*100)}% cheaper than Ellenbrook. Prioritise Malaga budget this week.`)
-          : 'Review individual campaign CPAs above to determine budget allocation.'}
-      </p>
+    <div class="card" style="padding:14px 16px">
+      <div class="card-h" style="margin-bottom:10px">Ellenbrook</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px"></th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">${weekLabel}</th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">${pWk}</th>
+          <th class="num" style="font-size:10px;color:var(--muted);font-weight:600;padding-bottom:6px">Change</th>
+        </tr></thead>
+        <tbody>
+          ${gLocRow('Spend',   ell.spend,  pEll.spend,  '$2')}
+          ${gLocRow('Clicks',  ell.clicks, pEll.clicks, 'n')}
+          ${gLocRow('Impr',    ell.impr,   null,        'n')}
+          ${gLocRow('Conv',    ell.conv,   pEll.conv,   'n')}
+          ${gLocRow('CPA',     ell.cpa,    pEll.cpa,    '$2', true)}
+          ${gLocRow('CTR',     ell.ctr,    pEll.ctr,    'n')}
+          ${gLocRow('CPC',     ell.cpc,    pEll.cpc,    '$2', true)}
+        </tbody>
+      </table>
     </div>
   </div>`;
 
@@ -3729,34 +3769,6 @@ function renderGAds() {
   </tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px">No recommendations — connect Ahrefs API for live keyword gap analysis.</td></tr>'}
   </tbody></table></div>`;
 
-  // ── 3-week trend + campaign breakdown ────────────────────────────────────
-  html += sectionTitle('Spend Trend &amp; Campaign Breakdown');
-  html += `<div class="grid-2 mb">
-    <div class="card">
-      <div class="card-h">3-Week Spend &amp; CPA Trend</div>
-      <div class="chart-wrap"><canvas id="adsChart"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-h">Campaign Breakdown</div>
-      <table><thead><tr><th>Campaign</th><th>Location</th><th class="num">Spend</th><th class="num">Conv</th><th class="num">CPA</th></tr></thead><tbody>
-      ${(()=>{
-        if(ads.campaigns&&ads.campaigns.length){
-          return ads.campaigns.map(c=>`<tr>
-            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${c.name}</td>
-            <td style="font-size:10px;color:var(--muted)">${c.location||'–'}</td>
-            <td class="num">${fmt(c.spend,'$2')}</td>
-            <td class="num ${c.conv>0?'good':''}">${c.conv||'–'}</td>
-            <td class="num ${c.conv>0&&c.cpa>50?'bad':c.conv>0?'good':''}">${c.conv>0?fmt(c.cpa,'$2'):'–'}</td>
-          </tr>`).join('');
-        }
-        const campMap={};
-        kws.forEach(k=>{k.campaigns.forEach(camp=>{if(!campMap[camp])campMap[camp]={name:camp,spend:0,conv:0};campMap[camp].spend+=k.cost;campMap[camp].conv+=k.conv;});});
-        const camps=Object.values(campMap).sort((a,b)=>b.spend-a.spend);
-        return camps.length?camps.map(c=>`<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${c.name}</td><td class="num">$${c.spend.toFixed(2)}</td><td class="num">${c.conv}</td><td class="num ${c.conv>0&&c.spend/c.conv>50?'bad':c.conv>0?'good':''}">${c.conv>0?'$'+(c.spend/c.conv).toFixed(2):'–'}</td></tr>`).join(''):'<tr><td colspan="4" style="color:var(--muted)">No campaign data</td></tr>';
-      })()}
-      </tbody></table>
-    </div>
-  </div>`;
 
   // ── Competitor context ────────────────────────────────────────────────────
   html += sectionTitle('Competitor Context');
