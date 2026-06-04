@@ -640,6 +640,21 @@ def build_data():
     gsc_pages_raw = (gsc.get("top_pages") or [])[:15]
 
     # ── Google Ads ───────────────────────────────────────────────────
+    # Detect API error state from google-ads-data.json (gads loaded separately)
+    _gads_accounts = (gads or {}).get("accounts", {})
+    _gads_has_error = isinstance(_gads_accounts, dict) and any(
+        isinstance(v, dict) and "error" in v for v in _gads_accounts.values()
+    )
+    _gads_error_msg = ""
+    if _gads_has_error:
+        _first_err = next((v.get("error","") for v in _gads_accounts.values() if isinstance(v,dict) and "error" in v), "")
+        if "429" in _first_err or "exhausted" in _first_err.lower():
+            _gads_error_msg = "rate_limited"
+        elif "DNS" in _first_err or "hostname" in _first_err:
+            _gads_error_msg = "dns_error"
+        else:
+            _gads_error_msg = "api_error"
+
     gads_list  = ads.get("google_ads") or []
     latest_ads = gads_list[0] if gads_list else {}
     prev_ads   = gads_list[1] if len(gads_list) > 1 else {}
@@ -974,6 +989,7 @@ def build_data():
 
         # Google Ads
         "google_ads": {
+            "api_status": _gads_error_msg or "ok",
             "spend": ads_spend, "p_spend": p_spend,
             "cpa": ads_cpa, "clicks": ads_clicks, "convs": ad_convs,
             "spend_chg": pct_change(ads_spend, p_spend),
@@ -2446,6 +2462,32 @@ function renderGAds() {
   const compSerp  = ads.competitor_serp || [];
   const kwTrack   = ads.keyword_tracking || [];
 
+  // ── API status banner ────────────────────────────────────────────────────
+  let statusBanner = '';
+  if (ads.api_status === 'rate_limited') {
+    statusBanner = `<div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:20px;line-height:1">⏳</span>
+      <div>
+        <div style="font-weight:700;color:#92400e;margin-bottom:4px">Google Ads API — Pending access upgrade</div>
+        <div style="font-size:12.5px;color:#78350f;line-height:1.6">
+          The Google Ads API developer token is on <strong>Explorer level</strong> — a very low daily quota that's currently exhausted.<br>
+          Data shown below is a placeholder and does not reflect real spend or clicks.<br>
+          <strong>Fix:</strong> Go to Google Ads → Tools &amp; Settings → API Centre → Apply for Basic Access. Approves in 1–2 days.
+        </div>
+      </div>
+    </div>`;
+  } else if (ads.api_status === 'dns_error') {
+    statusBanner = `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:14px 18px;margin-bottom:20px">
+      <strong style="color:#991b1b">Google Ads API — DNS error</strong><br>
+      <span style="font-size:12px;color:#7f1d1d">Run <code>python3 scripts/pull_all.py</code> from Terminal to retry.</span>
+    </div>`;
+  } else if (ads.api_status === 'api_error') {
+    statusBanner = `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:14px 18px;margin-bottom:20px">
+      <strong style="color:#991b1b">Google Ads API — Connection error</strong><br>
+      <span style="font-size:12px;color:#7f1d1d">Check credentials and run <code>python3 scripts/pull_all.py</code>.</span>
+    </div>`;
+  }
+
   // Use CSV totals if json is empty
   const totalSpend  = ads.csv_cost   > 0 ? ads.csv_cost   : ads.spend;
   const totalConv   = ads.csv_conv   > 0 ? ads.csv_conv   : ads.convs;
@@ -2457,7 +2499,7 @@ function renderGAds() {
   const ellConv     = kws.filter(k=>k.locations&&k.locations.includes('Ellenbrook')).reduce((s,k)=>s+k.conv,0);
 
   // ── KPI Cards ────────────────────────────────────────────────────────────
-  let html = `<div class="kpi-grid cols-4 mb">
+  let html = statusBanner + `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),ads.spend_chg,`${totalClicks} clicks · ${weekLabel}`)}
     ${kpiCard('','Conversions',fmt(totalConv,'n'),null,`Blended CPA: ${fmt(blendedCPA,'$2')}`,(blendedCPA>50&&blendedCPA>0)?'red':'green')}
     ${kpiCard('','Malaga',fmt(malSpend||mal.spend,'$2'),null,`${malConv||mal.conv||0} conversions`)}

@@ -330,14 +330,14 @@ tbody tr:hover td{background:#fafafa}
 <body>
 <script>
 window.DASHBOARD_DATA = {
-  "generated": "04 Jun 2026, 16:25",
+  "generated": "04 Jun 2026, 16:39",
   "report_period": "28 May \u2013 3 Jun 2026",
-  "refresh_ts": "4 Jun 2026, 15:57 AWST",
+  "refresh_ts": "4 Jun 2026, 16:35 AWST",
   "timestamps": {
-    "ga4": "4 Jun 2026, 14:52 AWST",
-    "gsc": "4 Jun 2026, 15:57 AWST",
-    "google_ads": "4 Jun 2026, 15:57 AWST",
-    "meta_ads": "4 Jun 2026, 15:57 AWST",
+    "ga4": "4 Jun 2026, 16:35 AWST",
+    "gsc": "4 Jun 2026, 16:35 AWST",
+    "google_ads": "4 Jun 2026, 16:35 AWST",
+    "meta_ads": "4 Jun 2026, 16:35 AWST",
     "gbp": "No data",
     "ahrefs": "No data"
   },
@@ -356,47 +356,47 @@ window.DASHBOARD_DATA = {
     "week_label": "25 May \u2013 31 May 2026"
   },
   "ga4": {
-    "sessions": 3002,
+    "sessions": 3042,
     "p_sessions": 3382,
-    "convs": 442,
+    "convs": 445,
     "p_convs": 497,
-    "users": 2289,
-    "new_users": 1974,
-    "conv_rate": 14.7,
+    "users": 2316,
+    "new_users": 1999,
+    "conv_rate": 14.6,
     "mob_share": 82,
-    "ses_chg": -11.2,
-    "conv_chg": -11.1,
+    "ses_chg": -10.1,
+    "conv_chg": -10.5,
     "sources": [
       {
         "label": "Organic Search",
-        "sessions": 1005
+        "sessions": 1021
       },
       {
         "label": "Paid Social",
-        "sessions": 550
+        "sessions": 557
       },
       {
         "label": "Direct",
-        "sessions": 518
+        "sessions": 522
       },
       {
         "label": "Cross-network",
-        "sessions": 486
+        "sessions": 492
       },
       {
         "label": "Paid Search",
-        "sessions": 266
+        "sessions": 268
       },
       {
         "label": "Organic Social",
-        "sessions": 134
+        "sessions": 135
       }
     ],
     "top_pages": [
       {
         "path": "/",
-        "views": 4678,
-        "sessions": 2113
+        "views": 4727,
+        "sessions": 2140
       },
       {
         "path": "/reformer-pilates",
@@ -405,43 +405,43 @@ window.DASHBOARD_DATA = {
       },
       {
         "path": "/contact",
-        "views": 452,
-        "sessions": 229
+        "views": 456,
+        "sessions": 231
       },
       {
         "path": "/group-fitness-timetable",
-        "views": 399,
-        "sessions": 195
+        "views": 405,
+        "sessions": 198
       },
       {
         "path": "/thank-you",
-        "views": 302,
-        "sessions": 147
+        "views": 304,
+        "sessions": 148
       },
       {
         "path": "/resources/post-workout-recovery",
-        "views": 299,
-        "sessions": 142
+        "views": 301,
+        "sessions": 143
       },
       {
         "path": "/personal-training",
-        "views": 277,
-        "sessions": 121
+        "views": 283,
+        "sessions": 124
       },
       {
         "path": "/neon21",
-        "views": 216,
-        "sessions": 82
+        "views": 218,
+        "sessions": 83
       },
       {
         "path": "/faqs",
-        "views": 215,
-        "sessions": 100
+        "views": 217,
+        "sessions": 101
       },
       {
         "path": "/casual-passes",
-        "views": 211,
-        "sessions": 100
+        "views": 215,
+        "sessions": 102
       }
     ],
     "period": "28 May \u2013 3 Jun 2026"
@@ -595,6 +595,7 @@ window.DASHBOARD_DATA = {
     ]
   },
   "google_ads": {
+    "api_status": "rate_limited",
     "spend": 0.0,
     "p_spend": 557.68,
     "cpa": 0.0,
@@ -3238,6 +3239,32 @@ function renderGAds() {
   const compSerp  = ads.competitor_serp || [];
   const kwTrack   = ads.keyword_tracking || [];
 
+  // ── API status banner ────────────────────────────────────────────────────
+  let statusBanner = '';
+  if (ads.api_status === 'rate_limited') {
+    statusBanner = `<div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:20px;line-height:1">⏳</span>
+      <div>
+        <div style="font-weight:700;color:#92400e;margin-bottom:4px">Google Ads API — Pending access upgrade</div>
+        <div style="font-size:12.5px;color:#78350f;line-height:1.6">
+          The Google Ads API developer token is on <strong>Explorer level</strong> — a very low daily quota that's currently exhausted.<br>
+          Data shown below is a placeholder and does not reflect real spend or clicks.<br>
+          <strong>Fix:</strong> Go to Google Ads → Tools &amp; Settings → API Centre → Apply for Basic Access. Approves in 1–2 days.
+        </div>
+      </div>
+    </div>`;
+  } else if (ads.api_status === 'dns_error') {
+    statusBanner = `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:14px 18px;margin-bottom:20px">
+      <strong style="color:#991b1b">Google Ads API — DNS error</strong><br>
+      <span style="font-size:12px;color:#7f1d1d">Run <code>python3 scripts/pull_all.py</code> from Terminal to retry.</span>
+    </div>`;
+  } else if (ads.api_status === 'api_error') {
+    statusBanner = `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:14px 18px;margin-bottom:20px">
+      <strong style="color:#991b1b">Google Ads API — Connection error</strong><br>
+      <span style="font-size:12px;color:#7f1d1d">Check credentials and run <code>python3 scripts/pull_all.py</code>.</span>
+    </div>`;
+  }
+
   // Use CSV totals if json is empty
   const totalSpend  = ads.csv_cost   > 0 ? ads.csv_cost   : ads.spend;
   const totalConv   = ads.csv_conv   > 0 ? ads.csv_conv   : ads.convs;
@@ -3249,7 +3276,7 @@ function renderGAds() {
   const ellConv     = kws.filter(k=>k.locations&&k.locations.includes('Ellenbrook')).reduce((s,k)=>s+k.conv,0);
 
   // ── KPI Cards ────────────────────────────────────────────────────────────
-  let html = `<div class="kpi-grid cols-4 mb">
+  let html = statusBanner + `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),ads.spend_chg,`${totalClicks} clicks · ${weekLabel}`)}
     ${kpiCard('','Conversions',fmt(totalConv,'n'),null,`Blended CPA: ${fmt(blendedCPA,'$2')}`,(blendedCPA>50&&blendedCPA>0)?'red':'green')}
     ${kpiCard('','Malaga',fmt(malSpend||mal.spend,'$2'),null,`${malConv||mal.conv||0} conversions`)}
