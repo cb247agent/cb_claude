@@ -1,6 +1,16 @@
 """
-pull_local_ads.py — Reads Google Ads and Meta Ads CSV exports and produces
+pull_local_ads.py — Reads Google Ads CSV exports and produces
 a unified state/ads-data.json for the performance agent and dashboards.
+
+⚠️  DEPRECATION NOTICE — Meta Ads (2026-06-04):
+Meta Ads data is now pulled LIVE from the Graph API via pull_meta.py.
+This script NO LONGER writes meta_ads to ads-data.json to avoid overwriting
+live API data with empty/stale CSV data (the metaads/ CSVs have been removed).
+For Meta Ads data: run `python scripts/pull_meta.py` or `python scripts/pull_all.py`.
+
+Google Ads CSVs are also now pulled via the API (pull_google_ads.py).
+This script is kept as a fallback for manual CSV imports only.
+Run pull_all.py for all live data — do not run this script in production.
 """
 
 import json
@@ -346,18 +356,28 @@ def parse_meta_ads(meta_dir):
 
 def pull_local_ads():
     google_csv_dir = BASE_DIR / "googleads"
-    meta_dir       = BASE_DIR / "metaads"
+
+    # ⚠️ Meta Ads: NO LONGER written here. Meta data comes from pull_meta.py (Graph API).
+    # Writing meta_ads from this script would overwrite live API data with empty results
+    # because the metaads/ CSVs have been deleted. We merge into ads-data.json carefully:
+    # read the existing file, update only google_ads, preserve meta_ads from the API.
+    existing_data = {}
+    if OUTPUT_FILE.exists():
+        try:
+            existing_data = json.loads(OUTPUT_FILE.read_text())
+        except Exception:
+            existing_data = {}
 
     output = {
+        **existing_data,  # preserve all existing keys (including meta_ads from API)
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "source":       "local CSV exports",
-        "google_ads": google_ads_summary(google_csv_dir) if google_csv_dir.exists() else [],
-        "meta_ads":  parse_meta_ads(meta_dir),
+        "source": "local CSV exports (google_ads only — meta_ads preserved from Graph API)",
+        "google_ads": google_ads_summary(google_csv_dir) if google_csv_dir.exists() else existing_data.get("google_ads", []),
     }
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(json.dumps(output, indent=2))
-    print(f"Combined ads data saved to {OUTPUT_FILE}")
+    print(f"Combined ads data saved to {OUTPUT_FILE} (meta_ads preserved from API)")
     return output
 
 

@@ -3,6 +3,8 @@
 .env.local
 .env.*
 *.env
+# Exception: .env.example is safe to commit (template only, no real values)
+!.env.example
 
 # API Keys & Secrets
 secrets/

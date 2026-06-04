@@ -18,8 +18,9 @@ Contact: reception@chasingbetter247.com.au | Instagram: @chasingbetter247 | Tagl
 
 ## CB247 Competitive Edge
 - Cheaper than Anytime/Snap with MORE premium facilities
-- Only gym with: Kids Hub + Sauna + Ice Bath + Reformer Pilates + 24/7 access
-- FIFO-friendly freeze — unique to WA market
+- Genuine differentiators (competitors don't have ALL of these): Kids Hub + Traditional Sauna + Ice Bath + 24/7 access + FIFO freeze
+- ⚠️ Never write "only gym with" in content — Ryderwear has sauna + reformer pilates. Verify before using "only" claims (ACL risk).
+- FIFO-friendly membership freeze — no other Perth chain offers this
 
 ## Architecture
 
@@ -61,7 +62,7 @@ Rules in brief:
 | `content-intel` | Content performance analysis |
 | `seo-agent` | SEO audits, content strategy, keyword research |
 
-**Model**: All agents use `minimax/minimax-m2.7` via OpenRouter.
+**Model**: Agents use Claude models routed by task complexity (see Context Management below).
 **Invocation**: Say "run [agent-name]" to fire any agent (see Agent Invocation below).
 
 ## Folder Structure
@@ -115,10 +116,11 @@ Data lands in `state/ga4-data.json`, `state/gsc-data.json`, `state/google-ads-da
 
 ## Context Management
 
-**Model**:
-- Default: `minimax/minimax-m2.7` (OpenRouter) — fast, for all standard content tasks
-- Subagents: `google/gemini-3-flash-preview` (OpenRouter) — configured via `CLAUDE_CODE_SUBAGENT_MODEL` in `.claude/settings.json`
-- Heavy tasks: `gemma4:31b-cloud` via Ollama localhost:11434 — for complex analysis and report generation
+**Model** (Max subscription):
+- Default (Sonnet): `claude-sonnet-4-5` — analysis, writing, SEO, competitor, paid ads, research
+- Lightweight (Haiku): `claude-haiku-4-5` — fast extraction (audience intel, content intel, subagents)
+- Heavy (Opus): `claude-opus-4-5` — high-volume creative generation and strategic synthesis
+- Configured via `ANTHROPIC_DEFAULT_SONNET_MODEL` / `ANTHROPIC_DEFAULT_HAIKU_MODEL` / `ANTHROPIC_DEFAULT_OPUS_MODEL` in `.claude/settings.json`
 
 **Token budget**: 0–60% normal | 60–75% summarize older context | 75–85% use /compact | 85%+ STOP and run /compact
 **Auto-compact**: Enabled (`autoCompact: true`), threshold at 70% context window.
@@ -135,10 +137,10 @@ Data lands in `state/ga4-data.json`, `state/gsc-data.json`, `state/google-ads-da
 - `landing page` / `write page` / `build page` → seo-landing-page-writer
 - `A/B test` / `hypothesis` → ab-testing-framework
 - `compliance` / `check claims` → compliance-checker
-- `brief` / `campaign brief` → campaign-brief-engine
+- `campaign brief` → campaign-brief-engine
 - `creative brief` / `storyboard` → creative-brief-engine
 - `market intel` / `competitor intel` → market-intelligence
-- `SEO audit` / `keyword research` / `SEO content` → seo-agent
+- `keyword research` / `SEO content` → seo-agent (full pipeline; for audit only, use `SEO audit` → seo-site-audit above)
 - `competitor` / `competitive analysis` → competitor-spy
 - `Google Ads` / `Meta Ads` / `paid ads` → paid-ads
 - `performance` / `dashboard` / `analytics` → performance

@@ -1,17 +1,22 @@
 # CB247 Session Start
 
 ## DO THIS FIRST
-Read this file completely at the start of every session. It replaces re-explaining the project.
-Then read `context/seasonal-calendar.md` and check:
-- What campaign is ACTIVE right now?
-- Is any event within 21 days? → spawn full campaign brief
-- Is any event within 60 days? → flag as prep priority
+Read these files completely at the start of every session — in order:
 
-After reading both files, confirm "CB247 context loaded. [Active campaign: X. Next event: Y in Z days.]"
+1. **This file** — project state, what's done, what's missing
+2. **`CB_Brain/wiki/CB247-Knowledge-Base.md`** — Master DOs/DON'Ts and historical learnings. Read before any content work. Contains: membership structure, add-on rules, blog design standard, compliance rules, competitor facts, SEO learnings, open questions.
+3. **`context/seasonal-calendar.md`** — Check:
+   - What campaign is ACTIVE right now?
+   - Is any event within 21 days? → spawn full campaign brief
+   - Is any event within 60 days? → flag as prep priority
+
+After reading all three files, confirm "CB247 context loaded. [Active campaign: X. Next event: Y in Z days.]"
+
+**At the end of every session:** Append new learnings, corrections, and decisions to `CB_Brain/wiki/CB247-Knowledge-Base.md` under the relevant category with today's date.
 
 ---
 
-## PROJECT STATE — 2026-05-27
+## PROJECT STATE — 2026-06-04
 
 ### DONE — 37 Skills Built
 **Foundation:** brand voice, UTM conventions, psychology triggers, competitor battle cards, marketing strategy, seasonal calendar, SEO targets/priorities, PESTLE/SWOT
@@ -32,17 +37,28 @@ After reading both files, confirm "CB247 context loaded. [Active campaign: X. Ne
 - `campaign-output-skill` — 7-stage: brief → content waterfall → email → social calendar → paid ads → landing page → executive report
 - `report-formatter` — McKinsey-style executive reports
 
-### DATA STATUS (2026-05-27)
-| Source | Status | Location |
-|--------|--------|----------|
-| GA4 | ✅ LIVE | `state/ga4-data.json` (last pull: 2026-05-18) |
-| GSC | ✅ LIVE | `state/gsc-data.json` (28-day, last pull: 2026-05-18) |
-| Google Ads (CSV) | ✅ LIVE | `googleads/Google Ads {Malaga,Ellenbrook}/` through week 18–24 May |
-| Meta Ads (CSV) | ✅ LIVE | `metaads/Malaga/Meta_Malaga.csv` · `metaads/Ellenbrook/Meta_Ellenbrook.csv` through 18–24 May |
-| Combined Ads | ✅ PROCESSED | `state/ads-data.json` |
-| Pull Script | ✅ OPERATIONAL | `scripts/pull_local_ads.py` (reads ISO weeks from daily rows) |
+### DATA STATUS (2026-06-04)
 
-> ⚠️ Data is 9 days stale. Run `python scripts/pull_all.py` to refresh. Ad CSVs for 25–31 May not yet uploaded.
+| Source | Status | How it pulls | Location |
+|--------|--------|-------------|----------|
+| GA4 | ⚠️ FAILING | `scripts/pull_ga4.py` (OAuth) | `state/ga4-data.json` — DNS error on last run, data stale |
+| GSC | ✅ LIVE | `scripts/pull_gsc.py` (OAuth) | `state/gsc-data.json` |
+| Google Ads | ✅ LIVE | `scripts/pull_google_ads.py` (API) | `state/google-ads-data.json` |
+| Meta Ads | ✅ LIVE | `scripts/pull_meta.py` (Graph API) | `state/ads-data.json` → `meta_ads` key |
+| GBP | ✅ LIVE | `scripts/pull_gbp.py` (API) | `state/gbp-data.json` |
+| Ahrefs | ⏭ WEEKLY ONLY | `scripts/pull_ahrefs.py` | `state/ahrefs-data.json` |
+| Apify | ⚠️ BLOCKED | 4 actors broken — subscription needed | `state/social-trends.json` (last: 2026-06-02) |
+
+> **To refresh all live data:** `python scripts/pull_all.py`
+> ⚠️ **GA4 is failing** with a DNS error. Check that `GA4_PROPERTY_ID` is set correctly in `.env` (NOT `GA4_MEASUREMENT_ID` — different name). If the env var is correct, this may be a local DNS/network issue.
+> ⚠️ **Meta token expires ~2026-08-03.** Renew at developers.facebook.com/tools/debug/accesstoken/ before that date.
+> ⚠️ **DO NOT run `pull_local_ads.py`** — it is deprecated for Meta data. Running it will preserve API meta_ads data (safe now) but provides no benefit over `pull_all.py`.
+
+### CSV DATA — FULLY MIGRATED TO API (2026-06-04)
+Both Meta Ads and Google Ads now pull via API. CSV workflows are retired:
+- `metaads/Malaga/*.csv` and `metaads/Ellenbrook/*.csv` — **DELETED** (replaced by Graph API)
+- `googleads/` folder — **DOES NOT EXIST** (Google Ads pulls via API since initial setup)
+- `scripts/pull_local_ads.py` — deprecated, kept as fallback only. **Never run in production.**
 
 ### REPORTS GENERATED
 - `outputs/reports/cb247-weekly-report-2026-05-25.html` — **Latest weekly report** (warm-light theme, canonical template)
@@ -55,11 +71,24 @@ After reading both files, confirm "CB247 context loaded. [Active campaign: X. Ne
 - `outputs/seo/reports/seo-report-cb247-week-02.docx` — SEO Week 2 report (2026-05-27)
 - `outputs/email-final-cost-estimation-2026-05-27.md` — Tool stack cost pitch for CEO/Manager ($355/mo for 5 locations)
 
+### BLOG DRAFTS — STATUS (2026-06-04)
+All 4 blog drafts rebuilt to match live CB247 site design (Poppins, 420px hero, real nav/footer).
+All compliance issues fixed (add-on rules, pricing in body removed).
+
+| File | Status | Pending |
+|------|--------|---------|
+| `docs/blog-drafts/best-gym-malaga.html` | ✅ Design + compliance OK | Angela QC → Mark publish |
+| `docs/blog-drafts/fifo-gym-membership-perth.html` | ✅ Design + compliance OK | Angela QC → Mark publish |
+| `docs/blog-drafts/gym-ellenbrook-perth.html` | ✅ Design + compliance OK | Angela QC → Mark publish |
+| `docs/blog-drafts/reformer-pilates-malaga.html` | ✅ Design + compliance OK | Angela QC → Mark publish |
+
 ### MISSING / INCOMPLETE
-- Google Ads + Meta Ads CSVs for 25–31 May not yet uploaded (both Malaga + Ellenbrook)
-- GA4/GSC data stale — last refresh 2026-05-18, run `python scripts/pull_all.py`
-- Scripts (Apify, Screaming Frog, Ahrefs) — written but need real API keys
-- CB_Brain wiki updates — rules exist but not actively maintained (ICP-Profiles.md empty)
+- GA4 pull failing — check `GA4_PROPERTY_ID` in `.env` (see DATA STATUS above)
+- Apify actors broken (TikTok/Reddit/Trends/FB Ads) — subscription top-up needed
+- Priority 5 CrossFit blog — not yet started
+- Ellenbrook facility verification — does Ellenbrook have Kids Hub? Reformer Pilates? ChasingRX? (ask Tia)
+- P3 FIFO internal link — add FIFO freeze mention + link from CB247 homepage
+- Mother's Day 2026 results not recorded in `CB_Brain/wiki/Campaign-History.md`
 
 ### LAST SESSION (2026-05-27)
 - Created root-level `CLAUDE.md` at `/Users/tiachasingbetter/Documents/ChasingBetter/CLAUDE.md`
