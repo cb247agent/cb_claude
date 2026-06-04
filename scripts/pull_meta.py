@@ -72,6 +72,37 @@ def _graph(path, params):
         return {"_error": str(e)}
 
 
+def _check_token_expiry():
+    """
+    Calls /debug_token to get the token's expiry date.
+    Prints a warning if the token expires within 14 days.
+    Silent if the debug call fails (non-critical — pull continues).
+    """
+    res = _graph("debug_token", {"input_token": ACCESS_TOKEN})
+    data = res.get("data", {})
+    expires_at = data.get("expires_at", 0)
+    if not expires_at:
+        return  # token is non-expiring or debug call failed — skip
+    try:
+        expiry = datetime.fromtimestamp(int(expires_at), tz=timezone.utc)
+        now = datetime.now(tz=timezone.utc)
+        days_left = (expiry - now).days
+        expiry_str = expiry.strftime("%Y-%m-%d")
+        if days_left <= 0:
+            print(f"  ❌ META TOKEN EXPIRED on {expiry_str} — pull will likely fail.")
+            print("  → Renew at: https://developers.facebook.com/tools/explorer/")
+            print("    Then extend: https://developers.facebook.com/tools/debug/accesstoken/")
+        elif days_left <= 14:
+            print(f"  ⚠️  META TOKEN EXPIRES IN {days_left} DAYS ({expiry_str}) — renew soon!")
+            print("  → Renew at: https://developers.facebook.com/tools/explorer/")
+            print("    Then extend: https://developers.facebook.com/tools/debug/accesstoken/")
+            print("    Update META_ACCESS_TOKEN in .env after renewing.")
+        else:
+            print(f"  ✅ Token valid until {expiry_str} ({days_left} days remaining)")
+    except Exception:
+        pass  # non-critical — don't block the pull
+
+
 def _token_ok():
     if not ACCESS_TOKEN or len(ACCESS_TOKEN) < 20:
         print("  META_ACCESS_TOKEN not set (or empty) — skipping Meta API pull.")
@@ -91,6 +122,7 @@ def _token_ok():
         print("    Then convert to long-lived: https://developers.facebook.com/tools/debug/accesstoken/")
         return False
     print(f"  ✅ Authenticated as: {me.get('name', me.get('id'))}")
+    _check_token_expiry()  # warn if expiry is within 14 days
     return True
 
 
@@ -114,6 +146,12 @@ def _discover_accounts():
         acct_id = f"act_{a.get('account_id')}"
         name = a.get("name", "")
         loc = cfg.get(acct_id) or cfg.get(str(a.get("account_id")))
+
+        # If a config file exists, skip any account not explicitly listed in it.
+        # This filters out the authenticating user's personal ad accounts.
+        if cfg and not loc:
+            continue
+
         if not loc:
             low = name.lower()
             if "malaga" in low:
