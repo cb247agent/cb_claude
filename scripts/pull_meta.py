@@ -257,6 +257,13 @@ def _build_week(accounts, start, end, include_ads=False):
                 re = _num(ad.get("reach"))
                 ads.append({
                     "name": ad.get("ad_name", ""),
+                    # ── Per-ad account info so the dashboard can show the
+                    #    correct club's Meta account in the Active Ads table.
+                    #    Without these, every ad falls back to "Account not
+                    #    mapped" or a name-keyword heuristic.
+                    "account_id":   a["id"],          # e.g. "act_1235069926610618"
+                    "account_name": a.get("name",""), # e.g. "ChasingBetter247 Malaga"
+                    "location":     a["location"],    # "Malaga" / "Ellenbrook"
                     "spend": round(sp, 2), "impr": int(im), "clicks": int(cl), "reach": int(re),
                     "ctr": round(cl / im * 100, 2) if im else 0,
                     "cpc": round(sp / cl, 2) if cl else 0,

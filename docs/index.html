@@ -7873,11 +7873,34 @@ function renderMeta() {
   const chg = (cur, prev) => prev > 0 ? ((cur - prev) / prev * 100).toFixed(1) + '%' : '–';
   const chgCls = (cur, prev, low=false) => !prev ? '' : (low ? cur < prev : cur > prev) ? 'good' : 'bad';
 
+  // ── Ad → Meta account mapping (each club has its own ad account) ─────────
+  // act IDs come from metaads/meta-accounts.json — kept in sync server-side.
+  const _META_ACCOUNTS = {
+    'act_1235069926610618': { name: 'ChasingBetter247 Malaga',     short: 'Malaga',     colour: '#0a5e54' },
+    'act_781237373084014':  { name: 'ChasingBetter247 Ellenbrook', short: 'Ellenbrook', colour: '#7c3aed' },
+    'Malaga':               { name: 'ChasingBetter247 Malaga',     short: 'Malaga',     colour: '#0a5e54' },
+    'Ellenbrook':           { name: 'ChasingBetter247 Ellenbrook', short: 'Ellenbrook', colour: '#7c3aed' },
+  };
+
+  // Resolve the account for an ad row. Priority:
+  //   1. Explicit a.account_id (act_...)  ← populated by next pull_meta.py
+  //   2. Explicit a.location string ('Malaga' / 'Ellenbrook')
+  //   3. Heuristic: scan ad name for malaga/ellenbrook keywords
+  //   4. Fallback: 'Account not mapped'
+  function _resolveMetaAccount(ad) {
+    if (ad.account_id && _META_ACCOUNTS[ad.account_id])  return _META_ACCOUNTS[ad.account_id];
+    if (ad.location  && _META_ACCOUNTS[ad.location])     return _META_ACCOUNTS[ad.location];
+    const n = (ad.ad_name || ad.name || '').toLowerCase();
+    if (n.includes('malaga'))     return _META_ACCOUNTS['Malaga'];
+    if (n.includes('ellenbrook')) return _META_ACCOUNTS['Ellenbrook'];
+    return { name: 'Account not mapped', short: '—', colour: 'var(--muted)' };
+  }
+
   // ── Ad performance table ────────────────────────────────────────────────────
   html += sectionTitle('Active Ads — Performance · ' + dispWeek);
   html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
     <th>Ad Creative</th>
-    <th>Location</th>
+    <th style="min-width:170px">Meta Account</th>
     <th class="num">Spend</th>
     <th class="num">Impressions</th>
     <th class="num">Clicks</th>
@@ -7889,10 +7912,14 @@ function renderMeta() {
   ${activeAds.map(a=>{
     const adName = a.ad_name || a.name || '';
     const cpc = a.cpc || (a.clicks > 0 ? (a.spend / a.clicks) : 0);
-    const loc  = a.location || 'Both';
+    const acct = _resolveMetaAccount(a);
+    const isUnmapped = acct.name === 'Account not mapped';
     return `<tr>
       <td style="font-size:11.5px;max-width:220px;word-break:break-word">${adName}</td>
-      <td><span style="font-size:10px;background:#f0f2f5;color:var(--muted);padding:2px 7px;border-radius:99px;white-space:nowrap">${loc}</span></td>
+      <td>
+        <span style="font-size:10.5px;color:${acct.colour};font-weight:600;white-space:nowrap">${acct.name}</span>
+        ${isUnmapped ? '' : `<div style="font-size:9px;color:var(--muted);margin-top:1px">${a.account_id || acct.short}</div>`}
+      </td>
       <td class="num">${fmt(a.spend,'$2')}</td>
       <td class="num">${fmt(a.impr||a.impressions||0,'n')}</td>
       <td class="num">${fmt(a.clicks||0,'n')}</td>
@@ -7902,7 +7929,12 @@ function renderMeta() {
       <td class="num ${cpc>0&&cpc<0.4?'good':cpc>0.6?'bad':''}">${cpc?fmt(cpc,'$2'):'–'}</td>
     </tr>`;
   }).join('')||'<tr><td colspan="9" style="color:var(--muted);padding:16px">No ad data available.</td></tr>'}
-  </tbody></table></div>`;
+  </tbody></table>
+  <p style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">
+    Account resolution: ad-level <code>account_id</code> when present, else explicit location, else name-keyword heuristic.
+    Ads showing "Account not mapped" need ad-level account info from <code>pull_meta.py</code> (effective next Monday's pull).
+  </p>
+  </div>`;
 
   // ── Duplicate Ad Detection table (audit rec — biggest leak surfaced) ────
   if (_dupGroups.length > 0) {
