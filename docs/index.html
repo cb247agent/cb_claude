@@ -5860,7 +5860,7 @@ function renderSEO() {
 
   html += `<div class="insight teal mb" style="border-left-width:6px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
-      <div class="insight-label" style="margin:0">📋 This Week — Executive Verdict</div>
+      <div class="insight-label" style="margin:0">This Week — Executive Verdict</div>
       <div style="font-size:10px;color:var(--muted);white-space:nowrap">GSC period: ${gscPeriod}</div>
     </div>
     <div style="font-size:13px;line-height:1.7">
@@ -5906,7 +5906,7 @@ function renderSEO() {
   html += sectionTitle('Key Observations');
   html += `<div class="grid-2 mb">
     <div class="insight red">
-      <div class="insight-label">⚠️ Biggest Leak — Reformer Pilates Gap</div>
+      <div class="insight-label">Biggest Leak — Reformer Pilates Gap</div>
       ${(ahF.keyword_gap_summary && ahF.keyword_gap_summary.primary_opportunity)
         || `${p11_25.length || 'Several'} non-branded keywords rank pos 11–25. Build dedicated landing pages.`}
       ${(ahF.keyword_gap_summary && ahF.keyword_gap_summary.total_gap_volume) ? `
@@ -5917,7 +5917,7 @@ function renderSEO() {
       ` : '<br><br><span style="color:var(--muted);font-size:12px">Connect Ahrefs API to see full gap.</span>')}
     </div>
     <div class="insight teal">
-      <div class="insight-label">✅ This Week's Wins — Position Movements</div>
+      <div class="insight-label">This Week's Wins — Position Movements</div>
       ${wowWins.length > 0
         ? wowWins.map(w=>`<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:5px 0;border-bottom:1px solid rgba(63,166,154,.12)">
             <span><b>${w.keyword}</b><br><span style="font-size:10px;color:var(--muted)">${w.note}</span></span>
@@ -5946,7 +5946,7 @@ function renderSEO() {
     .sort((a,b) => (b.volume||0) - (a.volume||0))
     .slice(0, 6);
 
-  html += sectionTitle('🎯 Quick Wins — Positions 4–20 (Highest ROI)');
+  html += sectionTitle('Quick Wins — Positions 4–20 (Highest ROI)');
   html += `<div class="card mb">
     <div style="padding:8px 14px 0;font-size:11px;color:var(--muted)">
       Keywords already ranking pos 4–20 — push to top 3 via on-page work. Sorted by impression opportunity.
@@ -5999,7 +5999,7 @@ function renderSEO() {
   // ── 4. TECHNICAL HEALTH (audit recommendation: Frog data was unused) ───
   if (tech.total_issue_types > 0 || (tech.issues||[]).length > 0) {
     const techIssues = tech.issues || [];
-    html += sectionTitle('🛠 Technical Health · Crawled ' + (tech.crawled_at || '—'));
+    html += sectionTitle('Technical Health · Crawled ' + (tech.crawled_at || '—'));
     html += `<div class="grid-2 mb">
       <div class="card">
         <div class="card-h">Issue Summary</div>
@@ -6275,7 +6275,7 @@ function renderSEO() {
     return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
   };
 
-  html += sectionTitle('📋 Next 2 Weeks — Prioritised Action List');
+  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
   html += `<div class="card mb"><table>
     <thead><tr>
       <th style="width:24px">#</th>
