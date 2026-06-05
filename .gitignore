@@ -40,3 +40,7 @@ context/*-context.json
 .DS_Store
 node_modules/
 *.log
+
+# CB247 Metricool inbox — contains private analytics PDFs
+cb247-inbox/metricool.pdf
+cb247-inbox/*.pdf

@@ -51,6 +51,7 @@ def build_payload():
     gbp_perf = _load("gbp-performance.json", {})
     gbp_ratings = _load("gbp-data.json", {})
     trends = _load("social-trends.json", {})
+    metricool = _load("metricool-data.json", {})  # parsed weekly PDF (richest source)
 
     ig_block = apify.get("instagram_profiles") or {}
     fb_block = apify.get("facebook_pages") or {}
@@ -141,15 +142,32 @@ def build_payload():
         },
     }
 
+    # ── Metricool parsed PDF (preferred source — richest private data) ──
+    metricool_available = bool(metricool.get("available"))
+    metricool_payload = {
+        "available":     metricool_available,
+        "parsed_at":     metricool.get("parsed_at") or "",
+        "date_range":    metricool.get("date_range") or {},
+        "combined":      metricool.get("combined") or {},
+        "fb":            metricool.get("fb") or {},
+        "ig":            metricool.get("ig") or {},
+        "gbp":           metricool.get("gbp") or {},
+        "parse_quality": metricool.get("parse_quality") or {},
+    }
+
     payload = {
         "generated_at":    datetime.now(timezone.utc).isoformat(),
         "data_freshness": {
-            "apify_pulled_at":     apify.get("date_pulled") or "",
-            "gbp_perf_pulled_at":  gbp_perf.get("generated_at") or "",
+            "metricool_parsed_at":   metricool.get("parsed_at") or "",
+            "metricool_date_range":  (metricool.get("date_range") or {}).get("raw") or "",
+            "metricool_available":   metricool_available,
+            "apify_pulled_at":       apify.get("date_pulled") or "",
+            "gbp_perf_pulled_at":    gbp_perf.get("generated_at") or "",
             "gbp_ratings_pulled_at": gbp_ratings.get("generated_at") or "",
-            "trends_pulled_at":    trends.get("scraped") or "",
-            "gbp_api_enabled":     bool(gbp_combined or gbp_locs),
+            "trends_pulled_at":      trends.get("scraped") or "",
+            "gbp_api_enabled":       bool(gbp_combined or gbp_locs),
         },
+        "metricool": metricool_payload,
         "instagram": {
             "available":   cb247_ig_summary["available"],
             "cb247":       cb247_ig_summary,
@@ -212,6 +230,7 @@ def inject():
     INDEX_PATH.write_text(updated, encoding="utf-8")
     print(f"[social] OK — block {action} in docs/index.html")
     df = payload["data_freshness"]
+    print(f"        Metricool PDF:   {'OK (' + (df['metricool_date_range'] or 'no range') + ')' if df['metricool_available'] else 'NOT PARSED — drop metricool.pdf in cb247-inbox/'}")
     print(f"        Apify pulled:    {df['apify_pulled_at'][:19] if df['apify_pulled_at'] else 'no data'}")
     print(f"        GBP perf pulled: {df['gbp_perf_pulled_at'][:19] if df['gbp_perf_pulled_at'] else 'no data'}")
     print(f"        Instagram CB247: {'OK' if payload['instagram']['available'] else 'MISSING'}")

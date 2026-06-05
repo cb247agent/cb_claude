@@ -109,6 +109,21 @@ log "Step 1d — Site crawl (CB247 + competitors, privacy-compliant)..."
 "$PYTHON" "$BASE_DIR/scripts/run_site_crawl.py" --competitors >> "$LOG" 2>&1 \
     || fail "run_site_crawl.py had issues — continuing"
 
+# ── Step 1e: Metricool PDF parse (drop metricool.pdf into cb247-inbox/ before 1:55am AWST) ──
+# Drops state/metricool-data.json with the rich Metricool weekly data
+# (stories, reach, demographics, GBP actions). Failure mode: preserves
+# last good JSON file rather than blanking it.
+log "Step 1e — Parse Metricool PDF (cb247-inbox/metricool.pdf)..."
+"$PYTHON" "$BASE_DIR/scripts/parse_metricool_pdf.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Metricool parse skipped — PDF missing or unparseable. Dashboard uses previous parse or hardcoded fallback."
+
+# ── Step 1f: GBP Performance API (per-location actions for Malaga + Ellenbrook) ──
+# Requires CB247_GBP_MALAGA_LOCATION_ID + CB247_GBP_ELLENBROOK_LOCATION_ID in .env.
+# First-run mode lists accessible locations; subsequent runs pull the metrics.
+log "Step 1f — GBP Performance API (per-location actions)..."
+"$PYTHON" "$BASE_DIR/scripts/pull_gbp_performance.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  GBP Performance skipped — first-run setup or API not enabled. Dashboard shows aggregate GBP only."
+
 log "Phase 1 complete."
 
 
