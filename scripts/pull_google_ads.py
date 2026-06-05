@@ -74,12 +74,13 @@ def pull_google_ads():
         _write_empty(skip_reason=str(e))
         return None
 
-    # --- Date range: most recently completed Mon–Sun week ---
+    # --- Date range: most recently completed Sat–Fri week ---
+    # Pulled on Monday — Friday conversions have had 72hrs to fully settle.
+    # days_since_friday: Mon=3, Tue=4, Wed=5, Thu=6, Fri=0, Sat=1, Sun=2
     today = datetime.today()
-    # days_since_sunday: Mon=1, Tue=2, ..., Sat=6, Sun=0
-    days_since_sunday = (today.weekday() + 1) % 7
-    end   = today if days_since_sunday == 0 else today - timedelta(days=days_since_sunday)
-    start = end - timedelta(days=6)
+    days_since_friday = (today.weekday() - 4) % 7
+    end   = today - timedelta(days=days_since_friday)      # last Friday
+    start = end - timedelta(days=6)                        # preceding Saturday
     end_date   = end.strftime("%Y-%m-%d")
     start_date = start.strftime("%Y-%m-%d")
 

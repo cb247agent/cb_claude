@@ -27,10 +27,13 @@ GA4_PROPERTY_ID = os.getenv("GA4_PROPERTY_ID", "")
 
 
 def get_default_date_range():
-    """Returns (start_date, end_date) for last 7 days"""
-    end = datetime.today().strftime("%Y-%m-%d")
-    start = (datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
-    return start, end
+    """Returns (start_date, end_date) for last completed Sat–Fri week.
+    Pulled on Monday — Friday conversions have had 72hrs to fully settle."""
+    today = datetime.today()
+    days_since_friday = (today.weekday() - 4) % 7
+    end   = today - timedelta(days=days_since_friday)   # last Friday
+    start = end - timedelta(days=6)                     # preceding Saturday
+    return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
 
 def run_report(client, property_id, start_date, end_date, dimension_names, metrics):
