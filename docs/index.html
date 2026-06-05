@@ -6062,19 +6062,8 @@ function renderMwccOverview() {
     html += '</tbody></table></div>';
   }
 
-  // Meta snapshot if live
-  if (metaSpend > 0) {
-    const s = meta.summary;
-    html += '<div class="section-title">Meta Ads Snapshot</div><div class="kpi-grid cols-4 mb">' +
-      kpiCard('','Spend','$'+s.spend.toFixed(2),null,`${(meta.campaigns||[]).length} campaigns`) +
-      kpiCard('','Impressions',_mwccFmt(s.impr),null,`CPM $${(s.cpm||0).toFixed(2)}`) +
-      kpiCard('','Clicks',_mwccFmt(s.clicks),null,`CTR ${(s.ctr||0).toFixed(2)}%`) +
-      kpiCard('','CPC','$'+(s.cpc||0).toFixed(2),null,`Reach ${_mwccFmt(s.reach)}`) +
-    '</div>';
-  }
-
-  if (!centreArr.length && !metaSpend) {
-    html = '<div class="insight neutral"><div class="insight-label">Awaiting Data</div>Add MWCC credentials to .env and drop OWNA files into mwcc-inbox/ to populate this dashboard. See mwcc-inbox/README.md</div>';
+  if (!centreArr.length) {
+    html = '<div class="insight neutral"><div class="insight-label">Awaiting Data</div>Add MWCC credentials to .env and drop OWNA files into mwcc-inbox/ to populate this dashboard.</div>';
   }
 
   el.innerHTML = html;
@@ -6136,10 +6125,33 @@ function renderMwccGads() {
   const ads = md.ads || {};
   const el = $('mwcc-gads-content');
   if (!el) return;
+
   if (ads.available === false) {
-    el.innerHTML = `<div class="insight neutral"><div class="insight-label">Awaiting Credentials</div>${ads.skip_reason||'Add MWCC_GOOGLE_ADS_CUSTOMER_ID (917-218-6113) and MWCC_GOOGLE_ADS_MANAGER_ID (569-719-3495) to .env'}</div>`;
+    el.innerHTML = `
+      <div class="kpi-grid cols-4 mb">
+        ${kpiCard('','Total Spend','—',null,'Connect Google Ads')}
+        ${kpiCard('','Impressions','—',null,'Connect Google Ads')}
+        ${kpiCard('','Clicks','—',null,'Connect Google Ads')}
+        ${kpiCard('','Conversions','—',null,'Connect Google Ads')}
+      </div>
+      <div class="section-title">Connect Google Ads</div>
+      <div class="card mb" style="padding:20px 24px">
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Add these variables to <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">.env</code> to enable live Google Ads data for My World Childcare.</p>
+        <table style="width:100%"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody>
+          <tr><td><code>MWCC_GOOGLE_ADS_CUSTOMER_ID</code></td><td style="font-family:monospace;font-size:12px;color:var(--teal)">917-218-6113</td></tr>
+          <tr><td><code>MWCC_GOOGLE_ADS_MANAGER_ID</code></td><td style="font-family:monospace;font-size:12px;color:var(--teal)">569-719-3495</td></tr>
+        </tbody></table>
+        <p style="margin:14px 0 4px;font-size:12px;color:var(--muted)">Then run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">python scripts/pull_mwcc_ads.py</code></p>
+      </div>
+      <div class="section-title">What will appear here</div>
+      <div class="card mb" style="padding:16px 24px">
+        <table><thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">Conv</th><th class="num">CPA</th></tr></thead><tbody>
+          <tr style="color:var(--muted)"><td colspan="6" style="text-align:center;padding:16px;font-size:12px">Campaign data will appear here once credentials are connected</td></tr>
+        </tbody></table>
+      </div>`;
     return;
   }
+
   let html = '';
   if (ads.totals) {
     const t = ads.totals;
@@ -6163,7 +6175,39 @@ function renderMwccGads() {
 function renderMwccOrgSocial() {
   const el = $('mwcc-orgsoc-content');
   if (!el) return;
-  el.innerHTML = '<div class="insight neutral"><div class="insight-label">Coming Soon</div>Instagram and Facebook organic metrics will appear here once Metricool API integration is configured for My World Childcare.</div>';
+  el.innerHTML = `
+    <div class="kpi-grid cols-4 mb">
+      ${kpiCard('','Followers','—',null,'Instagram + Facebook')}
+      ${kpiCard('','Reach','—',null,'This period')}
+      ${kpiCard('','Engagement Rate','—',null,'Avg across platforms')}
+      ${kpiCard('','Top Post Reach','—',null,'Best performing post')}
+    </div>
+    <div class="section-title">Platforms Tracked</div>
+    <div class="card mb" style="padding:20px 24px">
+      <table><thead><tr><th>Platform</th><th>Page / Handle</th><th>Metrics Planned</th><th>Status</th></tr></thead><tbody>
+        <tr>
+          <td style="font-weight:600">Facebook</td>
+          <td style="font-size:12px;color:var(--muted)">My World Childcare</td>
+          <td style="font-size:12px;color:var(--muted)">Page likes, reach, post engagement, link clicks</td>
+          <td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td>
+        </tr>
+        <tr>
+          <td style="font-weight:600">Instagram</td>
+          <td style="font-size:12px;color:var(--muted)">@myworldchildcare</td>
+          <td style="font-size:12px;color:var(--muted)">Followers, impressions, reach, engagement rate, top posts</td>
+          <td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td>
+        </tr>
+      </tbody></table>
+    </div>
+    <div class="section-title">Integration Required</div>
+    <div class="card mb" style="padding:16px 24px">
+      <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">Organic social metrics are pulled via <strong>Metricool</strong>. To connect:</p>
+      <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.8">
+        <li>Connect My World Childcare Facebook + Instagram pages in Metricool</li>
+        <li>Generate a Metricool API token and add to <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">.env</code> as <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">MWCC_METRICOOL_TOKEN</code></li>
+        <li>Run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">python scripts/pull_mwcc_social.py</code></li>
+      </ol>
+    </div>`;
 }
 
 function renderMwccWebsite() {
@@ -6171,10 +6215,38 @@ function renderMwccWebsite() {
   const ga4 = md.ga4 || {};
   const el = $('mwcc-website-content');
   if (!el) return;
+
   if (ga4.available === false) {
-    el.innerHTML = `<div class="insight neutral"><div class="insight-label">Awaiting Credentials</div>${ga4.skip_reason||'Add MWCC_GA4_PROPERTY_ID=315149021 to .env'}</div>`;
+    el.innerHTML = `
+      <div class="kpi-grid cols-4 mb">
+        ${kpiCard('','Active Users','—',null,'Connect GA4')}
+        ${kpiCard('','Sessions','—',null,'Connect GA4')}
+        ${kpiCard('','Key Events','—',null,'Connect GA4')}
+        ${kpiCard('','Avg Session','—',null,'Connect GA4')}
+      </div>
+      <div class="section-title">Connect GA4 — myworldcc.com.au</div>
+      <div class="card mb" style="padding:20px 24px">
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Add this variable to <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">.env</code> to enable website analytics for My World Childcare.</p>
+        <table style="width:100%"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody>
+          <tr><td><code>MWCC_GA4_PROPERTY_ID</code></td><td style="font-family:monospace;font-size:12px;color:var(--teal)">315149021</td></tr>
+        </tbody></table>
+        <p style="margin:14px 0 0;font-size:12px;color:var(--muted)">The service account in <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">secrets/</code> must also have Viewer access to this GA4 property. Then run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">python scripts/pull_mwcc_ga4.py</code></p>
+      </div>
+      <div class="section-title">What will appear here</div>
+      <div class="card mb" style="padding:16px 24px">
+        <table><thead><tr><th>Page</th><th class="num">Sessions</th><th class="num">Users</th><th class="num">Key Events</th></tr></thead><tbody>
+          <tr style="color:var(--muted)"><td colspan="4" style="text-align:center;padding:16px;font-size:12px">Top pages from myworldcc.com.au will appear here once GA4 is connected</td></tr>
+        </tbody></table>
+      </div>
+      <div class="section-title" style="margin-top:16px">Traffic by Channel</div>
+      <div class="card mb" style="padding:16px 24px">
+        <table><thead><tr><th>Channel</th><th class="num">Sessions</th><th class="num">Users</th></tr></thead><tbody>
+          <tr style="color:var(--muted)"><td colspan="3" style="text-align:center;padding:16px;font-size:12px">Channel breakdown will appear here once GA4 is connected</td></tr>
+        </tbody></table>
+      </div>`;
     return;
   }
+
   let html = `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Active Users',_mwccFmt(ga4.active_users),null,'')}
     ${kpiCard('','Sessions',_mwccFmt(ga4.sessions),null,`Prior: ${_mwccFmt(ga4.p_sessions)}`)}
