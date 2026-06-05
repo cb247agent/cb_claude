@@ -71,7 +71,7 @@ fi
 # ─────────────────────────────────────────────────────────────────
 log ""
 log "─── STEP 2: Google Ads (account 917-218-6113) ───"
-if "$PYTHON" "$BASE_DIR/scripts/pull_mwcc_ads.py" >> "$LOG" 2>&1; then
+if GRPC_DNS_RESOLVER=native "$PYTHON" "$BASE_DIR/scripts/pull_mwcc_ads.py" >> "$LOG" 2>&1; then
     log "  ✅ Google Ads pull complete → state/mwcc-ads.json"
 else
     FAILED_STEPS+=("google-ads")
