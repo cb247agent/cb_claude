@@ -6347,12 +6347,58 @@ function renderGAds() {
   const malConv     = kws.filter(k=>k.locations&&k.locations.includes('Malaga')).reduce((s,k)=>s+k.conv,0);
   const ellConv     = kws.filter(k=>k.locations&&k.locations.includes('Ellenbrook')).reduce((s,k)=>s+k.conv,0);
 
-  // ── KPI Cards ────────────────────────────────────────────────────────────
-  let html = statusBanner + `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),ads.spend_chg,`${totalClicks} clicks · ${weekLabel}`)}
-    ${kpiCard('','Conversions',fmt(totalConv,'n'),null,`Blended CPA: ${fmt(blendedCPA,'$2')}`,(blendedCPA>50&&blendedCPA>0)?'red':'green')}
-    ${kpiCard('','Malaga',fmt(malSpend||mal.spend,'$2'),null,`${malConv||mal.conv||0} conversions`)}
-    ${kpiCard('','Ellenbrook',fmt(ellSpend||ell.spend,'$2'),null,`${ellConv||ell.conv||0} conversions`)}
+  // ── WoW helpers (use previous-period data already in payload) ────────────
+  const _pMal_t = ads.p_malaga     || {};
+  const _pEll_t = ads.p_ellenbrook || {};
+  const _pTotalConv  = (_pMal_t.conv||0) + (_pEll_t.conv||0);
+  const _pTotalSpend = (_pMal_t.spend||0) + (_pEll_t.spend||0);
+  const _convChg = _pTotalConv > 0 ? ((totalConv - _pTotalConv) / _pTotalConv * 100) : null;
+  const _malSpendChg = _pMal_t.spend > 0 ? ((mal.spend - _pMal_t.spend) / _pMal_t.spend * 100) : null;
+  const _ellSpendChg = _pEll_t.spend > 0 ? ((ell.spend - _pEll_t.spend) / _pEll_t.spend * 100) : null;
+  const _malCpaChg   = _pMal_t.cpa > 0 ? ((mal.cpa - _pMal_t.cpa) / _pMal_t.cpa * 100) : null;
+  const _ellCpaChg   = _pEll_t.cpa > 0 ? ((ell.cpa - _pEll_t.cpa) / _pEll_t.cpa * 100) : null;
+
+  // ── 0. EXECUTIVE VERDICT (audit recommendation: verdict before data) ────
+  const _camps_v        = ads.campaigns || [];
+  const _activeCamps    = _camps_v.filter(c => c.spend > 0);
+  const _dormantCamps   = _camps_v.filter(c => c.spend === 0);
+  const _starCampaign   = [..._camps_v].filter(c => c.conv > 0).sort((a,b) => (a.spend/a.conv) - (b.spend/b.conv))[0];
+  const _malCPAvE       = (mal.cpa > 0 && ell.cpa > 0) ? (mal.cpa / ell.cpa) : null;
+
+  const _vWhereWeAre = `Spend ${fmt(totalSpend,'$2')} · ${totalConv} conv · blended CPA ${fmt(blendedCPA,'$2')} (target $25). ${ads.spend_chg!=null?`Spend ${ads.spend_chg>0?'↑':'↓'} ${Math.abs(ads.spend_chg).toFixed(1)}% WoW.`:''}`;
+  const _vRisk = _malCPAvE && _malCPAvE > 2
+    ? `Malaga CPA ${fmt(mal.cpa,'$2')} vs Ellenbrook ${fmt(ell.cpa,'$2')} — Malaga costs <b>${_malCPAvE.toFixed(1)}× more per conversion</b> on similar spend. Could be tracking, audience, or landing-page issue — verify before scaling.`
+    : (totalConv === 0 && totalSpend > 0)
+      ? `${fmt(totalSpend,'$2')} spent with 0 conversions tracked. Conversion pixel may be broken — audit before next budget cycle.`
+      : `${_dormantCamps.length} of ${_camps_v.length} campaigns are dormant ($0 spend). Account hygiene — archive or activate.`;
+  const _vPriority = _starCampaign
+    ? `Scale "${_starCampaign.name}" (${_starCampaign.location}) — currently ${_starCampaign.conv} conv at ${fmt(_starCampaign.spend/_starCampaign.conv,'$2')} CPA. Cheapest converter in the account.`
+    : `Verify conversion tracking before adding spend.`;
+
+  let html = statusBanner + `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Executive Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${weekLabel}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_vWhereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
+      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+    </div>
+  </div>`;
+
+  // ── 1. KPI Cards with WoW deltas + verdict colours ──────────────────────
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),ads.spend_chg,`${totalClicks} clicks · ${weekLabel}`,
+      ads.spend_chg>30?'amber':'')}
+    ${kpiCard('','Conversions',fmt(totalConv,'n'),_convChg,`Blended CPA: ${fmt(blendedCPA,'$2')} (target $25)`,
+      (blendedCPA>25&&blendedCPA>0)?'red':blendedCPA>0?'green':'amber')}
+    ${kpiCard('','Malaga',fmt(malSpend||mal.spend,'$2'),_malSpendChg,
+      `${malConv||mal.conv||0} conv · CPA ${fmt(mal.cpa,'$2')}${_malCpaChg!=null?` (${_malCpaChg>0?'+':''}${_malCpaChg.toFixed(0)}% WoW)`:''}`,
+      mal.cpa>25?'red':mal.cpa>0?'':'amber')}
+    ${kpiCard('','Ellenbrook',fmt(ellSpend||ell.spend,'$2'),_ellSpendChg,
+      `${ellConv||ell.conv||0} conv · CPA ${fmt(ell.cpa,'$2')}${_ellCpaChg!=null?` (${_ellCpaChg>0?'+':''}${_ellCpaChg.toFixed(0)}% WoW)`:''}`,
+      ell.cpa>0&&ell.cpa<10?'green':ell.cpa>25?'red':'')}
   </div>`;
 
   // ── Insight strip ────────────────────────────────────────────────────────
@@ -6361,7 +6407,7 @@ function renderGAds() {
   html += sectionTitle('Key Observations');
   html += `<div class="grid-2 mb">
     <div class="insight ${(blendedCPA>15&&blendedCPA>0)||wasteKwsQuick.length>0?'red':'amber'}">
-      <div class="insight-label">${blendedCPA>15&&blendedCPA>0?'⚠️ CPA Above Target — Review Campaigns':wasteKwsQuick.length>0?'⚠️ Budget Waste Detected — Pause These Keywords':'⚠️ Monitor — Account Stable'}</div>
+      <div class="insight-label">${blendedCPA>15&&blendedCPA>0?'CPA Above Target — Review Campaigns':wasteKwsQuick.length>0?'Budget Waste Detected — Pause These Keywords':'Monitor — Account Stable'}</div>
       ${blendedCPA>15&&blendedCPA>0
         ? `Blended CPA is <b>${fmt(blendedCPA,'$2')}</b> — above the $15 target. Malaga: ${fmt(mal.cpa,'$2')} · Ellenbrook: ${fmt(ell.cpa,'$2')}. Review low-converting campaigns and pause underperformers.`
         : wasteKwsQuick.length>0
@@ -6371,7 +6417,7 @@ function renderGAds() {
       }
     </div>
     <div class="insight teal">
-      <div class="insight-label">✅ ${winnerKwTop?'Best Performing Keyword — Scale This':'Conversion Tracking Active'}</div>
+      <div class="insight-label">${winnerKwTop?'Best Performing Keyword — Scale This':'Conversion Tracking Active'}</div>
       ${winnerKwTop
         ? `<b>"${winnerKwTop.keyword}"</b> — ${winnerKwTop.conv} conversions at <b>${fmt(winnerKwTop.cost/winnerKwTop.conv,'$2')} CPA</b> this week.
           Top impression share: ${winnerKwTop.top_impr_pct}%. ${winnerKwTop.top_impr_pct<80?'Raise bid to increase visibility — this keyword is proving ROI.':'Bid is competitive. Maintain and protect budget allocation.'}
@@ -6435,6 +6481,57 @@ function renderGAds() {
         <div><b style="color:var(--teal)">3. Pause-and-reinvest rule</b><br>
         <span style="color:var(--muted)">Any keyword with 10+ clicks and 0 conversions = pause. Move budget to converting keywords and new strategic additions below.</span></div>
       </div>
+    </div>
+  </div>`;
+
+  // ── Star Performer + Dormant Campaigns (audit recs: surface buried wins +
+  //    account hygiene before the Active Campaigns table) ─────────────────
+  html += sectionTitle('Star Performer + Account Hygiene');
+  const _starCPA = _starCampaign ? (_starCampaign.spend / _starCampaign.conv) : 0;
+  const _starShare = (_starCampaign && totalSpend > 0)
+    ? Math.round(_starCampaign.spend / totalSpend * 100) : 0;
+  const _starConvShare = (_starCampaign && totalConv > 0)
+    ? Math.round(_starCampaign.conv / totalConv * 100) : 0;
+  html += `<div class="grid-2 mb">
+    <div class="card" style="border-left:4px solid var(--teal)">
+      <div class="card-h">Star Performer — Scale This</div>
+      ${_starCampaign ? `
+        <div style="font-size:18px;font-weight:700;color:var(--teal);margin-bottom:4px">${_starCampaign.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">${_starCampaign.location} · ${weekLabel}</div>
+        <div class="stat-row"><span class="stat-label">Spend</span><span class="stat-val">${fmt(_starCampaign.spend,'$2')}</span></div>
+        <div class="stat-row"><span class="stat-label">Conversions</span><span class="stat-val good">${_starCampaign.conv}</span></div>
+        <div class="stat-row"><span class="stat-label">CPA</span><span class="stat-val good">${fmt(_starCPA,'$2')}</span></div>
+        <div class="stat-row"><span class="stat-label">CTR · CPC</span><span class="stat-val">${_starCampaign.ctr}% · ${fmt(_starCampaign.cpc,'$2')}</span></div>
+        <div class="stat-row"><span class="stat-label">Share of account</span><span class="stat-val">${_starShare}% spend · ${_starConvShare}% conv</span></div>
+        <div style="margin-top:14px;padding:10px 12px;background:rgba(63,166,154,.08);border-radius:4px;font-size:11.5px;line-height:1.6">
+          <b>Action:</b> Lift daily budget +25–30% over 2 weeks. CPA is ${blendedCPA > 0 ? (blendedCPA / _starCPA).toFixed(1) : '–'}× cheaper than account blended — significant headroom before diminishing returns kick in.
+        </div>
+      ` : '<div style="color:var(--muted);font-size:12px">No converting campaigns this week.</div>'}
+    </div>
+    <div class="card">
+      <div class="card-h">Account Hygiene — Dormant Campaigns
+        <span class="card-period">${_dormantCamps.length} of ${_camps_v.length}</span>
+      </div>
+      ${_dormantCamps.length > 0 ? `
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">
+          ${_dormantCamps.length} campaigns ran $0 spend this week. Pure account clutter, or paused with intent? Review before next planning cycle.
+        </div>
+        <table><thead><tr><th>Campaign</th><th>Location</th><th>Suggested action</th></tr></thead><tbody>
+        ${_dormantCamps.slice(0,10).map(c => {
+          const isRemark = /remarket|display/i.test(c.name);
+          const isService = /pilates|crossfit|yoga|exercise/i.test(c.name);
+          const action = isService ? 'Activate or delete — services exist but no spend'
+                       : isRemark  ? 'Verify audience list size — may have nothing to remarket to'
+                       : 'Archive — appears abandoned';
+          return `<tr>
+            <td style="font-size:11.5px;font-weight:600">${c.name}</td>
+            <td style="font-size:11px;color:var(--muted)">${c.location}</td>
+            <td style="font-size:10.5px;color:var(--text-2)">${action}</td>
+          </tr>`;
+        }).join('')}
+        ${_dormantCamps.length > 10 ? `<tr><td colspan="3" style="font-size:10px;color:var(--muted-2);padding:6px 12px">+${_dormantCamps.length - 10} more dormant</td></tr>` : ''}
+        </tbody></table>
+      ` : '<div style="color:var(--muted);font-size:12px;padding:8px 0">All campaigns are active — no hygiene issues.</div>'}
     </div>
   </div>`;
 
@@ -6679,18 +6776,117 @@ function renderGAds() {
     priorities.push(`<b>${_pn++}. Test budget increase:</b> All converting campaigns are below $20 CPA — well within target. Run a 2-week test with 25% higher daily budgets across converting campaigns. Google's algorithm will allocate toward best-performing ad groups automatically.`);
   }
 
-  // ── Agent Brief ──────────────────────────────────────────────────────────
+  // ── NEXT 2 WEEKS — structured action list (audit recommendation) ───────
+  // Replaces free-text "Paid Ads Agent priorities" with prioritised, scannable
+  // list: each action has title · why · owner · effort (S/M/L) · expected impact.
+  const _actions2w = [];
+
+  if (_starCampaign) {
+    _actions2w.push({
+      title: `Scale "${_starCampaign.name}" — lift budget +25%`,
+      why: `${_starCampaign.location} · ${_starCampaign.conv} conv at ${fmt(_starCPA,'$2')} CPA (${blendedCPA > 0 ? (blendedCPA/_starCPA).toFixed(1)+'×' : ''} cheaper than blended). CTR ${_starCampaign.ctr}% · CPC ${fmt(_starCampaign.cpc,'$2')}. Significant headroom before diminishing returns.`,
+      owner: 'Paid Media (Tia)',
+      effort: 'S',
+      impact: `Add 8–12 conv/wk at sub-$10 CPA. Est. +${Math.round(_starCampaign.conv * 0.25)} weekly conversions.`,
+    });
+  }
+
+  if (_malCPAvE && _malCPAvE > 2) {
+    _actions2w.push({
+      title: 'Audit Malaga conversion tracking + landing pages',
+      why: `Malaga CPA ${fmt(mal.cpa,'$2')} vs Ellenbrook ${fmt(ell.cpa,'$2')} on similar spend (${fmt(mal.spend,'$2')} vs ${fmt(ell.spend,'$2')}). ${_malCPAvE.toFixed(1)}× gap is too large to be audience alone. Verify pixel firing on Malaga landing pages first.`,
+      owner: 'Paid Media + Web Dev',
+      effort: 'M',
+      impact: 'If tracking gap closes, Malaga reports +20–35 conv/wk. If real, signals LP rebuild needed.',
+    });
+  }
+
+  if (_worstCamp) {
+    _actions2w.push({
+      title: `Review "${_worstCamp.name}" — ${fmt(_worstCamp.spend,'$2')} spent, 0 conv`,
+      why: `${_worstCamp.location} · ${_worstCamp.clicks} clicks but no conversions. Check ad copy vs landing page alignment, audience targeting, and pixel firing. 7-day window — pause if no improvement.`,
+      owner: 'Paid Media',
+      effort: 'S',
+      impact: `Recover ${fmt(_worstCamp.spend,'$2')}/wk wasted spend · reallocate to converters`,
+    });
+  }
+
+  if (_dormantCamps.length > 0) {
+    const serviceCamps = _dormantCamps.filter(c => /pilates|crossfit|yoga|exercise/i.test(c.name));
+    _actions2w.push({
+      title: `Triage ${_dormantCamps.length} dormant campaigns`,
+      why: `${_dormantCamps.length} of ${_camps_v.length} campaigns spent $0 this week.${serviceCamps.length > 0 ? ` ${serviceCamps.length} are service campaigns (Pilates, CrossFit, Yoga, Exercise) — these services exist but you're not advertising them.` : ''} Either activate with intent, archive, or delete.`,
+      owner: 'Paid Media (Tia)',
+      effort: 'S',
+      impact: 'Cleaner account · faster Monday reviews · clearer Smart Bidding signal',
+    });
+  }
+
+  _actions2w.push({
+    title: 'Add 3 high-intent unique keywords as exact match',
+    why: '"kids gym malaga" · "sauna and ice bath perth" · "fifo gym perth" — uncontested by Revo/Anytime/Snap and aligned with CB247\'s genuine differentiators (Kids Hub, sauna/ice, FIFO freeze). Low CPC, high conversion intent.',
+    owner: 'Paid Media',
+    effort: 'S',
+    impact: 'Est. +5–10 conv/wk at sub-$15 CPA · unlocks ad-copy angle competitors can\'t copy',
+  });
+
+  if (_convCamps.length > 0 && _convCamps.every(c => c.cpa < 20)) {
+    _actions2w.push({
+      title: 'Test +25% budget on all sub-$20 CPA campaigns',
+      why: `Every converting campaign is below the $25 CPA target. Smart Bidding has signal — let the algorithm reallocate. 2-week test, then reassess.`,
+      owner: 'Paid Media',
+      effort: 'S',
+      impact: 'Increase weekly volume without raising blended CPA',
+    });
+  }
+
+  if (totalConv === 0 && totalSpend > 0) {
+    _actions2w.unshift({
+      title: 'STOP — Verify conversion tracking before next budget cycle',
+      why: `${fmt(totalSpend,'$2')} spent this week with 0 conversions recorded. Either tracking is broken or pixel isn't firing. Audit in Google Ads → Tools → Conversions before adding any spend.`,
+      owner: 'Paid Media + Web Dev',
+      effort: 'S',
+      impact: 'Prevent burning further budget while blind',
+    });
+  }
+
+  const _effortBadge_ga = e => {
+    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
+    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
+  };
+
+  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
+  html += `<div class="card mb"><table>
+    <thead><tr>
+      <th style="width:24px">#</th>
+      <th>Action</th>
+      <th>Owner</th>
+      <th style="width:50px">Effort</th>
+      <th style="font-size:10px">Expected Impact</th>
+    </tr></thead><tbody>
+    ${_actions2w.map((a,i) => `<tr>
+      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td>
+        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
+      </td>
+      <td style="font-size:11px"><b>${a.owner}</b></td>
+      <td>${_effortBadge_ga(a.effort)}</td>
+      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
+    </tr>`).join('')}
+    </tbody></table>
+    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Review and reassign in next Monday meeting.</p>
+  </div>`;
+
+  // ── Full Paid Ads Agent report (kept as collapsed reference) ────────────
   const _ao_ads = D.raw_agent_outputs || {};
-  let adsAgentText = priorities.join('<br><br>');
   if (_ao_ads.has_outputs && _ao_ads.paid_ads) {
-    adsAgentText += `<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(63,166,154,.2)">
-      <b>Full Paid Ads Agent Report — ${_ao_ads.date}</b><br>
-      <div style="font-size:12px;line-height:1.7;max-height:300px;overflow-y:auto;margin-top:8px">
+    html += `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:11px;color:var(--muted);padding:8px 0">Full Paid Ads Agent Report — ${_ao_ads.date}</summary>
+      <div style="font-size:12px;line-height:1.7;margin-top:8px;padding:12px;background:#fafafa;border-radius:6px">
         ${formatAgentMd(_ao_ads.paid_ads)}
       </div>
-    </div>`;
+    </details>`;
   }
-  html += agentBrief('Paid Ads Agent', adsAgentText);
 
   $('gads-content').innerHTML = html;
 
