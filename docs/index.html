@@ -6152,20 +6152,24 @@ function renderMwccGads() {
     return;
   }
 
+  const dr    = ads.date_range || {};
+  const d_start = dr.start || '';
+  const d_end   = dr.end   || '';
+
   let html = '';
   if (ads.totals) {
     const t = ads.totals;
     html += `<div class="kpi-grid cols-4 mb">
-      ${kpiCard('','Total Spend','$'+(t.cost||0).toFixed(2),null,'')}
+      ${kpiCard('','Total Spend','$'+(t.spend||0).toFixed(2),null,d_start ? `${d_start} – ${d_end}` : '')}
       ${kpiCard('','Impressions',_mwccFmt(t.impressions),null,`CTR ${(t.ctr||0).toFixed(2)}%`)}
-      ${kpiCard('','Clicks',_mwccFmt(t.clicks),null,`CPC $${(t.avg_cpc||0).toFixed(2)}`)}
-      ${kpiCard('','Conversions',_mwccFmt(t.conversions),null,`CPA $${(t.cpa||0).toFixed(2)}`)}
+      ${kpiCard('','Clicks',_mwccFmt(t.clicks),null,`CPC $${(t.cpc||0).toFixed(2)}`)}
+      ${kpiCard('','Conversions',_mwccFmt(t.conversions),null,`CPA $${(t.cost_per_conv||0).toFixed(2)}`)}
     </div>`;
   }
-  const cams = ads.campaigns || [];
+  const cams = (ads.campaigns || []).filter(c => (c.spend||0) > 0);
   if (cams.length) {
     html += '<div class="section-title">Campaigns</div><div class="card mb"><table><thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">Conv</th><th class="num">CPA</th></tr></thead><tbody>';
-    for (const c of cams) html += `<tr><td style="font-size:11.5px">${c.campaign_name||c.name}</td><td class="num">$${(c.cost||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">${c.conversions||0}</td><td class="num">$${(c.cpa||0).toFixed(2)}</td></tr>`;
+    for (const c of cams) html += `<tr><td style="font-size:11.5px">${c.name||c.campaign_name}</td><td class="num">$${(c.spend||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">${(c.conversions||0).toFixed(1)}</td><td class="num">$${(c.cost_per_conv||0).toFixed(2)}</td></tr>`;
     html += '</tbody></table></div>';
   }
   if (!html) html = '<div class="insight neutral"><div class="insight-label">No Data</div>No Google Ads campaign data available for this period.</div>';
