@@ -7874,26 +7874,36 @@ function renderMeta() {
   const chgCls = (cur, prev, low=false) => !prev ? '' : (low ? cur < prev : cur > prev) ? 'good' : 'bad';
 
   // ── Ad → Meta account mapping (each club has its own ad account) ─────────
-  // act IDs come from metaads/meta-accounts.json — kept in sync server-side.
+  // Account names match what's shown in Meta Business Manager exactly.
+  // act IDs come from metaads/meta-accounts.json.
   const _META_ACCOUNTS = {
-    'act_1235069926610618': { name: 'ChasingBetter247 Malaga',     short: 'Malaga',     colour: '#0a5e54' },
-    'act_781237373084014':  { name: 'ChasingBetter247 Ellenbrook', short: 'Ellenbrook', colour: '#7c3aed' },
-    'Malaga':               { name: 'ChasingBetter247 Malaga',     short: 'Malaga',     colour: '#0a5e54' },
-    'Ellenbrook':           { name: 'ChasingBetter247 Ellenbrook', short: 'Ellenbrook', colour: '#7c3aed' },
+    'act_1235069926610618': { name: 'CB247',              short: 'Malaga',     account_id: 'act_1235069926610618', colour: '#0a5e54' },
+    'act_781237373084014':  { name: 'CB247 - Ellenbrook', short: 'Ellenbrook', account_id: 'act_781237373084014',  colour: '#7c3aed' },
+    'Malaga':               { name: 'CB247',              short: 'Malaga',     account_id: 'act_1235069926610618', colour: '#0a5e54' },
+    'Ellenbrook':           { name: 'CB247 - Ellenbrook', short: 'Ellenbrook', account_id: 'act_781237373084014',  colour: '#7c3aed' },
   };
 
   // Resolve the account for an ad row. Priority:
-  //   1. Explicit a.account_id (act_...)  ← populated by next pull_meta.py
-  //   2. Explicit a.location string ('Malaga' / 'Ellenbrook')
-  //   3. Heuristic: scan ad name for malaga/ellenbrook keywords
-  //   4. Fallback: 'Account not mapped'
+  //   1. Real Meta account_name + location from pull_meta.py (preferred)
+  //   2. Hardcoded account_id lookup
+  //   3. Hardcoded location lookup
+  //   4. Name keyword heuristic ('malaga' / 'ellenbrook' in ad name)
+  //   5. Fallback: 'Account not mapped'
   function _resolveMetaAccount(ad) {
+    if (ad.account_name && ad.location) {
+      return {
+        name:       ad.account_name,
+        short:      ad.location,
+        account_id: ad.account_id || (_META_ACCOUNTS[ad.location] || {}).account_id || null,
+        colour:     ad.location === 'Malaga' ? '#0a5e54' : ad.location === 'Ellenbrook' ? '#7c3aed' : 'var(--muted)',
+      };
+    }
     if (ad.account_id && _META_ACCOUNTS[ad.account_id])  return _META_ACCOUNTS[ad.account_id];
     if (ad.location  && _META_ACCOUNTS[ad.location])     return _META_ACCOUNTS[ad.location];
     const n = (ad.ad_name || ad.name || '').toLowerCase();
     if (n.includes('malaga'))     return _META_ACCOUNTS['Malaga'];
     if (n.includes('ellenbrook')) return _META_ACCOUNTS['Ellenbrook'];
-    return { name: 'Account not mapped', short: '—', colour: 'var(--muted)' };
+    return { name: 'Account not mapped', short: '—', account_id: null, colour: 'var(--muted)' };
   }
 
   // ── Ad performance table ────────────────────────────────────────────────────
@@ -7917,8 +7927,8 @@ function renderMeta() {
     return `<tr>
       <td style="font-size:11.5px;max-width:220px;word-break:break-word">${adName}</td>
       <td>
-        <span style="font-size:10.5px;color:${acct.colour};font-weight:600;white-space:nowrap">${acct.name}</span>
-        ${isUnmapped ? '' : `<div style="font-size:9px;color:var(--muted);margin-top:1px">${a.account_id || acct.short}</div>`}
+        <span style="font-size:11px;color:${acct.colour};font-weight:700;white-space:nowrap">${acct.name}</span>
+        ${isUnmapped ? '' : `<div style="font-size:9px;color:var(--muted);margin-top:2px;line-height:1.3">${acct.short}${acct.account_id ? ` · <span style="font-family:'SF Mono',Menlo,monospace">${acct.account_id}</span>` : ''}</div>`}
       </td>
       <td class="num">${fmt(a.spend,'$2')}</td>
       <td class="num">${fmt(a.impr||a.impressions||0,'n')}</td>
