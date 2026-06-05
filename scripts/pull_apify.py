@@ -49,7 +49,34 @@ APIFY_IG_ACTOR_ID      = "apify~instagram-hashtag-scraper"  # Instagram hashtag 
 APIFY_REDDIT_ACTOR_ID  = "apify/reddit-scraper"             # Reddit posts + comments (official actor, free tier)
 APIFY_TRENDS_ACTOR_ID  = "emastra~google-trends-scraper"    # Google Trends
 APIFY_FBADS_ACTOR_ID   = "apify/facebook-ads-scraper"          # FB Ads Library (official actor)
+APIFY_IG_PROFILE_ACTOR_ID = "apify~instagram-profile-scraper"  # Instagram profile + recent posts/reels (public)
+APIFY_FB_PAGE_ACTOR_ID    = "apify~facebook-pages-scraper"     # Facebook page + recent posts (public)
 APIFY_BASE_URL         = "https://api.apify.com/v2"
+
+# ── Own + competitor handles for organic social pulls (Recommendation B) ──
+# Replaces the previous hardcoded load_metricool() block. Public data only:
+# follower counts, recent post / reel public engagement. Apify cannot
+# access private metrics (story reach, post saves, demographics).
+CB247_IG_USERNAME  = "chasingbetter247"
+CB247_FB_PAGE_URL  = "https://www.facebook.com/chasingbetter247"
+
+COMPETITOR_IG_USERNAMES = [
+    "revofitness",                # Revo Fitness — Perth 24/7 chain (biggest threat)
+    "anytimefitnessaustralia",    # Anytime Fitness AU — national chain
+    "worldgymau",                 # World Gym Australia
+    "muscleuniversemalaga",       # Local Malaga competitor
+]
+
+COMPETITOR_FB_PAGE_URLS = [
+    "https://www.facebook.com/RevoFitnessAU",
+    "https://www.facebook.com/AnytimeFitnessAustralia",
+    "https://www.facebook.com/WorldGymAU",
+    "https://www.facebook.com/PlusFitnessEllenbrook",
+]
+
+# Cost-conscious caps — weekly pull, so small numbers are enough
+SOCIAL_PROFILE_POSTS_LIMIT = 12  # recent posts per profile
+SOCIAL_PROFILE_REELS_LIMIT = 8   # recent reels per profile
 
 # Fitness hashtags to monitor for trending content ideas (feeds the SEO blog generator)
 SOCIAL_HASHTAGS = [
@@ -1001,6 +1028,193 @@ def _find_ad_gaps(theme_counts):
 
 
 # ─────────────────────────────────────────────
+# Pipeline 7: Instagram Profile Scraping (own + competitors)
+# Replaces Metricool — public follower count + recent posts/reels engagement
+# ─────────────────────────────────────────────
+
+def pull_instagram_profiles():
+    """Pull CB247 + competitor Instagram public profiles via Apify.
+
+    Returns dict with:
+      cb247: { handle, followers, follows, posts_count, latest_posts:[...] }
+      competitors: [ {...}, ... ]
+
+    Apify cannot access: story metrics, post reach (vs impressions), post saves,
+    follower demographics. Those Metricool fields will be permanently unavailable.
+    """
+    if not APIFY_API_KEY:
+        print("  Instagram profiles skipped — no APIFY_API_KEY")
+        return None
+
+    usernames = [CB247_IG_USERNAME] + COMPETITOR_IG_USERNAMES
+    payload = {
+        "usernames":       usernames,
+        "resultsType":     "details",          # full profile + latest posts
+        "resultsLimit":    SOCIAL_PROFILE_POSTS_LIMIT,
+        "addParentData":   False,
+        # Some profile-scraper variants want "directUrls" with full URLs
+        "directUrls":      [f"https://www.instagram.com/{u}/" for u in usernames],
+    }
+
+    print(f"  Instagram profiles: scraping {len(usernames)} accounts...")
+    items = _run_apify_actor(APIFY_IG_PROFILE_ACTOR_ID, payload, timeout_checks=60)
+    if not items:
+        print("  Instagram profiles: actor returned no data")
+        return None
+
+    profiles_by_user = {}
+    for item in items:
+        username = (item.get("username") or item.get("ownerUsername") or "").lower()
+        if not username:
+            continue
+
+        # The Apify IG profile scraper returns posts as either `latestPosts`
+        # or via a separate dataset. Normalise here.
+        latest_posts_raw = item.get("latestPosts") or item.get("posts") or []
+        latest_posts = []
+        for p in latest_posts_raw[:SOCIAL_PROFILE_POSTS_LIMIT]:
+            ptype = (p.get("type") or "").lower()
+            latest_posts.append({
+                "url":         p.get("url") or p.get("postUrl") or "",
+                "type":        ptype,           # "image" / "video" / "sidecar"
+                "is_reel":     ptype == "video" or "reel" in (p.get("url") or "").lower(),
+                "timestamp":   p.get("timestamp") or p.get("takenAt") or "",
+                "caption":     (p.get("caption") or "")[:200],
+                "likes":       p.get("likesCount") or p.get("likes") or 0,
+                "comments":    p.get("commentsCount") or p.get("comments") or 0,
+                "views":       p.get("videoViewCount") or p.get("videoPlayCount") or 0,
+                "hashtags":    p.get("hashtags") or [],
+            })
+
+        profile = {
+            "handle":           username,
+            "full_name":        item.get("fullName") or "",
+            "followers":        item.get("followersCount") or 0,
+            "follows":          item.get("followsCount") or 0,
+            "posts_count":      item.get("postsCount") or 0,
+            "biography":        (item.get("biography") or "")[:240],
+            "verified":         item.get("verified") or False,
+            "is_business":      item.get("isBusinessAccount") or False,
+            "category":         item.get("businessCategoryName") or item.get("categoryName") or "",
+            "external_url":     item.get("externalUrl") or item.get("externalUrls") or "",
+            "latest_posts":     latest_posts,
+            "scraped_at":       datetime.now().isoformat(),
+        }
+        profiles_by_user[username] = profile
+
+    if not profiles_by_user:
+        return None
+
+    own = profiles_by_user.get(CB247_IG_USERNAME.lower())
+    competitors = [profiles_by_user[u.lower()] for u in COMPETITOR_IG_USERNAMES
+                   if u.lower() in profiles_by_user]
+
+    print(f"  Instagram profiles: pulled {len(profiles_by_user)} accounts "
+          f"({'CB247 ok' if own else 'CB247 MISSING'} · {len(competitors)} competitors)")
+
+    return {
+        "scraped_at":  datetime.now().isoformat(),
+        "cb247":       own,
+        "competitors": competitors,
+        "note":        "Public data only. Stories/reach/saves/demographics not available — Metricool replacement is partial.",
+    }
+
+
+# ─────────────────────────────────────────────
+# Pipeline 8: Facebook Page Scraping (own + competitors)
+# ─────────────────────────────────────────────
+
+def pull_facebook_pages():
+    """Pull CB247 + competitor Facebook public pages via Apify.
+
+    Returns dict with cb247 + competitors. Public data only — no page insights,
+    no post reach, no engagement breakdown beyond likes/comments/shares.
+    """
+    if not APIFY_API_KEY:
+        print("  Facebook pages skipped — no APIFY_API_KEY")
+        return None
+
+    start_urls = [CB247_FB_PAGE_URL] + COMPETITOR_FB_PAGE_URLS
+    payload = {
+        "startUrls":      [{"url": u} for u in start_urls],
+        "resultsLimit":   SOCIAL_PROFILE_POSTS_LIMIT,
+        "scrapePosts":    True,
+    }
+
+    print(f"  Facebook pages: scraping {len(start_urls)} pages...")
+    items = _run_apify_actor(APIFY_FB_PAGE_ACTOR_ID, payload, timeout_checks=60)
+    if not items:
+        print("  Facebook pages: actor returned no data")
+        return None
+
+    # Group by URL — the FB scraper returns one item per page (with posts nested)
+    # plus sometimes separate post items.
+    pages_by_url = {}
+    for item in items:
+        page_url = (item.get("pageUrl") or item.get("url") or "").rstrip("/")
+        if not page_url:
+            continue
+        # Normalise the URL for matching (strip protocol + trailing slash)
+        norm_url = page_url.lower().rstrip("/")
+        if "facebook.com" not in norm_url:
+            continue
+
+        # Posts may be on this item or aggregated separately. Take what's on item.
+        posts_raw = item.get("posts") or item.get("latestPosts") or []
+        posts = []
+        for p in posts_raw[:SOCIAL_PROFILE_POSTS_LIMIT]:
+            posts.append({
+                "url":       p.get("url") or "",
+                "timestamp": p.get("timestamp") or p.get("publishedAt") or "",
+                "text":      (p.get("text") or p.get("message") or "")[:300],
+                "likes":     p.get("likes") or p.get("reactionsCount") or 0,
+                "comments":  p.get("comments") or p.get("commentsCount") or 0,
+                "shares":    p.get("shares")   or p.get("sharesCount")   or 0,
+                "media_type": p.get("mediaType") or "",
+            })
+
+        page = {
+            "url":            page_url,
+            "name":           item.get("title") or item.get("pageName") or "",
+            "followers":      item.get("followers") or item.get("followersCount") or 0,
+            "likes":          item.get("likes") or item.get("likesCount") or 0,
+            "about":          (item.get("about") or item.get("description") or "")[:240],
+            "categories":     item.get("categories") or [],
+            "posts":          posts,
+            "scraped_at":     datetime.now().isoformat(),
+        }
+        pages_by_url[norm_url] = page
+
+    if not pages_by_url:
+        return None
+
+    # Match CB247 + each competitor by case-insensitive URL contains
+    def _find(target_url):
+        target = target_url.lower().rstrip("/")
+        for k, v in pages_by_url.items():
+            if target in k or k in target:
+                return v
+        return None
+
+    own = _find(CB247_FB_PAGE_URL)
+    competitors = []
+    for url in COMPETITOR_FB_PAGE_URLS:
+        match = _find(url)
+        if match:
+            competitors.append(match)
+
+    print(f"  Facebook pages: pulled {len(pages_by_url)} pages "
+          f"({'CB247 ok' if own else 'CB247 MISSING'} · {len(competitors)} competitors)")
+
+    return {
+        "scraped_at":  datetime.now().isoformat(),
+        "cb247":       own,
+        "competitors": competitors,
+        "note":        "Public data only. Page insights (reach, post-by-post impressions) require Page admin API.",
+    }
+
+
+# ─────────────────────────────────────────────
 # Shared helpers
 # ─────────────────────────────────────────────
 
@@ -1076,6 +1290,14 @@ def main():
     if fb_ads:
         (STATE_DIR / "fb-ads-intel.json").write_text(json.dumps(fb_ads, indent=2))
 
+    # ── Pipeline 7: Instagram Profiles (CB247 + competitors — Metricool replacement) ──
+    print("\n--- Pipeline 7: Instagram Profiles (CB247 + 4 competitors) ---")
+    ig_profiles = pull_instagram_profiles()
+
+    # ── Pipeline 8: Facebook Pages (CB247 + competitors — Metricool replacement) ──
+    print("\n--- Pipeline 8: Facebook Pages (CB247 + 4 competitors) ---")
+    fb_pages = pull_facebook_pages()
+
     # ── Local pack summary ──
     local_pack_summary = _summarise_local_pack(serp)
 
@@ -1111,6 +1333,9 @@ def main():
         "reddit_intel":        keep_if_none(reddit, "reddit_intel"),
         "google_trends":       keep_if_none(trends, "google_trends"),
         "facebook_ads":        keep_if_none(fb_ads, "facebook_ads"),
+        # ── Recommendation B — Metricool replacement (public data) ──
+        "instagram_profiles":  keep_if_none(ig_profiles, "instagram_profiles"),
+        "facebook_pages":      keep_if_none(fb_pages,    "facebook_pages"),
     }
 
     out_path.write_text(json.dumps(result, indent=2))
