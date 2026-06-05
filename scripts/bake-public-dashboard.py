@@ -1034,7 +1034,7 @@ def build_data():
             "p_ellenbrook": {"spend": safe_float(p_ell.get("spend")), "cpa": safe_float(p_ell.get("cpa")), "clicks": safe_int(p_ell.get("clicks")), "conv": safe_int(p_ell.get("conv")), "ctr": safe_float(p_ell.get("ctr")), "cpc": safe_float(p_ell.get("cpc"))},
             "p_week_label": prev_ads.get("week_label", ""),
             "trend_labels": trend_labels, "trend_spend": trend_spend, "trend_cpa": trend_cpa,
-            "campaigns": [{"name": c.get("name","")[:35], "spend": safe_float(c.get("spend")), "clicks": safe_int(c.get("clicks")), "impr": safe_int(c.get("impr")), "conv": safe_int(c.get("conv")), "cpa": safe_float(c.get("cpa")), "ctr": safe_float(c.get("ctr")), "cpc": safe_float(c.get("cpc")), "location": c.get("location","")} for c in campaigns if safe_float(c.get("spend") or 0) > 0][:10],
+            "campaigns": [{"name": c.get("name","")[:35], "spend": safe_float(c.get("spend")), "clicks": safe_int(c.get("clicks")), "impr": safe_int(c.get("impr")), "conv": safe_int(c.get("conv")), "cpa": safe_float(c.get("cpa")), "ctr": safe_float(c.get("ctr")), "cpc": safe_float(c.get("cpc")), "location": c.get("location","") or ("Malaga" if "malaga" in (c.get("name","") or "").lower() else "Ellenbrook" if "ellenbrook" in (c.get("name","") or "").lower() else "Both")} for c in campaigns if safe_float(c.get("spend") or 0) > 0][:10],
             "keywords": [],
             "week_label": _last_good_gads_label if _gads_error_msg else _report_period,
             "csv_clicks": 0,
@@ -2628,32 +2628,44 @@ function renderGAds() {
     </div>
   </div>`;
 
-  // ── Campaign Performance (compact) ───────────────────────────────────────
+  // ── Campaign Performance (compact, grouped by location) ─────────────────
   html += sectionTitle('Active Campaigns · ' + weekLabel);
-  const campsSorted = [...(ads.campaigns||[])].sort((a,b)=>b.spend-a.spend);
-  html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
-    <th>Campaign</th>
-    <th>Location</th>
-    <th class="num">Spend</th>
-    <th class="num">Clicks</th>
-    <th class="num">Impr</th>
-    <th class="num">Conv</th>
-    <th class="num">CPA</th>
-    <th class="num">CTR</th>
-    <th class="num">CPC</th>
-  </tr></thead><tbody>
-  ${campsSorted.map(c=>`<tr>
-    <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${c.name}</td>
-    <td><span style="font-size:10px;background:${c.location==='Ellenbrook'?'rgba(63,166,154,.12)':'#f0f2f5'};color:${c.location==='Ellenbrook'?'var(--teal)':'var(--muted)'};padding:2px 7px;border-radius:99px;white-space:nowrap">${c.location||'Both'}</span></td>
+  const campsAll = [...(ads.campaigns||[])].sort((a,b)=>b.spend-a.spend);
+  const campGroups = [
+    { label: 'Malaga',      color: '#f0f2f5',            textColor: 'var(--muted)',  camps: campsAll.filter(c=>c.location==='Malaga')      },
+    { label: 'Ellenbrook',  color: 'rgba(63,166,154,.12)', textColor: 'var(--teal)', camps: campsAll.filter(c=>c.location==='Ellenbrook')  },
+    { label: 'Both / Shared', color: '#f0f2f5',           textColor: 'var(--muted)', camps: campsAll.filter(c=>c.location!=='Malaga'&&c.location!=='Ellenbrook') },
+  ].filter(g=>g.camps.length>0);
+  const campRow = c => `<tr>
+    <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${c.name}</td>
     <td class="num">${fmt(c.spend,'$2')}</td>
     <td class="num">${fmt(c.clicks,'n')}</td>
     <td class="num">${c.impr?fmt(c.impr,'n'):'–'}</td>
     <td class="num ${c.conv>0?'good':''}">${c.conv||'–'}</td>
     <td class="num ${c.conv>0&&c.cpa>25?'bad':c.conv>0?'good':''}">${c.conv>0?fmt(c.cpa,'$2'):'–'}</td>
-    <td class="num">${c.ctr||'–'}%</td>
+    <td class="num">${c.ctr?c.ctr+'%':'–'}</td>
     <td class="num">${c.cpc?fmt(c.cpc,'$2'):'–'}</td>
-  </tr>`).join('')||'<tr><td colspan="9" style="color:var(--muted);padding:16px">No campaign data</td></tr>'}
-  </tbody></table></div>`;
+  </tr>`;
+  if (campsAll.length === 0) {
+    html += `<div class="card mb" style="color:var(--muted);padding:20px;text-align:center">No campaign data available</div>`;
+  } else {
+    html += campGroups.map(g=>`
+      <div class="card mb" style="overflow-x:auto">
+        <div style="padding:10px 14px 6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${g.textColor};background:${g.color};border-radius:8px 8px 0 0">${g.label} — ${g.camps.length} campaign${g.camps.length>1?'s':''}</div>
+        <table><thead><tr>
+          <th>Campaign</th>
+          <th class="num">Spend</th>
+          <th class="num">Clicks</th>
+          <th class="num">Impr</th>
+          <th class="num">Conv</th>
+          <th class="num">CPA</th>
+          <th class="num">CTR</th>
+          <th class="num">CPC</th>
+        </tr></thead><tbody>
+        ${g.camps.map(campRow).join('')}
+        </tbody></table>
+      </div>`).join('');
+  }
 
   // ── Location Summary with WoW ─────────────────────────────────────────────
   const pMal = ads.p_malaga     || {};
