@@ -2966,11 +2966,6 @@ window.DASHBOARD_DATA = {
     <div class="sidebar-item" data-page="mwcc-enrolments" onclick="nav(this)">Enrolments</div>
   </div>
 
-  <div class="sidebar-section" data-biz-group="mwcc" style="display:none">
-    <div class="sidebar-section-label">Reports</div>
-    <div class="sidebar-item" data-page="mwcc-report" onclick="nav(this)">Weekly Report</div>
-  </div>
-
   <div class="sidebar-footer">
     CB247 Group Marketing OS<br>
     Auto-runs every Monday 10am
@@ -3105,8 +3100,6 @@ window.DASHBOARD_DATA = {
       <div id="tracker-content"></div>
     </div>
 
-    <div class="page-footer" id="page-footer"></div>
-
     <!-- ══ MWCC PAGES ════════════════════════════════════════════════ -->
 
     <!-- MWCC: Overview -->
@@ -3172,23 +3165,7 @@ window.DASHBOARD_DATA = {
       <div id="mwcc-enrol-content"></div>
     </div>
 
-    <!-- ══ PAGE: MWCC WEEKLY REPORT ════════════════════════════════════ -->
-    <div class="page" id="page-mwcc-report">
-      <div class="page-header">
-        <h1>My World Childcare</h1>
-        <p>Weekly marketing &amp; operations report · 5 centres · Perth WA · Chasing Better Group</p>
-      </div>
-      <iframe
-        src="mwcc-report.html"
-        id="mwcc-frame"
-        style="width:100%;min-height:85vh;border:none;border-radius:6px;display:block"
-        title="My World Childcare Weekly Report"
-      ></iframe>
-      <p style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center">
-        Report regenerated every Monday 2pm AWST · Open in new tab:
-        <a href="mwcc-report.html" target="_blank">mwcc-report.html</a>
-      </p>
-    </div>
+    <div class="page-footer" id="page-footer"></div>
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -6054,8 +6031,7 @@ function renderMwccOverview() {
   let html = '';
 
   // KPIs
-  html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Weekly Revenue', net.total_revenue ? '$'+(net.total_revenue/1000).toFixed(1)+'k' : '—', null, ops.period?.label||'')}
+  html += `<div class="kpi-grid cols-3 mb">
     ${kpiCard('','Net Enrolments', net.net_movement!==undefined ? (net.net_movement>=0?'+':'')+net.net_movement : '—', null, `${net.total_enrolments||0} in &middot; ${net.total_exits||0} out`)}
     ${kpiCard('','Total Ad Spend', totalSpend>0 ? '$'+totalSpend.toFixed(0) : '—', null, totalSpend>0 ? `Meta $${metaSpend.toFixed(0)} &middot; Google $${adsSpend.toFixed(0)}` : 'Add credentials to .env')}
     ${kpiCard('','Avg Occupancy', avgOcc!==null ? avgOcc+'%' : '—', null, '5-centre network average')}
@@ -6069,13 +6045,12 @@ function renderMwccOverview() {
 
   // Centre summary table
   if (centreArr.length) {
-    html += '<div class="section-title">Centre Summary</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Revenue</th><th class="num">Occ %</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Wage %</th><th>Status</th></tr></thead><tbody>';
+    html += '<div class="section-title">Centre Summary</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Occ %</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Wage %</th><th>Status</th></tr></thead><tbody>';
     for (const name of MWCC_CENTRES) {
       const c = centres[name]; if (!c) continue;
       const occ = c.occupancy?.Overall||0;
       html += `<tr>
         <td style="font-weight:600">${name}</td>
-        <td class="num">$${((c.revenue||0)/1000).toFixed(1)}k</td>
         <td class="num"><span class="stat-val ${occ>=90?'bad':occ>=70?'good':''}">${occ}%</span></td>
         <td class="num">${c.enquiries||0}</td>
         <td class="num">${c.enrolments||0}</td>
@@ -6353,15 +6328,14 @@ function renderMwccEnrolments() {
     ${kpiCard('','Net Movement', (net.net_movement||0)>=0?'+'+(net.net_movement||0):(net.net_movement||0), null, 'Enrolments minus exits')}
   </div>`;
 
-  html += '<div class="section-title">Centre Detail</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Revenue</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Net</th><th class="num">Occupancy</th></tr></thead><tbody>';
-  let totRev=0, totEnq=0, totEnrol=0, totExit=0, totNet=0;
+  html += '<div class="section-title">Centre Detail</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Net</th><th class="num">Occupancy</th></tr></thead><tbody>';
+  let totEnq=0, totEnrol=0, totExit=0, totNet=0;
   for (const name of MWCC_CENTRES) {
     const c = centres[name]; if (!c) continue;
-    totRev  += c.revenue||0; totEnq += c.enquiries||0; totEnrol += c.enrolments||0; totExit += c.exits||0; totNet += c.net_movement||0;
+    totEnq += c.enquiries||0; totEnrol += c.enrolments||0; totExit += c.exits||0; totNet += c.net_movement||0;
     const occ = c.occupancy?.Overall||0;
     html += `<tr>
       <td style="font-weight:600">${name}</td>
-      <td class="num">$${(c.revenue||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
       <td class="num">${c.enquiries||0}</td>
       <td class="num">${c.enrolments||0}</td>
       <td class="num">${c.exits||0}</td>
@@ -6371,7 +6345,6 @@ function renderMwccEnrolments() {
   }
   html += `<tr style="font-weight:700;border-top:2px solid var(--border-strong);background:#fafafa">
     <td>TOTAL</td>
-    <td class="num">$${totRev.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
     <td class="num">${totEnq}</td><td class="num">${totEnrol}</td><td class="num">${totExit}</td>
     <td class="num"><span class="stat-val ${totNet>0?'good':totNet<0?'bad':''}">${totNet>=0?'+':''}${totNet}</span></td>
     <td class="num">—</td>
