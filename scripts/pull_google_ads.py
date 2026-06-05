@@ -104,6 +104,11 @@ def pull_google_ads():
     all_campaigns = []
     location_summaries = {}
     grand_totals = {"spend": 0, "clicks": 0, "impressions": 0, "conversions": 0}
+    # Tier 2 accumulators (search terms, QS, conv actions, auction insights)
+    search_terms       = []
+    quality_scores     = []
+    conversion_actions = []
+    auction_insights   = []
 
     for account in active_accounts:
         cid      = account["customer_id"]
@@ -175,6 +180,19 @@ def pull_google_ads():
         }
         print(f"[Google Ads]   {location}: {len(campaigns)} campaigns | ${round(loc_spend,2)} spend | {loc_conv} conversions")
 
+        # ── Tier 2 pulls — Search Terms, Quality Scores, Conversion Actions,
+        #    Auction Insights. Each wrapped in try/except so a single failure
+        #    (most commonly RESOURCE_EXHAUSTED on Explorer tokens) doesn't
+        #    kill the rest of the pull. ──────────────────────────────────────
+        search_terms.extend(
+            _pull_search_terms(ga_service, cid, location, start_date, end_date))
+        quality_scores.extend(
+            _pull_quality_scores(ga_service, cid, location, start_date, end_date))
+        conversion_actions.extend(
+            _pull_conversion_actions(ga_service, cid, location, start_date, end_date))
+        auction_insights.extend(
+            _pull_auction_insights(ga_service, cid, location, start_date, end_date))
+
     # --- Combined totals ---
     gt_spend = grand_totals["spend"]
     gt_impr  = grand_totals["impressions"]
@@ -194,11 +212,18 @@ def pull_google_ads():
             "conversions": gt_conv,
             "cpl":         round(gt_spend / gt_conv, 2) if gt_conv else 0,
         },
+        # ── Tier 2 deep-dives — empty arrays if all 4 helpers failed/skipped ──
+        "search_terms":       search_terms,
+        "quality_scores":     quality_scores,
+        "conversion_actions": conversion_actions,
+        "auction_insights":   auction_insights,
     }
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(json.dumps(output, indent=2))
     print(f"\n[Google Ads] Done — {len(all_campaigns)} campaigns total | ${round(gt_spend,2)} combined spend")
+    print(f"[Google Ads] Tier 2: {len(search_terms)} search terms | {len(quality_scores)} QS rows | "
+          f"{len(conversion_actions)} conv actions | {len(auction_insights)} competitor domains")
     print(f"[Google Ads] Saved to {OUTPUT_FILE}")
 
     # ── Also write a weekly entry into ads-data.json (dashboard format) ──
@@ -290,6 +315,206 @@ def _update_ads_data(output, start_date, end_date, all_campaigns, location_summa
 
     ADS_FILE.write_text(json.dumps(ads_data, indent=2))
     print(f"[Google Ads] ads-data.json updated — week {week_label}, ${round(gt_spend,2)} combined")
+
+
+def _qs_enum_to_label(val):
+    """Map Google Ads quality_score component enum to human label.
+    Returns one of 'Above average', 'Average', 'Below average', or '' for unknown.
+    """
+    # QualityScoreBucketEnum: 0=UNSPECIFIED 1=UNKNOWN 2=BELOW_AVERAGE 3=AVERAGE 4=ABOVE_AVERAGE
+    if val is None:
+        return ""
+    # Both .name attribute access (proto-plus) and bare int values supported
+    name = getattr(val, "name", None) or str(val)
+    name = name.upper()
+    if "ABOVE_AVERAGE" in name or name == "4":
+        return "Above average"
+    if "BELOW_AVERAGE" in name or name == "2":
+        return "Below average"
+    if "AVERAGE" in name or name == "3":
+        return "Average"
+    return ""
+
+
+def _pull_search_terms(ga_service, cid, location, start_date, end_date):
+    """Pull search_term_view — terms users typed that triggered ads."""
+    query = f"""
+        SELECT
+          search_term_view.search_term,
+          campaign.name,
+          metrics.impressions,
+          metrics.clicks,
+          metrics.cost_micros,
+          metrics.conversions
+        FROM search_term_view
+        WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
+          AND metrics.cost_micros > 0
+        ORDER BY metrics.cost_micros DESC
+        LIMIT 100
+    """
+    try:
+        rows = ga_service.search(customer_id=cid, query=query)
+        out = []
+        for r in rows:
+            spend = (r.metrics.cost_micros or 0) / 1_000_000
+            out.append({
+                "search_term": r.search_term_view.search_term,
+                "campaign":    r.campaign.name,
+                "location":    location,
+                "impressions": r.metrics.impressions,
+                "clicks":      r.metrics.clicks,
+                "cost":        round(spend, 2),
+                "conv":        round(r.metrics.conversions or 0, 2),
+            })
+        print(f"[Google Ads]   {location}: {len(out)} search terms pulled")
+        return out
+    except Exception as e:
+        print(f"[Google Ads]   {location}: search_term_view skipped — {str(e)[:120]}")
+        return []
+
+
+def _pull_quality_scores(ga_service, cid, location, start_date, end_date):
+    """Pull keyword_view with QS components."""
+    query = f"""
+        SELECT
+          ad_group_criterion.keyword.text,
+          ad_group_criterion.quality_info.quality_score,
+          ad_group_criterion.quality_info.creative_quality_score,
+          ad_group_criterion.quality_info.post_click_quality_score,
+          ad_group_criterion.quality_info.search_predicted_ctr,
+          campaign.name,
+          metrics.impressions,
+          metrics.clicks,
+          metrics.cost_micros,
+          metrics.conversions
+        FROM keyword_view
+        WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
+          AND ad_group_criterion.status = 'ENABLED'
+          AND metrics.cost_micros > 0
+        ORDER BY metrics.cost_micros DESC
+        LIMIT 100
+    """
+    try:
+        rows = ga_service.search(customer_id=cid, query=query)
+        out = []
+        for r in rows:
+            qi = r.ad_group_criterion.quality_info
+            spend = (r.metrics.cost_micros or 0) / 1_000_000
+            out.append({
+                "keyword":       r.ad_group_criterion.keyword.text,
+                "campaign":      r.campaign.name,
+                "location":      location,
+                "quality_score": qi.quality_score or 0,
+                "ad_relevance":  _qs_enum_to_label(qi.creative_quality_score),
+                "lp_experience": _qs_enum_to_label(qi.post_click_quality_score),
+                "expected_ctr":  _qs_enum_to_label(qi.search_predicted_ctr),
+                "impressions":   r.metrics.impressions,
+                "clicks":        r.metrics.clicks,
+                "cost":          round(spend, 2),
+                "conv":          round(r.metrics.conversions or 0, 2),
+            })
+        print(f"[Google Ads]   {location}: {len(out)} keywords with QS pulled")
+        return out
+    except Exception as e:
+        print(f"[Google Ads]   {location}: keyword_view (QS) skipped — {str(e)[:120]}")
+        return []
+
+
+def _pull_conversion_actions(ga_service, cid, location, start_date, end_date):
+    """Pull conversion actions firing in the period.
+    Uses campaign segmentation to get conversion counts + last-fire date.
+    """
+    query = f"""
+        SELECT
+          segments.conversion_action_name,
+          segments.conversion_action_category,
+          segments.date,
+          metrics.all_conversions
+        FROM campaign
+        WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
+          AND metrics.all_conversions > 0
+    """
+    try:
+        rows = ga_service.search(customer_id=cid, query=query)
+        # Aggregate by conversion_action_name
+        agg = {}
+        for r in rows:
+            name = r.segments.conversion_action_name
+            if not name:
+                continue
+            cat = getattr(r.segments.conversion_action_category, "name", "") or ""
+            date = r.segments.date
+            count = r.metrics.all_conversions or 0
+            entry = agg.setdefault(name, {
+                "name": name,
+                "category": cat,
+                "location": location,
+                "count": 0,
+                "last_fired": "",
+            })
+            entry["count"] += count
+            if date > (entry["last_fired"] or ""):
+                entry["last_fired"] = date
+        out = [
+            {**v, "count": round(v["count"], 2)}
+            for v in agg.values()
+        ]
+        out.sort(key=lambda x: x["count"], reverse=True)
+        print(f"[Google Ads]   {location}: {len(out)} conversion actions pulled")
+        return out
+    except Exception as e:
+        print(f"[Google Ads]   {location}: conversion_actions skipped — {str(e)[:120]}")
+        return []
+
+
+def _pull_auction_insights(ga_service, cid, location, start_date, end_date):
+    """Pull auction_insight_view — competitors appearing in your auctions."""
+    # Note: auction_insight_view aggregates differ from standard metrics.
+    # Per-domain rollup gives the cleanest competitor view.
+    query = f"""
+        SELECT
+          segments.auction_insight_domain,
+          metrics.search_impression_share,
+          metrics.overlap_rate,
+          metrics.position_above_rate,
+          metrics.outranking_share
+        FROM campaign
+        WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
+    """
+    try:
+        rows = ga_service.search(customer_id=cid, query=query)
+        # Aggregate by domain — average the share metrics (campaigns × domain)
+        agg = {}
+        for r in rows:
+            domain = r.segments.auction_insight_domain
+            if not domain:
+                continue
+            entry = agg.setdefault(domain, {
+                "domain": domain,
+                "location": location,
+                "_n": 0,
+                "impression_share": 0.0,
+                "overlap_rate": 0.0,
+                "position_above_rate": 0.0,
+                "outranking_share": 0.0,
+            })
+            entry["_n"] += 1
+            entry["impression_share"]    += float(r.metrics.search_impression_share or 0)
+            entry["overlap_rate"]        += float(r.metrics.overlap_rate or 0)
+            entry["position_above_rate"] += float(r.metrics.position_above_rate or 0)
+            entry["outranking_share"]    += float(r.metrics.outranking_share or 0)
+        out = []
+        for d in agg.values():
+            n = d.pop("_n") or 1
+            for k in ("impression_share", "overlap_rate", "position_above_rate", "outranking_share"):
+                d[k] = round(d[k] / n, 4)
+            out.append(d)
+        out.sort(key=lambda x: x["impression_share"], reverse=True)
+        print(f"[Google Ads]   {location}: {len(out)} competitor domains in auction insights")
+        return out[:20]
+    except Exception as e:
+        print(f"[Google Ads]   {location}: auction_insights skipped — {str(e)[:120]}")
+        return []
 
 
 def _write_empty(skip_reason):

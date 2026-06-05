@@ -1049,6 +1049,11 @@ def build_data():
             "csv_clicks": 0,
             "csv_cost": 0,
             "csv_conv": 0,
+            # ── Tier 2 pass-through (frontend reads these in renderGAds) ──
+            "search_terms":       (gads or {}).get("search_terms") or [],
+            "quality_scores":     (gads or {}).get("quality_scores") or [],
+            "conversion_actions": (gads or {}).get("conversion_actions") or [],
+            "auction_insights":   (gads or {}).get("auction_insights") or [],
             "bidding": {"new_recs": [
                 {"keyword": "gym malaga", "vol": "590", "bid": "$2.50", "priority": "High", "reason": "Core target — top 3 organic not yet achieved. Paid coverage essential while SEO builds."},
                 {"keyword": "24/7 gym malaga", "vol": "260", "bid": "$2.80", "priority": "High", "reason": "High-intent modifier. CB247 brand fits perfectly. Lower competition than generic 'gym malaga'."},
