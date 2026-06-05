@@ -503,13 +503,15 @@ log "Step 3b — SKIPPED — bake-public-dashboard.py disabled (baker consolidat
 #     || fail "bake-public-dashboard.py had issues"
 
 # ── Step 3b' (replacement): Refresh the inline injection blocks ──
-# Re-inject SEO_EXTRAS + SOCIAL_DATA so the dashboard picks up fresh
-# Metricool/GBP/Apify data without rebuilding the whole HTML.
-log "Step 3b' — Re-injecting SEO_EXTRAS + SOCIAL_DATA blocks (replacement for full bake)..."
+# Re-inject SEO_EXTRAS + SOCIAL_DATA + META_ADS_LIVE so the dashboard picks up
+# fresh Metricool/GBP/Apify/Meta data without rebuilding the whole HTML.
+log "Step 3b' — Re-injecting SEO_EXTRAS + SOCIAL_DATA + META_ADS_LIVE blocks (replacement for full bake)..."
 "$PYTHON" "$BASE_DIR/scripts/inject-seo-extras.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  SEO extras injection had issues"
 "$PYTHON" "$BASE_DIR/scripts/inject-social-block.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Social block injection had issues"
+"$PYTHON" "$BASE_DIR/scripts/inject-meta-ads.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Meta ads injection had issues"
 
 log "Step 3c — Deploying dashboard to GitHub Pages..."
 bash "$BASE_DIR/scripts/deploy-dashboard.sh" >> "$LOG" 2>&1 \
