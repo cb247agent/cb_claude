@@ -3,7 +3,10 @@
 #
 # Runs every Monday 10:00 AM Perth Time (AWST = UTC+8) via cron.
 # Cron entry:
-#   0 2 * * 1 /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/scripts/weekly-report.sh >> /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/weekly-report.log 2>&1
+#   0 10 * * 1 /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/scripts/weekly-report.sh >> /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/weekly-report.log 2>&1
+#
+# Companion cron — Monday 11:30 AM Perth — picks up late Metricool PDF drops:
+#   30 11 * * 1 /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/scripts/refresh-social.sh >> /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/state/refresh-social.log 2>&1
 #
 # APPROVAL FLOW:
 #   Agents generate → Tia reviews (dashboard + OS report email) → Tia approves
