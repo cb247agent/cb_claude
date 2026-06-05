@@ -2897,6 +2897,7 @@ window.DASHBOARD_DATA = {
   }
 };
 </script>
+<script src="mwcc-data.js"></script>
 
 <div class="app">
 
@@ -2947,8 +2948,27 @@ window.DASHBOARD_DATA = {
 
   <!-- MWCC sidebar sections (hidden until MWCC tab active) -->
   <div class="sidebar-section" data-biz-group="mwcc" style="display:none">
-    <div class="sidebar-section-label">My World Childcare</div>
-    <div class="sidebar-item active" data-page="mwcc-report" onclick="nav(this)">Weekly Report</div>
+    <div class="sidebar-section-label">Overview</div>
+    <div class="sidebar-item" data-page="mwcc-overview" onclick="nav(this)">Dashboard</div>
+  </div>
+
+  <div class="sidebar-section" data-biz-group="mwcc" style="display:none">
+    <div class="sidebar-section-label">Performance</div>
+    <div class="sidebar-item" data-page="mwcc-meta" onclick="nav(this)">Meta Ads</div>
+    <div class="sidebar-item" data-page="mwcc-google-ads" onclick="nav(this)">Google Ads</div>
+    <div class="sidebar-item" data-page="mwcc-organic-social" onclick="nav(this)">Organic Social</div>
+    <div class="sidebar-item" data-page="mwcc-website" onclick="nav(this)">Website</div>
+  </div>
+
+  <div class="sidebar-section" data-biz-group="mwcc" style="display:none">
+    <div class="sidebar-section-label">Centres</div>
+    <div class="sidebar-item" data-page="mwcc-occupancy" onclick="nav(this)">Occupancy</div>
+    <div class="sidebar-item" data-page="mwcc-enrolments" onclick="nav(this)">Enrolments</div>
+  </div>
+
+  <div class="sidebar-section" data-biz-group="mwcc" style="display:none">
+    <div class="sidebar-section-label">Reports</div>
+    <div class="sidebar-item" data-page="mwcc-report" onclick="nav(this)">Weekly Report</div>
   </div>
 
   <div class="sidebar-footer">
@@ -3086,6 +3106,71 @@ window.DASHBOARD_DATA = {
     </div>
 
     <div class="page-footer" id="page-footer"></div>
+
+    <!-- ══ MWCC PAGES ════════════════════════════════════════════════ -->
+
+    <!-- MWCC: Overview -->
+    <div class="page" id="page-mwcc-overview">
+      <div class="page-header">
+        <h1>My World Childcare</h1>
+        <p>Marketing + operations overview · 5 centres · Perth WA · Chasing Better Group</p>
+      </div>
+      <div id="mwcc-overview-content"></div>
+    </div>
+
+    <!-- MWCC: Meta Ads -->
+    <div class="page" id="page-mwcc-meta">
+      <div class="page-header">
+        <h1>Meta Ads</h1>
+        <p>Facebook &amp; Instagram paid social · Account act_2835637326727066 · Per-centre breakdown</p>
+      </div>
+      <div id="mwcc-meta-content"></div>
+    </div>
+
+    <!-- MWCC: Google Ads -->
+    <div class="page" id="page-mwcc-google-ads">
+      <div class="page-header">
+        <h1>Google Ads</h1>
+        <p>Google Ads · Account 917-218-6113 · Manager 569-719-3495</p>
+      </div>
+      <div id="mwcc-gads-content"></div>
+    </div>
+
+    <!-- MWCC: Organic Social -->
+    <div class="page" id="page-mwcc-organic-social">
+      <div class="page-header">
+        <h1>Organic Social</h1>
+        <p>Instagram &amp; Facebook organic performance · Metricool integration</p>
+      </div>
+      <div id="mwcc-orgsoc-content"></div>
+    </div>
+
+    <!-- MWCC: Website -->
+    <div class="page" id="page-mwcc-website">
+      <div class="page-header">
+        <h1>Website</h1>
+        <p>myworldcc.com.au · GA4 analytics · Property 315149021</p>
+      </div>
+      <div id="mwcc-website-content"></div>
+    </div>
+
+    <!-- MWCC: Occupancy -->
+    <div class="page" id="page-mwcc-occupancy">
+      <div class="page-header">
+        <h1>Centre Occupancy</h1>
+        <p>Per-centre &amp; per-room occupancy · compliance risk flags · wage breach monitor · OWNA data</p>
+      </div>
+      <div id="mwcc-occ-content"></div>
+    </div>
+
+    <!-- MWCC: Enrolments -->
+    <div class="page" id="page-mwcc-enrolments">
+      <div class="page-header">
+        <h1>Enrolments &amp; Revenue</h1>
+        <p>Enquiries · enrolments · exits · net movement · revenue per centre · OWNA data</p>
+      </div>
+      <div id="mwcc-enrol-content"></div>
+    </div>
 
     <!-- ══ PAGE: MWCC WEEKLY REPORT ════════════════════════════════════ -->
     <div class="page" id="page-mwcc-report">
@@ -3280,9 +3365,9 @@ function switchBiz(el) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
   if(biz==='mwcc'){
-    const p=document.getElementById('page-mwcc-report');
+    const p=document.getElementById('page-mwcc-overview');
     if(p) p.classList.add('active');
-    const s=document.querySelector('[data-page="mwcc-report"]');
+    const s=document.querySelector('[data-page="mwcc-overview"]');
     if(s) s.classList.add('active');
   } else {
     const p=document.getElementById('page-overview');
@@ -5932,6 +6017,369 @@ function closeTrackerDetail() {
   if (panel) panel.classList.remove('open');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MWCC — My World Childcare render functions
+// Data source: window.MWCC_DATA (written by bake-mwcc-report.py → docs/mwcc-data.js)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function _mwccFmt(v) {
+  if (v === null || v === undefined) return '—';
+  const n = parseInt(v);
+  if (isNaN(n)) return String(v);
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n >= 10000)   return (n/1000).toFixed(1)+'k';
+  if (n >= 1000)    return n.toLocaleString('en-AU');
+  return String(n);
+}
+const MWCC_CENTRES = ['Armadale','Midvale','Rockingham','Seville Grove','Waikiki'];
+
+function renderMwccOverview() {
+  const md = window.MWCC_DATA || {};
+  const ops  = md.ops  || {};
+  const meta = md.meta || {};
+  const ads  = md.ads  || {};
+  const net  = ops.network_summary || {};
+  const centres = ops.centres || {};
+  const el = $('mwcc-overview-content');
+  if (!el) return;
+
+  const centreArr   = Object.values(centres);
+  const avgOcc      = centreArr.length ? Math.round(centreArr.reduce((s,c)=>s+(c.occupancy?.Overall||0),0)/centreArr.length) : null;
+  const breachList  = net.centres_in_wage_breach || [];
+  const riskList    = net.rooms_with_compliance_risk || [];
+  const metaSpend   = meta.summary?.spend || 0;
+  const adsSpend    = ads.totals?.cost || 0;
+  const totalSpend  = metaSpend + adsSpend;
+
+  let html = '';
+
+  // KPIs
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Weekly Revenue', net.total_revenue ? '$'+(net.total_revenue/1000).toFixed(1)+'k' : '—', null, ops.period?.label||'')}
+    ${kpiCard('','Net Enrolments', net.net_movement!==undefined ? (net.net_movement>=0?'+':'')+net.net_movement : '—', null, `${net.total_enrolments||0} in &middot; ${net.total_exits||0} out`)}
+    ${kpiCard('','Total Ad Spend', totalSpend>0 ? '$'+totalSpend.toFixed(0) : '—', null, totalSpend>0 ? `Meta $${metaSpend.toFixed(0)} &middot; Google $${adsSpend.toFixed(0)}` : 'Add credentials to .env')}
+    ${kpiCard('','Avg Occupancy', avgOcc!==null ? avgOcc+'%' : '—', null, '5-centre network average')}
+  </div>`;
+
+  // Alerts
+  if (breachList.length || riskList.length) {
+    if (riskList.length) html += `<div class="insight red mb"><div class="insight-label">Compliance Risk — Immediate Action</div>${riskList.join(' &middot; ')} — room occupancy exceeds licensed capacity. Check ratios now.</div>`;
+    if (breachList.length) html += `<div class="insight amber mb"><div class="insight-label">Wage Breach — Review Rostering</div>${breachList.join(' &middot; ')} — wage % exc. leave exceeds 42% threshold.</div>`;
+  }
+
+  // Centre summary table
+  if (centreArr.length) {
+    html += '<div class="section-title">Centre Summary</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Revenue</th><th class="num">Occ %</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Wage %</th><th>Status</th></tr></thead><tbody>';
+    for (const name of MWCC_CENTRES) {
+      const c = centres[name]; if (!c) continue;
+      const occ = c.occupancy?.Overall||0;
+      html += `<tr>
+        <td style="font-weight:600">${name}</td>
+        <td class="num">$${((c.revenue||0)/1000).toFixed(1)}k</td>
+        <td class="num"><span class="stat-val ${occ>=90?'bad':occ>=70?'good':''}">${occ}%</span></td>
+        <td class="num">${c.enquiries||0}</td>
+        <td class="num">${c.enrolments||0}</td>
+        <td class="num">${c.exits||0}</td>
+        <td class="num"><span class="stat-val ${c.wage_breach?'bad':''}">${(c.wage_exc_leave_pct||0).toFixed(1)}%</span></td>
+        <td>${c.wage_breach?'<span style="font-size:9px;background:#fff8e1;color:#b45309;padding:1px 6px;border-radius:3px;font-weight:700">BREACH</span>':'<span style="font-size:9px;color:var(--teal);font-weight:600">OK</span>'}</td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // Meta snapshot if live
+  if (metaSpend > 0) {
+    const s = meta.summary;
+    html += '<div class="section-title">Meta Ads Snapshot</div><div class="kpi-grid cols-4 mb">' +
+      kpiCard('','Spend','$'+s.spend.toFixed(2),null,`${(meta.campaigns||[]).length} campaigns`) +
+      kpiCard('','Impressions',_mwccFmt(s.impr),null,`CPM $${(s.cpm||0).toFixed(2)}`) +
+      kpiCard('','Clicks',_mwccFmt(s.clicks),null,`CTR ${(s.ctr||0).toFixed(2)}%`) +
+      kpiCard('','CPC','$'+(s.cpc||0).toFixed(2),null,`Reach ${_mwccFmt(s.reach)}`) +
+    '</div>';
+  }
+
+  if (!centreArr.length && !metaSpend) {
+    html = '<div class="insight neutral"><div class="insight-label">Awaiting Data</div>Add MWCC credentials to .env and drop OWNA files into mwcc-inbox/ to populate this dashboard. See mwcc-inbox/README.md</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function renderMwccMeta() {
+  const md = window.MWCC_DATA || {};
+  const meta = md.meta || {};
+  const el = $('mwcc-meta-content');
+  if (!el) return;
+
+  if (!meta.summary?.spend) {
+    el.innerHTML = '<div class="insight neutral"><div class="insight-label">Awaiting Credentials</div>Add MWCC_META_AD_ACCOUNT_ID and MWCC_META_ACCESS_TOKEN to .env, then run: python scripts/pull_mwcc_meta.py</div>';
+    return;
+  }
+  const s = meta.summary;
+  let html = `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Total Spend','$'+(s.spend||0).toFixed(2),null,`${meta.date_range?.start} – ${meta.date_range?.end}`)}
+    ${kpiCard('','Impressions',_mwccFmt(s.impr),null,`CPM $${(s.cpm||0).toFixed(2)}`)}
+    ${kpiCard('','Clicks',_mwccFmt(s.clicks),null,`CTR ${(s.ctr||0).toFixed(2)}%`)}
+    ${kpiCard('','CPC','$'+(s.cpc||0).toFixed(2),null,`Reach ${_mwccFmt(s.reach)}`)}
+  </div>`;
+
+  // By centre
+  const bc = meta.by_centre || {};
+  if (MWCC_CENTRES.some(n=>bc[n])) {
+    html += '<div class="section-title">Spend by Centre</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Spend</th><th class="num">Impr</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">CPC</th><th class="num">LPV</th></tr></thead><tbody>';
+    for (const name of MWCC_CENTRES) {
+      const c = bc[name]; if (!c) continue;
+      html += `<tr><td style="font-weight:600">${name}</td><td class="num">$${(c.spend||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.impr)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">$${(c.cpc||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.lpv)}</td></tr>`;
+    }
+    if (bc['Other']) {
+      const c = bc['Other'];
+      html += `<tr style="color:var(--muted)"><td>Other / Unattributed</td><td class="num">$${(c.spend||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.impr)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">$${(c.cpc||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.lpv)}</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // Campaigns
+  const cams = meta.campaigns || [];
+  if (cams.length) {
+    html += '<div class="section-title">Campaigns</div><div class="card mb"><table><thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Impr</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">CPM</th></tr></thead><tbody>';
+    for (const c of cams) html += `<tr><td style="font-size:11.5px">${c.name}</td><td class="num">$${(c.spend||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.impr)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">$${(c.cpm||0).toFixed(2)}</td></tr>`;
+    html += '</tbody></table></div>';
+  }
+
+  // Top ads
+  const topAds = meta.top_ads || [];
+  if (topAds.length) {
+    html += '<div class="section-title">Top Ads by CTR</div><div class="card mb"><table><thead><tr><th>Ad</th><th>Centre</th><th class="num">CTR %</th><th class="num">CPC</th><th class="num">Clicks</th><th class="num">Spend</th></tr></thead><tbody>';
+    for (const a of topAds.slice(0,10)) html += `<tr><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${a.name}</td><td style="font-size:11.5px">${a.centre||'—'}</td><td class="num">${(a.ctr||0).toFixed(2)}%</td><td class="num">$${(a.cpc||0).toFixed(2)}</td><td class="num">${_mwccFmt(a.clicks)}</td><td class="num">$${(a.spend||0).toFixed(2)}</td></tr>`;
+    html += '</tbody></table></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderMwccGads() {
+  const md = window.MWCC_DATA || {};
+  const ads = md.ads || {};
+  const el = $('mwcc-gads-content');
+  if (!el) return;
+  if (ads.available === false) {
+    el.innerHTML = `<div class="insight neutral"><div class="insight-label">Awaiting Credentials</div>${ads.skip_reason||'Add MWCC_GOOGLE_ADS_CUSTOMER_ID (917-218-6113) and MWCC_GOOGLE_ADS_MANAGER_ID (569-719-3495) to .env'}</div>`;
+    return;
+  }
+  let html = '';
+  if (ads.totals) {
+    const t = ads.totals;
+    html += `<div class="kpi-grid cols-4 mb">
+      ${kpiCard('','Total Spend','$'+(t.cost||0).toFixed(2),null,'')}
+      ${kpiCard('','Impressions',_mwccFmt(t.impressions),null,`CTR ${(t.ctr||0).toFixed(2)}%`)}
+      ${kpiCard('','Clicks',_mwccFmt(t.clicks),null,`CPC $${(t.avg_cpc||0).toFixed(2)}`)}
+      ${kpiCard('','Conversions',_mwccFmt(t.conversions),null,`CPA $${(t.cpa||0).toFixed(2)}`)}
+    </div>`;
+  }
+  const cams = ads.campaigns || [];
+  if (cams.length) {
+    html += '<div class="section-title">Campaigns</div><div class="card mb"><table><thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">Conv</th><th class="num">CPA</th></tr></thead><tbody>';
+    for (const c of cams) html += `<tr><td style="font-size:11.5px">${c.campaign_name||c.name}</td><td class="num">$${(c.cost||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">${c.conversions||0}</td><td class="num">$${(c.cpa||0).toFixed(2)}</td></tr>`;
+    html += '</tbody></table></div>';
+  }
+  if (!html) html = '<div class="insight neutral"><div class="insight-label">No Data</div>No Google Ads campaign data available for this period.</div>';
+  el.innerHTML = html;
+}
+
+function renderMwccOrgSocial() {
+  const el = $('mwcc-orgsoc-content');
+  if (!el) return;
+  el.innerHTML = '<div class="insight neutral"><div class="insight-label">Coming Soon</div>Instagram and Facebook organic metrics will appear here once Metricool API integration is configured for My World Childcare.</div>';
+}
+
+function renderMwccWebsite() {
+  const md = window.MWCC_DATA || {};
+  const ga4 = md.ga4 || {};
+  const el = $('mwcc-website-content');
+  if (!el) return;
+  if (ga4.available === false) {
+    el.innerHTML = `<div class="insight neutral"><div class="insight-label">Awaiting Credentials</div>${ga4.skip_reason||'Add MWCC_GA4_PROPERTY_ID=315149021 to .env'}</div>`;
+    return;
+  }
+  let html = `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Active Users',_mwccFmt(ga4.active_users),null,'')}
+    ${kpiCard('','Sessions',_mwccFmt(ga4.sessions),null,`Prior: ${_mwccFmt(ga4.p_sessions)}`)}
+    ${kpiCard('','Key Events',_mwccFmt(ga4.key_events),null,'')}
+    ${kpiCard('','Avg Session',ga4.avg_duration ? Math.floor(ga4.avg_duration/60)+'m '+(ga4.avg_duration%60)+'s' : '—',null,`Engagement ${((ga4.engagement_rate||0)*100).toFixed(1)}%`)}
+  </div>`;
+  const topPages = ga4.top_pages || [];
+  if (topPages.length) {
+    html += '<div class="section-title">Top Pages</div><div class="card mb"><table><thead><tr><th>Page</th><th class="num">Sessions</th><th class="num">Users</th><th class="num">Events</th></tr></thead><tbody>';
+    for (const p of topPages.slice(0,10)) html += `<tr><td style="font-size:11.5px">${p.page_path||p.page||'/'}</td><td class="num">${_mwccFmt(p.sessions)}</td><td class="num">${_mwccFmt(p.active_users||p.users)}</td><td class="num">${_mwccFmt(p.key_events||p.events)}</td></tr>`;
+    html += '</tbody></table></div>';
+  }
+  const channels = ga4.by_channel || {};
+  if (Object.keys(channels).length) {
+    html += '<div class="section-title">Traffic by Channel</div><div class="card mb"><table><thead><tr><th>Channel</th><th class="num">Sessions</th><th class="num">Users</th></tr></thead><tbody>';
+    for (const [ch,v] of Object.entries(channels)) html += `<tr><td>${ch}</td><td class="num">${_mwccFmt(v.sessions)}</td><td class="num">${_mwccFmt(v.users)}</td></tr>`;
+    html += '</tbody></table></div>';
+  }
+  if (!html.includes('<table>')) html += '<div class="insight neutral"><div class="insight-label">No Data</div>No website data available.</div>';
+  el.innerHTML = html;
+}
+
+function renderMwccOccupancy() {
+  const md = window.MWCC_DATA || {};
+  const ops = md.ops || {};
+  const net = ops.network_summary || {};
+  const centres = ops.centres || {};
+  const el = $('mwcc-occ-content');
+  if (!el) return;
+
+  if (!Object.keys(centres).length) {
+    el.innerHTML = '<div class="insight neutral"><div class="insight-label">No Data</div>Drop MYWORLD_REPORT.xlsx and utilisation.xlsx into mwcc-inbox/ before running the pipeline. See mwcc-inbox/README.md</div>';
+    return;
+  }
+
+  const breachList = net.centres_in_wage_breach  || [];
+  const riskList   = net.rooms_with_compliance_risk || [];
+  const centreArr  = Object.values(centres);
+  const avgOcc     = Math.round(centreArr.reduce((s,c)=>s+(c.occupancy?.Overall||0),0)/centreArr.length);
+
+  let html = `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Avg Network Occ', avgOcc+'%', null, '5-centre average')}
+    ${kpiCard('','Wage Breaches', breachList.length+' centre'+(breachList.length===1?'':'s'), null, breachList.length ? breachList.join(', ') : 'All centres clear', breachList.length?'':'secondary')}
+    ${kpiCard('','Compliance Risks', riskList.length+' room'+(riskList.length===1?'':'s'), null, riskList.length ? 'Over licensed capacity' : 'All rooms clear', riskList.length?'':'secondary')}
+    ${kpiCard('','Period', ops.period?.label||'—', null, '')}
+  </div>`;
+
+  if (riskList.length)  html += `<div class="insight red mb"><div class="insight-label">Compliance Risk</div>${riskList.join(' &middot; ')} — occupancy exceeds licensed room capacity.</div>`;
+  if (breachList.length) html += `<div class="insight amber mb"><div class="insight-label">Wage Breach</div>${breachList.join(' &middot; ')} — wage % exc. leave above 42% threshold. Review rostering.</div>`;
+
+  html += '<div class="section-title">Centre Occupancy Detail</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">';
+
+  for (const name of MWCC_CENTRES) {
+    const c = centres[name]; if (!c) continue;
+    const overallOcc = c.occupancy?.Overall || 0;
+    const breach     = c.wage_breach;
+    const occClr     = overallOcc >= 100 ? '#ef4444' : overallOcc >= 90 ? '#f59e0b' : overallOcc >= 70 ? 'var(--teal)' : 'var(--text-2)';
+    const barPct     = Math.min(overallOcc, 100);
+
+    html += `<div class="card" style="padding:18px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${name}</div>
+          ${breach ? '<div style="font-size:9px;font-weight:700;text-transform:uppercase;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;display:inline-block;margin-top:4px">Wage Breach</div>' : ''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:26px;font-weight:700;color:${occClr};line-height:1">${overallOcc}%</div>
+          <div style="font-size:10px;color:var(--muted)">overall</div>
+        </div>
+      </div>
+      <div style="background:var(--border);border-radius:99px;height:5px;overflow:hidden;margin-bottom:14px">
+        <div style="background:${occClr};height:100%;border-radius:99px;width:${barPct}%;transition:width .4s"></div>
+      </div>`;
+
+    // Rooms detail table
+    const rooms = c.rooms_detail || {};
+    const roomKeys = Object.keys(rooms);
+    if (roomKeys.length) {
+      html += `<table style="width:100%;font-size:11px;margin-bottom:8px">
+        <thead><tr>
+          <th style="text-align:left;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Room</th>
+          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Occ%</th>
+          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Avg</th>
+          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Cap</th>
+        </tr></thead>
+        <tbody>`;
+
+      for (const [rname, rd] of Object.entries(rooms)) {
+        const rOcc  = rd.occupancy_pct || 0;
+        const rRisk = rd.compliance_risk;
+        const rClr  = rRisk ? '#ef4444' : rOcc >= 90 ? '#f59e0b' : 'var(--text)';
+
+        html += `<tr>
+          <td style="padding:4px 0;color:var(--text)">${rname}${rRisk ? ' <span style="font-size:8px;font-weight:700;background:#fff0f0;color:#ef4444;padding:1px 4px;border-radius:2px">RISK</span>' : ''}</td>
+          <td style="text-align:right;padding:4px 0;color:${rClr};font-weight:${rRisk?700:500}">${rOcc.toFixed(1)}%</td>
+          <td style="text-align:right;padding:4px 0;color:var(--text-2)">${(rd.avg_daily||0).toFixed(1)}</td>
+          <td style="text-align:right;padding:4px 0;color:var(--muted)">${rd.capacity||'—'}</td>
+        </tr>`;
+
+        // Mon-Fri mini trend bars
+        const daily = rd.daily_mon_fri || [];
+        if (daily.length) {
+          const maxV = Math.max(...daily, 1);
+          const cap  = rd.capacity || 1;
+          html += `<tr><td colspan="4" style="padding:2px 0 8px">
+            <div style="display:flex;gap:2px;align-items:flex-end;height:20px">
+              ${daily.map((v,i) => {
+                const h    = Math.max(Math.round((v/maxV)*100), 4);
+                const over = cap > 0 && v > cap;
+                const bc   = over ? '#ef4444' : rOcc >= 90 ? '#f59e0b' : 'var(--teal)';
+                return `<div title="${['Mon','Tue','Wed','Thu','Fri'][i]}: ${v}" style="flex:1;height:${h}%;background:${bc};border-radius:1px;opacity:.7"></div>`;
+              }).join('')}
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--muted-2);margin-top:2px"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span></div>
+          </td></tr>`;
+        }
+      }
+      html += '</tbody></table>';
+    }
+
+    // Wage footer
+    html += `<div style="padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px">
+      <span style="color:var(--muted)">Wage exc. leave</span>
+      <span style="font-weight:600;color:${breach?'#b45309':'var(--teal)'}">${(c.wage_exc_leave_pct||0).toFixed(1)}% ${breach ? '&#9888;' : '&#10003;'}</span>
+    </div>`;
+
+    html += '</div>'; // end card
+  }
+  html += '</div>'; // end grid
+  el.innerHTML = html;
+}
+
+function renderMwccEnrolments() {
+  const md = window.MWCC_DATA || {};
+  const ops = md.ops || {};
+  const net = ops.network_summary || {};
+  const centres = ops.centres || {};
+  const el = $('mwcc-enrol-content');
+  if (!el) return;
+
+  if (!Object.keys(centres).length) {
+    el.innerHTML = '<div class="insight neutral"><div class="insight-label">No Data</div>Drop MYWORLD_REPORT.xlsx into mwcc-inbox/ before running the pipeline.</div>';
+    return;
+  }
+
+  let html = `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Total Enquiries', net.total_enquiries||0, null, 'Network this week')}
+    ${kpiCard('','Total Enrolments', net.total_enrolments||0, null, 'Network this week')}
+    ${kpiCard('','Total Exits', net.total_exits||0, null, 'Network this week')}
+    ${kpiCard('','Net Movement', (net.net_movement||0)>=0?'+'+(net.net_movement||0):(net.net_movement||0), null, 'Enrolments minus exits')}
+  </div>`;
+
+  html += '<div class="section-title">Centre Detail</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Revenue</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Net</th><th class="num">Occupancy</th></tr></thead><tbody>';
+  let totRev=0, totEnq=0, totEnrol=0, totExit=0, totNet=0;
+  for (const name of MWCC_CENTRES) {
+    const c = centres[name]; if (!c) continue;
+    totRev  += c.revenue||0; totEnq += c.enquiries||0; totEnrol += c.enrolments||0; totExit += c.exits||0; totNet += c.net_movement||0;
+    const occ = c.occupancy?.Overall||0;
+    html += `<tr>
+      <td style="font-weight:600">${name}</td>
+      <td class="num">$${(c.revenue||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num">${c.enquiries||0}</td>
+      <td class="num">${c.enrolments||0}</td>
+      <td class="num">${c.exits||0}</td>
+      <td class="num"><span class="stat-val ${(c.net_movement||0)>0?'good':(c.net_movement||0)<0?'bad':''}">${(c.net_movement||0)>=0?'+':''}${c.net_movement||0}</span></td>
+      <td class="num"><span class="stat-val ${occ>=70?'good':''}">${occ}%</span></td>
+    </tr>`;
+  }
+  html += `<tr style="font-weight:700;border-top:2px solid var(--border-strong);background:#fafafa">
+    <td>TOTAL</td>
+    <td class="num">$${totRev.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+    <td class="num">${totEnq}</td><td class="num">${totEnrol}</td><td class="num">${totExit}</td>
+    <td class="num"><span class="stat-val ${totNet>0?'good':totNet<0?'bad':''}">${totNet>=0?'+':''}${totNet}</span></td>
+    <td class="num">—</td>
+  </tr>`;
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   renderStatus();
@@ -5945,6 +6393,15 @@ function init() {
   renderContentReview();
   renderTracker();
   renderReadme();
+
+  // MWCC pages (data from window.MWCC_DATA set by mwcc-data.js)
+  renderMwccOverview();
+  renderMwccMeta();
+  renderMwccGads();
+  renderMwccOrgSocial();
+  renderMwccWebsite();
+  renderMwccOccupancy();
+  renderMwccEnrolments();
 
   // Restore last active page
   const lastPage = localStorage.getItem('cb247-active-page')||'overview';
