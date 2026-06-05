@@ -8173,10 +8173,24 @@ function renderMeta() {
 
   // ── Duplicate ad detection (audit rec: cannibalising creatives) ──────────
   function _normaliseAdName(n) {
-    return (n || '').replace(/^(Instagram post:|Post:|Promoting website:)\s*/i, '')
-      .replace(/[".,!?]/g, '')
+    // Strip platform prefixes, leading quotes/spaces, then cut at the first
+    // sentence boundary so short ("Post: \"X\"") and long ("Instagram post:
+    // X.\n\nGot a mate...") forms of the same creative collapse to the
+    // same key.
+    let s = (n || '')
+      .replace(/^(Instagram post:|Post:|Promoting website:)\s*/i, '')
+      .replace(/^["'\s]+/, '');
+    // Take up to the first sentence-end or newline or closing quote
+    const breaks = ['\n', '.', '"', '?', '!'].map(c => {
+      const i = s.indexOf(c);
+      return i === -1 ? Infinity : i;
+    });
+    const cutAt = Math.min(...breaks);
+    s = s.slice(0, isFinite(cutAt) ? cutAt : 30);
+    return s
+      .replace(/[^A-Za-z0-9 ]+/g, '')   // drop emoji + remaining punctuation
+      .replace(/\s+/g, ' ')              // collapse whitespace
       .trim()
-      .slice(0, 30)
       .toLowerCase();
   }
   const _dupGroups = (() => {
