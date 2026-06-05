@@ -29,7 +29,11 @@ OUTPUT_FILE     = STATE_DIR / "mwcc-ads.json"
 HISTORY_FILE    = STATE_DIR / "mwcc-ads-history.json"
 
 DEVELOPER_TOKEN = os.getenv("GOOGLE_ADS_DEVELOPER_TOKEN", "")
-CUSTOMER_ID     = os.getenv("MWCC_GOOGLE_ADS_CUSTOMER_ID", "").replace("-", "")
+# Support both naming conventions
+CUSTOMER_ID     = (
+    os.getenv("MWCC_GOOGLE_ADS_CUSTOMER_ID_MYWORLD", "") or
+    os.getenv("MWCC_GOOGLE_ADS_CUSTOMER_ID", "")
+).replace("-", "")
 MANAGER_ID      = os.getenv("MWCC_GOOGLE_ADS_MANAGER_ID", "").replace("-", "")
 
 
