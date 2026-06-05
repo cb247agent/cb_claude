@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My World Childcare Marketing Weekly Report – 2026-06-05</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#01696f;--success:#437a22;--warn:#d19900;--danger:#b91c1c;
+--bg:#f7f6f2;--card:#ffffff;--border:#e2e0da;--text:#1a1a18;--muted:#6b6b65;
+--font:'Inter',sans-serif}
+[data-theme="dark"]{--bg:#0f1110;--card:#1a1e1d;--border:#2a302e;--text:#e8e6e0;--muted:#8a8a82}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:var(--primary)}
+.topbar{background:var(--primary);color:#fff;display:flex;align-items:center;
+justify-content:space-between;padding:20px 28px;position:sticky;top:0;z-index:100}
+.topbar-title{font-size:1rem;font-weight:700;letter-spacing:.01em}
+.dark-toggle{background:rgba(255,255,255,.15);border:none;color:#fff;padding:4px 14px;
+border-radius:20px;cursor:pointer;font-family:var(--font);font-size:12px}
+.tab-nav{display:flex;gap:2px;background:var(--card);border-bottom:2px solid var(--border);
+padding:0 28px;overflow-x:auto}
+.tab-btn{padding:10px 18px;border:none;background:none;color:var(--muted);cursor:pointer;
+font-family:var(--font);font-size:13px;font-weight:500;white-space:nowrap;
+border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab-btn:hover{color:var(--primary)}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700}
+.tab-panel{display:none;padding:28px}.tab-panel.active{display:block}
+.hero{background:linear-gradient(135deg,var(--primary) 0%,#014d51 100%);color:#fff;
+border-radius:14px;padding:24px 28px;margin-bottom:24px;display:flex;
+justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
+.hero h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.hero p{font-size:12px;opacity:.85}
+.hero-right{text-align:right;font-size:12px;opacity:.85}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.kpi-grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:900px){.kpi-grid,.kpi-grid-3,.kpi-grid-5{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.kpi-grid,.kpi-grid-3,.kpi-grid-5{grid-template-columns:1fr}}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+color:var(--muted);margin-bottom:4px}
+.kpi-value{font-size:2rem;font-weight:700;color:var(--primary);line-height:1.1;margin-bottom:4px}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.kpi-up{color:var(--success);font-weight:600}
+.kpi-dn{color:var(--danger);font-weight:600}
+.kpi-fl{color:var(--muted)}
+.badge{display:inline-block;border-radius:5px;padding:2px 9px;font-size:11px;
+font-weight:700;white-space:nowrap}
+.b-green{background:#d5ecc2;color:#437a22}.b-amber{background:#fef3cc;color:#d19900}
+.b-red{background:#fee2e2;color:#b91c1c}.b-blue{background:#dbeafe;color:#1d4ed8}
+.b-teal{background:#ccf0ef;color:#01696f}.b-grey{background:#f0efeb;color:#6b6b65}
+.section-title{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:14px;margin-top:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+padding:18px;margin-bottom:20px}
+.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+color:var(--muted);margin-bottom:12px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:800px){.two-col{grid-template-columns:1fr}}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:var(--bg);color:var(--muted);font-weight:700;text-transform:uppercase;
+font-size:10px;letter-spacing:.06em;padding:8px 10px;border-bottom:2px solid var(--border);
+text-align:left;white-space:nowrap}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg)}
+.tbl-total td{font-weight:700;border-top:2px solid var(--border)}
+.bm-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.bm-cell{flex:1;min-width:100px;background:var(--card);border:1px solid var(--border);
+border-radius:8px;padding:10px 12px;text-align:center}
+.bm-metric{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;
+letter-spacing:.06em;margin-bottom:4px}
+.bm-actual{font-size:1.3rem;font-weight:700;margin-bottom:2px}
+.bm-verdict{font-size:11px;font-weight:600}
+.v-exc{color:var(--success)}.v-good{color:#3b82f6}.v-avg{color:var(--warn)}.v-poor{color:var(--danger)}
+.funnel{display:flex;gap:0;margin-bottom:20px;border-radius:10px;overflow:hidden;
+border:1px solid var(--border)}
+.funnel-step{flex:1;padding:14px 12px;text-align:center;border-right:1px solid var(--border);
+background:var(--card)}
+.funnel-step:last-child{border-right:none}
+.funnel-val{font-size:1.4rem;font-weight:700;color:var(--primary)}
+.funnel-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;
+letter-spacing:.05em;margin-top:2px}
+.funnel-sub{font-size:11px;color:var(--muted);margin-top:2px}
+@media(max-width:700px){.funnel{flex-direction:column}
+.funnel-step{border-right:none;border-bottom:1px solid var(--border)}}
+.insight-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:700px){.insight-grid{grid-template-columns:1fr}}
+.insight-card{border-radius:10px;padding:16px;border-left:4px solid}
+.ic-green{background:#f0faf0;border-color:var(--success)}
+.ic-red{background:#fff5f5;border-color:var(--danger)}
+.ic-amber{background:#fffbeb;border-color:var(--warn)}
+.ic-blue{background:#f0f7ff;border-color:#3b82f6}
+[data-theme="dark"] .ic-green{background:#1a2a1a}
+[data-theme="dark"] .ic-red{background:#2a1a1a}
+[data-theme="dark"] .ic-amber{background:#2a2510}
+[data-theme="dark"] .ic-blue{background:#0d1f30}
+.ic-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.ic-green .ic-title{color:var(--success)}.ic-red .ic-title{color:var(--danger)}
+.ic-amber .ic-title{color:var(--warn)}.ic-blue .ic-title{color:#3b82f6}
+.bullets{list-style:none;padding:0}
+.bullets li{padding:3px 0 3px 14px;font-size:12px;position:relative}
+.bullets li::before{content:"▸";position:absolute;left:0;opacity:.55}
+.ch-table{width:100%;border-collapse:collapse;font-size:12px}
+.ch-table th{background:var(--bg);color:var(--muted);font-weight:700;text-transform:uppercase;
+font-size:10px;letter-spacing:.06em;padding:10px 12px;border-bottom:2px solid var(--border);
+text-align:left;white-space:nowrap}
+.ch-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.ch-table tr:last-child td{border-bottom:none}
+.ch-table tr:hover td{background:var(--bg)}
+.na-box{background:var(--bg);border:2px dashed var(--border);border-radius:10px;
+padding:32px;text-align:center;color:var(--muted);margin-bottom:20px}
+.na-box strong{display:block;margin-bottom:6px;font-size:14px;color:var(--text)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">My World Childcare Marketing Weekly Report</div>
+  <button class="dark-toggle" onclick="document.documentElement.setAttribute('data-theme',
+    document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">Dark</button>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('overview',this)">Executive Summary</button>
+  <button class="tab-btn" onclick="showTab('centres',this)">Centre Occupancy</button>
+  <button class="tab-btn" onclick="showTab('meta',this)">Meta Ads</button>
+  <button class="tab-btn" onclick="showTab('google',this)">Google Ads</button>
+  <button class="tab-btn" onclick="showTab('organic',this)">Organic Social</button>
+  <button class="tab-btn" onclick="showTab('website',this)">Website</button>
+</div>
+
+
+<div id="overview" class="tab-panel active">
+  <div class="hero">
+    <div>
+      <h1>Marketing Weekly Report</h1>
+      <p>Period: <strong>25 May–31 May 2026</strong> &nbsp;|&nbsp; Generated: 5 Jun 2026 &nbsp;|&nbsp; My World Childcare</p>
+    </div>
+    <div class="hero-right">
+      <div>Chasing Better Group</div>
+      <div style="margin-top:4px;font-size:11px;opacity:.7">Confidential · Internal Use Only</div>
+    </div>
+  </div>
+
+  <div class="section-title">Week at a Glance</div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Ad Spend</div>
+      <div class="kpi-value">$0.00</div>
+      <div class="kpi-sub">Meta $0.00 · Google $0.00 &nbsp;|&nbsp; <span class="kpi-fl">—</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Google Conversions</div>
+      <div class="kpi-value">0.00</div>
+      <div class="kpi-sub"><span class="kpi-fl">—</span> · CPC $0.00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Website Active Users</div>
+      <div class="kpi-value">0</div>
+      <div class="kpi-sub"><span class="kpi-fl">—</span> week-on-week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Net Enrolment Movement</div>
+      <div class="kpi-value">+2</div>
+      <div class="kpi-sub">3 enrolments · 1 exits · 8 enquiries</div>
+    </div>
+  </div>
+
+  <div class="section-title">Channel Snapshot</div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="ch-table">
+      <thead><tr><th>Channel</th><th>Key Metric 1</th><th>Key Metric 2</th><th>Key Metric 3</th><th>Key Metric 4</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Meta Ads</strong></td>
+          <td>Spend <strong>$0.00</strong></td>
+          <td>Impressions <strong>0</strong></td>
+          <td>Clicks <strong>0</strong></td>
+          <td>CTR <strong>0.00%</strong> · CPC <strong>$0.00</strong></td>
+          <td><span class="badge b-amber">Monitor</span></td>
+        </tr>
+        <tr>
+          <td><strong>Google Ads</strong></td>
+          <td>Spend <strong>$0.00</strong></td>
+          <td>Impressions <strong>0</strong></td>
+          <td>Clicks <strong>0</strong></td>
+          <td>Conv <strong>0.00</strong> · CPC <strong>$0.00</strong></td>
+          <td><span class="badge b-blue">Monitor</span></td>
+        </tr>
+        <tr>
+          <td><strong>Website</strong></td>
+          <td>Active Users <strong>0</strong></td>
+          <td>Sessions <strong>0</strong></td>
+          <td>Key Events <strong>0</strong></td>
+          <td>Avg Duration <strong>0:00</strong></td>
+          <td><span class="badge b-amber">Monitor</span></td>
+        </tr>
+        <tr>
+          <td><strong>Centre Ops</strong></td>
+          <td>Enquiries <strong>8</strong></td>
+          <td>Enrolments <strong>3</strong></td>
+          <td>Exits <strong>1</strong></td>
+          <td>Net <strong>+2</strong></td>
+          <td><span class="badge b-teal">Active</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">Week-on-Week Highlights</div>
+  <div class="insight-grid">
+    <div class="insight-card ic-green">
+      <div class="ic-title">What Improved</div>
+      <ul class="bullets"><li>Meta CPC at <strong>$0.00</strong> — excellent efficiency (benchmark &lt;$1.00)</li>
+<li>Net enrolment movement <strong>+2</strong> (3 enrolments, 1 exits)</li></ul>
+    </div>
+    <div class="insight-card ic-red">
+      <div class="ic-title">What Declined</div>
+      <ul class="bullets"><li>No significant declines vs prior week.</li></ul>
+    </div>
+    <div class="insight-card ic-amber">
+      <div class="ic-title">Ongoing Concerns</div>
+      <ul class="bullets"><li>Wage breach at <strong>Midvale, Seville Grove</strong> — exceeds 42% threshold, review staffing</li>
+<li>Compliance risk: <strong>Waikiki — Toddlers</strong> — room over licensed capacity</li></ul>
+    </div>
+    <div class="insight-card ic-blue">
+      <div class="ic-title">Priority Actions This Week</div>
+      <ul class="bullets"><li>Review /book-a-tour engagement rate — high-traffic, lower-conversion page</li>
+<li>Address wage overspend at Midvale, Seville Grove — review roster vs occupancy</li>
+<li>Resolve capacity compliance at Waikiki — Toddlers</li>
+<li>Scale best-performing Meta creatives — review Top Ads tab for CTR leaders</li></ul>
+    </div>
+  </div>
+</div>
+
+<div id="centres" class="tab-panel">
+  <div class="hero">
+    <div><h1>Centre Occupancy</h1><p>2026-05-25 to 2026-05-31 · My World Childcare</p></div>
+    <div class="hero-right">
+      <div>Enquiries: <strong>8</strong></div>
+      <div>Net Movement: <strong>+2</strong></div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Enquiries</div><div class="kpi-value">8</div></div>
+    <div class="kpi-card"><div class="kpi-label">Enrolments</div><div class="kpi-value">3</div></div>
+    <div class="kpi-card"><div class="kpi-label">Exits</div><div class="kpi-value">1</div></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Net Movement</div>
+      <div class="kpi-value">+2</div>
+      <div class="kpi-sub">Total revenue: $94,652.65</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Enquiries · Enrolments · Exits by Centre</div>
+      <table class="tbl">
+        <thead><tr><th>Centre</th><th>Enquiries</th><th>Enrolments</th><th>Exits</th><th>Net</th></tr></thead>
+        <tbody><tr><td>Armadale</td><td>2</td><td>2</td><td>0</td><td><span class="kpi-up">+2</span></td></tr>
+<tr><td>Midvale</td><td>0</td><td>0</td><td>0</td><td><span class="kpi-fl">0</span></td></tr>
+<tr><td>Rockingham</td><td>3</td><td>0</td><td>0</td><td><span class="kpi-fl">0</span></td></tr>
+<tr><td>Seville Grove</td><td>0</td><td>0</td><td>0</td><td><span class="kpi-fl">0</span></td></tr>
+<tr><td>Waikiki</td><td>3</td><td>1</td><td>1</td><td><span class="kpi-fl">0</span></td></tr>
+<tr class="tbl-total"><td>Total</td><td>8</td><td>3</td><td>1</td><td>+2</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Revenue · Wage Health · Occupancy</div>
+      <table class="tbl">
+        <thead><tr><th>Centre</th><th>Revenue</th><th>Wage Exc Leave</th><th>Overall Occ</th></tr></thead>
+        <tbody><tr><td>Armadale</td><td>$9,670.06</td><td>28.06% ✓</td><td>53%</td></tr>
+<tr><td>Midvale</td><td>$21,793.50</td><td>43.03% <span class="badge b-red" style="font-size:9px">⚠ Breach</span></td><td>40%</td></tr>
+<tr><td>Rockingham</td><td>$9,558.00</td><td>35.77% ✓</td><td>38%</td></tr>
+<tr><td>Seville Grove</td><td>$17,477.34</td><td>44.06% <span class="badge b-red" style="font-size:9px">⚠ Breach</span></td><td>42%</td></tr>
+<tr><td>Waikiki</td><td>$36,153.75</td><td>40.19% ✓</td><td>82%</td></tr>
+</tbody>
+      </table>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted)">Wage breach threshold: 42.0% exc. leave. Occupancy from OWNA weekly report.</div>
+    </div>
+  </div>
+
+  <div class="section-title">Room-Level Occupancy</div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Centre / Room</th><th>Weekly Avg Occupancy</th><th>Status</th></tr></thead>
+      <tbody><tr><td>Armadale — After School</td><td>58%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Armadale — Before School</td><td>43%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Midvale — After School</td><td>56%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Midvale — Before School</td><td>37%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Midvale — Kindy</td><td>35%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Midvale — Toddlers</td><td>15%</td><td><span class="badge b-red">Critical</span></td></tr>
+<tr><td>Midvale — Babies</td><td>38%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Rockingham — After School</td><td>46%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Rockingham — Before School</td><td>19%</td><td><span class="badge b-red">Critical</span></td></tr>
+<tr><td>Seville Grove — Babies</td><td>33%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Seville Grove — Toddlers</td><td>32%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Seville Grove — Kindy</td><td>45%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Seville Grove — Before School</td><td>34%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Seville Grove — After School</td><td>72%</td><td><span class="badge b-green">Healthy</span></td></tr>
+<tr><td>Waikiki — Kindy</td><td>61%</td><td><span class="badge b-green">Healthy</span></td></tr>
+<tr><td>Waikiki — Toddlers <span class="badge b-red" style="font-size:9px">⚠ Compliance</span></td><td>112%</td><td><span class="badge b-red">Compliance Risk</span></td></tr>
+<tr><td>Waikiki — Babies</td><td>95%</td><td><span class="badge b-green">Strong</span></td></tr>
+</tbody>
+    </table>
+    <div style="margin-top:8px;font-size:11px;color:var(--muted)">Occupancy = avg Mon–Fri enrolments ÷ licensed capacity. &gt;100% = compliance risk.</div>
+  </div>
+</div>
+<div id="meta" class="tab-panel">
+  <div class="na-box"><strong>No Meta Ads data</strong>
+  Ensure META_ACCESS_TOKEN and MWCC_META_AD_ACCOUNT_ID are set in .env and run pull_mwcc_meta.py</div>
+</div>
+<div id="google" class="tab-panel">
+  <div class="na-box"><strong>No Google Ads data</strong>
+  Ensure MWCC_GOOGLE_ADS_CUSTOMER_ID is set in .env and run pull_mwcc_ads.py</div>
+</div>
+
+<div id="organic" class="tab-panel">
+  <div class="hero">
+    <div><h1>Organic Social</h1><p>Facebook &amp; Instagram Organic</p></div>
+    <div class="hero-right"><div>Data source: Metricool</div></div>
+  </div>
+  <div class="na-box">
+    <strong>Organic social data is sourced from Metricool — not yet automated</strong>
+    <span>To add organic social data to this report, export from Metricool and paste key metrics below.<br>
+    A pull_mwcc_organic.py script (Metricool or Meta Graph API) can be added in a future phase.</span>
+  </div>
+  <div class="card">
+    <div class="card-title">How to view organic social data</div>
+    <ol style="font-size:13px;padding-left:20px;line-height:2">
+      <li>Log in to <a href="https://app.metricool.com" target="_blank">Metricool</a></li>
+      <li>Select the My World Childcare brand</li>
+      <li>Go to Analytics → set the date range to match this report week</li>
+      <li>Download the PDF or review Facebook + Instagram tabs for followers, reach, and engagement</li>
+    </ol>
+  </div>
+</div>
+<div id="website" class="tab-panel">
+  <div class="na-box"><strong>No GA4 data</strong>
+  Ensure MWCC_GA4_PROPERTY_ID is set in .env and run pull_mwcc_ga4.py</div>
+</div>
+
+<script>
+function showTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Critical Behavior: Check Before Asserting
+
+**Before answering any question about system state, always verify with the relevant tool first. Never assert from memory.**
+
+This applies to: cron jobs (`crontab -l`), scheduled tasks, scripts, config files, API status, file contents, environment state, or anything that exists on disk or in the system. Read it, then answer.
+
 # ChasingBetter247 — CB_Marketing
 
 AI-powered marketing automation for ChasingBetter247 Health & Fitness Club (Perth, WA).
