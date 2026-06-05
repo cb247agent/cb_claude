@@ -13,6 +13,7 @@ MWCC campaign structure (3 campaigns, all under one account):
   Leads-Perf Max-2     — Performance Max
 """
 
+import argparse
 import json
 import os
 import sys
@@ -32,8 +33,13 @@ CUSTOMER_ID     = os.getenv("MWCC_GOOGLE_ADS_CUSTOMER_ID", "").replace("-", "")
 MANAGER_ID      = os.getenv("MWCC_GOOGLE_ADS_MANAGER_ID", "").replace("-", "")
 
 
-def pull_mwcc_ads():
-    """Fetch Google Ads data for MWCC and save to state/mwcc-ads.json."""
+def pull_mwcc_ads(start_override: str = "", end_override: str = ""):
+    """Fetch Google Ads data for MWCC and save to state/mwcc-ads.json.
+
+    Args:
+        start_override: Optional date string YYYY-MM-DD. Overrides automatic week calc.
+        end_override:   Optional date string YYYY-MM-DD. Overrides automatic week calc.
+    """
 
     # --- Prerequisites check ---
     missing = []
@@ -68,13 +74,18 @@ def pull_mwcc_ads():
         _write_empty(str(e))
         return None
 
-    # --- Date range: most recently completed Sat–Fri week ---
-    today  = datetime.today()
-    days_since_friday = (today.weekday() - 4) % 7
-    end    = today - timedelta(days=days_since_friday)   # last Friday
-    start  = end - timedelta(days=6)                     # preceding Saturday
-    end_date   = end.strftime("%Y-%m-%d")
-    start_date = start.strftime("%Y-%m-%d")
+    # --- Date range: custom override or most recently completed Sat–Fri week ---
+    if start_override and end_override:
+        start_date = start_override
+        end_date   = end_override
+        print(f"[MWCC Ads] Using custom date range: {start_date} → {end_date}")
+    else:
+        today  = datetime.today()
+        days_since_friday = (today.weekday() - 4) % 7
+        end    = today - timedelta(days=days_since_friday)   # last Friday
+        start  = end - timedelta(days=6)                     # preceding Saturday
+        end_date   = end.strftime("%Y-%m-%d")
+        start_date = start.strftime("%Y-%m-%d")
 
     query = f"""
         SELECT
@@ -252,4 +263,8 @@ def _get_oauth_client_secret() -> str:
 
 
 if __name__ == "__main__":
-    pull_mwcc_ads()
+    parser = argparse.ArgumentParser(description="Pull MWCC Google Ads data")
+    parser.add_argument("--start", default="", help="Start date YYYY-MM-DD (default: auto Sat–Fri week)")
+    parser.add_argument("--end",   default="", help="End date   YYYY-MM-DD (default: auto Sat–Fri week)")
+    args = parser.parse_args()
+    pull_mwcc_ads(start_override=args.start, end_override=args.end)
