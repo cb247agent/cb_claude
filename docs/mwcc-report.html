@@ -147,13 +147,13 @@ padding:32px;text-align:center;color:var(--muted);margin-bottom:20px}
   <div class="kpi-grid">
     <div class="kpi-card">
       <div class="kpi-label">Total Ad Spend</div>
-      <div class="kpi-value">$1,269.44</div>
-      <div class="kpi-sub">Meta $1,269.44 · Google $0.00 &nbsp;|&nbsp; <span class="kpi-up">↑ 0.0%</span></div>
+      <div class="kpi-value">$3,105.65</div>
+      <div class="kpi-sub">Meta $1,269.44 · Google $1,836.21 &nbsp;|&nbsp; <span class="kpi-up">↑ 0.0%</span></div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Google Conversions</div>
-      <div class="kpi-value">0.00</div>
-      <div class="kpi-sub"><span class="kpi-fl">—</span> · CPC $0.00</div>
+      <div class="kpi-value">53.67</div>
+      <div class="kpi-sub"><span class="kpi-up">↑ 0.0%</span> · CPC $2.81</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Website Active Users</div>
@@ -182,10 +182,10 @@ padding:32px;text-align:center;color:var(--muted);margin-bottom:20px}
         </tr>
         <tr>
           <td><strong>Google Ads</strong></td>
-          <td>Spend <strong>$0.00</strong></td>
-          <td>Impressions <strong>0</strong></td>
-          <td>Clicks <strong>0</strong></td>
-          <td>Conv <strong>0.00</strong> · CPC <strong>$0.00</strong></td>
+          <td>Spend <strong>$1,836.21</strong></td>
+          <td>Impressions <strong>37,209</strong></td>
+          <td>Clicks <strong>653</strong></td>
+          <td>Conv <strong>53.67</strong> · CPC <strong>$2.81</strong></td>
           <td><span class="badge b-blue">Monitor</span></td>
         </tr>
         <tr>
@@ -213,6 +213,7 @@ padding:32px;text-align:center;color:var(--muted);margin-bottom:20px}
     <div class="insight-card ic-green">
       <div class="ic-title">What Improved</div>
       <ul class="bullets"><li>Meta CPC at <strong>$0.50</strong> — excellent efficiency (benchmark &lt;$1.00)</li>
+<li>Google Ads delivered <strong>54 conversions</strong> at $34.21/conv</li>
 <li>Net enrolment movement <strong>+2</strong> (3 enrolments, 1 exits)</li></ul>
     </div>
     <div class="insight-card ic-red">
@@ -788,9 +789,204 @@ padding:32px;text-align:center;color:var(--muted);margin-bottom:20px}
     </table>
   </div>
 </div>
+
 <div id="google" class="tab-panel">
-  <div class="na-box"><strong>No Google Ads data</strong>
-  Ensure MWCC_GOOGLE_ADS_CUSTOMER_ID is set in .env and run pull_mwcc_ads.py</div>
+  <div class="hero">
+    <div><h1>Google Ads Performance</h1><p>2026-05-25&nbsp;–&nbsp;2026-05-31 · Search + Performance Max</p></div>
+    <div class="hero-right"><div>Spend: <strong>$1,836.21</strong></div><div>Conversions: <strong>53.67</strong></div></div>
+  </div>
+
+  <div class="section-title">Performance vs Benchmarks (Childcare Perth/AU)</div>
+  <div class="bm-row">
+<div class="bm-cell">
+  <div class="bm-metric">CTR</div>
+  <div class="bm-actual" style="color:var(--danger)">1.75%</div>
+  <div class="bm-verdict v-poor">Below</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">CPC</div>
+  <div class="bm-actual" style="color:var(--success)">$2.81</div>
+  <div class="bm-verdict v-exc">Excellent</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">CPM</div>
+  <div class="bm-actual" style="color:var(#3b82f6)">$49.35</div>
+  <div class="bm-verdict v-good">Good</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">Cost/Conv</div>
+  <div class="bm-actual" style="color:var(#3b82f6)">$34.21</div>
+  <div class="bm-verdict v-good">Good</div>
+</div>
+</div>
+  <div class="funnel" style="margin-bottom:24px">
+  <div class="funnel-step"><div class="funnel-val">37,209</div><div class="funnel-lbl">Impressions</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">653</div><div class="funnel-lbl">Clicks</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">53.67</div><div class="funnel-lbl">Conversions</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">1.75%</div><div class="funnel-lbl">CTR</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">$34.21</div><div class="funnel-lbl">Cost/Conv</div><div class="funnel-sub"><span class="kpi-dn">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">$1,836.21</div><div class="funnel-lbl">Total Spend</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+</div>
+
+  <div class="card">
+    <div class="card-title">Campaign Performance (WoW)</div>
+    <table class="tbl">
+      <thead><tr><th>Campaign</th><th>Type</th><th>Spend</th><th>Clicks</th><th>Conversions</th><th>CPC</th><th>Cost/Conv</th></tr></thead>
+      <tbody><tr>
+  <td>MWCC | Brand</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$982.56 <span class="kpi-up">↑ 0.0%</span></td>
+  <td>363 <span class="kpi-up">↑ 0.0%</span></td>
+  <td><strong>35.67</strong> <span class="kpi-dn">↓ 0.0%</span></td>
+  <td>$2.71 <span class="kpi-dn">↑ 0.0%</span></td>
+  <td>$27.54</td>
+</tr>
+<tr>
+  <td>Leads-Performance Max-2</td><td><span class="badge b-grey">PERFORMANCE_MAX</span></td>
+  <td>$524.58 <span class="kpi-up">↑ 0.0%</span></td>
+  <td>216 <span class="kpi-up">↑ 0.0%</span></td>
+  <td><strong>13.00</strong> <span class="kpi-up">↑ 0.0%</span></td>
+  <td>$2.43 <span class="kpi-dn">↑ 0.0%</span></td>
+  <td>$40.35</td>
+</tr>
+<tr>
+  <td>MWCC | Q2 2026</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$329.06 <span class="kpi-up">↑ 0.0%</span></td>
+  <td>74 <span class="kpi-up">↑ 0.0%</span></td>
+  <td><strong>5.00</strong> <span class="kpi-up">↑ 0.0%</span></td>
+  <td>$4.45 <span class="kpi-dn">↑ 0.0%</span></td>
+  <td>$65.81</td>
+</tr>
+<tr>
+  <td>My World CC I Midland/Midvale I Homepage</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Midland/Midvale I Test AI MAX</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Brand Campaign</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Waikiki</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Seville Grove/Armadale</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Waikiki/Rockingham I DSA Campaign</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World  CC I Midvale/Midland I DSA</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I RLSA</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Waikiki/Rockingham TEST</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Midland/Midvale I Internal Location Page I TEST</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Rockingham OSHC</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>Display Remarketing</td><td><span class="badge b-grey">DISPLAY</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>Careers 22-23</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>PMax: Local Campaign</td><td><span class="badge b-grey">PERFORMANCE_MAX</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Seville Grove/Armadale Seville Grove Internal</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>Exercise Leads-Search-Midvale</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+</tbody>
+    </table>
+  </div>
 </div>
 
 <div id="organic" class="tab-panel">

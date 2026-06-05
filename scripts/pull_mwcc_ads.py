@@ -102,26 +102,41 @@ def pull_mwcc_ads(start_override: str = "", end_override: str = ""):
           metrics.cost_micros,
           metrics.ctr,
           metrics.average_cpc,
-          metrics.conversions,
-          metrics.conversion_rate
+          metrics.conversions
         FROM campaign
         WHERE campaign.status != 'REMOVED'
           AND segments.date BETWEEN '{start_date}' AND '{end_date}'
         ORDER BY metrics.cost_micros DESC
     """
 
-    # --- Login via manager (MWCC is a child account under the MCC) ---
-    login_id = MANAGER_ID if MANAGER_ID else CUSTOMER_ID
-    try:
-        client = GoogleAdsClient.load_from_dict({
-            **base_config,
-            "login_customer_id": login_id,
-        })
-        ga_service = client.get_service("GoogleAdsService")
-        response   = ga_service.search(customer_id=CUSTOMER_ID, query=query)
-    except Exception as e:
-        print(f"[MWCC Ads] API error: {e}")
-        _write_empty(str(e))
+    # --- Login: try manager login first, fall back to direct login ---
+    # Manager login required for MCC child accounts; direct works if user has
+    # standalone access (e.g. cb_agent added directly to the MWCC account).
+    login_attempts = []
+    if MANAGER_ID:
+        login_attempts.append(("manager", MANAGER_ID))
+    login_attempts.append(("direct", CUSTOMER_ID))
+
+    response = None
+    for attempt_name, login_id in login_attempts:
+        try:
+            print(f"[MWCC Ads] Trying {attempt_name} login (login_id={login_id[:3]}***{login_id[-4:]})...")
+            client = GoogleAdsClient.load_from_dict({
+                **base_config,
+                "login_customer_id": login_id,
+            })
+            ga_service = client.get_service("GoogleAdsService")
+            response = ga_service.search(customer_id=CUSTOMER_ID, query=query)
+            # Force iteration to catch auth errors early
+            response = list(response)
+            print(f"[MWCC Ads] {attempt_name} login succeeded.")
+            break
+        except Exception as e:
+            print(f"[MWCC Ads] {attempt_name} login failed: {str(e)[:120]}")
+            response = None
+
+    if response is None:
+        _write_empty("All login attempts failed — check account access for cb_agent@chasingbetter.com.au")
         return None
 
     campaigns  = []
@@ -147,7 +162,6 @@ def pull_mwcc_ads(start_override: str = "", end_override: str = ""):
             "ctr":          round(row.metrics.ctr * 100, 2) if row.metrics.ctr else 0,
             "cpc":          round(row.metrics.average_cpc / 1_000_000, 2) if row.metrics.average_cpc else 0,
             "conversions":  conversions,
-            "conv_rate":    round(row.metrics.conversion_rate * 100, 2) if row.metrics.conversion_rate else 0,
             "cost_per_conv": round(spend / conversions, 2) if conversions else 0,
         }
         campaigns.append(campaign)
