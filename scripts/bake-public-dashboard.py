@@ -583,6 +583,15 @@ def build_data():
     refresh  = load("last-refresh.json")
     tracker  = load_tracker()
 
+    # ── Frozen Ahrefs snapshot from June 1 cron (token exhausted thereafter) ──
+    # The live ahrefs-data.json was overwritten on June 3 with empty data.
+    # ahrefs-snapshot-2026-06-01.json holds the last known good figures
+    # extracted from outputs/seo/weekly-seo-brief-2026-06-01.md.
+    ahrefs_frozen = load("ahrefs-snapshot-2026-06-01.json") or {}
+
+    # ── Screaming Frog technical crawl (used to populate Tech Health card) ──
+    frog = load("screaming-frog-data.json") or {}
+
     now = datetime.now().strftime("%d %b %Y, %H:%M")
 
     # ── Per-source timestamp helper (ISO UTC → Perth AWST readable) ───
@@ -1145,6 +1154,59 @@ def build_data():
             "recent_backlinks": recent_bls,
             "broken_backlinks": [],
             "lost_backlinks": [],
+
+            # ── New SEO block extensions (Tier 1 + Tier 3 audit recommendations) ──
+            # Dynamic GSC date range so the page stops showing hardcoded "25–31 May"
+            "gsc_date_range": (gsc or {}).get("date_range") or {},
+
+            # GA4 organic-channel WoW comparison
+            "ga4_organic": (lambda: (
+                {
+                    "current_sessions": next(
+                        (safe_int(s.get("sessions")) for s in (ga4.get("traffic_sources") or [])
+                         if (s.get("sessionDefaultChannelGroup") or "").lower() == "organic search"),
+                        0,
+                    ),
+                    "current_conversions": next(
+                        (safe_int(s.get("conversions")) for s in (ga4.get("traffic_sources") or [])
+                         if (s.get("sessionDefaultChannelGroup") or "").lower() == "organic search"),
+                        0,
+                    ),
+                    "previous_sessions": next(
+                        (safe_int(s.get("sessions")) for s in (ga4.get("previous", {}).get("traffic_sources") or [])
+                         if (s.get("sessionDefaultChannelGroup") or "").lower() == "organic search"),
+                        0,
+                    ),
+                    "previous_conversions": next(
+                        (safe_int(s.get("conversions")) for s in (ga4.get("previous", {}).get("traffic_sources") or [])
+                         if (s.get("sessionDefaultChannelGroup") or "").lower() == "organic search"),
+                        0,
+                    ),
+                }
+            ))(),
+
+            # Frozen Ahrefs snapshot (June 1 cron — the last good pull)
+            "ahrefs_frozen": ahrefs_frozen,
+
+            # Technical health from Screaming Frog
+            "tech_health": {
+                "crawled_at":  frog.get("date_crawled") or "",
+                "errors":      (frog.get("summary") or {}).get("errors", 0),
+                "warnings":    (frog.get("summary") or {}).get("warnings", 0),
+                "notices":     (frog.get("summary") or {}).get("notices", 0),
+                "total_issue_types": (frog.get("summary") or {}).get("total_issue_types", 0),
+                "issues": [
+                    {
+                        "name":          i.get("name", ""),
+                        "priority":      i.get("priority", "notice"),
+                        "count":         i.get("count", 0),
+                        "description":   i.get("description", ""),
+                        "affected_urls": (i.get("affected_urls") or [])[:5],
+                    }
+                    for i in (frog.get("issues") or [])
+                    if i.get("priority") in ("error", "warning")
+                ][:10],
+            },
         },
 
         # Intel
