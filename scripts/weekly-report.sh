@@ -10,10 +10,13 @@
 #   → Jane receives content pipeline for QC → Jane approves → Joanne gets posting schedule
 #
 # Pipeline:
-#   Phase 1  Data Pull      pull_all + pull_ahrefs + pull_apify
+#   Phase 1  Data Pull      pull_all + pull_ahrefs + pull_apify + site crawl (no duplicate pulls)
 #   Phase 2  Agent Pipeline 9 agents in sequence (research → ... → strategist)
 #   Phase 3  Outputs        bake reports + deploy dashboard (source of truth)
-#   Phase 4  Email Delivery Tia OS report ONLY — team emails held until Tia approves
+#   Phase 4  Email Delivery Tia OS report + SEO report — team emails held until Tia approves
+#
+# NOTE: weekly-seo.sh is merged into this pipeline. Do NOT run weekly-seo.sh separately
+#       — all data pulls happen once here to preserve API quotas.
 
 # No set -e — agent failures are tracked in FAILED_AGENTS[], not script-killing.
 # Each phase uses explicit || handling so one failed pull/agent doesn't abort the run.
@@ -101,6 +104,10 @@ log "Step 1b — Ahrefs (rankings + gaps + organic value)..."
 log "Step 1c — Apify (SERP + Maps + Reddit + Trends + FB Ads)..."
 "$PYTHON" "$BASE_DIR/scripts/pull_apify.py" >> "$LOG" 2>&1 \
     || fail "pull_apify.py had issues — continuing"
+
+log "Step 1d — Site crawl (CB247 + competitors, privacy-compliant)..."
+"$PYTHON" "$BASE_DIR/scripts/run_site_crawl.py" --competitors >> "$LOG" 2>&1 \
+    || fail "run_site_crawl.py had issues — continuing"
 
 log "Phase 1 complete."
 
@@ -481,7 +488,13 @@ log "NOTE: Team emails are HELD until Tia approves."
 "$PYTHON" "$BASE_DIR/scripts/send_weekly_report.py" >> "$LOG" 2>&1 \
     || fail "Tia OS report email had issues"
 
-log "Step 4b — How to release team emails after Tia approves:"
+log "Step 4b — Generating + sending SEO report..."
+"$PYTHON" "$BASE_DIR/scripts/generate_seo_report.py" >> "$LOG" 2>&1 \
+    || fail "generate_seo_report.py had issues"
+"$PYTHON" "$BASE_DIR/scripts/send_seo_report.py" >> "$LOG" 2>&1 \
+    || fail "send_seo_report.py had issues"
+
+log "Step 4c — How to release team emails after Tia approves:"
 log "    python scripts/send_team_emails.py --approve"
 log "    OR per-person: python scripts/send_team_emails.py --role jane"
 
