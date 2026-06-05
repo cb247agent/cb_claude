@@ -8680,119 +8680,376 @@ function renderMeta() {
 // ── Render: GBP ──────────────────────────────────────────────────────────────
 function renderGBP() {
   const gbp     = D.gbp, mal = gbp.malaga, ell = gbp.ellenbrook;
-  const packRate = gbp.local_pack.pack_presence_rate || 0;
-  const packKws  = (gbp.local_pack.appearing_in_pack || []).map(p=>`${p.keyword} (#${p.position})`).join(', ') || 'No data';
-  // Pull this week's GBP signal data from Metricool
-  const mc = (D.organic_social && D.organic_social.metricool && D.organic_social.metricool.gbp) || {};
+  const packRate = (gbp.local_pack && gbp.local_pack.pack_presence_rate) || 0;
+  const packKws  = ((gbp.local_pack && gbp.local_pack.appearing_in_pack) || []).map(p=>`${p.keyword} (#${p.position})`).join(', ');
 
-  // ── KPI cards ───────────────────────────────────────────────────────────────
-  let html = `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Malaga Rating', stars(mal.rating), null, `${fmt(mal.reviews,'n')} reviews`)}
-    ${kpiCard('','Ellenbrook Rating', stars(ell.rating), null, `${fmt(ell.reviews,'n')} reviews`)}
-    ${kpiCard('','Local Pack Rate', packRate+'%', null, 'Appearing in 3-pack for tracked keywords')}
-    ${kpiCard('','GBP Actions (wk)', fmt(mc.total_actions||0,'n'), mc.actions_chg||null, 'Clicks + calls + directions', (mc.actions_chg||0)<0?'red':'green')}
+  // Metricool aggregate GBP (when PDF parsed) — preferred over hardcoded fallbacks
+  const SX = window.SOCIAL_DATA || {};
+  const mcMetricool = (SX.metricool && SX.metricool.available) ? SX.metricool.gbp : null;
+  const mcHard = (D.organic_social && D.organic_social.metricool && D.organic_social.metricool.gbp) || {};
+  const mc = mcMetricool || mcHard;
+
+  // Live GBP API per-location performance (when 3 GCP APIs enabled)
+  const sxGbp = (SX.gbp && SX.gbp.available) ? SX.gbp : null;
+
+  // ── Data freshness banner — honest about what's live vs frozen ───────────
+  const apifyDate = ((window.SOCIAL_DATA && SX.data_freshness && SX.data_freshness.apify_pulled_at) || '').slice(0,10);
+  const mcDate    = mcMetricool ? ((SX.metricool && SX.metricool.date_range && SX.metricool.date_range.raw) || '') : '';
+  const gbpApiOk  = sxGbp != null;
+  let html = '';
+  html += `<div style="background:${gbpApiOk?'#e8f5f4':'#fff8e1'};border:1px solid ${gbpApiOk?'var(--teal)':'#fcd34d'};border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11.5px;color:${gbpApiOk?'#0a5e54':'#92400e'}">
+    <b>Data sources:</b>
+    Apify Maps (ratings/reviews/photos) <span style="color:var(--muted)">${apifyDate||'unknown'}</span>
+    · Metricool (aggregate actions) <span style="color:var(--muted)">${mcDate||(mcMetricool?'':'25–31 May hardcoded fallback')}</span>
+    · GBP Performance API (per-location actions) <span style="color:var(--muted)">${gbpApiOk?'live':'not enabled in GCP — drop 3 free APIs to unlock'}</span>
   </div>`;
 
-  // ── 2. Insight strip — 2 cards (red + teal) ──────────────────────────────
-  const gbpSignalsDown = (mc.actions_chg||0) < 0;
-  html += sectionTitle('Key Observations — This Week');
+  // ── Competitor scan — find the alpha threat (highest weighted score) ─────
+  const competitors = gbp.competitors || [];
+  const scoreOf = c => (c.rating||0) * Math.log10((c.reviews||0)+1) * ((c.completeness||100)/100);
+  const cb247CombinedScore = (((mal.rating||0)+(ell.rating||0))/2) * Math.log10(((mal.reviews||0)+(ell.reviews||0))+1) * (((mal.completeness||0)+(ell.completeness||0))/200);
+  const topCompetitor = [...competitors].sort((a,b) => (b.rating||0) - (a.rating||0))[0];
+  const ratingThreat = topCompetitor && (topCompetitor.rating > Math.max(mal.rating||0, ell.rating||0));
+
+  // ── Photo gap visual data ────────────────────────────────────────────────
+  const photoTarget = 100;
+  const malPhotoPct = Math.min(100, Math.round(((mal.photos||0) / photoTarget) * 100));
+  const ellPhotoPct = Math.min(100, Math.round(((ell.photos||0) / photoTarget) * 100));
+
+  // ── 0. EXECUTIVE VERDICT (audit recommendation: verdict before data) ────
+  const _vWhereWeAre = `Malaga ${mal.rating}★ (${fmt(mal.reviews,'n')} reviews) · Ellenbrook ${ell.rating}★ (${fmt(ell.reviews,'n')} reviews). Local pack presence: ${packRate}%.`;
+  const _vRisk = ratingThreat
+    ? `<b>${topCompetitor.name} at ${topCompetitor.rating}★ (${topCompetitor.reviews} reviews, ${topCompetitor.location})</b> — higher rated than both CB247 locations. Smaller review base (you have ${fmt((mal.reviews||0)+(ell.reviews||0),'n')} combined) but the perception gap shows on every search.`
+    : (mal.photos||0)+(ell.photos||0) < 150
+      ? `Photo count short: ${mal.photos||0}+${ell.photos||0}=${(mal.photos||0)+(ell.photos||0)} vs 200 combined target. Listings with 100+ photos get ~5× more calls.`
+      : `Stable across both locations — focus on review velocity to defend lead.`;
+  const _vPriority = (mal.photos||0) < 80 || (ell.photos||0) < 80
+    ? `Upload <b>10 priority photos per location</b> this week (sauna · ice bath · Kids Hub · gym floor · classes). Single highest-leverage GBP action available.`
+    : 'Run weekly review-request protocol at reception — target 5 new reviews per location.';
+
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Executive Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${apifyDate ? 'Apify ' + apifyDate : ''}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_vWhereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
+      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+    </div>
+  </div>`;
+
+  // ── 1. KPI cards — verdict colours + honest "no WoW yet" sub-text ───────
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Malaga Rating', mal.rating ? mal.rating + '★' : '–', null,
+      `${fmt(mal.reviews,'n')} reviews · ${mal.completeness||0}% complete`,
+      mal.rating >= 4.7 ? 'green' : mal.rating >= 4.5 ? '' : 'amber')}
+    ${kpiCard('','Ellenbrook Rating', ell.rating ? ell.rating + '★' : '–', null,
+      `${fmt(ell.reviews,'n')} reviews · ${ell.completeness||0}% complete`,
+      ell.rating >= 4.7 ? 'green' : ell.rating >= 4.5 ? '' : 'amber')}
+    ${kpiCard('','Local Pack Rate', packRate + '%', null,
+      `${(gbp.local_pack && gbp.local_pack.appearing_in_pack || []).length} of ${(gbp.local_pack && gbp.local_pack.total_tracked) || '?'} tracked keywords`,
+      packRate >= 60 ? 'green' : packRate >= 30 ? '' : 'amber')}
+    ${kpiCard('','GBP Actions (wk)', fmt(mc.total_actions||0,'n'), mc.actions_chg||null,
+      mcMetricool ? `Web ${fmt(mc.website_clicks||0,'n')} · Phone ${fmt(mc.phone_clicks||0,'n')} · Dir ${fmt(mc.directions||0,'n')}` : 'Metricool aggregate (no per-location split until GBP API enabled)',
+      (mc.actions_chg||0)<-15?'red':(mc.actions_chg||0)>5?'green':'')}
+  </div>`;
+
+  // ── 2. Key Observations strip (no emojis, surfaces 4.9★ competitor) ────
+  html += sectionTitle('Key Observations — ' + (mcDate || 'this week'));
   html += `<div class="grid-2 mb">
-    <div class="insight ${gbpSignalsDown?'red':'amber'}">
-      <div class="insight-label">⚠️ ${gbpSignalsDown?'GBP Signals Down — System-Wide Drop':'GBP — Watch Weekly Trend'}</div>
-      ${gbpSignalsDown
-        ? `Three metrics declined simultaneously — <b>system-wide signal drop</b>, not a one-off.
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0">
-            <div style="text-align:center;background:rgba(239,68,68,.06);border-radius:6px;padding:8px">
-              <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.website_chg||'–49.7'}%</div>
-              <div style="font-size:10px;color:var(--muted)">Website Clicks</div>
-            </div>
-            <div style="text-align:center;background:rgba(239,68,68,.06);border-radius:6px;padding:8px">
-              <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.reach_chg||'–23'}%</div>
-              <div style="font-size:10px;color:var(--muted)">Search Reach</div>
-            </div>
-            <div style="text-align:center;background:rgba(239,68,68,.06);border-radius:6px;padding:8px">
-              <div style="font-size:1.1rem;font-weight:700;color:#ef4444">${mc.actions_chg||'–33.1'}%</div>
-              <div style="font-size:10px;color:var(--muted)">Total Actions</div>
-            </div>
-          </div>
-          Root causes: GBP post cadence dropped, no new photos, competitor listings gaining ground.
-          <b>Fix today:</b> Post 1 GBP update + add 3 photos + respond to all open reviews within 24h.`
-        : `GBP actions: ${fmt(mc.total_actions||0,'n')} this week. Local pack rate: ${packRate}%.
-          Photos: Malaga ${mal.photos||0}/100 · Ellenbrook ${ell.photos||0}/100.
-          <b>Maintain cadence:</b> 1 GBP post/week + 5 photos/week per location.`
-      }
-      <br><br><b>Photo gap:</b> Malaga ${mal.photos||0}/100 · Ellenbrook ${ell.photos||0}/100. Listings with 100+ photos get 520% more calls. Upload 10 priority shots this week: sauna, ice bath, Kids Hub, gym floor, classes.
+    <div class="insight ${ratingThreat?'red':'amber'}">
+      <div class="insight-label">${ratingThreat ? 'Reputation Risk — Higher-Rated Competitor in Catchment' : 'Photo Gap — Highest-Leverage Fix Available'}</div>
+      ${ratingThreat
+        ? `<b>${topCompetitor.name}</b> rates <b>${topCompetitor.rating}★</b> in ${topCompetitor.location} — higher than CB247 ${topCompetitor.location === 'Malaga' ? 'Malaga (' + mal.rating + '★)' : 'Ellenbrook (' + ell.rating + '★)'}.
+          <br><br><b>Why it matters:</b> Google's local pack and review carousels show ratings prominently. A 0.2★ gap on identical search queries translates to 8–15% click loss.
+          <br><br><b>Mitigation:</b> CB247's review base is far larger (${fmt((mal.reviews||0)+(ell.reviews||0),'n')} vs ${topCompetitor.reviews}) so absolute social proof is on your side. Run a 4-week review velocity push (5/week/location) to widen the count gap until rating math catches up.`
+        : `<b>Combined photos: ${(mal.photos||0) + (ell.photos||0)} of 200 target</b> across both locations. Listings with 100+ photos receive ~5× more direction requests and ~3× more website clicks.
+          <br><br><b>Action:</b> Upload 10 photos per location this week — sauna · ice bath · Kids Hub · gym floor · reception · class shots.`}
+      ${packRate < 50 ? `<br><br><b>Local pack gap:</b> Only ${packRate}% of tracked keywords show CB247 in 3-pack. Review velocity + photo recency + post cadence are the 3 levers.` : ''}
     </div>
     <div class="insight teal">
-      <div class="insight-label">✅ Local Pack Presence — ${packRate}% Coverage · Reviews Strong</div>
-      CB247 appears in the Google local 3-pack for <b>${packRate}% of tracked keywords</b>.
-      ${packKws ? `<br><br><b>In pack:</b> ${packKws}` : ''}
-      <br><br><b>Review stats:</b>
-      <div class="stat-row" style="margin-top:4px"><span class="stat-label">Malaga</span><span class="stat-val">${stars(mal.rating)} · ${fmt(mal.reviews,'n')} reviews</span></div>
-      <div class="stat-row"><span class="stat-label">Ellenbrook</span><span class="stat-val">${stars(ell.rating)} · ${fmt(ell.reviews,'n')} reviews</span></div>
-      <br><b>Ranking signals (priority):</b> ① Review velocity · ② Photo recency · ③ Post frequency · ④ Listing clicks
-      <br>CB247 is strong on ratings but needs higher weekly review velocity (target: 5+/week/location).
+      <div class="insight-label">Local Pack + Reviews — Where CB247 Wins Right Now</div>
+      CB247 ranks in the local 3-pack for <b>${packRate}%</b> of tracked keywords.
+      ${packKws ? `<br><span style="font-size:11px;color:var(--muted)">In pack: ${packKws}</span>` : ''}
+      <div style="margin-top:10px">
+        <div class="stat-row"><span class="stat-label">Malaga</span><span class="stat-val">${mal.rating}★ · ${fmt(mal.reviews,'n')} reviews</span></div>
+        <div class="stat-row"><span class="stat-label">Ellenbrook</span><span class="stat-val">${ell.rating}★ · ${fmt(ell.reviews,'n')} reviews</span></div>
+        <div class="stat-row"><span class="stat-label">Combined reviews</span><span class="stat-val good">${fmt((mal.reviews||0)+(ell.reviews||0),'n')}</span></div>
+      </div>
+      <br><b>Ranking signals (priority):</b> 1. Review velocity · 2. Photo recency · 3. Post frequency · 4. Listing clicks.
+      <br>CB247's review count vs all 5 tracked competitors is the strongest lever you already own.
     </div>
   </div>`;
 
-  // ── Location summary (side by side, compact) ────────────────────────────────
+  // ── 3. Photo Gap Progress Bars (audit rec — visual replaces text) ────────
+  const photoBar = (label, count, pct) => {
+    const colour = pct >= 80 ? '#3FA69A' : pct >= 50 ? '#f59e0b' : '#ef4444';
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:600">${label}</span>
+        <span style="font-size:11px"><b style="color:${colour}">${count}</b> <span style="color:var(--muted)">/ ${photoTarget} target (${pct}%)</span></span>
+      </div>
+      <div style="background:#f0f2f5;border-radius:4px;height:10px;overflow:hidden">
+        <div style="background:${colour};width:${pct}%;height:100%;transition:width .3s"></div>
+      </div>
+    </div>`;
+  };
+  html += sectionTitle('Photo Gap — Highest-Leverage Action');
+  html += `<div class="card mb" style="padding:16px 20px">
+    ${photoBar('Malaga', mal.photos||0, malPhotoPct)}
+    ${photoBar('Ellenbrook', ell.photos||0, ellPhotoPct)}
+    <p style="font-size:11px;color:var(--muted);margin:6px 0 0">
+      Single biggest GBP ranking lever per hour invested. Upload priority: <b>sauna · ice bath · Kids Hub · gym floor · reception · Reformer Pilates studio · classes in progress · members training</b>. Name files descriptively (e.g. <code style="background:#f0f2f5;padding:1px 4px;border-radius:3px">chasingbetter247-malaga-sauna.jpg</code>) for SEO carry-over.
+    </p>
+  </div>`;
+
+  // ── 4. Review Velocity card (audit rec — surfaces what's NOT being tracked) ─
+  // We don't have launch date in data — estimate via rating + reviews context
+  // Until weekly review snapshots are stored, this is a target framework not a tracker
+  html += sectionTitle('Review Velocity — Weekly Target Tracker');
+  html += `<div class="card mb">
+    <div style="padding:14px 20px 4px;font-size:11.5px;color:var(--muted)">
+      <b>Why velocity matters:</b> Google weighs review recency heavily in local pack ranking. 5 new reviews this week beats 50 old reviews from 2 years ago for the same keyword. Once we log weekly review snapshots, this card shows actual WoW velocity vs target.
+    </div>
+    <table>
+      <thead><tr>
+        <th>Location</th>
+        <th class="num">Total Reviews</th>
+        <th class="num">Target/wk</th>
+        <th class="num">This week</th>
+        <th>Status</th>
+      </tr></thead><tbody>
+      <tr>
+        <td style="font-weight:600">Malaga</td>
+        <td class="num">${fmt(mal.reviews,'n')}</td>
+        <td class="num">5+</td>
+        <td class="num" style="color:var(--muted)">—</td>
+        <td style="font-size:11px;color:var(--muted)">Snapshot tracker needed (add ad-hoc weekly count)</td>
+      </tr>
+      <tr>
+        <td style="font-weight:600">Ellenbrook</td>
+        <td class="num">${fmt(ell.reviews,'n')}</td>
+        <td class="num">5+</td>
+        <td class="num" style="color:var(--muted)">—</td>
+        <td style="font-size:11px;color:var(--muted)">Snapshot tracker needed (add ad-hoc weekly count)</td>
+      </tr>
+      </tbody>
+    </table>
+    <p style="font-size:10.5px;color:var(--muted);padding:8px 14px 4px">
+      <b>To activate:</b> ad-hoc weekly review count delta from <code>state/gbp-data.json</code> snapshots. Store previous week's review count and diff. Single line of Python in <code>scripts/pull_gbp.py</code>.
+    </p>
+  </div>`;
+
+  // ── 5. Per-Location Performance (Tier 2 — shows when GBP API enabled) ────
+  if (sxGbp) {
+    const sxMal = (sxGbp.malaga && sxGbp.malaga.performance) || {};
+    const sxEll = (sxGbp.ellenbrook && sxGbp.ellenbrook.performance) || {};
+    html += sectionTitle('Per-Location Actions — Google Business Profile API');
+    html += `<div class="grid-2 mb">
+      <div class="card"><div class="card-h">Malaga</div>
+        <div class="stat-row"><span class="stat-label">Total actions</span><span class="stat-val">${fmt(sxMal.total_actions||0,'n')}</span></div>
+        <div class="stat-row"><span class="stat-label">Website clicks</span><span class="stat-val">${fmt(sxMal.website_clicks||0,'n')}</span></div>
+        <div class="stat-row"><span class="stat-label">Phone calls</span><span class="stat-val">${fmt(sxMal.phone_clicks||0,'n')}</span></div>
+        <div class="stat-row"><span class="stat-label">Direction requests</span><span class="stat-val">${fmt(sxMal.direction_requests||0,'n')}</span></div>
+        <div class="stat-row"><span class="stat-label">Total impressions</span><span class="stat-val">${fmt(sxMal.total_impressions||0,'n')}</span></div>
+      </div>
+      <div class="card"><div class="card-h">Ellenbrook</div>
+        <div class="stat-row"><span class="stat-label">Total actions</span><span class="stat-val">${fmt(sxEll.total_actions||0,'n')}</span></div>
+        <div class="stat-row"><span class="stat-label">Website clicks</span><span class="stat-val">${fmt(sxEll.website_clicks||0,'n')}</span></div>
+        <div class="stat-row"><span class="stat-label">Phone calls</span><span class="stat-val">${fmt(sxEll.phone_clicks||0,'n')}</span></div>
+        <div class="stat-row"><span class="stat-label">Direction requests</span><span class="stat-val">${fmt(sxEll.direction_requests||0,'n')}</span></div>
+        <div class="stat-row"><span class="stat-label">Total impressions</span><span class="stat-val">${fmt(sxEll.total_impressions||0,'n')}</span></div>
+      </div>
+    </div>`;
+  } else {
+    html += sectionTitle('Per-Location Actions — Awaiting GBP API');
+    html += `<div class="insight neutral mb" style="font-size:12px">
+      Per-location calls / directions / website clicks split currently unavailable. Metricool gives an aggregate but not the Malaga vs Ellenbrook split. To unlock:
+      <ol style="margin:8px 0 0;padding-left:22px;line-height:1.7">
+        <li>Enable 3 free APIs in GCP project 359818033415: <code>mybusinessaccountmanagement</code> · <code>mybusinessbusinessinformation</code> · <code>businessprofileperformance</code></li>
+        <li>Run <code>./.venv/bin/python3.13 scripts/pull_gbp_performance.py</code> once to discover location IDs</li>
+        <li>Add <code>CB247_GBP_MALAGA_LOCATION_ID</code> + <code>CB247_GBP_ELLENBROOK_LOCATION_ID</code> to <code>.env</code></li>
+      </ol>
+      Then this section populates automatically on the Monday 10am cron.
+    </div>`;
+  }
+
+  // ── 6. Location summary cards (cleaned — no hardcoded fallbacks) ────────
   html += sectionTitle('Location Details');
+  const locCard = (label, loc, photoPct) => `
+    <div class="card">
+      <div class="card-h">${label} GBP</div>
+      <div class="stat-row"><span class="stat-label">Rating</span><span class="stat-val">${loc.rating}★</span></div>
+      <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-val">${fmt(loc.reviews,'n')}</span></div>
+      <div class="stat-row"><span class="stat-label">Photos</span><span class="stat-val">${fmt(loc.photos,'n')} <span style="font-size:10px;color:${photoPct>=80?'var(--teal)':photoPct>=50?'#f59e0b':'#ef4444'}">/ ${photoTarget} (${photoPct}%)</span></span></div>
+      <div class="stat-row"><span class="stat-label">Profile complete</span><span class="stat-val">${loc.completeness||0}%</span></div>
+      <div class="stat-row"><span class="stat-label">Category</span><span class="stat-val" style="font-size:11px">${loc.category||'–'}</span></div>
+      <div class="stat-row"><span class="stat-label">Hours set</span><span class="stat-val">${loc.hours_set?'Yes':'No'}</span></div>
+      <div class="stat-row"><span class="stat-label">Phone</span><span class="stat-val" style="font-size:11px;font-family:'SF Mono',Menlo,monospace">${loc.phone||'–'}</span></div>
+    </div>`;
   html += `<div class="grid-2 mb">
-    <div class="card">
-      <div class="card-h">Malaga GBP</div>
-      <div class="stat-row"><span class="stat-label">Rating</span><span class="stat-val">${stars(mal.rating)}</span></div>
-      <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-val">${fmt(mal.reviews,'n')} <span style="font-size:10px;color:var(--muted)">/ 530 target</span></span></div>
-      <div class="stat-row"><span class="stat-label">Photos</span><span class="stat-val">${fmt(mal.photos,'n')} <span style="font-size:10px;color:var(--muted)">/ 100 target</span></span></div>
-      <div class="stat-row"><span class="stat-label">Profile complete</span><span class="stat-val">${mal.completeness||'–'}%</span></div>
-      <div class="stat-row"><span class="stat-label">Website clicks (wk)</span><span class="stat-val bad">${mc.website_clicks||95} <span style="font-size:10px;color:#ef4444">${mc.website_chg||'–49.7'}% WoW</span></span></div>
-    </div>
-    <div class="card">
-      <div class="card-h">Ellenbrook GBP</div>
-      <div class="stat-row"><span class="stat-label">Rating</span><span class="stat-val">${stars(ell.rating)}</span></div>
-      <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-val">${fmt(ell.reviews,'n')} <span style="font-size:10px;color:var(--muted)">/ 280 target</span></span></div>
-      <div class="stat-row"><span class="stat-label">Photos</span><span class="stat-val">${fmt(ell.photos,'n')} <span style="font-size:10px;color:var(--muted)">/ 100 target</span></span></div>
-      <div class="stat-row"><span class="stat-label">Profile complete</span><span class="stat-val">${ell.completeness||'–'}%</span></div>
-      <div class="stat-row"><span class="stat-label">Total actions (wk)</span><span class="stat-val">${mc.total_actions||446}</span></div>
-    </div>
+    ${locCard('Malaga', mal, malPhotoPct)}
+    ${locCard('Ellenbrook', ell, ellPhotoPct)}
   </div>`;
 
-  // ── Competitor benchmark ────────────────────────────────────────────────────
-  html += sectionTitle('Competitor Benchmark');
+  // ── 7. Competitor Benchmark expanded — adds Photos, Completeness, Gap Score ──
+  html += sectionTitle('Competitor Benchmark — Weighted Gap Analysis');
+  const cb247Combined = {
+    name: 'ChasingBetter247',
+    location: 'Malaga + Ellenbrook',
+    rating: +(((mal.rating||0)+(ell.rating||0))/2).toFixed(1),
+    reviews: (mal.reviews||0) + (ell.reviews||0),
+    photos: (mal.photos||0) + (ell.photos||0),
+    completeness: Math.round(((mal.completeness||0)+(ell.completeness||0))/2),
+  };
+  const cb247Score = scoreOf(cb247Combined);
   html += `<div class="card mb"><table>
     <thead><tr>
-      <th>Business</th><th>Location</th>
-      <th class="num">Rating</th><th class="num">Reviews</th><th>Gap to CB247</th>
+      <th>Business</th>
+      <th>Location</th>
+      <th class="num">Rating</th>
+      <th class="num">Reviews</th>
+      <th class="num">Photos</th>
+      <th class="num">Complete</th>
+      <th class="num">Gap Score</th>
+      <th>Read</th>
     </tr></thead><tbody>
     <tr style="background:#f0f9f7">
       <td style="font-weight:700;color:var(--teal)">ChasingBetter247</td>
       <td>Malaga + Ellenbrook</td>
-      <td class="num">${stars(mal.rating)}</td>
-      <td class="num"><b>${fmt((mal.reviews||0)+(ell.reviews||0),'n')}</b></td>
+      <td class="num"><b>${cb247Combined.rating}★</b></td>
+      <td class="num"><b>${fmt(cb247Combined.reviews,'n')}</b></td>
+      <td class="num">${fmt(cb247Combined.photos,'n')}</td>
+      <td class="num">${cb247Combined.completeness}%</td>
+      <td class="num"><b>${cb247Score.toFixed(2)}</b></td>
       <td style="font-size:11px;color:var(--teal)">Baseline</td>
     </tr>
-    ${gbp.competitors.map(c=>{
-      const gap = (c.reviews||0) - ((mal.reviews||0)+(ell.reviews||0));
+    ${competitors.map(c=>{
+      const cScore = scoreOf(c);
+      const scoreDelta = cScore - cb247Score;
+      const ahead = scoreDelta > 0;
+      const ratingAhead = (c.rating||0) > Math.max(mal.rating||0, ell.rating||0);
+      const read = ratingAhead ? 'Higher rating — reputation alarm'
+                 : ahead ? 'Catching up on score'
+                 : 'Behind CB247';
+      const readColour = ratingAhead ? '#b91c1c' : ahead ? '#92400e' : 'var(--muted)';
       return `<tr>
-        <td>${c.name}</td><td style="font-size:11px;color:var(--muted)">${c.location}</td>
-        <td class="num">${stars(c.rating)}</td>
-        <td class="num ${gap>0?'bad':''}">${fmt(c.reviews,'n')}</td>
-        <td style="font-size:11px;${gap>0?'color:#ef4444':'color:var(--teal)'}">
-          ${gap>0?'+'+gap.toLocaleString()+' reviews ahead':'–'}
-        </td>
+        <td style="font-size:12px">${c.name}</td>
+        <td style="font-size:11px;color:var(--muted)">${c.location}</td>
+        <td class="num ${ratingAhead?'bad':''}">${c.rating}★</td>
+        <td class="num">${fmt(c.reviews,'n')}</td>
+        <td class="num">${fmt(c.photos,'n')}</td>
+        <td class="num" style="color:var(--muted)">${c.completeness}%</td>
+        <td class="num ${ahead?'bad':'good'}">${cScore.toFixed(2)}</td>
+        <td style="font-size:10.5px;color:${readColour}">${read}</td>
       </tr>`;
-    }).join('')||'<tr><td colspan="5" style="color:var(--muted)">No competitor data — run pull_apify.py</td></tr>'}
+    }).join('')||'<tr><td colspan="8" style="color:var(--muted)">No competitor data — run pull_apify.py</td></tr>'}
     </tbody></table>
-  <p style="font-size:11px;color:var(--muted);margin-top:8px;padding:0 4px">
-    Review count vs competitors is a long-term signal. More impactful <b>this week</b>:
-    respond to all reviews, post 1 GBP update, and upload 10 photos — these move local pack rank faster than waiting for review volume to grow.
-  </p></div>`;
+    <p style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">
+      <b>Gap Score</b> = rating × log10(reviews+1) × completeness%. Combines reputation depth + visibility weight + listing quality. CB247's score is calculated on combined Malaga + Ellenbrook (both compete for Perth metro discovery).
+    </p>
+  </div>`;
 
-  html += agentBrief('GBP Agent',
-    `<b>1. Respond to all reviews today (including any critical ones):</b> Critical replies are public — every prospective member sees them. Template: "Thank you for your feedback. We're sorry your experience didn't meet expectations. Please contact us at reception@chasingbetter247.com.au." Never argue.<br><br>
-     <b>2. Post 1 GBP update today — Winter Push:</b> "Perth winters were made for the gym ❄️ Train 24/7 from $11.95/week." Post to BOTH Malaga + Ellenbrook. Use warm facility photo (sauna/gym floor). GBP posts have 7-day half-life — post every Tuesday.<br><br>
-     <b>3. Upload 10 photos per location this week:</b> Priority: sauna, ice bath, Kids Hub, gym floor, reception, Reformer Pilates studio. Name files descriptively (e.g. "chasingbetter247-malaga-sauna.jpg"). 100+ photos = 520% more calls.<br><br>
-     <b>4. Add 3 Q&A entries:</b> (1) "Do you have a kids area?" (2) "Can I freeze my membership for FIFO?" (3) "What's the price?" Pre-answered Q&As appear directly in Google search results.<br><br>
-     <b>5. Weekly review-request protocol:</b> Ask every new member sign-up verbally + QR code on reception desk. Target: 5+ reviews/week/location. Review velocity = #1 local pack ranking signal.`);
+  // ── 8. NEXT 2 WEEKS — structured action list (audit recommendation) ─────
+  const _gbpActions = [];
+
+  // 1. Always — photo upload (highest leverage)
+  if ((mal.photos||0) < 80 || (ell.photos||0) < 80) {
+    _gbpActions.push({
+      title: `Upload 10 priority photos per location (Malaga ${mal.photos}, Ellenbrook ${ell.photos})`,
+      why: 'Listings with 100+ photos get ~5× more direction requests and ~3× more website clicks. Single highest-leverage GBP action per hour invested. Priority shots: sauna, ice bath, Kids Hub, gym floor, reception, Reformer Pilates studio, classes in progress, members training.',
+      owner: 'Brand Manager (Angela) + Web Dev (Mark)',
+      effort: 'M',
+      impact: `Move both locations from ${malPhotoPct}%/${ellPhotoPct}% toward 80%+ photo coverage in 2 weeks · estimated +15–25% calls within 4 weeks`,
+    });
+  }
+
+  // 2. Reputation defence if competitor has higher rating
+  if (ratingThreat) {
+    _gbpActions.push({
+      title: `Counter ${topCompetitor.name} reputation gap`,
+      why: `${topCompetitor.name} at ${topCompetitor.rating}★ (${topCompetitor.reviews} reviews) is rated higher than CB247 ${topCompetitor.location}. Mitigation: increase review velocity to widen absolute count gap. CB247 has ${fmt((mal.reviews||0)+(ell.reviews||0),'n')} combined vs their ${topCompetitor.reviews} — social proof depth is on your side.`,
+      owner: 'Reception (Joanne) + Brand Manager (Angela)',
+      effort: 'M',
+      impact: 'Defend local pack click share within 4 weeks · sustain +200 review count lead per quarter',
+    });
+  }
+
+  // 3. Always — review response protocol
+  _gbpActions.push({
+    title: 'Respond to all reviews within 24 hours',
+    why: 'Every prospective member reads recent review replies. Critical reviews need acknowledgment + invite offline ("please contact reception@chasingbetter247.com.au"). Never argue. Professional replies double-down on positive perception even when the review itself is negative.',
+    owner: 'Brand Manager (Angela)',
+    effort: 'S',
+    impact: 'Reduces review-driven churn signal · boosts local pack ranking signal',
+  });
+
+  // 4. Always — weekly GBP post
+  _gbpActions.push({
+    title: 'Post 1 GBP update per location every Tuesday',
+    why: 'GBP posts have a 7-day half-life — fresh content signals an active listing. Use facility highlights, member milestones, suburb mentions. Each post = free local SEO signal for "gym malaga" / "gym ellenbrook" local pack.',
+    owner: 'Content + Brand Manager',
+    effort: 'S',
+    impact: 'Sustains GBP freshness signal · +5–10% local pack impressions per location',
+  });
+
+  // 5. Always — Q&A pre-population
+  _gbpActions.push({
+    title: 'Add 3 Q&A entries per location',
+    why: 'Pre-answered Q&As appear directly in Google search results. Add: (1) "Do you have a kids area?" (2) "Can I freeze my membership for FIFO?" (3) "What\'s the price?" Owners can post both the question and the answer.',
+    owner: 'Brand Manager',
+    effort: 'S',
+    impact: 'Captures purchase-intent traffic before competitors · reduces phone enquiries · adds rich result coverage',
+  });
+
+  // 6. Weekly review-request protocol
+  _gbpActions.push({
+    title: 'Weekly review-request protocol — 5+ reviews per location',
+    why: 'Review velocity = #1 local pack ranking signal (Google emphasises recency over total volume). Ask every new member sign-up verbally + QR code on reception desk linking direct to the GBP review form. Pre-write SMS template for follow-up 48h after first visit.',
+    owner: 'Reception (Joanne)',
+    effort: 'S',
+    impact: 'Lift weekly review velocity from current ad-hoc to 5+/week/location · widen the count lead vs all competitors',
+  });
+
+  // 7. Enable GBP Performance API
+  if (!sxGbp) {
+    _gbpActions.push({
+      title: 'Enable Google Business Profile Performance API (3 clicks in GCP)',
+      why: 'pull_gbp_performance.py is ready but blocked on 3 free APIs not yet enabled in GCP project 359818033415. Once enabled and location IDs added to .env, the dashboard shows proper per-location calls/directions/website clicks split instead of relying on Metricool aggregate.',
+      owner: 'Web Dev (Mark) — 5-minute job',
+      effort: 'S',
+      impact: 'Unlocks per-location attribution · removes stale Metricool fallback · sets up review velocity tracker',
+    });
+  }
+
+  const _effortBadge_gbp = e => {
+    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
+    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
+  };
+
+  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
+  html += `<div class="card mb"><table>
+    <thead><tr>
+      <th style="width:24px">#</th>
+      <th>Action</th>
+      <th>Owner</th>
+      <th style="width:50px">Effort</th>
+      <th style="font-size:10px">Expected Impact</th>
+    </tr></thead><tbody>
+    ${_gbpActions.map((a,i) => `<tr>
+      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td>
+        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
+      </td>
+      <td style="font-size:11px"><b>${a.owner}</b></td>
+      <td>${_effortBadge_gbp(a.effort)}</td>
+      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
+    </tr>`).join('')}
+    </tbody></table>
+    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Review and reassign in next Monday meeting.</p>
+  </div>`;
 
   $('gbp-content').innerHTML = html;
 }
