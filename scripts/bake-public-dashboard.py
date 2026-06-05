@@ -2628,16 +2628,19 @@ function renderGAds() {
     </div>
   </div>`;
 
-  // ── Campaign Performance (compact, grouped by location) ─────────────────
+  // ── Campaign Performance — per account (Malaga / Ellenbrook) ────────────
+  // Each account runs: Gym Geo (shared), location-specific campaign, PMax: local campaign
   html += sectionTitle('Active Campaigns · ' + weekLabel);
-  const campsAll = [...(ads.campaigns||[])].sort((a,b)=>b.spend-a.spend);
-  const campGroups = [
-    { label: 'Malaga',      color: '#f0f2f5',            textColor: 'var(--muted)',  camps: campsAll.filter(c=>c.location==='Malaga')      },
-    { label: 'Ellenbrook',  color: 'rgba(63,166,154,.12)', textColor: 'var(--teal)', camps: campsAll.filter(c=>c.location==='Ellenbrook')  },
-    { label: 'Both / Shared', color: '#f0f2f5',           textColor: 'var(--muted)', camps: campsAll.filter(c=>c.location!=='Malaga'&&c.location!=='Ellenbrook') },
-  ].filter(g=>g.camps.length>0);
+  const campsAll = ads.campaigns || [];
+  const campShared = campsAll.filter(c => c.location === 'Both');
+  const campMalaga = campsAll.filter(c => c.location === 'Malaga');
+  const campEll    = campsAll.filter(c => c.location === 'Ellenbrook');
+  const pMaxRow = `<tr style="opacity:.55">
+    <td style="font-size:12px;font-weight:600;font-style:italic">PMax: local campaign</td>
+    <td class="num" colspan="7" style="color:var(--muted);font-size:11px">Data not in current export — check Google Ads directly</td>
+  </tr>`;
   const campRow = c => `<tr>
-    <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${c.name}</td>
+    <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${c.name}</td>
     <td class="num">${fmt(c.spend,'$2')}</td>
     <td class="num">${fmt(c.clicks,'n')}</td>
     <td class="num">${c.impr?fmt(c.impr,'n'):'–'}</td>
@@ -2646,25 +2649,35 @@ function renderGAds() {
     <td class="num">${c.ctr?c.ctr+'%':'–'}</td>
     <td class="num">${c.cpc?fmt(c.cpc,'$2'):'–'}</td>
   </tr>`;
+  const campTableHead = `<table><thead><tr>
+    <th>Campaign</th>
+    <th class="num">Spend</th>
+    <th class="num">Clicks</th>
+    <th class="num">Impr</th>
+    <th class="num">Conv</th>
+    <th class="num">CPA</th>
+    <th class="num">CTR</th>
+    <th class="num">CPC</th>
+  </tr></thead><tbody>`;
   if (campsAll.length === 0) {
     html += `<div class="card mb" style="color:var(--muted);padding:20px;text-align:center">No campaign data available</div>`;
   } else {
-    html += campGroups.map(g=>`
-      <div class="card mb" style="overflow-x:auto">
-        <div style="padding:10px 14px 6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${g.textColor};background:${g.color};border-radius:8px 8px 0 0">${g.label} — ${g.camps.length} campaign${g.camps.length>1?'s':''}</div>
-        <table><thead><tr>
-          <th>Campaign</th>
-          <th class="num">Spend</th>
-          <th class="num">Clicks</th>
-          <th class="num">Impr</th>
-          <th class="num">Conv</th>
-          <th class="num">CPA</th>
-          <th class="num">CTR</th>
-          <th class="num">CPC</th>
-        </tr></thead><tbody>
-        ${g.camps.map(campRow).join('')}
+    html += `<div class="grid-2 mb">
+      <div class="card" style="overflow-x:auto;padding:0">
+        <div style="padding:10px 14px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#f0f2f5;border-radius:8px 8px 0 0">Malaga — Google Ads Account</div>
+        ${campTableHead}
+        ${[...campShared,...campMalaga].map(campRow).join('')}
+        ${pMaxRow}
         </tbody></table>
-      </div>`).join('');
+      </div>
+      <div class="card" style="overflow-x:auto;padding:0">
+        <div style="padding:10px 14px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);background:rgba(63,166,154,.08);border-radius:8px 8px 0 0">Ellenbrook — Google Ads Account</div>
+        ${campTableHead}
+        ${[...campShared,...campEll].map(campRow).join('')}
+        ${pMaxRow}
+        </tbody></table>
+      </div>
+    </div>`;
   }
 
   // ── Location Summary with WoW ─────────────────────────────────────────────
