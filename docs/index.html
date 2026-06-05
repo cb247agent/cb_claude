@@ -8104,24 +8104,236 @@ function renderCb247Membership() {
   _comingSoonPage('cb247-membership-content','Membership Statistics',
     'Member count, join rate, churn, and FIFO freeze stats will appear here. Connect your membership management system (Mindbody / Clubware) to populate this page.');
 }
-function renderMwccSeo() {
-  const md = window.MWCC_DATA || {};
-  const ga4 = md.ga4 || {};
-  const el = $('mwcc-seo-content');
-  if (!el) return;
-  // Re-use website render logic (GA4 + placeholder for GSC)
-  if (ga4.available === false) {
-    el.innerHTML = `<div class="insight neutral"><div class="insight-label">Connect GA4 + Google Search Console</div>Add MWCC_GA4_PROPERTY_ID=315149021 to .env. GSC integration coming soon.</div>`;
-  } else {
-    el.innerHTML = `<div class="insight neutral"><div class="insight-label">GSC Rankings Coming Soon</div>GA4 website data available on the legacy Website page. Full SEO dashboard (keyword rankings, GSC clicks, page performance) will migrate here once GSC integration is built.</div>`;
-  }
-}
-function renderMwccGbp()             { _comingSoonPage('mwcc-gbp-content','Google Business Profile','5-centre GBP data (reviews, local search visibility, calls, directions) will appear here once the GBP API is connected.'); }
+const MWCC_CFG = {
+  brand: 'My World Childcare', bizKey: 'mwcc',
+  website: 'myworldcc.com.au',
+  ig: '@myworldchildcare', fb: 'My World Childcare',
+  locations: ['Beechboro','Ellenbrook','Maddington','Maylands','Mirrabooka'],
+  ga4Var: 'MWCC_GA4_PROPERTY_ID',
+  gscVar: 'MWCC_GSC_SITE_URL',
+  gadsCustomerVar: 'MWCC_GOOGLE_ADS_CUSTOMER_ID_MYWORLD',
+  metaAccountVar: 'MWCC_META_AD_ACCOUNT_ID',
+  pullScript: {
+    ga4:    'scripts/pull_mwcc_ga4.py',
+    gsc:    'scripts/pull_mwcc_gsc.py',
+    gads:   'scripts/pull_mwcc_ads.py',
+    meta:   'scripts/pull_mwcc_meta.py',
+    social: 'scripts/pull_mwcc_social.py',
+    gbp:    'scripts/pull_mwcc_gbp.py',
+  },
+};
+function renderMwccSeo()             { _perfSeoScaffold('mwcc-seo-content', MWCC_CFG); }
+function renderMwccGbp()             { _perfGbpScaffold('mwcc-gbp-content', MWCC_CFG); }
 function renderMwccContentPlanner()  { _comingSoonPage('mwcc-content-planner-content','Content Planner','Scheduled posts, campaign calendar, and content queue for My World Childcare.'); }
 function renderMwccContentReview()   { _comingSoonPage('mwcc-content-review-content','Content Review','Drafts pending team review and approval for My World Childcare.'); }
 function renderMwccActionTracker()   { _comingSoonPage('mwcc-action-tracker-content','Action Tracker','Open actions, priorities, owners, and due dates for My World Childcare.'); }
 
-// ── Stubs: Karribank ──────────────────────────────────────────────────────────
+// ── Performance Page Scaffolds (CB247-style, biz-agnostic) ──────────────────
+// Used by Karribank, Sparrows (and any future biz) to render the same 5
+// Performance pages as CB247 Gym, with "Awaiting data" states until the
+// relevant API pipeline is connected.
+//
+// cfg shape:
+//   { brand, website, ig, fb, locations:[],
+//     ga4Var, gscVar, gadsCustomerVar, metaAccountVar,
+//     pullScript:{ga4,gads,meta,social,gbp} }
+
+function _perfSeoScaffold(elId, cfg) {
+  const el = $(elId); if (!el) return;
+  el.innerHTML = `
+    <div class="kpi-grid cols-4 mb">
+      ${kpiCard('','SEO Health Score','—',null,'Connect GA4 + GSC + Ahrefs','')}
+      ${kpiCard('','Organic Traffic','—',null,'Monthly visits from search')}
+      ${kpiCard('','Domain Rating','—',null,'Quality referring domains')}
+      ${kpiCard('','Page 1 Keywords','—',null,'Top 10 + top 3 tracked')}
+    </div>
+    ${sectionTitle('Key Observations')}
+    <div class="grid-2 mb">
+      <div class="insight red">
+        <div class="insight-label">⚠️ Ranking Gap — Page 2+ Keywords</div>
+        Non-branded keywords ranking positions 11–25 get near-zero clicks.
+        Page 2 CTR averages 0.5%. The fix is <b>dedicated landing pages</b> — one page per keyword.
+        <br><br><span style="color:var(--muted);font-size:12px">Connect Google Search Console + Ahrefs to populate this list.</span>
+      </div>
+      <div class="insight teal">
+        <div class="insight-label">✅ What's Working — Top 3 Positions</div>
+        Pages ranking top 3 earn zero ad spend and high CTR.
+        <br><br><span style="color:var(--muted);font-size:12px">Connect GSC to surface ${cfg.brand}'s top 3 queries.</span>
+        <br><br><b>Protect these:</b> Add internal links from every new blog post back to ranking pages. Never change URL slugs without 301 redirects.
+      </div>
+    </div>
+    ${sectionTitle('Top 10 Keywords by Traffic')}
+    <div class="card mb"><table>
+      <thead><tr><th>Keyword</th><th class="num">Pos</th><th class="num">Vol/mo</th><th class="num">Traffic</th><th class="num">KD</th><th>Status</th><th style="font-size:10px">Action</th></tr></thead>
+      <tbody><tr><td colspan="7" style="color:var(--muted);padding:16px">No keyword data — connect Ahrefs / GSC to populate.</td></tr></tbody>
+    </table></div>
+    ${sectionTitle('Search Console — Top Queries')}
+    <div class="grid-2 mb">
+      <div class="card"><div class="card-h">Top 10 Queries by Clicks</div>
+        <table><thead><tr><th>Query</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">Pos</th></tr></thead>
+        <tbody><tr><td colspan="4" style="color:var(--muted)">No GSC data — run pull script.</td></tr></tbody></table>
+      </div>
+      <div class="card"><div class="card-h">Top Pages by Organic Traffic</div>
+        <table><thead><tr><th>Page</th><th class="num">Traffic</th><th>Top KW</th><th class="num">Pos</th></tr></thead>
+        <tbody><tr><td colspan="4" style="color:var(--muted)">No page data.</td></tr></tbody></table>
+      </div>
+    </div>
+    ${sectionTitle('Backlink Profile')}
+    <div class="card mb"><div class="card-h">Quality Referring Domains (DR 40+)</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Connect Ahrefs to surface referring domains, DR distribution, and anchor profile.</div>
+      <table><thead><tr><th>Domain</th><th class="num">DR</th><th class="num">Links</th></tr></thead>
+      <tbody><tr><td colspan="3" style="color:var(--muted);padding:12px">Awaiting Ahrefs connection.</td></tr></tbody></table>
+    </div>
+    ${sectionTitle('Connect Data Sources')}
+    <div class="card mb" style="padding:16px 24px">
+      <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">${cfg.brand} SEO dashboard goes live once these are connected:</p>
+      <table style="width:100%"><thead><tr><th>Source</th><th>Variable</th><th>Pull Script</th></tr></thead><tbody>
+        <tr><td>Google Analytics 4</td><td><code>${cfg.ga4Var}</code></td><td><code>${cfg.pullScript.ga4}</code></td></tr>
+        <tr><td>Google Search Console</td><td><code>${cfg.gscVar}</code></td><td><code>${cfg.pullScript.gsc||'(via GA4 script)'}</code></td></tr>
+        <tr><td>Ahrefs API</td><td><code>AHREFS_API_TOKEN</code></td><td><code>scripts/pull_ahrefs.py</code></td></tr>
+      </tbody></table>
+      <p style="margin:14px 0 0;font-size:12px;color:var(--muted)">Add the variables to <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">.env</code> and ensure the service account in <code>secrets/</code> has Viewer access to the GA4 property and GSC site.</p>
+    </div>`;
+}
+
+function _perfGadsScaffold(elId, cfg) {
+  const el = $(elId); if (!el) return;
+  el.innerHTML = `
+    <div class="kpi-grid cols-5 mb">
+      ${kpiCard('','Weekly Spend','—',null,'Last completed week')}
+      ${kpiCard('','Clicks','—',null,'Paid search + Performance Max')}
+      ${kpiCard('','Conversions','—',null,'Lead form + phone calls')}
+      ${kpiCard('','Avg CPC','—',null,'Spend ÷ clicks')}
+      ${kpiCard('','Cost / Conv','—',null,'Spend ÷ conversions')}
+    </div>
+    ${sectionTitle('Campaign Performance')}
+    <div class="card mb"><div class="card-h">Active Campaigns — This Week</div>
+      <table><thead><tr><th>Campaign</th><th>Type</th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">CPC</th><th class="num">Conv</th><th class="num">Cost/Conv</th></tr></thead>
+      <tbody><tr><td colspan="8" style="color:var(--muted);padding:16px">No Google Ads data — connect the account to populate.</td></tr></tbody></table>
+    </div>
+    ${sectionTitle('8-Week Trend')}
+    <div class="card mb" style="padding:20px 24px">
+      <div style="font-size:12px;color:var(--muted)">Rolling 8-week history (spend, clicks, conversions, cost/conv) will appear here once the pull script has run twice.</div>
+    </div>
+    ${sectionTitle('Connect Google Ads')}
+    <div class="card mb" style="padding:16px 24px">
+      <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">${cfg.brand} Google Ads dashboard goes live once these are configured:</p>
+      <table style="width:100%"><thead><tr><th>Variable</th><th>Purpose</th></tr></thead><tbody>
+        <tr><td><code>${cfg.gadsCustomerVar}</code></td><td>${cfg.brand} customer ID (no dashes)</td></tr>
+        <tr><td><code>GOOGLE_ADS_DEVELOPER_TOKEN</code></td><td>Shared dev token</td></tr>
+      </tbody></table>
+      <p style="margin:14px 0 0;font-size:12px;color:var(--muted)">Run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">${cfg.pullScript.gads}</code></p>
+    </div>`;
+}
+
+function _perfOrgSocialScaffold(elId, cfg) {
+  const el = $(elId); if (!el) return;
+  el.innerHTML = `
+    <div class="kpi-grid cols-4 mb">
+      ${kpiCard('','Followers','—',null,'Instagram + Facebook')}
+      ${kpiCard('','Reach','—',null,'This period')}
+      ${kpiCard('','Engagement Rate','—',null,'Avg across platforms')}
+      ${kpiCard('','Top Post Reach','—',null,'Best performing post')}
+    </div>
+    ${sectionTitle('Platforms Tracked')}
+    <div class="card mb" style="padding:20px 24px">
+      <table><thead><tr><th>Platform</th><th>Page / Handle</th><th>Metrics Planned</th><th>Status</th></tr></thead><tbody>
+        <tr><td style="font-weight:600">Facebook</td><td style="font-size:12px;color:var(--muted)">${cfg.fb}</td><td style="font-size:12px;color:var(--muted)">Page likes, reach, post engagement, link clicks</td><td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td></tr>
+        <tr><td style="font-weight:600">Instagram</td><td style="font-size:12px;color:var(--muted)">${cfg.ig}</td><td style="font-size:12px;color:var(--muted)">Followers, impressions, reach, engagement rate, top posts</td><td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td></tr>
+      </tbody></table>
+    </div>
+    ${sectionTitle('Top Posts')}
+    <div class="card mb" style="padding:20px 24px"><div style="font-size:12px;color:var(--muted)">Top-performing organic posts will appear here once Metricool is connected.</div></div>
+    ${sectionTitle('Integration Required')}
+    <div class="card mb" style="padding:16px 24px">
+      <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">Organic social metrics are pulled via <strong>Metricool</strong>. To connect:</p>
+      <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.8">
+        <li>Connect ${cfg.brand} Facebook + Instagram pages in Metricool</li>
+        <li>Generate a Metricool API token and add to <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">.env</code> as <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">${cfg.bizKey.toUpperCase()}_METRICOOL_TOKEN</code></li>
+        <li>Run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">${cfg.pullScript.social}</code></li>
+      </ol>
+    </div>`;
+}
+
+function _perfMetaScaffold(elId, cfg) {
+  const el = $(elId); if (!el) return;
+  el.innerHTML = `
+    <div class="kpi-grid cols-5 mb">
+      ${kpiCard('','Weekly Spend','—',null,'Last completed week')}
+      ${kpiCard('','Reach','—',null,'Unique users reached')}
+      ${kpiCard('','Clicks','—',null,'Link clicks')}
+      ${kpiCard('','CTR','—',null,'Clicks ÷ impressions')}
+      ${kpiCard('','Cost / Result','—',null,'Spend ÷ conversions')}
+    </div>
+    ${sectionTitle('Campaign Performance')}
+    <div class="card mb"><div class="card-h">Active Campaigns — This Week</div>
+      <table><thead><tr><th>Campaign</th><th>Objective</th><th class="num">Spend</th><th class="num">Reach</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">Results</th><th class="num">Cost/Result</th></tr></thead>
+      <tbody><tr><td colspan="8" style="color:var(--muted);padding:16px">No Meta Ads data — connect the account to populate.</td></tr></tbody></table>
+    </div>
+    ${sectionTitle('Creative Performance')}
+    <div class="card mb" style="padding:20px 24px"><div style="font-size:12px;color:var(--muted)">Top-performing creatives (CTR, hook rate, hold rate) will appear here once the pull script has run.</div></div>
+    ${sectionTitle('Connect Meta Ads')}
+    <div class="card mb" style="padding:16px 24px">
+      <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">${cfg.brand} Meta Ads dashboard goes live once these are configured:</p>
+      <table style="width:100%"><thead><tr><th>Variable</th><th>Purpose</th></tr></thead><tbody>
+        <tr><td><code>${cfg.metaAccountVar}</code></td><td>${cfg.brand} ad account ID (format: <code>act_XXXX</code>)</td></tr>
+        <tr><td><code>META_ACCESS_TOKEN</code></td><td>Long-lived system user token with ads_read</td></tr>
+      </tbody></table>
+      <p style="margin:14px 0 0;font-size:12px;color:var(--muted)">Run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">${cfg.pullScript.meta}</code></p>
+    </div>`;
+}
+
+function _perfGbpScaffold(elId, cfg) {
+  const el = $(elId); if (!el) return;
+  const locsRows = (cfg.locations||[]).map(l => `
+    <tr><td style="font-weight:600">${l}</td><td style="color:var(--muted)">—</td><td class="num" style="color:var(--muted)">—</td><td class="num" style="color:var(--muted)">—</td><td class="num" style="color:var(--muted)">—</td><td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td></tr>
+  `).join('') || '<tr><td colspan="6" style="color:var(--muted);padding:12px">No locations configured.</td></tr>';
+  el.innerHTML = `
+    <div class="kpi-grid cols-4 mb">
+      ${kpiCard('','Calls','—',null,'From GBP listing')}
+      ${kpiCard('','Direction Requests','—',null,'Map-based directions')}
+      ${kpiCard('','Website Clicks','—',null,'From GBP to site')}
+      ${kpiCard('','New Reviews','—',null,'Avg star rating: —')}
+    </div>
+    ${sectionTitle('Per-Location Performance')}
+    <div class="card mb"><div class="card-h">${cfg.brand} Locations</div>
+      <table><thead><tr><th>Location</th><th>Rating</th><th class="num">Calls</th><th class="num">Directions</th><th class="num">Web Clicks</th><th>Status</th></tr></thead>
+      <tbody>${locsRows}</tbody></table>
+    </div>
+    ${sectionTitle('Recent Reviews')}
+    <div class="card mb" style="padding:20px 24px"><div style="font-size:12px;color:var(--muted)">Most recent reviews across all locations will appear here once the GBP API is connected.</div></div>
+    ${sectionTitle('Connect Google Business Profile')}
+    <div class="card mb" style="padding:16px 24px">
+      <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">${cfg.brand} GBP dashboard goes live once the Google Business Profile API is connected:</p>
+      <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.8">
+        <li>Enable the Business Profile Performance API in Google Cloud Console</li>
+        <li>Add the OAuth scope <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">https://www.googleapis.com/auth/business.manage</code> to the existing token</li>
+        <li>Add location IDs to <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">.env</code> as <code>${cfg.bizKey.toUpperCase()}_GBP_LOCATION_IDS</code> (comma-separated)</li>
+        <li>Run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">${cfg.pullScript.gbp}</code></li>
+      </ol>
+    </div>`;
+}
+
+// ── Karribank ────────────────────────────────────────────────────────────────
+const KB_CFG = {
+  brand: 'Karribank', bizKey: 'kb',
+  website: 'karribank.com.au',
+  ig: '@karribank', fb: 'Karribank',
+  locations: ['Karribank Cafe', 'Karribank Restaurant', 'Karribank Accommodation'],
+  ga4Var: 'KB_GA4_PROPERTY_ID',
+  gscVar: 'KB_GSC_SITE_URL',
+  gadsCustomerVar: 'KB_GOOGLE_ADS_CUSTOMER_ID',
+  metaAccountVar: 'KB_META_AD_ACCOUNT_ID',
+  pullScript: {
+    ga4:    'scripts/pull_kb_ga4.py',
+    gsc:    'scripts/pull_kb_gsc.py',
+    gads:   'scripts/pull_kb_ads.py',
+    meta:   'scripts/pull_kb_meta.py',
+    social: 'scripts/pull_kb_social.py',
+    gbp:    'scripts/pull_kb_gbp.py',
+  },
+};
+
 function _kbSetup(elId, label) {
   _comingSoonPage(elId, label, `Connect Karribank data sources to populate this page. Contact the system admin to begin onboarding.`);
 }
@@ -8129,27 +8341,46 @@ function renderKbOverview()         { _kbSetup('kb-overview-content','Karribank 
 function renderKbCafe()             { _kbSetup('kb-cafe-content','Cafe'); }
 function renderKbRestaurant()       { _kbSetup('kb-restaurant-content','Restaurant'); }
 function renderKbAccommodation()    { _kbSetup('kb-accommodation-content','Accommodation'); }
-function renderKbSeo()              { _kbSetup('kb-seo-content','SEO & Organic'); }
-function renderKbGads()             { _kbSetup('kb-google-ads-content','Google Ads'); }
-function renderKbOrgSocial()        { _kbSetup('kb-organic-social-content','Organic Social'); }
-function renderKbMeta()             { _kbSetup('kb-meta-content','Meta Ads'); }
-function renderKbGbp()              { _kbSetup('kb-gbp-content','Google Business Profile'); }
+function renderKbSeo()              { _perfSeoScaffold('kb-seo-content', KB_CFG); }
+function renderKbGads()             { _perfGadsScaffold('kb-google-ads-content', KB_CFG); }
+function renderKbOrgSocial()        { _perfOrgSocialScaffold('kb-organic-social-content', KB_CFG); }
+function renderKbMeta()             { _perfMetaScaffold('kb-meta-content', KB_CFG); }
+function renderKbGbp()              { _perfGbpScaffold('kb-gbp-content', KB_CFG); }
 function renderKbContentPlanner()   { _kbSetup('kb-content-planner-content','Content Planner'); }
 function renderKbContentReview()    { _kbSetup('kb-content-review-content','Content Review'); }
 function renderKbActionTracker()    { _kbSetup('kb-action-tracker-content','Action Tracker'); }
 
-// ── Stubs: Sparrows ───────────────────────────────────────────────────────────
+// ── Sparrows ─────────────────────────────────────────────────────────────────
+const SP_CFG = {
+  brand: 'Sparrows', bizKey: 'sp',
+  website: 'sparrows.edu.au',
+  ig: '@sparrowsed', fb: 'Sparrows',
+  locations: ['Sparrows Campus'],
+  ga4Var: 'SP_GA4_PROPERTY_ID',
+  gscVar: 'SP_GSC_SITE_URL',
+  gadsCustomerVar: 'SP_GOOGLE_ADS_CUSTOMER_ID',
+  metaAccountVar: 'SP_META_AD_ACCOUNT_ID',
+  pullScript: {
+    ga4:    'scripts/pull_sp_ga4.py',
+    gsc:    'scripts/pull_sp_gsc.py',
+    gads:   'scripts/pull_sp_ads.py',
+    meta:   'scripts/pull_sp_meta.py',
+    social: 'scripts/pull_sp_social.py',
+    gbp:    'scripts/pull_sp_gbp.py',
+  },
+};
+
 function _spSetup(elId, label) {
   _comingSoonPage(elId, label, `Connect Sparrows data sources to populate this page. Contact the system admin to begin onboarding.`);
 }
 function renderSpOverview()         { _spSetup('sp-overview-content','Sparrows Dashboard'); }
 function renderSpVet()              { _spSetup('sp-vet-content','VET Programs'); }
 function renderSpNonVet()           { _spSetup('sp-nonvet-content','Non-VET Programs'); }
-function renderSpSeo()              { _spSetup('sp-seo-content','SEO & Organic'); }
-function renderSpGads()             { _spSetup('sp-google-ads-content','Google Ads'); }
-function renderSpOrgSocial()        { _spSetup('sp-organic-social-content','Organic Social'); }
-function renderSpMeta()             { _spSetup('sp-meta-content','Meta Ads'); }
-function renderSpGbp()              { _spSetup('sp-gbp-content','Google Business Profile'); }
+function renderSpSeo()              { _perfSeoScaffold('sp-seo-content', SP_CFG); }
+function renderSpGads()             { _perfGadsScaffold('sp-google-ads-content', SP_CFG); }
+function renderSpOrgSocial()        { _perfOrgSocialScaffold('sp-organic-social-content', SP_CFG); }
+function renderSpMeta()             { _perfMetaScaffold('sp-meta-content', SP_CFG); }
+function renderSpGbp()              { _perfGbpScaffold('sp-gbp-content', SP_CFG); }
 function renderSpContentPlanner()   { _spSetup('sp-content-planner-content','Content Planner'); }
 function renderSpContentReview()    { _spSetup('sp-content-review-content','Content Review'); }
 function renderSpActionTracker()    { _spSetup('sp-action-tracker-content','Action Tracker'); }
