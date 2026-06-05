@@ -1050,14 +1050,22 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
     Inline injection avoids GitHub Pages CDN caching of a separate mwcc-data.js file.
     Also writes docs/mwcc-data.js as a backup / for local dev use.
 
-    Sets window.MWCC_DATA = { generated, period, ops, meta, ads, ga4 }.
+    Sets window.MWCC_DATA = { generated, period, ops, meta, ads, ads_history, meta_history, ga4 }.
     """
+    # Load rolling histories so the dashboard can render WoW deltas + 8-week trends
+    ads_history = _load("mwcc-ads-history.json", default=[])
+    meta_history = _load("mwcc-meta-history.json", default=[])
+    if not isinstance(ads_history, list):  ads_history  = []
+    if not isinstance(meta_history, list): meta_history = []
+
     data = {
         "generated": datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC"),
         "period": ops.get("period") or ops.get("network_summary", {}).get("period", {}),
         "ops": ops,
         "meta": meta,
         "ads": ads,
+        "ads_history": ads_history,
+        "meta_history": meta_history,
         "ga4": ga4,
     }
     json_payload = json.dumps(data, indent=2, default=str)
