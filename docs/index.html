@@ -6644,6 +6644,196 @@ function renderGAds() {
     </div>
   </div>`;
 
+  // ── Tier 2 deep-dives (audit recommendations) ─────────────────────────────
+  // These four sections turn the page from "good" to "decision-grade":
+  // Search Terms hit list · Quality Score breakdown · Conversion Tracking
+  // audit · Auction Insights. All require Google Ads API Basic Access —
+  // currently blocked at Explorer-level quota. Each section reads its data
+  // block if present (ads.search_terms / ads.quality_scores /
+  // ads.conversion_actions / ads.auction_insights) and falls back to an
+  // honest "Awaiting Basic Access" empty state with the exact .env var
+  // and pull command needed to activate it.
+  const _gApiBlocked = (ads.api_status === 'rate_limited');
+  const _gBasicAccessNote = `<div style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">
+    Source: Google Ads API · <code style="background:#f0f2f5;padding:1px 5px;border-radius:3px">search_term_view</code>. Currently blocked on Explorer quota. Apply for Basic Access (Google Ads → Tools & Settings → API Centre) — approval takes 1–2 days.
+  </div>`;
+
+  // ── Search Terms — Negative Keyword Hit List (highest-ROI section) ─────
+  const _searchTerms = ads.search_terms || [];
+  const _negCandidates = _searchTerms.filter(t => (t.cost||0) >= 10 && (t.conv||0) === 0);
+  const _promoteCandidates = _searchTerms.filter(t => (t.cost||0) < 5 && (t.conv||0) >= 2);
+
+  html += sectionTitle('Search Terms — Negative Keyword Hit List');
+  html += `<div class="grid-2 mb">
+    <div class="card">
+      <div class="card-h">Pause as Negative Keywords
+        <span class="card-period" style="background:#fef2f2;color:#991b1b">Spent &gt; $10 · 0 conv</span>
+      </div>
+      <table><thead><tr>
+        <th>Search Term</th><th class="num">Spend</th><th class="num">Clicks</th><th class="num">Conv</th><th style="font-size:10px">Action</th>
+      </tr></thead><tbody>
+      ${_negCandidates.length > 0
+        ? _negCandidates.slice(0,10).map(t => `<tr>
+            <td style="font-size:11.5px;font-weight:600">${t.search_term||t.term}</td>
+            <td class="num">${fmt(t.cost,'$2')}</td>
+            <td class="num">${t.clicks}</td>
+            <td class="num">${t.conv||0}</td>
+            <td style="font-size:10px;color:#991b1b;font-weight:600">Add as negative — exact match</td>
+          </tr>`).join('')
+        : `<tr><td colspan="5" style="padding:14px;color:var(--muted);font-size:12px;line-height:1.6">
+            <b>${_gApiBlocked ? 'Awaiting Google Ads Basic Access.' : 'No high-spend zero-conv terms detected.'}</b><br>
+            This is the highest-ROI table in any Google Ads report — typically recovers 10–30% of weekly waste. Each row = a search term parents/members typed that triggered an ad, spent over $10, but didn't convert. Add to the campaign's negative keyword list (exact match) to stop the bleed.
+          </td></tr>`
+      }
+      </tbody></table>
+      ${_gApiBlocked ? _gBasicAccessNote : ''}
+    </div>
+    <div class="card">
+      <div class="card-h">Promote as Exact Match
+        <span class="card-period" style="background:#e8f5f4;color:#3FA69A">Spent &lt; $5 · 2+ conv</span>
+      </div>
+      <table><thead><tr>
+        <th>Search Term</th><th class="num">Spend</th><th class="num">Conv</th><th class="num">CPA</th><th style="font-size:10px">Action</th>
+      </tr></thead><tbody>
+      ${_promoteCandidates.length > 0
+        ? _promoteCandidates.slice(0,10).map(t => `<tr>
+            <td style="font-size:11.5px;font-weight:600">${t.search_term||t.term}</td>
+            <td class="num">${fmt(t.cost,'$2')}</td>
+            <td class="num good">${t.conv}</td>
+            <td class="num good">${fmt(t.cost/t.conv,'$2')}</td>
+            <td style="font-size:10px;color:var(--teal);font-weight:600">Add as exact match · raise bid</td>
+          </tr>`).join('')
+        : `<tr><td colspan="5" style="padding:14px;color:var(--muted);font-size:12px;line-height:1.6">
+            <b>${_gApiBlocked ? 'Awaiting Google Ads Basic Access.' : 'No low-cost high-conv terms detected.'}</b><br>
+            Hidden winners — search terms that converted multiple times on minimal spend. Promoting them to exact match captures more volume at a controlled bid (currently they\'re triggered via broad/phrase variants you can\'t bid up directly).
+          </td></tr>`
+      }
+      </tbody></table>
+    </div>
+  </div>`;
+
+  // ── Quality Score Breakdown ──────────────────────────────────────────────
+  const _qs = ads.quality_scores || [];
+  const _qsLow = _qs.filter(k => (k.quality_score||0) <= 4 && (k.cost||0) > 5);
+
+  html += sectionTitle('Quality Score Breakdown — Low QS Spending');
+  html += `<div class="card mb">
+    <div class="card-h">Keywords with QS ≤ 4 and spend &gt; $5
+      <span class="card-period">${_qsLow.length} flagged</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);padding:0 14px 8px">
+      Quality Score directly multiplies CPC. A QS of 3 vs a competitor's QS of 8 means you pay ~2.5× more per click for the same position. Lift QS by fixing the weakest component (expected CTR, ad relevance, or landing-page experience).
+    </div>
+    <table><thead><tr>
+      <th>Keyword</th><th class="num">QS</th><th>Expected CTR</th><th>Ad Relevance</th><th>LP Experience</th><th class="num">Spend</th><th style="font-size:10px">Fix</th>
+    </tr></thead><tbody>
+    ${_qsLow.length > 0
+      ? _qsLow.slice(0,10).map(k => {
+          const fix = k.lp_experience === 'Below average' ? 'Rebuild landing page · improve load time'
+                   : k.ad_relevance === 'Below average' ? 'Rewrite ad copy to match keyword intent'
+                   : k.expected_ctr === 'Below average' ? 'Pin stronger headline · improve ad extensions'
+                   : 'Audit all 3 QS components';
+          return `<tr>
+            <td style="font-size:11.5px;font-weight:600">${k.keyword}</td>
+            <td class="num"><span style="font-size:10px;background:#fef2f2;color:#991b1b;padding:1px 6px;border-radius:3px;font-weight:700">${k.quality_score}/10</span></td>
+            <td style="font-size:10.5px">${rankBadge(k.expected_ctr||'')}</td>
+            <td style="font-size:10.5px">${rankBadge(k.ad_relevance||'')}</td>
+            <td style="font-size:10.5px">${rankBadge(k.lp_experience||'')}</td>
+            <td class="num">${fmt(k.cost,'$2')}</td>
+            <td style="font-size:10px;color:var(--text-2)">${fix}</td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="7" style="padding:14px;color:var(--muted);font-size:12px;line-height:1.6">
+          <b>${_gApiBlocked ? 'Awaiting Google Ads Basic Access.' : 'No low-QS keywords with significant spend.'}</b><br>
+          Once live, this surfaces every keyword spending real money at QS 1–4. Each row gets a specific fix (rebuild LP / rewrite ad / better extension) based on which QS component is "Below average". Typical impact: 20–40% CPC reduction on improved keywords within 4 weeks.
+        </td></tr>`
+    }
+    </tbody></table>
+    ${_gApiBlocked ? `<div style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">Source: Google Ads API · <code style="background:#f0f2f5;padding:1px 5px;border-radius:3px">keyword_view</code> with QS component breakdown.</div>` : ''}
+  </div>`;
+
+  // ── Conversion Tracking Audit (critical — broken tracking inflates CPA) ─
+  const _convActions = ads.conversion_actions || [];
+
+  html += sectionTitle('Conversion Tracking Audit');
+  html += `<div class="card mb">
+    <div class="card-h">Active Conversion Actions
+      <span class="card-period">Last 7 days</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);padding:0 14px 8px">
+      Critical for the Malaga vs Ellenbrook CPA gap audit. If tracking is broken on Malaga but not Ellenbrook, reported CPA gap (${mal.cpa>0&&ell.cpa>0?(mal.cpa/ell.cpa).toFixed(1):'–'}×) is overstated. Every conversion action should fire within the last 7 days.
+    </div>
+    <table><thead><tr>
+      <th>Conversion Action</th><th>Category</th><th class="num">Count (7d)</th><th>Last Fired</th><th style="font-size:10px">Status</th>
+    </tr></thead><tbody>
+    ${_convActions.length > 0
+      ? _convActions.slice(0,10).map(c => {
+          const daysSince = c.last_fired ? Math.floor((Date.now() - new Date(c.last_fired).getTime()) / 86400000) : null;
+          const status = daysSince === null ? 'no_data'
+                       : daysSince > 7 ? 'broken'
+                       : daysSince > 2 ? 'stale'
+                       : 'healthy';
+          const statusPill = status === 'healthy'
+              ? '<span style="font-size:9px;background:#e8f5f4;color:#00c4b4;padding:1px 6px;border-radius:3px;font-weight:700">HEALTHY</span>'
+              : status === 'stale'
+                ? '<span style="font-size:9px;background:#fef9c3;color:#92400e;padding:1px 6px;border-radius:3px;font-weight:700">STALE</span>'
+                : status === 'broken'
+                  ? '<span style="font-size:9px;background:#fef2f2;color:#991b1b;padding:1px 6px;border-radius:3px;font-weight:700">BROKEN</span>'
+                  : '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 6px;border-radius:3px">NO DATA</span>';
+          return `<tr>
+            <td style="font-size:11.5px;font-weight:600">${c.name}</td>
+            <td style="font-size:11px;color:var(--muted)">${c.category||'–'}</td>
+            <td class="num ${c.count>0?'good':'bad'}">${c.count||0}</td>
+            <td style="font-size:11px;color:var(--muted)">${c.last_fired ? new Date(c.last_fired).toLocaleDateString() : '–'}</td>
+            <td>${statusPill}</td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="5" style="padding:14px;color:var(--muted);font-size:12px;line-height:1.6">
+          <b>${_gApiBlocked ? 'Awaiting Google Ads Basic Access.' : 'No conversion actions configured.'}</b><br>
+          Without this audit, broken tracking can silently inflate CPA by 50–200% — the account looks like it\'s failing when actually the data is failing. Each conversion action gets a colour pill: HEALTHY (fired within 2 days), STALE (3–7 days), BROKEN (over 7 days), NO DATA. Run this first whenever a campaign appears to underperform.
+        </td></tr>`
+    }
+    </tbody></table>
+    ${_gApiBlocked ? `<div style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">Source: Google Ads API · <code style="background:#f0f2f5;padding:1px 5px;border-radius:3px">conversion_action</code>.</div>` : ''}
+  </div>`;
+
+  // ── Auction Insights — Competitor Pressure ───────────────────────────────
+  const _auctions = ads.auction_insights || [];
+
+  html += sectionTitle('Auction Insights — Competitor Pressure');
+  html += `<div class="card mb">
+    <div class="card-h">Top Competitors by Impression Share Overlap
+      <span class="card-period">${weekLabel}</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);padding:0 14px 8px">
+      Tells you whether CPC is rising because of the auction (more competitors bidding) or because of your account (lower QS, worse ad). Outranking share &gt;50% = you usually win the auction; &lt;30% = you're being outbid.
+    </div>
+    <table><thead><tr>
+      <th>Competitor Domain</th><th class="num">Impr Share</th><th class="num">Overlap Rate</th><th class="num">Position Above</th><th class="num">Outranking Share</th><th style="font-size:10px">Read</th>
+    </tr></thead><tbody>
+    ${_auctions.length > 0
+      ? _auctions.slice(0,8).map(a => {
+          const read = a.outranking_share >= 0.5 ? 'Winning vs them'
+                     : a.outranking_share >= 0.3 ? 'Split — monitor'
+                     : 'Being outbid';
+          return `<tr>
+            <td style="font-size:11.5px;font-weight:600">${a.domain}</td>
+            <td class="num">${(a.impression_share*100).toFixed(1)}%</td>
+            <td class="num">${(a.overlap_rate*100).toFixed(1)}%</td>
+            <td class="num">${(a.position_above_rate*100).toFixed(1)}%</td>
+            <td class="num ${a.outranking_share>=0.5?'good':a.outranking_share>=0.3?'':'bad'}">${(a.outranking_share*100).toFixed(1)}%</td>
+            <td style="font-size:10px;color:var(--text-2)">${read}</td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="6" style="padding:14px;color:var(--muted);font-size:12px;line-height:1.6">
+          <b>${_gApiBlocked ? 'Awaiting Google Ads Basic Access.' : 'No auction insights available for this period.'}</b><br>
+          Will populate with Revo Fitness, Anytime Fitness, Snap Fitness, Ryderwear Gym, and any other domains showing up in CB247's auctions. Each row tells you: how often they appear when you do, whether they ranked above you, and your outranking share. Replaces the current hardcoded competitor block with live auction data.
+        </td></tr>`
+    }
+    </tbody></table>
+    ${_gApiBlocked ? `<div style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">Source: Google Ads API · <code style="background:#f0f2f5;padding:1px 5px;border-radius:3px">auction_insight_view</code>.</div>` : ''}
+  </div>`;
+
   // ── Recommended New Keywords ──────────────────────────────────────────────
   html += sectionTitle('Keyword Recommendations — Add to Account');
   html += `<div class="insight teal mb" style="font-size:12px">
