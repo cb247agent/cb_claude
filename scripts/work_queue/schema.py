@@ -59,7 +59,7 @@ VALID_PRIORITY = {"P1", "P2", "P3"}
 VALID_DATA_QUALITY = {"high", "medium", "low"}
 VALID_CONFIDENCE = {"high", "medium", "low"}
 VALID_VERDICT = {"winner", "partial_win", "no_change", "underperforming", "pending"}
-VALID_KPI_STATUS = {"winner", "partial_win", "no_change", "underperforming"}
+VALID_KPI_STATUS = {"winner", "partial_win", "no_change", "underperforming", "pending"}
 
 
 # ── Records ──────────────────────────────────────────────────────────────────

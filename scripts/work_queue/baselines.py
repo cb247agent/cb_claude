@@ -364,3 +364,38 @@ def gbp_metric_from_field(metric: str) -> Optional[str]:
         "gbp_photos_count":  "photos",
         "gbp_rating":        "rating",
     }.get(metric)
+
+
+# ── Organic Social ───────────────────────────────────────────────────────────
+
+
+def social_scraped_at() -> Optional[str]:
+    """Timestamp of the latest social-trends.json scrape."""
+    s = _load("social-trends.json")
+    return s.get("scraped") if s else None
+
+
+def social_top_hashtags(n: int = 3) -> list:
+    """Top-N trending hashtags by count from state/social-trends.json.
+    Returns list of dicts {hashtag, count} ranked descending by count."""
+    s = _load("social-trends.json")
+    if not s:
+        return []
+    tags = list(s.get("trending_hashtags") or [])
+    tags.sort(key=lambda t: int(t.get("count") or 0), reverse=True)
+    return tags[:n]
+
+
+def social_top_posts_by_engagement(n: int = 2, min_engagement: int = 30) -> list:
+    """Top-N posts from state/social-trends.json ranked by engagement,
+    filtered to those with at least `min_engagement` (filters out low-signal
+    noise). Returns the raw post dicts."""
+    s = _load("social-trends.json")
+    if not s:
+        return []
+    posts = [
+        p for p in (s.get("top_posts") or [])
+        if int(p.get("engagement") or 0) >= min_engagement
+    ]
+    posts.sort(key=lambda p: int(p.get("engagement") or 0), reverse=True)
+    return posts[:n]

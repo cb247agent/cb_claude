@@ -161,6 +161,10 @@ log "Step 1h''' — Emit Work Queue actions (GBP)..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/gbp_emitter.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  GBP emitter had issues — check $LOG"
 
+log "Step 1h'''' — Emit Work Queue actions (Organic Social)..."
+"$PYTHON" "$BASE_DIR/scripts/work_queue/social_emitter.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Social emitter had issues — check $LOG"
+
 # ── Step 1i: Sync Work Queue → Supabase ──
 # Pushes state/work-queue.json into the work_queue_actions table so the
 # dashboard renders fresh actions in real-time. Idempotent on PK (id).

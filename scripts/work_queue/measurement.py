@@ -89,6 +89,14 @@ def compute_kpi_status(projected: Dict, actual: Optional[float]) -> Dict:
         "status":          "no_change",
     }
 
+    # Qualitative metrics: when no automated lookup is available, the action
+    # is awaiting human review (used by organic-social actions where measurement
+    # requires the team to write a learnings note). Reflected as 'pending' so
+    # the UI shows "Awaiting human review" rather than misleading 'no_change'.
+    if metric == "qualitative_assessment" and actual is None:
+        base_dict["status"] = "pending"
+        return base_dict
+
     # No actual value means we couldn't fetch the data
     if actual is None:
         base_dict["status"] = "no_change"
@@ -180,6 +188,7 @@ def _tolerance_for(metric: str) -> float:
 def compute_overall_verdict(actual_kpis: List[Dict]) -> str:
     """
     Aggregate per-KPI statuses into one overall verdict.
+      Any pending KPI                       → 'pending' (awaiting human review)
       All winners                          → 'winner'
       Mix of winners + partials             → 'partial_win'
       Majority underperforming              → 'underperforming'
@@ -190,6 +199,12 @@ def compute_overall_verdict(actual_kpis: List[Dict]) -> str:
 
     total = len(actual_kpis)
     statuses = [k.get("status", "no_change") for k in actual_kpis]
+
+    # Any pending KPI blocks final verdict — the team still needs to record
+    # their assessment (used for organic social qualitative actions)
+    if "pending" in statuses:
+        return "pending"
+
     winners      = statuses.count("winner")
     partials     = statuses.count("partial_win")
     no_changes   = statuses.count("no_change")
