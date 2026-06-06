@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChasingBetter Group — Marketing OS</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 <style>
 /* ── Reset ───────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -326,9 +327,52 @@ tbody tr:hover td{background:#fafafa}
 .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 @media(max-width:1100px){.kpi-grid.cols-4{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:repeat(3,1fr)}.tracker-pipeline{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid.cols-4,.kpi-grid.cols-3,.grid-2,.grid-3{grid-template-columns:1fr}.kanban{grid-template-columns:1fr 1fr}.skill-grid{grid-template-columns:1fr}.tracker-pipeline{grid-template-columns:1fr}}
+/* ── Team identity bar (Supabase live state) ──── */
+.cb-identity-bar{position:fixed;top:14px;right:18px;display:flex;gap:8px;z-index:1000;font-size:11px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.cb-who-pick{background:#fff;border:1px solid var(--border);border-radius:18px;padding:5px 14px;cursor:pointer;color:var(--text);transition:border-color .15s;display:flex;align-items:center}
+.cb-who-pick:hover{border-color:var(--teal)}
+.cb-who-pick select{border:none;background:transparent;font-size:11px;font-weight:600;color:var(--text);cursor:pointer;outline:none;font-family:inherit;padding-right:4px}
+.cb-live-dot{background:#fff;border:1px solid var(--border);border-radius:18px;padding:5px 12px 5px 9px;display:flex;align-items:center;gap:7px;color:var(--text-2)}
+.cb-live-dot::before{content:'';width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0;transition:background .25s}
+.cb-live-dot.connected::before{background:#3FA69A;box-shadow:0 0 0 0 rgba(63,166,154,.6);animation:cb-pulse 2s ease-out infinite}
+.cb-live-dot.reconnecting::before{background:#f59e0b}
+.cb-live-dot.offline::before{background:#dc2626}
+@keyframes cb-pulse{0%{box-shadow:0 0 0 0 rgba(63,166,154,.4)}70%{box-shadow:0 0 0 6px rgba(63,166,154,0)}100%{box-shadow:0 0 0 0 rgba(63,166,154,0)}}
+/* ── Supabase test panel (Phase A only — removed after Phase B) ─ */
+.cb-test-panel{background:#fffbeb;border:1px dashed #f59e0b;border-radius:6px;padding:14px 18px;margin-top:24px;font-size:11px;color:var(--text-2)}
+.cb-test-panel-h{font-weight:700;color:#92400e;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;font-size:10px}
+.cb-test-panel-desc{margin-bottom:12px;font-size:11px;color:#92400e;line-height:1.55}
+.cb-test-btn{background:#fff;border:1px solid #d97706;color:#92400e;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;margin-right:8px;font-family:inherit}
+.cb-test-btn:hover{background:#fef3c7}
+.cb-test-btn:disabled{opacity:.5;cursor:wait}
+.cb-test-output{margin-top:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--text);background:#fff;border:1px solid #fde68a;border-radius:3px;padding:10px;max-height:200px;overflow-y:auto;white-space:pre-wrap;display:none;line-height:1.5}
+.cb-test-output.show{display:block}
 </style>
 </head>
 <body>
+<!-- ── Team identity bar (always visible, top-right) ────────────────────────── -->
+<div class="cb-identity-bar" id="cb-identity-bar">
+  <div class="cb-who-pick">
+    <select id="cb-who-select" onchange="if(window.cbState)cbState.setWhoAmI(this.value)" aria-label="Who am I?">
+      <option value="" disabled selected>Who am I?</option>
+      <option value="Tia">Tia</option>
+      <option value="Angela">Angela</option>
+      <option value="Denver">Denver</option>
+      <option value="Joanne">Joanne</option>
+      <option value="John">John</option>
+      <option value="Mark">Mark</option>
+      <option value="Shauna">Shauna</option>
+      <option value="Ivan">Ivan</option>
+      <option value="Agust">Agust</option>
+      <option value="Shaun">Shaun</option>
+      <option value="Jane">Jane</option>
+      <option value="AI">AI</option>
+    </select>
+  </div>
+  <div class="cb-live-dot" id="cb-live-dot">
+    <span id="cb-live-label">Connecting</span>
+  </div>
+</div>
 <script id="seo-extras-block">
 // CB247 SEO extras — injected by scripts/inject-seo-extras.py
 // Sources: frozen Ahrefs (1 Jun), Screaming Frog (1 Jun), live GA4 organic, live GSC
@@ -6724,6 +6768,171 @@ window.MWCC_DATA = {
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════════════════════════════
+// CB247 TEAM STATE — Supabase wrapper module (Phase A — connection + identity)
+// Provides window.cbState as the single API for all team-shared state.
+// Phase B-D will migrate Planner / Review / Tracker reads + writes to use this.
+// ══════════════════════════════════════════════════════════════════════════════
+const _SUPABASE_URL = 'https://ckjwzwktuiavyfuolbgx.supabase.co';
+const _SUPABASE_KEY = 'sb_publishable_3giOfPJ92JW7DN8w9jPvoQ_cFo4rd0s';
+const _WHO_KEY      = 'cb-who-am-i';
+
+let _supa = null;
+let _connStatus = 'connecting';   // 'connecting' | 'connected' | 'reconnecting' | 'offline'
+let _channels = [];
+
+function _setConnStatus(status) {
+  _connStatus = status;
+  const dot = document.getElementById('cb-live-dot');
+  const lbl = document.getElementById('cb-live-label');
+  if (!dot) return;
+  dot.classList.remove('connected','reconnecting','offline');
+  if      (status === 'connected')    { dot.classList.add('connected');    if (lbl) lbl.textContent = 'Live'; }
+  else if (status === 'reconnecting') { dot.classList.add('reconnecting'); if (lbl) lbl.textContent = 'Reconnecting'; }
+  else if (status === 'offline')      { dot.classList.add('offline');      if (lbl) lbl.textContent = 'Offline'; }
+  else                                { if (lbl) lbl.textContent = 'Connecting'; }
+}
+
+function _initSupabase() {
+  if (typeof supabase === 'undefined') {
+    console.warn('[cbState] Supabase JS library not loaded — retrying in 200ms');
+    setTimeout(_initSupabase, 200);
+    return;
+  }
+  try {
+    _supa = supabase.createClient(_SUPABASE_URL, _SUPABASE_KEY, {
+      realtime: { params: { eventsPerSecond: 10 } }
+    });
+    _setConnStatus('connecting');
+
+    // Restore "Who am I?" from localStorage on boot
+    const me = localStorage.getItem(_WHO_KEY);
+    if (me) {
+      const sel = document.getElementById('cb-who-select');
+      if (sel) sel.value = me;
+    }
+
+    // Probe a presence channel so we can show Live/Offline status reliably
+    const ch = _supa.channel('cb-presence-probe');
+    ch.subscribe((status) => {
+      if      (status === 'SUBSCRIBED')    _setConnStatus('connected');
+      else if (status === 'CHANNEL_ERROR') _setConnStatus('offline');
+      else if (status === 'TIMED_OUT')     _setConnStatus('offline');
+      else if (status === 'CLOSED')        _setConnStatus('reconnecting');
+    });
+    _channels.push(ch);
+
+    console.log('[cbState] Supabase client created — URL:', _SUPABASE_URL);
+  } catch (e) {
+    console.error('[cbState] init failed:', e);
+    _setConnStatus('offline');
+  }
+}
+
+window.cbState = {
+  // ── Identity ────────────────────────────────────────────────────────────
+  whoAmI: () => localStorage.getItem(_WHO_KEY) || null,
+  setWhoAmI: (name) => {
+    if (!name) return;
+    localStorage.setItem(_WHO_KEY, name);
+    console.log('[cbState] Identity set to:', name);
+  },
+
+  // ── Connection introspection ───────────────────────────────────────────
+  connectionStatus: () => _connStatus,
+  client: () => _supa,
+
+  // ── Generic helpers (used by Phase B-D wrappers) ───────────────────────
+  async upsert(table, row) {
+    if (!_supa) return { error: 'not_connected' };
+    const me = window.cbState.whoAmI();
+    const payload = { ...row, updated_by: me, updated_at: new Date().toISOString() };
+    const { data, error } = await _supa.from(table).upsert(payload).select();
+    if (error) console.warn(`[cbState] upsert ${table} failed:`, error);
+    return { data, error };
+  },
+  async readAll(table) {
+    if (!_supa) return { data: [], error: 'not_connected' };
+    const { data, error } = await _supa.from(table).select('*');
+    return { data: data || [], error };
+  },
+  subscribe(table, callback) {
+    if (!_supa) return null;
+    const ch = _supa
+      .channel(`cb-${table}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table }, payload => callback(payload))
+      .subscribe();
+    _channels.push(ch);
+    return ch;
+  },
+
+  // ── Phase A test utilities (removed once Phase B lands) ─────────────────
+  async testWrite(outEl) {
+    const itemId = `__test_${Date.now()}`;
+    const me     = window.cbState.whoAmI() || 'unknown';
+    const lines  = [`[${new Date().toISOString()}] testWrite as "${me}"...`];
+    const flush  = () => { if (outEl) { outEl.textContent = lines.join('\n'); outEl.classList.add('show'); } };
+    flush();
+
+    if (!_supa) { lines.push('FAIL — client not initialised'); flush(); return; }
+    const ins = await _supa.from('planner_status').insert({ item_id: itemId, status: 'Idea', updated_by: me }).select();
+    if (ins.error) { lines.push(`FAIL on insert: ${ins.error.message}`); flush(); return; }
+    lines.push(`  insert OK — item_id=${itemId}`); flush();
+
+    const sel = await _supa.from('planner_status').select('*').eq('item_id', itemId);
+    if (sel.error || !sel.data.length) { lines.push(`FAIL on select: ${sel.error?.message || 'not found'}`); flush(); return; }
+    lines.push(`  select OK — found row with status="${sel.data[0].status}", updated_by="${sel.data[0].updated_by}"`); flush();
+
+    const del = await _supa.from('planner_status').delete().eq('item_id', itemId);
+    if (del.error) { lines.push(`FAIL on delete: ${del.error.message}`); flush(); return; }
+    lines.push(`  delete OK — cleaned up`);
+    lines.push(`ALL PASSED — Supabase write/read/delete working from this browser.`);
+    flush();
+  },
+
+  async testRealtime(outEl) {
+    const me    = window.cbState.whoAmI() || 'unknown';
+    const lines = [`[${new Date().toISOString()}] testRealtime as "${me}"...`];
+    const flush = () => { if (outEl) { outEl.textContent = lines.join('\n'); outEl.classList.add('show'); } };
+    flush();
+
+    if (!_supa) { lines.push('FAIL — client not initialised'); flush(); return; }
+
+    let received = false;
+    const id = `__rt_${Date.now()}`;
+    const ch = _supa.channel(`cb-test-rt-${Date.now()}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'planner_status' }, payload => {
+        if (payload.new && payload.new.item_id === id) {
+          received = true;
+          lines.push(`  REALTIME EVENT RECEIVED — item_id=${payload.new.item_id}, status=${payload.new.status}`);
+          flush();
+        }
+      });
+
+    ch.subscribe(async (status) => {
+      if (status !== 'SUBSCRIBED') return;
+      lines.push(`  subscription active — sending test insert...`); flush();
+      await _supa.from('planner_status').insert({ item_id: id, status: 'Idea', updated_by: me });
+
+      setTimeout(async () => {
+        if (!received) {
+          lines.push(`  TIMEOUT — no realtime event after 3s`);
+          lines.push(`FAIL — realtime may be disabled on planner_status. Re-run the SQL or check Supabase Database → Replication.`);
+        } else {
+          lines.push(`ALL PASSED — realtime broadcasts working. Other browsers will see live changes.`);
+        }
+        flush();
+        await _supa.from('planner_status').delete().eq('item_id', id);
+        _supa.removeChannel(ch);
+      }, 3000);
+    });
+  },
+};
+
+// Boot once the DOM has the identity bar
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _initSupabase);
+else _initSupabase();
+
 // ── Data ──────────────────────────────────────────────────────────────────────
 const D = window.DASHBOARD_DATA;
 
@@ -10313,6 +10522,20 @@ function renderPlanner() {
       </div>
     </div>`;
   }
+
+  // ── PHASE A TEST PANEL — remove once Phase B (real Supabase wiring) lands ──
+  html += `
+    <div class="cb-test-panel" id="cb-test-panel">
+      <div class="cb-test-panel-h">Supabase connection — Phase A test panel</div>
+      <div class="cb-test-panel-desc">
+        Temporary. Two buttons that prove the dashboard can write to + receive realtime updates from your Supabase database. Once Phase B lands (real Planner approvals migrated), this panel goes away.<br>
+        <b>Tip:</b> open the dashboard in a second browser tab (or another laptop) and click "Test realtime" — you should see the event appear in both tabs at once.
+      </div>
+      <button class="cb-test-btn" onclick="cbState.testWrite(document.getElementById('cb-test-out'))">Test write</button>
+      <button class="cb-test-btn" onclick="cbState.testRealtime(document.getElementById('cb-test-out'))">Test realtime</button>
+      <div class="cb-test-output" id="cb-test-out"></div>
+    </div>
+  `;
 
   $('planner-content').innerHTML = html;
 }
