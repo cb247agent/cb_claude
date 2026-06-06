@@ -5778,14 +5778,26 @@ window.MWCC_DATA = {
     <div class="page active" id="page-overview">
       <div class="page-header">
         <h1>Marketing Overview</h1>
-        <p>ChasingBetter247 Gym · Malaga + Ellenbrook · $11.95/week, no lock-in</p>
+        <p id="overview-period">CB247 Gym · Malaga + Ellenbrook</p>
       </div>
+
+      <!-- Data freshness banner -->
+      <div id="overview-freshness"></div>
+
+      <!-- Executive verdict -->
+      <div id="overview-verdict"></div>
 
       <!-- KPI row -->
       <div class="kpi-grid cols-4 mb" id="overview-kpis"></div>
 
+      <!-- Hero card: organic vs paid multiplier -->
+      <div id="overview-hero"></div>
+
       <!-- Insight strip -->
       <div id="overview-insights"></div>
+
+      <!-- NEW: What Changed This Week -->
+      <div id="overview-changed"></div>
 
       <!-- GA4 + GSC -->
       <div class="section-title">Web Performance</div>
@@ -6276,55 +6288,165 @@ function switchBiz(el) {
 
 // ── Render: Overview ─────────────────────────────────────────────────────────
 function renderOverview() {
-  const g = D.ga4, s = D.seo, ads = D.google_ads;
+  const g = D.ga4, s = D.seo, ads = D.google_ads, gsc = D.gsc;
   const metaSpend   = (D.meta&&D.meta.total_spend)||0;
-  const totalSpend  = ads.spend + metaSpend;
-  const organicMult = totalSpend > 0 ? Math.round(s.organic_value / totalSpend * 10) / 10 : 0;
+  const totalSpend  = (ads.spend||0) + metaSpend;
+  const organicMult = totalSpend > 0 ? Math.round((s.organic_value||0) / totalSpend * 10) / 10 : 0;
   const mal = D.gbp.malaga, ell = D.gbp.ellenbrook;
+  const packRate = (D.gbp.local_pack && D.gbp.local_pack.pack_presence_rate) || 0;
+  const blendedCPA = ads.cpa || 0;
 
-  // ── 4 KPI cards ──────────────────────────────────────────────────────────
-  $('overview-kpis').innerHTML =
-    kpiCard('','Weekly Sessions', fmt(g.sessions,'n'), g.ses_chg, `Prior week: ${fmt(g.p_sessions,'n')}`, g.ses_chg<-10?'red':g.ses_chg>5?'green':'') +
-    kpiCard('','Conversions',     fmt(g.convs,'n'),    g.conv_chg, `Conv. rate: ${fmt(g.conv_rate,'%')}`, g.conv_chg>0?'green':'') +
-    kpiCard('','Total Ad Spend',  fmt(totalSpend,'$2'),ads.spend_chg, metaSpend>0?`Google ${fmt(ads.spend,'$2')} · Meta ${fmt(metaSpend,'$2')}`:`CPA: ${fmt(ads.cpa,'$2')}`) +
-    kpiCard('','Organic Value',   fmt(s.organic_value,'$')+'/wk', null, organicMult>1?`${organicMult}× return vs ad spend`:`DR ${s.domain_rating||'–'} · ${s.tk_summary.top_3_count||0} top-3 keywords`, 'green');
-
-  // ── Insight strip ─────────────────────────────────────────────────────────
-  const insightEl = document.getElementById('overview-insights');
-  if (insightEl) {
-    const sesDown = (g.ses_chg||0) < -10;
-    const cpaHigh = ads.cpa > 15 && ads.cpa > 0;
-    insightEl.innerHTML = `<div class="grid-2 mb">
-      <div class="insight ${sesDown||cpaHigh?'red':'amber'}">
-        <div class="insight-label">${sesDown ? '⚠️ Traffic Drop — Investigate' : cpaHigh ? '⚠️ CPA Above $15 — Review Campaigns' : '⚠️ Watch: Paid Social Conversions'}</div>
-        ${sesDown
-          ? `Sessions fell <b>${Math.abs(g.ses_chg||0)}% WoW</b> (${fmt(g.p_sessions,'n')} → ${fmt(g.sessions,'n')}). Check which channel dropped in GA4 — most likely paid campaign paused or a ranking lost.`
-          : cpaHigh
-          ? `Blended CPA is <b>${fmt(ads.cpa,'$2')}</b> — above the $15 target. Malaga: ${fmt(ads.malaga.cpa,'$2')} · Ellenbrook: ${fmt(ads.ellenbrook.cpa,'$2')}. Review low-converting campaigns and pause underperformers.`
-          : `Meta Ads spent <b>${fmt(metaSpend,'$2')}</b> this week. Ensure conversion events are firing in Meta Events Manager — disconnected tracking inflates CPR.`
-        }
-      </div>
-      <div class="insight teal">
-        <div class="insight-label">${organicMult>1 ? `✅ Organic Delivers ${organicMult}× More Value Than Paid` : '✅ Conversion Rate Strong'}</div>
-        ${organicMult>1
-          ? `SEO organic is worth <b>${fmt(s.organic_value,'$')}/wk</b> vs <b>${fmt(totalSpend,'$2')}</b> in ad spend. Organic traffic compounds — every page published keeps delivering without paying per click.`
-          : `CB247 converts at <b>${fmt(g.conv_rate,'%')}</b> — well above the gym industry average of 5–8%. The site copy and UX are working.`
-        }
-        <br><br><b>Organic top-3 rankings:</b> ${s.tk_summary.top_3_count||0} keywords &nbsp;·&nbsp; <b>GBP:</b> Malaga ${mal.rating}⭐ (${fmt(mal.reviews,'n')} reviews) &nbsp;·&nbsp; Ellenbrook ${ell.rating}⭐ (${fmt(ell.reviews,'n')} reviews)
-      </div>
-    </div>`;
+  // ── Page header subtitle: replace marketing copy with status line ───────
+  if ($('overview-period')) {
+    $('overview-period').innerHTML = `${g.period||'7-day window'} · last data refresh ${D.refresh_ts||D.generated||'unknown'}`;
   }
 
-  // Web cards
-  const gsc = D.gsc;
+  // ── Data freshness banner ──────────────────────────────────────────────
+  const ts = D.timestamps || {};
+  $('overview-freshness').innerHTML = `<div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b style="color:var(--text-2)">GA4</b> ${ts.ga4||'–'}</span>
+    <span><b style="color:var(--text-2)">GSC</b> ${ts.gsc||'–'}</span>
+    <span><b style="color:var(--text-2)">Google Ads</b> ${ts.google_ads||'–'}</span>
+    <span><b style="color:var(--text-2)">Meta</b> ${ts.meta_ads||'–'}</span>
+    <span><b style="color:var(--text-2)">GBP</b> ${ts.gbp||'–'}</span>
+    <span><b style="color:var(--text-2)">Ahrefs</b> ${ts.ahrefs||'–'}</span>
+  </div>`;
+
+  // ── Executive Verdict (audit recommendation: verdict before data) ───────
+  const sesChg  = g.ses_chg || 0;
+  const convChg = g.conv_chg || 0;
+  const sesDown = sesChg < -10;
+  const convDown = convChg < -10;
+  const pairedDrop = sesDown && convDown;
+  const _vWhereWeAre = `${fmt(g.sessions,'n')} sessions (${sesChg>0?'+':''}${sesChg.toFixed(1)}% WoW) · ${fmt(g.convs,'n')} conversions (${convChg>0?'+':''}${convChg.toFixed(1)}% WoW) · conv rate <b>${fmt(g.conv_rate,'%')}</b> · ${fmt(totalSpend,'$2')} ad spend.`;
+  const _vRisk = pairedDrop
+    ? `<b>Paired drop:</b> sessions ${Math.abs(sesChg).toFixed(1)}% AND conversions ${Math.abs(convChg).toFixed(1)}% — signals funnel issue rather than source. Audit GA4 events firing on Join + Tour pages first.`
+    : sesDown
+      ? `Sessions ${Math.abs(sesChg).toFixed(1)}% WoW (${fmt(g.p_sessions,'n')} → ${fmt(g.sessions,'n')}). Most likely cause: paid campaign paused OR a ranking lost — check Google Ads page first.`
+      : blendedCPA > 25
+        ? `Blended CPA $${blendedCPA.toFixed(2)} above $25 target. Review per-location CPA on Google Ads page · pause underperformers.`
+        : `Stable week. Focus shifts to scaling what's working: organic content + Ellenbrook Meta PMax.`;
+  const _vPriority = pairedDrop
+    ? 'Audit GA4 conversion events first (join form · tour booking · location page). Funnel issue inflates CPA on every channel.'
+    : organicMult > 5
+      ? `Scale organic content output. Organic delivers <b>${organicMult}× more value</b> than paid spend ($${fmt(s.organic_value,'$2').replace('$','')}/wk vs $${fmt(totalSpend,'$2').replace('$','')}/wk) — every published page compounds.`
+      : 'Review Next 2 Weeks queues on each Performance page.';
+
+  $('overview-verdict').innerHTML = `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Executive Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${g.period||''}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_vWhereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
+      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+    </div>
+  </div>`;
+
+  // ── 4 KPI cards (with drill-down hints + verdict colours) ──────────────
+  $('overview-kpis').innerHTML =
+    kpiCard('','Weekly Sessions', fmt(g.sessions,'n'), sesChg, `Prior: ${fmt(g.p_sessions,'n')} · → Web Performance`, sesChg<-10?'red':sesChg>5?'green':'') +
+    kpiCard('','Conversions',     fmt(g.convs,'n'),    convChg, `Conv rate ${fmt(g.conv_rate,'%')} · → Funnel`, convChg<-10?'red':convChg>0?'green':'') +
+    kpiCard('','Total Ad Spend',  fmt(totalSpend,'$2'),ads.spend_chg, `CPA ${fmt(blendedCPA,'$2')} · Google ${fmt(ads.spend,'$2')} · Meta ${fmt(metaSpend,'$2')}`, blendedCPA>25?'red':blendedCPA>0&&blendedCPA<15?'green':'') +
+    kpiCard('','Organic Value',   '$'+fmt(s.organic_value,'n')+'/wk', null, organicMult>1?`<b>${organicMult}× return</b> vs ad spend · → SEO page`:`DR ${s.domain_rating||'–'} · ${s.tk_summary.top_3_count||0} top-3 keywords`, organicMult>=5?'green':'');
+
+  // ── Hero card: organic vs paid multiplier (when >1×) ───────────────────
+  if (organicMult > 1) {
+    $('overview-hero').innerHTML = `<div class="card mb" style="background:linear-gradient(135deg,#e8f5f4 0%,#fff 70%);border:1px solid var(--teal);padding:18px 24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">
+        <div>
+          <div style="font-size:10px;color:var(--teal);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Strongest Marketing Story</div>
+          <div style="font-size:22px;font-weight:700;color:#0a5e54;line-height:1.2"><span style="font-size:32px">${organicMult}×</span> Organic Return vs Paid Spend</div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:6px">SEO worth <b>${fmt(s.organic_value,'$')}/wk</b> vs <b>${fmt(totalSpend,'$2')}</b> in ad spend. Every page published compounds without paying per click.</div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:var(--muted);min-width:160px">
+          <div><b style="color:var(--text-2);font-size:12px">${s.tk_summary.top_3_count||0}</b> top-3 keywords</div>
+          <div><b style="color:var(--text-2);font-size:12px">${s.tk_summary.top_10_count||0}</b> on page 1</div>
+          <div><b style="color:var(--text-2);font-size:12px">DR ${s.domain_rating||'–'}</b> · target DR ${(window.SEO_EXTRAS&&window.SEO_EXTRAS.ahrefs_frozen&&window.SEO_EXTRAS.ahrefs_frozen.domain_rating_target)||10}</div>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    $('overview-hero').innerHTML = '';
+  }
+
+  // ── Insight strip (no emojis) ──────────────────────────────────────────
+  const cpaHigh = blendedCPA > 25 && blendedCPA > 0;
+  $('overview-insights').innerHTML = `<div class="grid-2 mb">
+    <div class="insight ${pairedDrop||sesDown||cpaHigh?'red':'amber'}">
+      <div class="insight-label">${pairedDrop?'Paired Funnel Drop — Investigate':sesDown?'Traffic Drop — Investigate':cpaHigh?'CPA Above Target — Review':'Watch: Conversion Tracking'}</div>
+      ${pairedDrop
+        ? `Sessions <b>${Math.abs(sesChg).toFixed(1)}% WoW</b> AND conversions <b>${Math.abs(convChg).toFixed(1)}% WoW</b> moving together points to funnel rather than source. Check conversion tracking on every landing page first (Join · Tour · Location pages). If tracking is fine, audit landing page changes from this week.`
+        : sesDown
+          ? `Sessions fell <b>${Math.abs(sesChg).toFixed(1)}% WoW</b> (${fmt(g.p_sessions,'n')} → ${fmt(g.sessions,'n')}). Check Google Ads page for paused campaigns and SEO page for lost rankings.`
+          : cpaHigh
+            ? `Blended CPA <b>${fmt(blendedCPA,'$2')}</b> above $25 target. Malaga: ${fmt(ads.malaga.cpa,'$2')} · Ellenbrook: ${fmt(ads.ellenbrook.cpa,'$2')}. Review on Google Ads page and pause underperformers.`
+            : `Meta Ads spent <b>${fmt(metaSpend,'$2')}</b> — verify conversion events fire in Meta Events Manager. Disconnected tracking inflates CPR.`}
+    </div>
+    <div class="insight teal">
+      <div class="insight-label">${organicMult>5?'Compounding Engine — Organic Working':'Conversion Rate Strong'}</div>
+      ${organicMult>5
+        ? `Organic <b>${organicMult}× ad spend</b> means every dollar invested in content keeps returning. <b>${s.tk_summary.top_3_count||0} top-3 rankings</b> drive ${fmt(s.organic_value,'$')}/wk in equivalent traffic value — no recurring CPC.`
+        : `CB247 converts at <b>${fmt(g.conv_rate,'%')}</b> — well above 5–8% gym industry average. Site copy + UX are working.`}
+      <br><br><b>GBP:</b> Malaga ${mal.rating}★ (${fmt(mal.reviews,'n')} reviews) · Ellenbrook ${ell.rating}★ (${fmt(ell.reviews,'n')} reviews) · Local pack ${packRate}%
+    </div>
+  </div>`;
+
+  // ── NEW: "What Changed This Week" card (audit rec) ──────────────────────
+  const movers = [];
+  if (g.ses_chg != null)  movers.push({label:'Sessions',          value:fmt(g.sessions,'n'),         chg:g.ses_chg,        page:'overview',       hint:'→ Web Performance'});
+  if (g.conv_chg != null) movers.push({label:'Conversions',       value:fmt(g.convs,'n'),            chg:g.conv_chg,       page:'overview',       hint:'→ Funnel audit'});
+  if (ads.spend_chg != null) movers.push({label:'Ad Spend',       value:fmt(totalSpend,'$2'),         chg:ads.spend_chg,    page:'google-ads',     hint:'→ Google Ads page'});
+  if (ads.malaga&&ads.p_malaga&&ads.p_malaga.spend) movers.push({label:'Malaga CPA',value:fmt(ads.malaga.cpa,'$2'),chg:ads.p_malaga.cpa>0?((ads.malaga.cpa-ads.p_malaga.cpa)/ads.p_malaga.cpa*100):null,page:'google-ads',hint:'→ Google Ads · Malaga',inverse:true});
+  if (ads.ellenbrook&&ads.p_ellenbrook&&ads.p_ellenbrook.spend) movers.push({label:'Ellenbrook CPA',value:fmt(ads.ellenbrook.cpa,'$2'),chg:ads.p_ellenbrook.cpa>0?((ads.ellenbrook.cpa-ads.p_ellenbrook.cpa)/ads.p_ellenbrook.cpa*100):null,page:'google-ads',hint:'→ Google Ads · Ellenbrook',inverse:true});
+  // Filter to entries with non-null change, sort by absolute change descending
+  const sortedMovers = movers
+    .filter(m => m.chg != null && !isNaN(m.chg))
+    .sort((a,b) => Math.abs(b.chg) - Math.abs(a.chg))
+    .slice(0, 6);
+
+  const positives = sortedMovers.filter(m => (m.inverse ? m.chg < 0 : m.chg > 0));
+  const negatives = sortedMovers.filter(m => (m.inverse ? m.chg > 0 : m.chg < 0));
+
+  $('overview-changed').innerHTML = `${sectionTitle('What Changed This Week — Biggest Movers')}<div class="grid-2 mb">
+    <div class="card">
+      <div class="card-h" style="color:var(--teal)">Wins — what improved</div>
+      ${positives.length > 0
+        ? positives.map(m => `<div class="stat-row">
+            <span class="stat-label">${m.label}</span>
+            <span class="stat-val">
+              ${m.value}
+              <span style="color:var(--teal);font-size:11px;margin-left:6px">↑ ${Math.abs(m.chg).toFixed(1)}%</span>
+              <div style="font-size:9px;color:var(--muted);text-align:right">${m.hint}</div>
+            </span>
+          </div>`).join('')
+        : '<div style="padding:8px 0;font-size:12px;color:var(--muted)">No clear wins this week.</div>'}
+    </div>
+    <div class="card">
+      <div class="card-h" style="color:#b91c1c">Losses — what dropped</div>
+      ${negatives.length > 0
+        ? negatives.map(m => `<div class="stat-row">
+            <span class="stat-label">${m.label}</span>
+            <span class="stat-val">
+              ${m.value}
+              <span style="color:#b91c1c;font-size:11px;margin-left:6px">↓ ${Math.abs(m.chg).toFixed(1)}%</span>
+              <div style="font-size:9px;color:var(--muted);text-align:right">${m.hint}</div>
+            </span>
+          </div>`).join('')
+        : '<div style="padding:8px 0;font-size:12px;color:var(--muted)">No major losses this week.</div>'}
+    </div>
+  </div>`;
+
+  // ── Web Performance (GA4 + GSC side-by-side) ────────────────────────────
   $('overview-web').innerHTML = `
     <div class="card">
-      <div class="card-h">Google Analytics 4 <span class="card-period">${g.period}</span></div>
+      <div class="card-h">Google Analytics 4 <span class="card-period">${g.period||''}</span></div>
       <div class="stat-row"><span class="stat-label">Sessions</span><span class="stat-val">${fmt(g.sessions,'n')} <small style="color:var(--muted)">${fmtChg(g.ses_chg)}</small></span></div>
       <div class="stat-row"><span class="stat-label">Users</span><span class="stat-val">${fmt(g.users,'n')}</span></div>
       <div class="stat-row"><span class="stat-label">New Users</span><span class="stat-val">${fmt(g.new_users,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Conversions</span><span class="stat-val">${fmt(g.convs,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Conv. Rate</span><span class="stat-val">${fmt(g.conv_rate,'%')}</span></div>
+      <div class="stat-row"><span class="stat-label">Conversions</span><span class="stat-val">${fmt(g.convs,'n')} <small style="color:var(--muted)">${fmtChg(g.conv_chg)}</small></span></div>
+      <div class="stat-row"><span class="stat-label">Conv. Rate</span><span class="stat-val good"><b>${fmt(g.conv_rate,'%')}</b></span></div>
       <div class="stat-row"><span class="stat-label">Mobile Share</span><span class="stat-val ${g.mob_share>80?'warn':''}">${g.mob_share}%</span></div>
       <div style="margin-top:14px"><div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px">TRAFFIC BY CHANNEL</div>
       <div class="chart-wrap"><canvas id="channelChart"></canvas></div></div>
@@ -6337,27 +6459,25 @@ function renderOverview() {
       <div class="stat-row"><span class="stat-label">Avg Position</span><span class="stat-val">#${gsc.position}</span></div>
       <div style="margin-top:14px"><div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px">TOP QUERIES</div>
       <table><thead><tr><th>Query</th><th class="num">Clicks</th><th class="num">Pos</th></tr></thead><tbody>
-        ${gsc.top_queries.slice(0,6).map(q=>`<tr><td>${q.query}</td><td class="num">${q.clicks}</td><td class="num">#${q.position}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted)">No data</td></tr>'}
+        ${(gsc.top_queries||[]).slice(0,6).map(q=>`<tr><td>${q.query}</td><td class="num">${q.clicks}</td><td class="num">#${q.position}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted)">No data</td></tr>'}
       </tbody></table></div>
     </div>`;
 
-  // Channel snapshot
-  const gbp = D.gbp;
+  // ── Channel Snapshot (rebalanced — separate per-channel mini cards) ─────
   $('overview-channels').innerHTML = `
     <div class="card">
-      <div class="card-h">Google Business Profile</div>
-      <div class="stat-row"><span class="stat-label">Malaga Rating</span><span class="stat-val">${stars(mal.rating)}</span></div>
-      <div class="stat-row"><span class="stat-label">Malaga Reviews</span><span class="stat-val">${fmt(mal.reviews,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Ellenbrook Rating</span><span class="stat-val">${stars(ell.rating)}</span></div>
-      <div class="stat-row"><span class="stat-label">Ellenbrook Reviews</span><span class="stat-val">${fmt(ell.reviews,'n')}</span></div>
-      <div class="stat-row"><span class="stat-label">Local Pack Rate</span><span class="stat-val">${D.gbp.local_pack.pack_presence_rate||0}% keywords</span></div>
+      <div class="card-h">Google Business Profile <span class="card-period">→ GBP page</span></div>
+      <div class="stat-row"><span class="stat-label">Malaga</span><span class="stat-val">${mal.rating}★ · ${fmt(mal.reviews,'n')} reviews</span></div>
+      <div class="stat-row"><span class="stat-label">Ellenbrook</span><span class="stat-val">${ell.rating}★ · ${fmt(ell.reviews,'n')} reviews</span></div>
+      <div class="stat-row"><span class="stat-label">Local Pack Rate</span><span class="stat-val ${packRate>=60?'good':packRate<30?'bad':''}">${packRate}% of tracked keywords</span></div>
+      <div class="stat-row"><span class="stat-label">Combined photos</span><span class="stat-val">${fmt((mal.photos||0)+(ell.photos||0),'n')} <span style="font-size:10px;color:var(--muted)">/ 200 target</span></span></div>
     </div>
     <div class="card">
-      <div class="card-h">🌱 SEO vs Ads</div>
+      <div class="card-h">SEO vs Ads <span class="card-period">→ SEO page</span></div>
       <div class="stat-row"><span class="stat-label">Organic Value (SEO)</span><span class="stat-val good">${fmt(s.organic_value,'$')}/wk</span></div>
-      <div class="stat-row"><span class="stat-label">WoW Change</span><span class="stat-val ${(s.ov_chg||0)>=0?'good':'bad'}">${fmtChg(s.ov_chg)}</span></div>
       <div class="stat-row"><span class="stat-label">Google Ads Spend</span><span class="stat-val">${fmt(ads.spend,'$2')}/wk</span></div>
-      <div class="stat-row"><span class="stat-label">Keywords Page 1</span><span class="stat-val">${s.tk_summary.top_10_count||0} / 20 tracked</span></div>
+      <div class="stat-row"><span class="stat-label">Multiplier</span><span class="stat-val ${organicMult>=5?'good':''}"><b>${organicMult}×</b></span></div>
+      <div class="stat-row"><span class="stat-label">Keywords Page 1</span><span class="stat-val">${s.tk_summary.top_10_count||0} / ${s.tk_summary.total_keywords||20} tracked</span></div>
       <div class="stat-row"><span class="stat-label">Top-3 Rankings</span><span class="stat-val good">${s.tk_summary.top_3_count||0} keywords</span></div>
     </div>`;
 
