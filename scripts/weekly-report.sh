@@ -139,6 +139,16 @@ log "Step 1g — Parse Membership XLSX exports..."
 "$PYTHON" "$BASE_DIR/scripts/parse_membership_data.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Membership parse skipped — XLSX files missing or unparseable. Dashboard uses previous parse."
 
+# ── Step 1h: Work Queue action emission ──
+# Reads fresh state/*.json data and emits structured WorkQueueAction records
+# to state/work-queue.json. Each performance page contributes its own
+# emitter; Session 1 ships only the SEO emitter. Session 2 ingests JSON
+# into Supabase so the dashboard displays them as Work Queue cards.
+# See: CB_Brain/wiki/Work-Queue-Architecture.md
+log "Step 1h — Emit Work Queue actions (SEO)..."
+"$PYTHON" "$BASE_DIR/scripts/work_queue/seo_emitter.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  SEO emitter had issues — check $LOG"
+
 log "Phase 1 complete."
 
 
