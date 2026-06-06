@@ -1,17 +1,32 @@
 name: seo-agent
-skills: seo-site-audit, competitor-seo-scraper, seo-content-strategist, seo-reporting
-# Layer 2: reads compressed context only — state/ access is denied
+skills: competitor-seo-scraper, seo-content-strategist
+# Layer 2: reads compressed context. Exception (06 Jun 2026): allowed to read
+# state/work-queue.json — that's our own structured emitter output, not raw API
+# data, so the Layer-2 boundary still holds. seo_emitter.py produces 11 tactical
+# SEO actions weekly; this agent reads them as INPUT and expands each into a
+# strategic brief (competitor context, content structure, expected impact).
+# That eliminates the previous parallel-track confusion where emitter and agent
+# both produced "what to do about SEO" but didn't reference each other.
 data_source: context/seo-context.json
-tools: Read(context/seo-context.json), Read(context/seo-targets-cb247.md), Read(context/seo-priorities-cb247.md), Read(context/brand-voice.md), Read(skills/**), Read(outputs/**), Write(outputs/seo/**), WebFetch
+tools: Read(context/seo-context.json), Read(context/seo-targets-cb247.md), Read(context/seo-priorities-cb247.md), Read(context/brand-voice.md), Read(state/work-queue.json), Read(skills/**), Read(outputs/**), Write(outputs/seo/**), WebFetch
+
+# RESCOPED 06 Jun 2026 — Tia direction
+# Previously: 4 skills (audit + competitor + content strategy + reporting),
+# produced 4 parallel .md files that didn't reference the emitter cards
+# Now: 2 skills (competitor + content strategy), reads emitter actions as input,
+# produces ONE strategic brief that expands the emitter's 11 tactical cards
+# into the competitive + content context Mark + John need to actually execute.
+# Site audit work moves to scripts/run_screaming_frog.py (tooled, not LLM).
+# Reporting moves to Performance Review verdict cards (auto, not LLM).
+
 context:
   - context/seo-context.json
   - context/seo-targets-cb247.md
   - context/seo-priorities-cb247.md
   - context/brand-voice.md
-  - skills/seo-site-audit/SKILL.md
+  - state/work-queue.json
   - skills/competitor-seo-scraper/SKILL.md
   - skills/seo-content-strategist/SKILL.md
-  - skills/seo-reporting/SKILL.md
 
 Inputs:
   site_url: "https://www.chasingbetter247.com.au/"
@@ -31,24 +46,18 @@ Targets:
   Competitors: Anytime Fitness Malaga, Revo Fitness Malaga, Revo Fitness Ellenbrook
 
 Workflow:
-  - name: site-audit
-    description: "Audit CB247 Malaga, Ellenbrook and key service pages for technical + on-page SEO issues"
-    skills: [seo-site-audit]
-    output: "outputs/seo/audits/site-audit-$(date +%Y-%m-%d).md"
+  - name: ingest-emitter-actions
+    description: "Read state/work-queue.json and extract this week's SEO actions (source_page='seo-organic'). These are the typed tactical cards the team will execute — the agent's job is to expand each into a strategic brief, NOT to invent a parallel list. If no SEO actions exist for this week (emitter hasn't run yet), exit with a clear message."
+    output: "(internal — held in context for next step)"
 
   - name: competitor-analysis
-    description: "Scrape competitor sites (Anytime, Revo) and compare against CB247 for SEO gaps"
+    description: "For each SEO action's keyword, fetch how Anytime + Revo rank for the same query and what their landing-page structure looks like. Document the gap CB247 must close."
     skills: [competitor-seo-scraper]
     output: "outputs/seo/competitors/competitor-gap-analysis-$(date +%Y-%m-%d).md"
 
-  - name: content-strategy
-    description: "Generate content gap analysis and P1 content briefs based on audit + competitor findings"
+  - name: strategic-brief
+    description: "For EACH emitter action from step 1, write a 1-page strategic brief covering: (1) Why this matters (commercial impact, competitive gap), (2) Page structure recommendation (H2s, word count benchmark vs competitor, schema markup), (3) Internal linking plan, (4) Expected impact + confidence, (5) Effort split between John (content), Angela (brand QC), Mark (Webflow build). Link back to the emitter action id (e.g., seo-act-2026w23-001) so the team can cross-reference."
     skills: [seo-content-strategist]
-    output: "outputs/seo/content/content-recommendations-$(date +%Y-%m-%d).md"
+    output: "outputs/seo/content/strategic-briefs-$(date +%Y-%m-%d).md"
 
-  - name: seo-report
-    description: "Compile all findings into a single SEO pilot report for stakeholder review"
-    skills: [seo-reporting]
-    output: "outputs/seo/reports/seo-pilot-report-$(date +%Y-%m-%d).md"
-
-End: print "SEO AGENT COMPLETE — All outputs saved to outputs/seo/"
+End: print "SEO AGENT COMPLETE — Strategic briefs for [N] emitter actions saved to outputs/seo/"

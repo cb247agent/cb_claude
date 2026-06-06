@@ -118,15 +118,15 @@ def _emit_save_call(week: str, start_serial: int) -> Tuple[List[WorkQueueAction]
             title=f"Save-call queue at {display} — {queue_size} pending exits, target {save_count} saves",
             description=(
                 f"{queue_size} members at {display} have filed cancellation but haven't left yet. "
-                f"This is the highest-leverage queue in the dataset. Joanne pulls the future-cancellation "
-                f"list from the CRM, prioritises members who joined ≥6 months ago (long-tenure save is "
-                f"highest LTV), and runs save calls with a personalised offer: 1 month freeze + free PT "
-                f"intro session OR addon upgrade trial. "
+                f"This is the highest-leverage queue in the dataset. Angela + the {display} reception team "
+                f"pull the future-cancellation list from the CRM, prioritise members who joined ≥6 months "
+                f"ago (long-tenure save is highest LTV), and run save calls with a personalised offer: "
+                f"1 month freeze + free PT intro session OR addon upgrade trial. "
                 f"Target: {save_count} retained ({SAVE_CALL_TARGET_REDUCTION_PCT*100:.0f}% conversion on "
                 f"the queue), measured as a drop in weekly cancellations and a smaller future-queue."
             ),
-            owner="Joanne",
-            owner_role="Lead / Coord",
+            owner="Angela",
+            owner_role="Manager CB247 Gym (Save Calls + Member Habit)",
             priority="P1",
             effort_hours=4.0,
             category="membership",
@@ -177,15 +177,16 @@ def _emit_churn_reason(week: str, start_serial: int) -> Tuple[List[WorkQueueActi
                 f"{not_using} members cited 'not using the membership enough' as their cancellation "
                 f"reason (combined PGM + Cleverwaiver). This is the highest-leverage actionable reason "
                 f"in the dataset — the member wanted value, the value wasn't activated. "
-                f"Launch a habit-build sequence triggered at the 14-day post-signup mark: "
-                f"(1) class booking nudge with personalised time recommendations, "
+                f"Angela + reception team launch a habit-build sequence triggered at the 14-day "
+                f"post-signup mark: "
+                f"(1) class booking SMS nudge with personalised time recommendations, "
                 f"(2) PT intro at 30d for members with <2 visits, "
                 f"(3) addon trial day at 45d. "
                 f"Target: halve 'not using' churn (~{int(not_using * 0.5)} retained) over 28 days, "
                 f"reflected as a drop in combined weekly cancellations."
             ),
-            owner="Joanne",
-            owner_role="Lead / Coord",
+            owner="Angela",
+            owner_role="Manager CB247 Gym (Save Calls + Member Habit)",
             priority="P1",
             effort_hours=5.0,
             category="membership",

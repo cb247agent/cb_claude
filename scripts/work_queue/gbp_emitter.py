@@ -104,13 +104,13 @@ def _emit_review_growth(loc: str, week: str, start_serial: int) -> Tuple[List[Wo
         description=(
             f"{display} sits at {baseline} reviews ({rating} stars). Compounding new "
             f"reviews keeps recency signals strong in Google's local algorithm and dilutes "
-            f"any single 1-star outlier. Frontline cadence: trainers ask post-PT, reception "
-            f"prompts post-class with the GBP review QR card, follow-up SMS 24h after first "
-            f"visit. Target: +{REVIEW_GROWTH_TARGET_DELTA} new reviews in "
-            f"{REVIEW_GROWTH_WINDOW_DAYS} days."
+            f"any single 1-star outlier. Angela briefs the reception team on the cadence: "
+            f"trainers ask post-PT, reception prompts post-class with the GBP review QR card, "
+            f"follow-up SMS 24h after first visit. "
+            f"Target: +{REVIEW_GROWTH_TARGET_DELTA} new reviews in {REVIEW_GROWTH_WINDOW_DAYS} days."
         ),
-        owner="Tia",
-        owner_role="OS Owner / Operations",
+        owner="Angela",
+        owner_role="Manager CB247 Gym (Frontline Review Cadence)",
         priority="P2",
         effort_hours=2.0,
         category="gbp",
@@ -220,10 +220,12 @@ def _emit_competitor_gap(loc: str, week: str, start_serial: int) -> Tuple[List[W
             f"members hitting 30-day attendance milestone, hand-trained PTs personally asking "
             f"top clients. Volume of new 5-star reviews dilutes older mid-rating reviews and "
             f"lifts the average. Target: +{COMPETITOR_DEFENSIVE_TARGET} new reviews in "
-            f"{COMPETITOR_WINDOW_DAYS} days (faster than routine REVIEW_GROWTH cadence)."
+            f"{COMPETITOR_WINDOW_DAYS} days (faster than routine REVIEW_GROWTH cadence). "
+            f"Tia owns the strategic call (counter-positioning vs the competitor); Angela + "
+            f"reception team execute the frontline review push."
         ),
         owner="Tia",
-        owner_role="OS Owner / Operations",
+        owner_role="OS Owner (Strategic Defence; Angela + reception execute)",
         priority="P1",
         effort_hours=3.0,
         category="gbp",

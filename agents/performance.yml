@@ -2,9 +2,67 @@ name: performance
 skills: performance-dashboard
 # Layer 2: reads compressed context only — state/ access is denied
 data_source: context/performance-context.json
-tools: Read(context/performance-context.json), Write(outputs/research/**), Write(state/kpi_ledger.json)
-Runs: Weekly, post-campaign only
-KPI: Meta CPM<$12 CPC<$1.50 CPL<$25 | Google CTR>4% CPC<$3
-Output: outputs/research/performance-week-[N].md
-Format: Wins + Issues + 3 Actions + Budget Recommendation
-End: print "PERFORMANCE ANALYSIS COMPLETE"
+tools: Read(context/performance-context.json), Read(state/work-queue.json), Write(outputs/research/**), Write(state/kpi_ledger.json)
+Runs: Weekly, Monday after Phase 1 emitters complete
+
+# RESCOPED 06 Jun 2026 — Tia direction
+# Previously: "Wins + Issues + 3 Actions + Budget Recommendation"
+# Now: ONLY cross-channel budget allocation.
+#
+# Why: Session 5 emitters (meta_emitter, google_ads_emitter) now produce
+# typed Work Queue cards for Meta + Google tactical actions. The agent
+# producing a parallel "3 actions" list created two competing tracks. The
+# ONE job the emitters genuinely can't do — cross-channel budget shifting
+# between Meta/Google × Malaga/Ellenbrook — is now this agent's only
+# deliverable. Clear lane, no overlap with emitters.
+#
+# Important: this agent only WRITES a recommendation .md. It does NOT have
+# Google Ads or Meta API write access. Tia reads the recommendation and
+# manually adjusts budgets in Google Ads / Meta Business Manager.
+
+Purpose: |
+  Produce a cross-channel budget allocation recommendation for the upcoming
+  week. Reviews this cycle's Meta + Google performance + emitter actions,
+  then proposes shifts between channels and locations to chase ROAS.
+
+KPI guard-rails:
+  Meta:    CPM<$12  CPC<$1.50  CPL<$25
+  Google:  CTR>4%   CPC<$3
+  (Use these as boundary alarms. Recommend cuts where boundaries breached,
+  reallocate to channels/locations operating within them.)
+
+Inputs:
+  - context/performance-context.json  (last 4 weeks paid performance, both clubs)
+  - state/work-queue.json             (this week's emitter actions — read to ensure
+                                       budget recommendations align with tactical fixes
+                                       the team is already actioning; don't recommend
+                                       shifting budget INTO a campaign the Meta emitter
+                                       has flagged for PAUSE)
+
+Output: outputs/research/budget-allocation-week-[N].md
+
+Output format:
+  # Budget Allocation — Week of [DATE]
+
+  ## Current allocation (last 7 days)
+  | Channel × Location | Spend | CPA | Conv | Within guard-rails? |
+  | Meta Malaga      | $X    | $X  | N    | yes / breach        |
+  | Meta Ellenbrook  | $X    | $X  | N    | yes / breach        |
+  | Google Malaga    | $X    | $X  | N    | yes / breach        |
+  | Google Ellenbrook| $X    | $X  | N    | yes / breach        |
+
+  ## Recommended shifts (net spend unchanged unless flagged)
+  Decrease: $X/day from [channel × location] — reason: [breach detail]
+  Increase: $X/day to   [channel × location] — reason: [opportunity + ROAS evidence]
+  (Repeat for each shift; max 3-4 shifts per week to avoid optimisation thrash)
+
+  ## Tia's action
+  - [ ] Adjust Meta Business Manager budgets per above
+  - [ ] Adjust Google Ads campaign budgets per above
+  - [ ] Confirm shift live by end of Wednesday for 4 full days of measurement
+
+  ## Cross-reference with emitter actions
+  Note any Work Queue PAUSE actions affecting this recommendation
+  (e.g., "Pause Ellenbrook Gym campaign" — don't reallocate INTO Ellenbrook Gym).
+
+End: print "BUDGET ALLOCATION COMPLETE"

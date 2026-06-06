@@ -137,10 +137,10 @@ def _emit_pause(ads: list, week: str, start_serial: int) -> Tuple[List[WorkQueue
                 f"This ad spent ${spend:.0f} last week at {ctr:.2f}% CTR (CPC ${cpc:.2f}, {clicks} clicks) — "
                 f"below the {PAUSE_MAX_CTR:.2f}% CTR floor for {location}. Pause in Meta Ads Manager and "
                 f"reallocate the budget to the SCALE candidates this same cycle. Re-evaluate the creative "
-                f"angle before relaunching."
+                f"angle with Shauna before relaunching."
             ),
-            owner="Tia",
-            owner_role="OS Owner / Paid Ads",
+            owner="Joanne",
+            owner_role="Lead / Coord (Meta + TikTok Paid Ads)",
             priority="P1",
             effort_hours=0.25,
             category="meta",
@@ -210,8 +210,8 @@ def _emit_scale(ads: list, week: str, start_serial: int) -> Tuple[List[WorkQueue
                 f"if CPC stays under ${cpc * 1.30:.2f}, hold the new budget through the cycle. "
                 f"Target: +45% clicks at similar or better CPC."
             ),
-            owner="Tia",
-            owner_role="OS Owner / Paid Ads",
+            owner="Joanne",
+            owner_role="Lead / Coord (Meta + TikTok Paid Ads)",
             priority="P1",
             effort_hours=0.25,
             category="meta",
