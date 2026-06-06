@@ -10804,10 +10804,8 @@ function renderPlanner() {
 
   let html = '';
 
-  // ── Page intro ────────────────────────────────────────────────────────
-  html += `<p style="font-size:12.5px;color:var(--text-2);line-height:1.7;margin:0 0 20px">
-    Every active piece of work in one inbox — <b>${contentCount} content items</b> (blogs, Instagram, TikTok, GBP posts, emails) and <b>${actionCount} operational fixes</b> (SEO, GBP, ads, website). Same approval flow regardless of type. Once an item reaches <b>Published</b>, it moves to Performance Review.
-  </p>`;
+  // Page intro removed — static <p> in page-header (around line 6580) already
+  // describes the page. The Total Items KPI card below shows the live count.
 
   // ── KPI bar ────────────────────────────────────────────────────────────
   html += `<div class="kpi-grid cols-5 mb">
@@ -11199,10 +11197,8 @@ function renderContentReview() {
 
   let html = '';
 
-  // ── Page subtitle (replaces the big intro panel) ────────────────────────
-  html += `<p style="font-size:12.5px;color:var(--text-2);line-height:1.7;margin:0 0 20px;max-width:780px">
-    Did our work move the needle? Each card below shows one published Work Queue action, what we predicted, what actually happened, and an automatic verdict. Add team learnings to the notes field — they feed next cycle's plan. <b>Source data lives on its own page</b> (links at the bottom).
-  </p>`;
+  // Page subtitle removed — static <p> in page-header (around line 6589) already
+  // describes the page. The Measured Outcomes section title carries the rest.
 
   // ══════════════════════════════════════════════════════════════════════
   // SESSION 4: Measured Outcomes — verdict cards from work_queue_actions
