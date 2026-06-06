@@ -6382,11 +6382,15 @@ const stars = r => {
   const full = Math.round(parseFloat(r));
   return '<span class="stars">'+'★'.repeat(full)+'☆'.repeat(Math.max(0,5-full))+'</span> '+r;
 };
-const kpiCard = (icon,label,value,change,sub,colorClass='') => `
+// kpiCard(icon, label, value, change, sub, colorClass='', inverse=false)
+// inverse=true means "increase is BAD" — flips the WoW pill colour so an
+// up arrow shows red (warning) instead of teal (good). Use for metrics
+// like Ended Memberships, Future Cancellations, Ad Spend, CPA, CPC.
+const kpiCard = (icon,label,value,change,sub,colorClass='',inverse=false) => `
   <div class="kpi-card ${colorClass}">
     <div class="kpi-label">${label}</div>
     <div class="kpi-value">${value}</div>
-    ${change!==null?`<div class="kpi-change ${chgClass(change)}">${arrow(change)} ${fmtChg(change)} vs prior week</div>`:''}
+    ${change!==null?`<div class="kpi-change ${chgClass(change,inverse)}">${arrow(change)} ${fmtChg(change)} vs prior week</div>`:''}
     ${sub?`<div class="kpi-sub">${sub}</div>`:''}
   </div>`;
 const insightTypeMap = {'green':'teal','red':'red','amber':'amber','blue':'neutral','teal':'teal'};
@@ -6536,7 +6540,7 @@ function renderOverview() {
   $('overview-kpis').innerHTML =
     kpiCard('','Weekly Sessions', fmt(g.sessions,'n'), sesChg, `Prior: ${fmt(g.p_sessions,'n')} · → Web Performance`, sesChg<-10?'red':sesChg>5?'green':'') +
     kpiCard('','Conversions',     fmt(g.convs,'n'),    convChg, `Conv rate ${fmt(g.conv_rate,'%')} · → Funnel`, convChg<-10?'red':convChg>0?'green':'') +
-    kpiCard('','Total Ad Spend',  fmt(totalSpend,'$2'),ads.spend_chg, `CPA ${fmt(blendedCPA,'$2')} · Google ${fmt(ads.spend,'$2')} · Meta ${fmt(metaSpend,'$2')}`, blendedCPA>25?'red':blendedCPA>0&&blendedCPA<15?'green':'') +
+    kpiCard('','Total Ad Spend',  fmt(totalSpend,'$2'),ads.spend_chg, `CPA ${fmt(blendedCPA,'$2')} · Google ${fmt(ads.spend,'$2')} · Meta ${fmt(metaSpend,'$2')}`, blendedCPA>25?'red':blendedCPA>0&&blendedCPA<15?'green':'', true /* inverse — rising spend warrants attention */) +
     kpiCard('','Organic Value',   '$'+fmt(s.organic_value,'n')+'/wk', null, organicMult>1?`<b>${organicMult}× return</b> vs ad spend · → SEO page`:`DR ${s.domain_rating||'–'} · ${s.tk_summary.top_3_count||0} top-3 keywords`, organicMult>=5?'green':'');
 
   // ── Hero card: organic vs paid multiplier (when >1×) ───────────────────
@@ -7267,15 +7271,15 @@ function renderGAds() {
   // ── 1. KPI Cards with WoW deltas + verdict colours ──────────────────────
   html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),ads.spend_chg,`${totalClicks} clicks · ${weekLabel}`,
-      ads.spend_chg>30?'amber':'')}
+      ads.spend_chg>30?'amber':'', true /* inverse — rising spend = warning */)}
     ${kpiCard('','Conversions',fmt(totalConv,'n'),_convChg,`Blended CPA: ${fmt(blendedCPA,'$2')} (target $25)`,
       (blendedCPA>25&&blendedCPA>0)?'red':blendedCPA>0?'green':'amber')}
     ${kpiCard('','Malaga',fmt(malSpend||mal.spend,'$2'),_malSpendChg,
       `${malConv||mal.conv||0} conv · CPA ${fmt(mal.cpa,'$2')}${_malCpaChg!=null?` (${_malCpaChg>0?'+':''}${_malCpaChg.toFixed(0)}% WoW)`:''}`,
-      mal.cpa>25?'red':mal.cpa>0?'':'amber')}
+      mal.cpa>25?'red':mal.cpa>0?'':'amber', true /* inverse — rising spend */)}
     ${kpiCard('','Ellenbrook',fmt(ellSpend||ell.spend,'$2'),_ellSpendChg,
       `${ellConv||ell.conv||0} conv · CPA ${fmt(ell.cpa,'$2')}${_ellCpaChg!=null?` (${_ellCpaChg>0?'+':''}${_ellCpaChg.toFixed(0)}% WoW)`:''}`,
-      ell.cpa>0&&ell.cpa<10?'green':ell.cpa>25?'red':'')}
+      ell.cpa>0&&ell.cpa<10?'green':ell.cpa>25?'red':'', true /* inverse — rising spend */)}
   </div>`;
 
   // ── Insight strip ────────────────────────────────────────────────────────
@@ -8558,7 +8562,7 @@ function renderMeta() {
   const cpcColour = blendedCpcNum > 0 && blendedCpcNum < 0.5 ? 'green' :
                     blendedCpcNum > 1.0 ? 'red' : '';
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),spendChg?parseFloat(spendChg):null,dispWeek+' · Both locations')}
+    ${kpiCard('','Total Spend',fmt(totalSpend,'$2'),spendChg?parseFloat(spendChg):null,dispWeek+' · Both locations','', true /* inverse — rising spend = warning */)}
     ${kpiCard('','Clicks',fmt(totalResults,'n'),clicksChg,'Reach: '+fmt(totalReach,'n')+(reachChg!=null?` (${reachChg>0?'+':''}${reachChg.toFixed(1)}% WoW)`:''))}
     ${kpiCard('','Cost per Click',blendedCPR!=='–'?'$'+blendedCPR:'–',null,'Mal $'+fmt(malCPC,'$2').replace('$','')+' · Ell $'+fmt(ellCPC,'$2').replace('$','')+' · target <$0.50',cpcColour)}
     ${kpiCard('','Audience Frequency',(malFreq+ellFreq>0?((malFreq+ellFreq)/2).toFixed(2)+'×':'–'),null,'Mal '+malFreq.toFixed(2)+'× · Ell '+ellFreq.toFixed(2)+'× · saturation if >2.5×',(malFreq>2.5||ellFreq>2.5)?'red':(malFreq>1.8||ellFreq>1.8)?'amber':'')}
@@ -11681,7 +11685,8 @@ function renderCb247Membership() {
     ${kpiCard('','Ended', fmt(t.EndedContracts,'n'),
       _pct(t.EndedContracts, pt.EndedContracts),
       `Mal ${(s.per_club.Malaga||{}).EndedContracts||0} · Ell ${(s.per_club.Ellenbrook||{}).EndedContracts||0}`,
-      endedDelta!=null && endedDelta>30 ? 'red' : (endedDelta!=null && endedDelta<0 ? 'green' : ''))}
+      endedDelta!=null && endedDelta>30 ? 'red' : (endedDelta!=null && endedDelta<0 ? 'green' : ''),
+      true /* inverse — more ended is BAD */)}
     ${kpiCard('','Net Movement', (netNow>=0?'+':'') + netNow,
       null,
       `Prior week: ${netPrior>=0?'+':''}${netPrior} · ${netDelta!=null?(netDelta>=0?'+':'')+netDelta+' WoW':''}`,
@@ -11689,7 +11694,8 @@ function renderCb247Membership() {
     ${kpiCard('','Future Cancellations', fmt(t.FutureCancellations,'n'),
       _pct(t.FutureCancellations, pt.FutureCancellations),
       `Mal ${(s.per_club.Malaga||{}).FutureCancellations||0} · Ell ${(s.per_club.Ellenbrook||{}).FutureCancellations||0}`,
-      futureDelta!=null && futureDelta>20 ? 'red' : (futureDelta!=null && futureDelta<-20 ? 'green' : 'amber'))}
+      futureDelta!=null && futureDelta>20 ? 'red' : (futureDelta!=null && futureDelta<-20 ? 'green' : 'amber'),
+      true /* inverse — more future cancellations is BAD */)}
     ${kpiCard('','Projected Next 30d', fmt(t.ProjectedCancellations,'n'),
       null,
       `~${Math.round((t.ProjectedCancellations||0)*0.7)} likely confirmed`,
