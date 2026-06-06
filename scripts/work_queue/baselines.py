@@ -103,25 +103,36 @@ def gsc_date_range() -> Optional[dict]:
 # ── Meta Ads ─────────────────────────────────────────────────────────────────
 
 
-def meta_latest_week() -> Optional[dict]:
-    """Latest week's combined Meta Ads stats."""
+def _meta_latest_week_full() -> Optional[dict]:
+    """Latest week's full Meta block (combined + per-location + ads array)."""
     ads = _load("ads-data.json")
     if not ads:
         return None
     weeks = ads.get("meta_ads") or []
     if not weeks:
         return None
-    return weeks[0].get("combined") or None
+    return weeks[0]
+
+
+def meta_latest_week() -> Optional[dict]:
+    """Latest week's combined Meta Ads stats."""
+    wk = _meta_latest_week_full()
+    if not wk:
+        return None
+    return wk.get("combined") or None
 
 
 def meta_ctr_baseline() -> Optional[float]:
     w = meta_latest_week()
     if not w:
         return None
-    impressions = w.get("impressions") or 0
+    # Meta data uses 'impr' (not 'impressions') in some snapshots
+    impressions = w.get("impressions") or w.get("impr") or 0
     clicks = w.get("clicks") or 0
     if impressions == 0:
-        return None
+        # Fall back to the pre-computed ctr if present
+        ctr = w.get("ctr")
+        return float(ctr) if ctr is not None else None
     return round(clicks / impressions * 100, 2)
 
 
@@ -134,6 +145,53 @@ def meta_cpa_baseline() -> Optional[float]:
     if not results:
         return None
     return round(spend / results, 2)
+
+
+def meta_combined_metric(metric_field: str) -> Optional[float]:
+    """Account-level Meta metric. metric_field is the key in the combined dict
+    (ctr, cpc, cpm, spend, clicks, impr, reach)."""
+    w = meta_latest_week()
+    if not w:
+        return None
+    v = w.get(metric_field)
+    return float(v) if v is not None else None
+
+
+def meta_all_ads_latest() -> list:
+    """Raw list of ads from the latest week (each ad has name, spend, clicks,
+    impr, reach, ctr, cpc, etc.). Empty list if not available."""
+    wk = _meta_latest_week_full()
+    if not wk:
+        return []
+    return wk.get("ads") or []
+
+
+def meta_ad_metric_for(ad_name: str, metric_field: str) -> Optional[float]:
+    """Look up a single ad's metric_field (ctr, cpc, clicks, impr, spend, reach).
+    Case-insensitive substring match — ad names get truncated in the snapshot
+    so exact match is unreliable."""
+    if not ad_name:
+        return None
+    ads = meta_all_ads_latest()
+    needle = ad_name.strip().lower()
+    for ad in ads:
+        nm = (ad.get("name") or "").strip().lower()
+        if nm == needle or nm.startswith(needle) or needle.startswith(nm[:40]):
+            v = ad.get(metric_field)
+            return float(v) if v is not None else None
+    return None
+
+
+def meta_metric_from_field(metric: str) -> Optional[str]:
+    """Map a VALID_METRICS name (meta_ctr, meta_cpc, ...) to the JSON field name."""
+    return {
+        "meta_ctr":               "ctr",
+        "meta_cpc":               "cpc",
+        "meta_cpm":               "cpm",
+        "meta_results_weekly":    "clicks",   # results == clicks until conv tracking exists
+        "meta_ad_clicks_weekly":  "clicks",
+        "meta_ad_reach_weekly":   "reach",
+    }.get(metric)
 
 
 # ── Google Ads ───────────────────────────────────────────────────────────────

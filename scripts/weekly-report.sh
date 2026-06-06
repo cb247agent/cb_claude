@@ -149,6 +149,10 @@ log "Step 1h — Emit Work Queue actions (SEO)..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/seo_emitter.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  SEO emitter had issues — check $LOG"
 
+log "Step 1h' — Emit Work Queue actions (Meta Ads)..."
+"$PYTHON" "$BASE_DIR/scripts/work_queue/meta_emitter.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Meta emitter had issues — check $LOG"
+
 # ── Step 1i: Sync Work Queue → Supabase ──
 # Pushes state/work-queue.json into the work_queue_actions table so the
 # dashboard renders fresh actions in real-time. Idempotent on PK (id).

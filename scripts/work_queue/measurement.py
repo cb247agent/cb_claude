@@ -20,6 +20,8 @@ HIGHER_IS_BETTER = {
     "ahrefs_domain_rating",
     "meta_ctr",
     "meta_results_weekly",
+    "meta_ad_clicks_weekly",
+    "meta_ad_reach_weekly",
     "google_ads_conversions_weekly",
     "gbp_review_response_rate",
     "gbp_reviews_count",
@@ -35,6 +37,7 @@ LOWER_IS_BETTER = {
     "gsc_position",
     "meta_cpa",
     "meta_cpm",
+    "meta_cpc",
     "google_ads_cpa",
     "google_ads_cpc",
     "membership_cancellations_weekly",
@@ -135,6 +138,16 @@ def _tolerance_for(metric: str) -> float:
         return 0.5            # half a percentage point
     if metric in ("meta_cpa", "google_ads_cpa"):
         return 1.0            # $1 noise
+    if metric == "meta_ctr":
+        return 0.2            # 0.2 percentage points (ad-level Meta CTR is twitchy)
+    if metric == "meta_cpc":
+        return 0.05           # 5¢ noise
+    if metric == "meta_cpm":
+        return 0.5            # 50¢ CPM noise
+    if metric in ("meta_ad_clicks_weekly", "meta_results_weekly"):
+        return 20             # 20 clicks noise at weekly cadence
+    if metric == "meta_ad_reach_weekly":
+        return 200            # 200 reach noise
     if metric == "ahrefs_domain_rating":
         return 0.5            # half a DR point
     return 0
