@@ -8,6 +8,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This applies to: cron jobs (`crontab -l`), scheduled tasks, scripts, config files, API status, file contents, environment state, or anything that exists on disk or in the system. Read it, then answer.
 
+## Critical Behavior: Read ENGINEERING.md Before Architectural Changes
+
+**Before modifying ANY of these areas, read `ENGINEERING.md` first.** It contains cookbooks, dispatcher patterns, RLS rules, and the cbState frontend conventions that prevent silent breakage:
+
+| If the change touches... | What ENGINEERING.md tells you |
+|---|---|
+| `scripts/work_queue/*` (emitters, measurement, sync, schema) | The 9-step cookbook for adding a new emitter — covers schema extension, baseline helpers, measurement dispatch, weekly-report.sh wiring |
+| `db/*.sql` or Supabase tables | RLS policies, REPLICA IDENTITY FULL requirement, realtime publication setup |
+| `docs/index.html` render functions or `cbState.*` | The cbState namespace pattern, localStorage cache + Supabase sync, realtime postgres_changes flow |
+| `agents/*.yml` | Layer 2 boundary — agents read `context/*.json` not `state/*.json` (with documented exceptions) |
+| `scripts/weekly-report.sh` phase ordering | Why each Phase runs in the order it does, what depends on what |
+
+**Does NOT apply to:** content tasks (blogs, social posts, emails), brand voice work, agent skill content generation, or answering questions about the project. For those, this CLAUDE.md is sufficient.
+
+**Why this rule exists:** the closed-loop architecture (emitter → Supabase → dashboard → team → measurement → verdict) has multiple invariants that aren't obvious from code alone. Skipping ENGINEERING.md and improvising has caused silent breakage in the past — forgetting REPLICA IDENTITY FULL means realtime stops working, forgetting to register a metric in VALID_METRICS means actions fail validation, etc.
+
+Operational tasks (running scripts, debugging cron, restoring data) — read `HANDOFF.md` instead.
+
 # ChasingBetter247 — CB_Marketing
 
 AI-powered marketing automation for ChasingBetter247 Health & Fitness Club (Perth, WA).
