@@ -1,0 +1,28 @@
+bake-public-dashboard.py is disabled until the "baker consolidation" project completes.
+
+Why it's disabled:
+  The current baker overwrites docs/index.html from scratch, which wipes:
+    - Multi-business pages (MWCC, Karribank, Sparrows, Group Overview)
+    - CB247 Membership Statistics page + render function
+    - All 5 inline data injection blocks (SEO, Social, Meta, Membership, MWCC)
+    - Content Planner Tier 1 work (Denver Approval stage, full team roster, etc.)
+    - Any uncommitted edits to docs/index.html
+
+Today's incident (06 Jun 2026):
+  The launchd job com.cb247.data-refresh fires every 6 hours and calls
+  pull_all.py, which previously had an internal subprocess call to this baker
+  on line 117. That wiped ~4,500 lines of work between 12:00 and recovery.
+  Root cause: pull_all.py:117 was not covered by the "Step 3b disabled" fix in
+  weekly-report.sh. Fix applied: pull_all.py now calls inject-*.py scripts
+  instead, which only refresh data payloads inside their own <script id="..."> blocks.
+
+Re-enable when:
+  bake-public-dashboard.py is rewritten to PRESERVE multi-business sections
+  and the Content Planner Tier 1 work (rather than regenerating from scratch).
+
+To run baker anyway (single-shot, e.g. after consolidation):
+  rm state/.baker-disabled
+  python scripts/bake-public-dashboard.py
+  touch state/.baker-disabled   # re-arm immediately after
+
+Created: 06 Jun 2026

@@ -109,20 +109,32 @@ def run_all():
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     LAST_REFRESH.write_text(json.dumps(refresh_record, indent=2))
 
-    # Bake Marketing OS dashboard with live data
-    print("\n--- Baking Marketing OS Dashboard ---")
-    try:
-        import subprocess, sys
-        result = subprocess.run(
-            [sys.executable, str(BASE_DIR / "scripts" / "bake-public-dashboard.py")],
-            capture_output=True, text=True
-        )
-        if result.returncode == 0:
-            log("Marketing OS dashboard baked → docs/index.html")
-        else:
-            log(f"Dashboard bake warning: {result.stderr[-200:]}", "SKIP")
-    except Exception as e:
-        log(f"Dashboard bake skipped: {e}", "SKIP")
+    # ── Refresh dashboard data via inject scripts ──────────────────────────
+    # Note: previously called bake-public-dashboard.py here, but that wipes
+    # multi-business pages + Content Planner work + all uncommitted edits.
+    # Inject scripts only refresh the data payloads inside <script id="..."> blocks
+    # they own — leaving page structure, render functions, and Tier 1 work intact.
+    # See: pending baker consolidation in MEMORY.md
+    print("\n--- Refreshing dashboard data (inject scripts) ---")
+    import subprocess, sys
+    INJECT_SCRIPTS = [
+        "inject-seo-extras.py",
+        "inject-social-block.py",
+        "inject-meta-ads.py",
+        "inject-membership-data.py",
+    ]
+    for script in INJECT_SCRIPTS:
+        try:
+            result = subprocess.run(
+                [sys.executable, str(BASE_DIR / "scripts" / script)],
+                capture_output=True, text=True, timeout=120
+            )
+            if result.returncode == 0:
+                log(f"inject: {script} OK")
+            else:
+                log(f"inject: {script} warning: {(result.stderr or result.stdout)[-200:]}", "SKIP")
+        except Exception as e:
+            log(f"inject: {script} skipped: {e}", "SKIP")
 
     print(f"\n{'='*50}")
     successes = [k for k, v in results.items() if v == "success"]

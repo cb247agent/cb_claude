@@ -9,10 +9,24 @@ Architecture:
 
 Run:  python scripts/bake-public-dashboard.py
 Deploy: bash scripts/deploy-dashboard.sh
+
+────────────────────────────────────────────────────────────────────────────
+SAFETY GUARD: a sentinel file at state/.baker-disabled blocks all writes.
+This baker overwrites docs/index.html from scratch, wiping multi-business
+pages, Content Planner Tier 1 work, and any uncommitted edits. While the
+"baker consolidation" project (see MEMORY.md) is pending, this guard prevents
+silent autopilot wipes from launchd / pull_all.py / manual runs.
+
+To temporarily allow a single run:
+    rm state/.baker-disabled
+    python scripts/bake-public-dashboard.py
+    touch state/.baker-disabled   # re-arm
+────────────────────────────────────────────────────────────────────────────
 """
 
 import csv
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +34,19 @@ BASE_DIR  = Path(__file__).resolve().parent.parent
 STATE_DIR = BASE_DIR / "state"
 DOCS_DIR  = BASE_DIR / "docs"
 OUT_FILE  = DOCS_DIR / "index.html"
+
+# ── Sentinel guard: refuse to run if state/.baker-disabled exists ────────
+_SENTINEL = STATE_DIR / ".baker-disabled"
+if _SENTINEL.exists():
+    print(
+        f"[bake-public-dashboard] BLOCKED by sentinel file: {_SENTINEL}\n"
+        f"  Reason file says:\n"
+        f"  ────────────────\n"
+        + (_SENTINEL.read_text().rstrip() or "  (no reason recorded)") + "\n"
+        f"  ────────────────\n"
+        f"  To run anyway: rm '{_SENTINEL}' && python scripts/bake-public-dashboard.py"
+    )
+    sys.exit(0)   # exit 0 so calling scripts don't fail noisily
 
 BRAND   = "#3FA69A"
 DARK    = "#2d7a70"
