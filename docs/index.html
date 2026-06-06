@@ -6815,14 +6815,14 @@ function _initSupabase() {
 
     console.log('[cbState] Supabase client created — URL:', _SUPABASE_URL);
 
-    // Phase B: fire planner sync layer once the client exists. It internally
-    // migrates from localStorage, hydrates the cache, and subscribes to realtime.
-    if (window.cbState && window.cbState.planner) {
-      window.cbState.planner.init();
-    } else {
-      // cbState defined later in script — defer
-      setTimeout(() => { if (window.cbState?.planner) window.cbState.planner.init(); }, 100);
-    }
+    // Phase B + Session 2: fire each sync layer once the client exists.
+    // planner = team approvals; workQueue = agent-emitted actions.
+    const _bootSyncLayers = () => {
+      if (window.cbState?.planner)   window.cbState.planner.init();
+      if (window.cbState?.workQueue) window.cbState.workQueue.init();
+    };
+    if (window.cbState?.planner) _bootSyncLayers();
+    else setTimeout(_bootSyncLayers, 100);   // cbState defined later in script — defer
   } catch (e) {
     console.error('[cbState] init failed:', e);
     _setConnStatus('offline');
@@ -7065,6 +7065,71 @@ window.cbState = {
         updated_by: me,
         updated_at: new Date().toISOString()
       }).then(r => { if (r.error) console.warn('[cbState.planner] setApproval failed:', r.error); });
+    },
+  },
+
+  // ── Session 2: Work Queue actions (emitted by performance pages) ──────
+  // Reads work_queue_actions from Supabase. Each row is an action emitted
+  // by an emitter (SEO Session 1, more in Session 5+). The dashboard merges
+  // these with content items via _getAllWorkItems() in renderPlanner.
+  workQueue: {
+    CACHE_KEY: 'cb247-work-queue-actions',
+    _initialized: false,
+    _rerender: null,
+    _items: [],
+
+    setRerenderFn(fn) { this._rerender = fn; },
+
+    getAll() { return this._items; },
+
+    async _hydrate() {
+      if (!_supa) return;
+      const { data, error } = await _supa.from('work_queue_actions').select('*').order('priority').order('source_run_at', { ascending: false });
+      if (error) { console.warn('[cbState.workQueue] hydrate failed:', error); return; }
+      this._items = data || [];
+      try { localStorage.setItem(this.CACHE_KEY, JSON.stringify(this._items)); } catch(_) {}
+      console.log('[cbState.workQueue] hydrated', this._items.length, 'actions');
+    },
+
+    _hydrateFromCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(this.CACHE_KEY) || '[]');
+        if (Array.isArray(cached) && cached.length) {
+          this._items = cached;
+          console.log('[cbState.workQueue] loaded', cached.length, 'actions from cache (pending fresh hydrate)');
+        }
+      } catch(_) {}
+    },
+
+    _subscribe() {
+      if (!_supa) return;
+      const self = this;
+      _supa.channel('cb-work-queue-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'work_queue_actions' }, (payload) => {
+          // Re-hydrate the entire collection on any change (simplest correct approach;
+          // work queue is small enough — ~20 actions/week max — that this is fine).
+          self._hydrate().then(() => { if (self._rerender) self._rerender(); });
+        })
+        .subscribe();
+    },
+
+    async init() {
+      if (this._initialized) return;
+      if (!_supa) { setTimeout(() => this.init(), 500); return; }
+      this._initialized = true;
+      this._hydrateFromCache();   // instant render from cache, fresh hydrate in background
+      if (!this._rerender) {
+        this._rerender = () => {
+          try {
+            if (typeof renderPlanner       === 'function') renderPlanner();
+            if (typeof renderContentReview === 'function') renderContentReview();
+          } catch (e) { console.warn('[cbState.workQueue] rerender failed:', e); }
+        };
+      }
+      await this._hydrate();
+      this._subscribe();
+      this._rerender();
+      console.log('[cbState.workQueue] Session 2 sync layer active');
     },
   },
 };
@@ -10157,6 +10222,8 @@ const PLANNER_STATUS_COLORS = {Idea:'#f3f4f6',Scheduled:'rgba(63,166,154,.1)',Pu
 // WORK QUEUE: unifies content items (PLANNER_ITEMS) + operational actions
 // (D.tracker.actions) into a single list. Same approval flow, same Kanban.
 // ══════════════════════════════════════════════════════════════════════════════
+// Legacy converter — for D.tracker.actions (the old agent output format).
+// Kept as a fallback when Supabase work_queue is empty.
 function _actionToWorkItem(a) {
   return {
     id:           a.id,
@@ -10175,11 +10242,56 @@ function _actionToWorkItem(a) {
     _source:      a,
   };
 }
+
+// Session 2 converter — for work_queue_actions rows from Supabase.
+// The new structured format with projected_kpis, data_quality, etc.
+function _workQueueRowToWorkItem(r) {
+  // First KPI shown in card preview
+  const primary = (r.projected_kpis && r.projected_kpis[0]) || {};
+  const baseline = primary.baseline !== undefined && primary.baseline !== null ? primary.baseline : '?';
+  const target = primary.target !== undefined && primary.target !== null
+    ? primary.target
+    : (primary.delta_min !== undefined && primary.delta_max !== undefined
+        ? `+${primary.delta_min}–${primary.delta_max}`
+        : '?');
+  const kpiSummary = primary.metric
+    ? `${primary.metric}: ${baseline} → ${target}`
+    : '';
+  return {
+    id:           r.id,
+    kind:         'action',
+    day:          0,
+    platform:     r.category || r.source_page?.split('-')[0] || 'action',
+    type:         'Operations',
+    title:        r.title || 'Untitled action',
+    assignee:     r.owner || 'Team',
+    assigneeRole: r.owner_role || '',
+    caption:      kpiSummary,
+    instructions: r.description || '',
+    kw:           '',
+    dueDate:      '',
+    priority:     r.priority || '',
+    dataQuality:  r.data_quality || 'medium',
+    projectedKpis: r.projected_kpis || [],
+    sourcePage:   r.source_page || '',
+    _source:      r,
+  };
+}
+
 function _getAllWorkItems() {
   const content = PLANNER_ITEMS.map(p => ({ ...p, kind: 'content' }));
-  const actions = ((window.D && D.tracker && D.tracker.actions) || []).map(_actionToWorkItem);
-  return content.concat(actions);
+
+  // Prefer Supabase work_queue (Session 2) — the source of truth from emitters
+  const wq = (window.cbState?.workQueue?.getAll() || []);
+  if (wq.length > 0) {
+    return content.concat(wq.map(_workQueueRowToWorkItem));
+  }
+
+  // Legacy fallback: D.tracker.actions from the old agent output (kept for transition period)
+  const legacy = ((window.D && D.tracker && D.tracker.actions) || []).map(_actionToWorkItem);
+  return content.concat(legacy);
 }
+
 function _findWorkItem(id) {
   return _getAllWorkItems().find(x => x.id === id) || null;
 }
