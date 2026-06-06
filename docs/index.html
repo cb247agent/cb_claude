@@ -10340,9 +10340,11 @@ function renderContentReview() {
   const ell      = meta.ell_cur    || {};
 
   // Items marked Published or Scheduled
-  const published = PLANNER_ITEMS.filter(i => saved[i.id]==='Published');
-  const scheduled = PLANNER_ITEMS.filter(i => saved[i.id]==='Scheduled');
-  const pendingQC = PLANNER_ITEMS.filter(i => saved[i.id]==='Angela QC');
+  const published       = PLANNER_ITEMS.filter(i => saved[i.id]==='Published');
+  const scheduled       = PLANNER_ITEMS.filter(i => saved[i.id]==='Scheduled');
+  const pendingAngelaQC = PLANNER_ITEMS.filter(i => saved[i.id]==='Angela QC');
+  const pendingDenver   = PLANNER_ITEMS.filter(i => saved[i.id]==='Denver Approval');
+  const pendingQC       = [...pendingAngelaQC, ...pendingDenver];   // combined for the review-content badge
 
   // Top performing GSC query
   const topQuery = [...gscQ].sort((a,b)=>(b.clicks||0)-(a.clicks||0))[0];
@@ -10373,10 +10375,13 @@ function renderContentReview() {
       <div style="flex-shrink:0;min-width:200px">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">Who reviews what</div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#3FA69A;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Tia</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">All content — final approval, GBP posts</span></div>
-          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#1a1a1a;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Angela</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">Blog copy, captions, tone of voice</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#3FA69A;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Tia</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">Final approval, GBP posts</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#1a1a1a;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Angela</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">Brand QC — blog copy, captions, tone of voice</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#7c2d12;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Denver</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">COO sign-off — final gate on every item</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#f3f4f6;color:#444;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">John</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">SEO / on-page review for blogs</span></div>
           <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#f3f4f6;color:#444;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Joanne</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">Scheduling, Instagram, TikTok timing</span></div>
-          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#f3f4f6;color:#444;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Mark</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">WordPress blog publishing</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#f3f4f6;color:#444;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Mark</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">Webflow blog publishing</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;background:#f3f4f6;color:#444;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap">Shaun + Jane</span><span style="font-size:11px;color:var(--text-2);line-height:1.5">Graphic design — shared across all 4 businesses</span></div>
         </div>
         <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text-2);line-height:1.6">
           <b>2-week rule:</b> Content needs at least 2 weeks of data before drawing performance conclusions.
@@ -10386,11 +10391,12 @@ function renderContentReview() {
   </div>`;
 
   // ── KPI bar ────────────────────────────────────────────────────────────
-  html += `<div class="kpi-grid cols-4 mb">
+  html += `<div class="kpi-grid cols-5 mb">
     ${kpiCard('','Published', published.length, null, 'Items marked live this cycle', published.length>0?'green':'')}
-    ${kpiCard('','Pending QC', pendingQC.length, null, 'Waiting for Angela review', pendingQC.length>0?'amber':'')}
+    ${kpiCard('','Pending Angela QC', pendingAngelaQC.length, null, 'Waiting for brand QC', pendingAngelaQC.length>0?'amber':'')}
+    ${kpiCard('','Pending Denver', pendingDenver.length, null, 'Waiting for COO sign-off', pendingDenver.length>0?'amber':'')}
     ${kpiCard('','Top Organic Query', topQuery?topQuery.query:'–', null, topQuery?topQuery.clicks+' clicks · pos '+topQuery.position:'No GSC data')}
-    ${kpiCard('','Star Ad', starAd?'✅ Found':'None', null, starAd?starAd.ad_name:'No star-tier ads this week', starAd?'green':'amber')}
+    ${kpiCard('','Star Ad', starAd?'Found':'None', null, starAd?starAd.ad_name:'No star-tier ads this week', starAd?'green':'amber')}
   </div>`;
 
   // ── Performance loop reminder ─────────────────────────────────────────
@@ -10409,7 +10415,8 @@ function renderContentReview() {
     const reviewGroups = [
       {label:'Published — check performance in 2 weeks', items: published, color:'#3FA69A', bg:'rgba(63,166,154,.08)'},
       {label:'Scheduled — going out soon', items: scheduled, color:'#3FA69A', bg:'rgba(63,166,154,.05)'},
-      {label:'Waiting Angela QC', items: pendingQC, color:'#111', bg:'#f9fafb'},
+      {label:'Waiting Angela QC (brand)', items: pendingAngelaQC, color:'#111', bg:'#f9fafb'},
+      {label:'Waiting Denver sign-off (COO)', items: pendingDenver, color:'#7c2d12', bg:'rgba(124,45,18,.06)'},
     ];
     reviewGroups.forEach(g => {
       if (!g.items.length) return;
@@ -10439,8 +10446,7 @@ function renderContentReview() {
         <th>Query</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">Pos</th><th style="font-size:10px">Signal</th>
       </tr></thead><tbody>
       ${gscQ.slice(0,10).map(q=>{
-        const signal = q.clicks>=50 ? '🟢 Strong' : q.clicks>=10 ? '🟡 Growing' : '🔴 Low';
-        const action = q.position>3&&q.position<=10 ? '⚡ Optimise H1' : q.position>10 ? '📄 Build page' : '🔒 Protect';
+        const action = q.position>3&&q.position<=10 ? 'Optimise H1' : q.position>10 ? 'Build page' : 'Protect';
         return `<tr>
           <td style="font-size:11px">${q.query}</td>
           <td class="num">${fmt(q.clicks,'n')}</td>
@@ -10479,10 +10485,10 @@ function renderContentReview() {
       <th class="num">CPM</th><th class="num">Results</th><th>Tier</th><th style="font-size:10px">Verdict</th>
     </tr></thead><tbody>
     ${sortedAds.map(a=>{
-      const verdict = a.tier==='star' ? '🚀 Scale — raise budget 30%'
-        : a.tier==='good'  ? '✅ Keep — maintain budget'
-        : a.tier==='poor'  ? '⛔ Pause — below average signal'
-        : '⏸ Monitor — refresh in 2 weeks';
+      const verdict = a.tier==='star' ? 'Scale — raise budget 30%'
+        : a.tier==='good'  ? 'Keep — maintain budget'
+        : a.tier==='poor'  ? 'Pause — below average signal'
+        : 'Monitor — refresh in 2 weeks';
       return `<tr style="${a.tier==='star'?'background:#f0fdf4':a.tier==='poor'?'background:#fff5f5':''}">
         <td style="font-size:11px;max-width:180px;word-break:break-word">${a.ad_name}</td>
         <td style="font-size:10px">${a.location||'–'}</td>
@@ -10497,7 +10503,7 @@ function renderContentReview() {
     </tbody></table></div>`;
   } else {
     html += `<div class="card mb" style="padding:20px;color:var(--muted);font-size:13px;text-align:center">
-      No active Meta ad data. Upload Meta CSV files to <code>metaads/</code> folder and run <code>python3 scripts/bake-public-dashboard.py</code>.
+      No active Meta ad data. Fresh ad numbers arrive every Monday at 10:00 AM AWST via <code>pull_weekly.py</code>. To pull manually: <code>python scripts/pull_weekly.py</code>.
     </div>`;
   }
 
@@ -10508,13 +10514,13 @@ function renderContentReview() {
   const nonBrand = gscQ.filter(q=>!['chasing better','chasingbetter','cb247'].some(b=>(q.query||'').toLowerCase().includes(b)) && q.clicks>0);
   html += `<div class="grid-2 mb">
     <div class="insight teal">
-      <div class="insight-label">✅ What to repeat</div>
+      <div class="insight-label">What to repeat</div>
       ${starAd ? `<b>Meta:</b> "${starAd.ad_name}" has dual Above Average signals — duplicate this angle and test a new variation.<br><br>` : ''}
       ${topGscQ.length ? `<b>SEO:</b> Top queries — ${topGscQ.map(q=>`"${q.query}" (${q.clicks} clicks)`).join(', ')} — these pages are working. Add internal links from new content back to them.<br><br>` : ''}
       ${nonBrand.length ? `<b>Non-brand traffic:</b> ${nonBrand.slice(0,3).map(q=>`"${q.query}"`).join(', ')} are generating organic clicks — expand with more content on these topics.` : 'Focus on building non-brand keyword content — currently most traffic is brand-name searches.'}
     </div>
     <div class="insight ${poorAds.length>0||nonBrand.length===0?'red':'amber'}">
-      <div class="insight-label">⚠️ What to fix or retire</div>
+      <div class="insight-label">What to fix or retire</div>
       ${poorAds.length > 0 ? `<b>Meta:</b> ${poorAds.length} ad${poorAds.length>1?'s':''} with Below Average signals — <b>pause now</b>: ${poorAds.map(a=>`"${a.ad_name}"`).join(', ')}. Replace with new creative using the star ad angle.<br><br>` : '<b>Meta:</b> No poor-tier ads this week. Refresh any Average-tier ads every 3–4 weeks to prevent fatigue.<br><br>'}
       ${brandQ.length > (gscQ.length * 0.7) ? `<b>SEO:</b> ${Math.round(brandQ.length/gscQ.length*100)}% of clicks are brand searches (people already know CB247). Build non-brand content to attract new audiences — "gym malaga", "reformer pilates perth", "kids gym malaga".` : '<b>SEO:</b> Good mix of brand and non-brand traffic. Keep publishing keyword-targeted content to grow non-brand share.'}
     </div>
