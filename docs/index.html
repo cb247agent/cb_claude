@@ -6223,13 +6223,16 @@ window.MWCC_DATA = {
     <div class="sidebar-item" data-page="gbp" onclick="nav(this)">Google Business Profile</div>
   </div>
   <div class="sidebar-section" data-biz-group="cb247">
-    <div class="sidebar-section-label">Content</div>
-    <div class="sidebar-item" data-page="content-planner" onclick="nav(this)">Content Planner</div>
-    <div class="sidebar-item" data-page="content-review" onclick="nav(this)">Content Review <span class="badge neutral" id="review-badge">0</span></div>
+    <div class="sidebar-section-label">Team Workspace</div>
+    <div class="sidebar-item" data-page="content-planner" onclick="nav(this)">Work Queue <span class="badge neutral" id="tracker-badge">0</span></div>
+    <div class="sidebar-item" data-page="content-review" onclick="nav(this)">Performance Review <span class="badge neutral" id="review-badge">0</span></div>
   </div>
-  <div class="sidebar-section" data-biz-group="cb247">
+  <!-- Action Tracker hidden — actions now flow into Work Queue alongside content items.
+       Page DIV (#page-action-tracker) and renderTracker() kept in place for sidebar
+       parity on other businesses and for the Meeting Minutes flow. -->
+  <div class="sidebar-section" data-biz-group="cb247" style="display:none">
     <div class="sidebar-section-label">Operations</div>
-    <div class="sidebar-item" data-page="action-tracker" onclick="nav(this)">Action Tracker <span class="badge neutral" id="tracker-badge">0</span></div>
+    <div class="sidebar-item" data-page="action-tracker" onclick="nav(this)">Action Tracker</div>
   </div>
 
   <!-- ── MY WORLD CHILDCARE ────────────────────────────────── -->
@@ -6452,20 +6455,20 @@ window.MWCC_DATA = {
       <div id="gbp-content"></div>
     </div>
 
-    <!-- ══ PAGE: CONTENT PLANNER ════════════════════════════════════ -->
+    <!-- ══ PAGE: WORK QUEUE  (formerly Content Planner — now also includes operational actions) ══ -->
     <div class="page" id="page-content-planner">
       <div class="page-header">
-        <h1>Content Planner</h1>
-        <p>Plan, approve, and track every piece of content — blogs, Instagram, TikTok, GBP posts, and emails — across a 2-week rolling schedule. Move cards through the workflow as they progress from draft to published.</p>
+        <h1>Work Queue</h1>
+        <p>Every active piece of work in one inbox — content drafts (blogs, Instagram, TikTok, GBP posts, emails) and operational fixes (SEO, GBP, ads, website). Same approval flow for all items. Move cards through the workflow from idea to done.</p>
       </div>
       <div id="planner-content"></div>
     </div>
 
-    <!-- ══ PAGE: CONTENT REVIEW ═════════════════════════════════════ -->
+    <!-- ══ PAGE: PERFORMANCE REVIEW  (formerly Content Review — strictly post-publish analysis) ══ -->
     <div class="page" id="page-content-review">
       <div class="page-header">
-        <h1>Content Review</h1>
-        <p>Review performance of published content — track what worked, what needs adjustment, and feed learnings back into the next planning cycle.</p>
+        <h1>Performance Review</h1>
+        <p>Post-publish analysis only. How did the content + actions perform after going live? Learnings here feed next cycle's Work Queue. Items appear here once their Work Queue status becomes Published.</p>
       </div>
       <div id="review-content"></div>
     </div>
@@ -10150,11 +10153,42 @@ const PLANNER_APPROVAL_KEY = 'cb247-planner-approval';
 const PLANNER_STATUSES = ['Idea','Scheduled','Published'];
 const PLANNER_STATUS_COLORS = {Idea:'#f3f4f6',Scheduled:'rgba(63,166,154,.1)',Published:'rgba(63,166,154,.15)'};
 
+// ══════════════════════════════════════════════════════════════════════════════
+// WORK QUEUE: unifies content items (PLANNER_ITEMS) + operational actions
+// (D.tracker.actions) into a single list. Same approval flow, same Kanban.
+// ══════════════════════════════════════════════════════════════════════════════
+function _actionToWorkItem(a) {
+  return {
+    id:           a.id,
+    kind:         'action',
+    day:          0,
+    platform:     a.category || 'action',
+    type:         'Operations',
+    title:        a.recommendation || 'Untitled action',
+    assignee:     a.owner || 'Team',
+    assigneeRole: a.ownerRole || '',
+    caption:      a.context || '',
+    instructions: a.context || a.recommendation || '',
+    kw:           '',
+    dueDate:      a.due_date || '',
+    priority:     a.priority || '',
+    _source:      a,
+  };
+}
+function _getAllWorkItems() {
+  const content = PLANNER_ITEMS.map(p => ({ ...p, kind: 'content' }));
+  const actions = ((window.D && D.tracker && D.tracker.actions) || []).map(_actionToWorkItem);
+  return content.concat(actions);
+}
+function _findWorkItem(id) {
+  return _getAllWorkItems().find(x => x.id === id) || null;
+}
+
 // ── Planner Modal ─────────────────────────────────────────────────────────────
 let _modalItemId = null;
 
 window.openPlannerModal = (id) => {
-  const item = PLANNER_ITEMS.find(x=>x.id===id);
+  const item = _findWorkItem(id);   // matches both content + action items
   if(!item) return;
   _modalItemId = id;
 
@@ -10248,7 +10282,7 @@ window.saveModalAndClose = () => {
 
   // If "Needs Adjustment" was selected and there are notes + a draft link, auto-apply
   if(_pendingApproval === 'adjustment' && notes) {
-    const item = PLANNER_ITEMS.find(x => x.id === _modalItemId);
+    const item = _findWorkItem(_modalItemId);
     if(item && item.draftLink) {
       _applyAdjustmentViaServer(item, notes);
       return; // don't close yet — wait for server response
@@ -10412,12 +10446,21 @@ window.cycleFromModal = () => {
 
 // ── Platform colours + icons ────────────────────────────────────────────────
 const PLAT_CFG = {
+  // Content channels
   instagram: {bg:'#dbeafe', color:'#1d4ed8', border:'#3b82f6', label:'Instagram'},
   tiktok:    {bg:'#fef2f2', color:'#991b1b', border:'#ef4444', label:'TikTok'},
   blog:      {bg:'#fef9c3', color:'#854d0e', border:'#f59e0b', label:'Blog'},
   email:     {bg:'#ecfdf5', color:'#166534', border:'#10b981', label:'Email'},
   gbp:       {bg:'rgba(63,166,154,.15)', color:'#3FA69A', border:'#3FA69A', label:'GBP'},
   meta:      {bg:'#ede9fe', color:'#5b21b6', border:'#8b5cf6', label:'Meta Ad'},
+  // Operational action categories (Work Queue)
+  seo:        {bg:'#f3e8ff', color:'#6b21a8', border:'#a855f7', label:'SEO'},
+  'paid-ads': {bg:'#ede9fe', color:'#5b21b6', border:'#8b5cf6', label:'Paid Ads'},
+  website:    {bg:'#fef3c7', color:'#92400e', border:'#f59e0b', label:'Website'},
+  operations: {bg:'#f3f4f6', color:'#374151', border:'#9ca3af', label:'Operations'},
+  social:     {bg:'#fce7f3', color:'#9d174d', border:'#ec4899', label:'Social'},
+  content:    {bg:'#f0fdf4', color:'#15803d', border:'#22c55e', label:'Content'},
+  action:     {bg:'#f3f4f6', color:'#374151', border:'#9ca3af', label:'Action'},
 };
 const ASSIGNEE_CFG = {
   // Decision makers
@@ -10466,10 +10509,15 @@ function renderPlanner() {
   const saved    = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
   const approved = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
 
+  // Work Queue = content items + operational actions, both in the same flow.
+  // (Published / Done items will move to Performance Review — handled below.)
+  const ALL_ITEMS    = _getAllWorkItems();
+  const ACTIVE_ITEMS = ALL_ITEMS.filter(i => (saved[i.id]||'Idea') !== 'Published');
+
   // ── Status counts for KPI bar ────────────────────────────────────────────
   const counts = {};
   KANBAN_COLS.forEach(c => counts[c.key] = 0);
-  PLANNER_ITEMS.forEach(item => {
+  ALL_ITEMS.forEach(item => {
     const s = saved[item.id] || 'Idea';
     counts[s] = (counts[s]||0) + 1;
   });
@@ -10477,13 +10525,15 @@ function renderPlanner() {
   const pendingDenver   = counts['Denver Approval'] || 0;
   const scheduled       = counts['Scheduled'] || 0;
   const published       = counts['Published'] || 0;
-  const totalItems      = PLANNER_ITEMS.length;
+  const contentCount    = ACTIVE_ITEMS.filter(i => i.kind === 'content').length;
+  const actionCount     = ACTIVE_ITEMS.filter(i => i.kind === 'action').length;
+  const totalItems      = ACTIVE_ITEMS.length;
 
   let html = '';
 
   // ── Page intro ────────────────────────────────────────────────────────
   html += `<p style="font-size:12.5px;color:var(--text-2);line-height:1.7;margin:0 0 20px">
-    Your 2-week publishing schedule for every CB247 channel — blogs, Instagram, TikTok, GBP posts, and emails. Each card is one piece of content moving from draft to published.
+    Every active piece of work in one inbox — <b>${contentCount} content items</b> (blogs, Instagram, TikTok, GBP posts, emails) and <b>${actionCount} operational fixes</b> (SEO, GBP, ads, website). Same approval flow regardless of type. Once an item reaches <b>Published</b>, it moves to Performance Review.
   </p>`;
 
   // ── KPI bar ────────────────────────────────────────────────────────────
@@ -10521,7 +10571,7 @@ function renderPlanner() {
   html += `<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:28px;align-items:start">`;
 
   KANBAN_COLS.forEach(col => {
-    const items = PLANNER_ITEMS.filter(item => (saved[item.id]||'Idea') === col.key);
+    const items = ACTIVE_ITEMS.filter(item => (saved[item.id]||'Idea') === col.key);
     html += `<div style="background:${col.color};border-top:3px solid ${col.border};border-radius:6px;padding:8px;min-height:100px">
       <div style="font-size:10px;font-weight:700;margin-bottom:8px;color:var(--text);text-transform:uppercase;letter-spacing:.5px">${col.label} <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(${items.length})</span></div>
       ${items.map(item => {
@@ -10571,7 +10621,7 @@ function renderPlanner() {
   const _DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
   // Count items in this week
-  const _wkItemCount = PLANNER_ITEMS.filter(item => {
+  const _wkItemCount = ACTIVE_ITEMS.filter(item => {
     const d = new Date(_calToday); d.setDate(_calToday.getDate()+item.day); d.setHours(0,0,0,0);
     return d >= _wkStart && d <= _wkEnd;
   }).length;
@@ -10595,7 +10645,7 @@ function renderPlanner() {
         _colDate.setDate(_wkStart.getDate() + i);
         _colDate.setHours(0,0,0,0);
         const _isToday = _colDate.getTime() === _calToday.getTime();
-        const _colItems = PLANNER_ITEMS.filter(item => {
+        const _colItems = ACTIVE_ITEMS.filter(item => {
           const d = new Date(_calToday); d.setDate(_calToday.getDate()+item.day); d.setHours(0,0,0,0);
           return d.getTime() === _colDate.getTime();
         });
@@ -10638,7 +10688,7 @@ function renderPlanner() {
   html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
     <th>Platform</th><th>Title</th><th>Assignee</th><th>Keyword</th><th class="num">Day</th><th>Status</th><th>Action</th>
   </tr></thead><tbody>
-  ${PLANNER_ITEMS.map(item => {
+  ${ACTIVE_ITEMS.map(item => {
     const st = saved[item.id] || 'Idea';
     const stColor = st==='Published'?'#3FA69A':st==='Scheduled'?'#3FA69A':st==='Denver Approval'?'#7c2d12':st==='Angela QC'?'#111':st==='In Progress'?'#3FA69A':'#999';
     const nextSt = KANBAN_COLS[(KANBAN_COLS.findIndex(c=>c.key===st)+1) % KANBAN_COLS.length].key;
@@ -10711,10 +10761,11 @@ function renderContentReview() {
   const ell      = meta.ell_cur    || {};
 
   // Items marked Published or Scheduled
-  const published       = PLANNER_ITEMS.filter(i => saved[i.id]==='Published');
-  const scheduled       = PLANNER_ITEMS.filter(i => saved[i.id]==='Scheduled');
-  const pendingAngelaQC = PLANNER_ITEMS.filter(i => saved[i.id]==='Angela QC');
-  const pendingDenver   = PLANNER_ITEMS.filter(i => saved[i.id]==='Denver Approval');
+  const ALL             = _getAllWorkItems();
+  const published       = ALL.filter(i => saved[i.id]==='Published');
+  const scheduled       = ALL.filter(i => saved[i.id]==='Scheduled');
+  const pendingAngelaQC = ALL.filter(i => saved[i.id]==='Angela QC');
+  const pendingDenver   = ALL.filter(i => saved[i.id]==='Denver Approval');
   const pendingQC       = [...pendingAngelaQC, ...pendingDenver];   // combined for the review-content badge
 
   // Top performing GSC query
