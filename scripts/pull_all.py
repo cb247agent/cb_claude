@@ -1,7 +1,19 @@
 """
-pull_all.py — Runs all three Google data pipelines in sequence.
-Saves GA4 + GSC + Google Ads data to state/*.json and timestamps last run.
-Usage: python pull_all.py
+pull_all.py — Runs the FREE-source data pipelines.
+
+What's IN here (4x/day via launchd com.cb247.data-refresh):
+    GA4   (Google Analytics 4 — free)
+    GSC   (Google Search Console — free)
+    GBP   (Google Business Profile — free with quota)
+
+What's NOT here (moved to pull_weekly.py on 06 Jun 2026 to save quota/credit):
+    Google Ads   — quota-limited, pulled weekly Mondays via pull_weekly.py
+    Meta Ads     — Graph API rate-limited, pulled weekly Mondays via pull_weekly.py
+    Apify        — already weekly via weekly-report.sh Step 1c
+    Ahrefs       — manual only (frozen snapshot, out of credits)
+
+Usage:
+    python scripts/pull_all.py
 """
 
 import json
@@ -55,17 +67,6 @@ def run_all():
         results["gsc"] = f"error: {e}"
         log(f"GSC pull failed: {e}", "FAIL")
 
-    # Google Ads
-    print("\n--- Google Ads ---")
-    try:
-        import pull_google_ads
-        data = pull_google_ads.pull_google_ads()
-        results["google_ads"] = "success" if data else "skipped"
-        log("Google Ads pull complete" if data else "Google Ads skipped")
-    except Exception as e:
-        results["google_ads"] = f"error: {e}"
-        log(f"Google Ads pull failed: {e}", "FAIL")
-
     # Google Business Profile
     print("\n--- Google Business Profile ---")
     try:
@@ -77,16 +78,17 @@ def run_all():
         results["gbp"] = f"error: {e}"
         log(f"GBP pull failed: {e}", "FAIL")
 
-    # Meta Ads (Graph API → merges into ads-data.json under meta_ads)
-    print("\n--- Meta Ads (Graph API) ---")
-    try:
-        import pull_meta
-        data = pull_meta.pull_meta()
-        results["meta_ads"] = "success" if data else "skipped"
-        log("Meta Ads pull complete" if data else "Meta Ads skipped (token missing/expired)")
-    except Exception as e:
-        results["meta_ads"] = f"error: {e}"
-        log(f"Meta Ads pull failed: {e}", "FAIL")
+    # Google Ads — EXCLUDED from 4x/day refresh (quota control, 06 Jun 2026)
+    # Pulled weekly via scripts/pull_weekly.py (called by weekly-report.sh Step 1a)
+    # Reason: Basic API access has tight daily limits while Standard access is
+    # pending Google review. Burning 28 calls/week on data that updates ~weekly
+    # was wasteful. To pull manually: python scripts/pull_weekly.py --skip-meta
+    results["google_ads"] = "skipped (weekly-only)"
+
+    # Meta Ads — EXCLUDED from 4x/day refresh (rate-limit control, 06 Jun 2026)
+    # Pulled weekly via scripts/pull_weekly.py (called by weekly-report.sh Step 1a)
+    # To pull manually: python scripts/pull_weekly.py --skip-google-ads
+    results["meta_ads"] = "skipped (weekly-only)"
 
     # Ahrefs SEO data — EXCLUDED from daily refresh (unit cost control)
     # Ahrefs Lite plan: 100k units/month. Daily pulls would exhaust ~30k units/month on
@@ -121,6 +123,7 @@ def run_all():
         "inject-seo-extras.py",
         "inject-social-block.py",
         "inject-meta-ads.py",
+        "inject-google-ads.py",
         "inject-membership-data.py",
     ]
     for script in INJECT_SCRIPTS:

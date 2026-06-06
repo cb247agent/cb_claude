@@ -96,7 +96,11 @@ cd "$BASE_DIR"
 log ""
 log "─── PHASE 1: DATA PULL ───"
 
-log "Step 1a — GA4 + GSC + Google Ads + Meta..."
+log "Step 1a — Weekly paid-source pull (Google Ads + Meta Ads)..."
+"$PYTHON" "$BASE_DIR/scripts/pull_weekly.py" >> "$LOG" 2>&1 \
+    || fail "pull_weekly.py had issues — continuing"
+
+log "Step 1a' — Free-source pull (GA4 + GSC + GBP) + inject blocks..."
 "$PYTHON" "$BASE_DIR/scripts/pull_all.py" >> "$LOG" 2>&1 \
     || fail "pull_all.py had issues — continuing"
 
