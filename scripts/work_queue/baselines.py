@@ -386,6 +386,158 @@ def social_top_hashtags(n: int = 3) -> list:
     return tags[:n]
 
 
+# ── Membership ───────────────────────────────────────────────────────────────
+
+
+def _membership_summary() -> Optional[dict]:
+    """The latest summary block from state/membership-data.json."""
+    m = _load("membership-data.json")
+    if not m:
+        return None
+    return m.get("summary")
+
+
+def _membership_contracts() -> Optional[dict]:
+    """The contracts block (addon counts + active base)."""
+    m = _load("membership-data.json")
+    if not m:
+        return None
+    return m.get("contracts")
+
+
+def _membership_cleverwaiver() -> Optional[dict]:
+    """The exit survey block."""
+    m = _load("membership-data.json")
+    if not m:
+        return None
+    return m.get("cleverwaiver")
+
+
+def membership_period() -> Optional[dict]:
+    """Period {raw, start, end} of the latest snapshot."""
+    s = _membership_summary()
+    return s.get("period") if s else None
+
+
+def _resolve_club_key(location: str) -> Optional[str]:
+    """Normalise location → 'Malaga' / 'Ellenbrook' / None=combined."""
+    if not location:
+        return None
+    l = location.strip().lower()
+    if l in ("malaga", "mlg"):
+        return "Malaga"
+    if l in ("ellenbrook", "ebk"):
+        return "Ellenbrook"
+    return None  # treated as combined
+
+
+def membership_signups_for(location: Optional[str]) -> Optional[int]:
+    """Per-location new contracts for the latest snapshot. Pass None or
+    'combined' for the totals row."""
+    s = _membership_summary()
+    if not s:
+        return None
+    club = _resolve_club_key(location) if location else None
+    if club:
+        v = (s.get("per_club") or {}).get(club, {}).get("NewContracts")
+    else:
+        v = (s.get("totals") or {}).get("NewContracts")
+    return int(v) if v is not None else None
+
+
+def membership_cancellations_for(location: Optional[str]) -> Optional[int]:
+    """Per-location ended contracts for the latest snapshot."""
+    s = _membership_summary()
+    if not s:
+        return None
+    club = _resolve_club_key(location) if location else None
+    if club:
+        v = (s.get("per_club") or {}).get(club, {}).get("EndedContracts")
+    else:
+        v = (s.get("totals") or {}).get("EndedContracts")
+    return int(v) if v is not None else None
+
+
+def membership_future_cancellations_for(location: Optional[str]) -> Optional[int]:
+    """Per-location future-dated cancellations (save-call queue size)."""
+    s = _membership_summary()
+    if not s:
+        return None
+    club = _resolve_club_key(location) if location else None
+    if club:
+        v = (s.get("per_club") or {}).get(club, {}).get("FutureCancellations")
+    else:
+        v = (s.get("totals") or {}).get("FutureCancellations")
+    return int(v) if v is not None else None
+
+
+def membership_addon_count_for(addon: str) -> Optional[int]:
+    """Active member count for a specific addon (combined across locations).
+    Pass the exact addon label as it appears in the JSON, e.g.
+    'Recovery (Sauna + Ice Bath)' or 'Reformer Pilates'."""
+    c = _membership_contracts()
+    if not c:
+        return None
+    v = (c.get("addon_active") or {}).get(addon)
+    return int(v) if v is not None else None
+
+
+def membership_top_addons(n: int = 4) -> list:
+    """Top addons ranked by active count descending."""
+    c = _membership_contracts()
+    if not c:
+        return []
+    items = list((c.get("addon_active") or {}).items())
+    items.sort(key=lambda kv: int(kv[1] or 0), reverse=True)
+    return [{"addon": k, "count": int(v or 0)} for k, v in items[:n]]
+
+
+def membership_cancel_reason_count(reason: str, source: str = "combined") -> Optional[int]:
+    """Count of a specific cancel reason. `source` ∈ {'pgm', 'cleverwaiver', 'combined'}.
+    Reasons across sources don't always use identical strings — caller passes the
+    canonical reason and we sum partial-match across both sources."""
+    s = _membership_summary()
+    cw = _membership_cleverwaiver()
+    needle = (reason or "").strip().lower()
+    if not needle:
+        return None
+    total = 0
+    matched = False
+
+    if source in ("pgm", "combined") and s:
+        for r, count in (s.get("cancel_reasons_pgm") or {}).items():
+            if needle in r.strip().lower():
+                total += int(count or 0)
+                matched = True
+
+    if source in ("cleverwaiver", "combined") and cw:
+        for r, count in (cw.get("reasons") or {}).items():
+            if needle in r.strip().lower():
+                total += int(count or 0)
+                matched = True
+
+    return total if matched else None
+
+
+def membership_switched_to_gym_count() -> int:
+    """Combined count of members who churned citing 'switched to another gym'
+    across PGM cancel reasons and Cleverwaiver exit-survey. The strongest
+    competitive-loss signal in the dataset."""
+    pgm = membership_cancel_reason_count("switched", source="pgm") or 0
+    cw  = membership_cancel_reason_count("switched", source="cleverwaiver") or 0
+    return pgm + cw
+
+
+def membership_not_using_count() -> int:
+    """Combined count of 'not using membership enough' churns. Highest-leverage
+    actionable reason — these members were paying without engaging, an onboarding
+    + habit-build campaign can move the needle."""
+    pgm = membership_cancel_reason_count("not using", source="pgm") or 0
+    cw  = membership_cancel_reason_count("not using", source="cleverwaiver") or 0
+    return pgm + cw
+
+
+# Insert just before social_top_posts_by_engagement definition
 def social_top_posts_by_engagement(n: int = 2, min_engagement: int = 30) -> list:
     """Top-N posts from state/social-trends.json ranked by engagement,
     filtered to those with at least `min_engagement` (filters out low-signal

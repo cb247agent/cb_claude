@@ -54,6 +54,10 @@ from work_queue.baselines import (  # noqa: E402
     gbp_photos_count_for,
     gbp_rating_for,
     gbp_metric_from_field,
+    membership_signups_for,
+    membership_cancellations_for,
+    membership_future_cancellations_for,
+    membership_addon_count_for,
 )
 from work_queue.measurement import (  # noqa: E402
     compute_kpi_status,
@@ -175,7 +179,23 @@ def _fetch_actual(metric: str, keyword: Optional[str], pattern: Optional[str]) -
     if metric == "gbp_rating" and keyword:
         return gbp_rating_for(keyword)
 
-    # Session 5d+: ig_*, membership_* lookups
+    # ── Membership (Session 5e) ── keyword carries location (malaga/ellenbrook)
+    # or addon name (e.g., 'Recovery (Sauna + Ice Bath)'). Empty/None keyword
+    # means combined / totals row.
+    if metric == "membership_signups_weekly":
+        v = membership_signups_for(keyword)
+        return float(v) if v is not None else None
+    if metric == "membership_cancellations_weekly":
+        v = membership_cancellations_for(keyword)
+        return float(v) if v is not None else None
+    if metric == "membership_future_cancellations":
+        v = membership_future_cancellations_for(keyword)
+        return float(v) if v is not None else None
+    if metric == "membership_addon_active_count" and keyword:
+        v = membership_addon_count_for(keyword)
+        return float(v) if v is not None else None
+
+    # Session 5f+: ig_engagement_rate, ig_followers (when account APIs wired)
     return None
 
 

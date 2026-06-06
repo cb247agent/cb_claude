@@ -42,6 +42,8 @@ VALID_METRICS = {
     "ig_followers",
     "membership_signups_weekly",
     "membership_cancellations_weekly",
+    "membership_addon_active_count",
+    "membership_future_cancellations",
     "qualitative_assessment",
 }
 

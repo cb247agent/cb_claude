@@ -33,6 +33,7 @@ HIGHER_IS_BETTER = {
     "ig_engagement_rate",
     "ig_followers",
     "membership_signups_weekly",
+    "membership_addon_active_count",
 }
 
 # Metrics where a LOWER number is better (improvement)
@@ -45,6 +46,7 @@ LOWER_IS_BETTER = {
     "google_ads_cpc",
     "google_ads_spend_weekly",
     "membership_cancellations_weekly",
+    "membership_future_cancellations",
 }
 
 
@@ -182,6 +184,12 @@ def _tolerance_for(metric: str) -> float:
         return 0.5            # half-post noise
     if metric == "gbp_review_response_rate":
         return 2              # 2pp noise
+    if metric in ("membership_signups_weekly", "membership_cancellations_weekly"):
+        return 10             # 10-member noise at weekly cadence
+    if metric == "membership_future_cancellations":
+        return 15             # 15-member noise (this is a larger queue)
+    if metric == "membership_addon_active_count":
+        return 2              # 2 addon members noise
     return 0
 
 
