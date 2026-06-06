@@ -11414,8 +11414,334 @@ function _comingSoonPage(elId, title, detail) {
 }
 
 function renderCb247Membership() {
-  _comingSoonPage('cb247-membership-content','Membership Statistics',
-    'Member count, join rate, churn, and FIFO freeze stats will appear here. Connect your membership management system (Mindbody / Clubware) to populate this page.');
+  const M = window.MEMBERSHIP_DATA || null;
+  const el = $('cb247-membership-content');
+  if (!el) return;
+
+  // ── No data — show setup state ──────────────────────────────────────────
+  if (!M || !(M.summary && M.summary.available)) {
+    el.innerHTML = `<div class="insight neutral mb">
+      <div class="insight-label">Awaiting Membership Data</div>
+      <span style="font-size:12px">Drop the weekly XLSX exports into <code style="background:#f0f2f5;padding:1px 5px;border-radius:3px">cb247-membership-inbox/</code> then run:
+      <br><br><code style="background:#f0f2f5;padding:4px 8px;border-radius:3px;display:inline-block;margin-top:4px">./.venv/bin/python3.13 scripts/parse_membership_data.py<br>./.venv/bin/python3.13 scripts/inject-membership-data.py</code>
+      <br><br>Expected files: <b>PGM_ContractsSummary.xlsx</b> · <b>PGM_AllContracts.xlsx</b> · <b>Cleverwaiver.xlsx</b>. See <code>cb247-membership-inbox/README.md</code> for full setup.</span>
+    </div>`;
+    return;
+  }
+
+  const s = M.summary;
+  const cw = M.cleverwaiver || {};
+  const ctx = M.contracts || {};
+  const prior = M.prior_week || null;
+
+  const t = s.totals || {};
+  const pt = (prior && prior.totals) || {};
+  const period = (s.period && s.period.raw) || '';
+
+  // WoW helpers
+  const _delta = (cur, prev) => (prev != null && prev !== 0) ? (cur - prev) : null;
+  const _pct = (cur, prev) => (prev != null && prev !== 0) ? ((cur - prev) / prev * 100) : null;
+  const newDelta = _delta(t.NewContracts, pt.NewContracts);
+  const endedDelta = _delta(t.EndedContracts, pt.EndedContracts);
+  const futureDelta = _delta(t.FutureCancellations, pt.FutureCancellations);
+  const netNow = (t.NewContracts||0) - (t.EndedContracts||0);
+  const netPrior = (pt.NewContracts||0) - (pt.EndedContracts||0);
+  const netDelta = _delta(netNow, netPrior);
+
+  // ── Data freshness banner ──────────────────────────────────────────────
+  let html = `<div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b style="color:var(--text-2)">PGM</b> ${period||'no data'}</span>
+    <span><b style="color:var(--text-2)">Parsed</b> ${(M.parsed_at||'').slice(0,10)}</span>
+    <span><b style="color:var(--text-2)">CleverWaiver</b> ${cw.available ? cw.total_responses + ' responses' : 'no responses'}</span>
+    <span><b style="color:var(--text-2)">Active base</b> ${ctx.total_active_base_combined||'—'}</span>
+    <span style="color:var(--teal)">→ Source: Perfect Gym + CleverWaiver weekly export</span>
+  </div>`;
+
+  // ── 0. EXECUTIVE VERDICT ───────────────────────────────────────────────
+  const netNeg = netNow < 0;
+  const futVsNew = (t.NewContracts||0) > 0 ? ((t.FutureCancellations||0) / t.NewContracts) : 0;
+  const _vWhereWeAre = `${t.NewContracts||0} new · ${t.EndedContracts||0} ended · <b>net ${netNow>=0?'+':''}${netNow}</b> · ${t.FutureCancellations||0} future cancellations queued${futVsNew>1?` (<b>${futVsNew.toFixed(1)}× this week's new sign-ups</b>)`:''}.`;
+  const _vRisk = netNeg && futVsNew > 2
+    ? `<b>Net negative + future cancellation pipeline ${futVsNew.toFixed(1)}× this week's new sign-ups</b> (${t.FutureCancellations||0} queued). The save call programme is the #1 business priority — if 30% of the pipeline is saved, that's <b>${Math.round((t.FutureCancellations||0)*0.3)} contracts retained per week</b>.`
+    : netNeg
+      ? `Net movement <b>${netNow}</b> means more members are leaving than joining. Inspect Cancellation Reasons below — top reason should drive this week's action plan.`
+      : `Net positive week (${netNow>0?'+':''}${netNow}). Future cancellation pipeline at ${t.FutureCancellations||0} — keep save call cadence even on positive weeks.`;
+  const topReason = cw.reasons ? Object.keys(cw.reasons)[0] : null;
+  const _vPriority = topReason
+    ? `Build a save-call playbook against "${topReason}" — currently the #1 cancellation reason (${cw.reasons[topReason]||0} of ${cw.total_responses||0} responses this week).`
+    : 'Run save calls on the entire future cancellation pipeline before contracts end. Target 30% retention.';
+
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Executive Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${period}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_vWhereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
+      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+    </div>
+  </div>`;
+
+  // ── 1. KPI cards (5 KPIs with WoW + verdict colours) ───────────────────
+  const _signedPct = v => v == null ? null : v;
+  html += `<div class="kpi-grid cols-5 mb">
+    ${kpiCard('','New Memberships', fmt(t.NewContracts,'n'),
+      _pct(t.NewContracts, pt.NewContracts),
+      `Mal ${(s.per_club.Malaga||{}).NewContracts||0} · Ell ${(s.per_club.Ellenbrook||{}).NewContracts||0}`,
+      newDelta!=null && newDelta>0 ? 'green' : (newDelta!=null && newDelta<-15 ? 'red' : ''))}
+    ${kpiCard('','Ended', fmt(t.EndedContracts,'n'),
+      _pct(t.EndedContracts, pt.EndedContracts),
+      `Mal ${(s.per_club.Malaga||{}).EndedContracts||0} · Ell ${(s.per_club.Ellenbrook||{}).EndedContracts||0}`,
+      endedDelta!=null && endedDelta>30 ? 'red' : (endedDelta!=null && endedDelta<0 ? 'green' : ''))}
+    ${kpiCard('','Net Movement', (netNow>=0?'+':'') + netNow,
+      null,
+      `Prior week: ${netPrior>=0?'+':''}${netPrior} · ${netDelta!=null?(netDelta>=0?'+':'')+netDelta+' WoW':''}`,
+      netNow<-30 ? 'red' : netNow>0 ? 'green' : 'amber')}
+    ${kpiCard('','Future Cancellations', fmt(t.FutureCancellations,'n'),
+      _pct(t.FutureCancellations, pt.FutureCancellations),
+      `Mal ${(s.per_club.Malaga||{}).FutureCancellations||0} · Ell ${(s.per_club.Ellenbrook||{}).FutureCancellations||0}`,
+      futureDelta!=null && futureDelta>20 ? 'red' : (futureDelta!=null && futureDelta<-20 ? 'green' : 'amber'))}
+    ${kpiCard('','Projected Next 30d', fmt(t.ProjectedCancellations,'n'),
+      null,
+      `~${Math.round((t.ProjectedCancellations||0)*0.7)} likely confirmed`,
+      (t.ProjectedCancellations||0)>400 ? 'red' : 'amber')}
+  </div>`;
+
+  // ── 2. Key Observations ───────────────────────────────────────────────
+  const reasons = cw.reasons || {};
+  const reasonsList = Object.entries(reasons).slice(0, 5);
+  const wouldReturn = cw.would_return || {};
+  const winBack = (wouldReturn.Yes||0) + (wouldReturn.Unsure||0);
+  html += sectionTitle('Key Observations — ' + period);
+  html += `<div class="grid-2 mb">
+    <div class="insight ${netNeg?'red':'amber'}">
+      <div class="insight-label">${netNeg?'Net Negative — Save Call Priority':'Net Positive — Maintain Cadence'}</div>
+      ${netNeg
+        ? `<b>${Math.abs(netNow)} more members ended than joined</b> this week. Future cancellation pipeline at <b>${t.FutureCancellations||0}</b> contracts — every saved cancellation directly improves next week's net.`
+        : `<b>+${netNow} net</b> — momentum positive. Sustain save call cadence at 30%+ to convert future cancellations.`}
+      <br><br><b>Per-club split:</b>
+      <div class="stat-row" style="margin-top:6px"><span class="stat-label">Malaga net</span><span class="stat-val ${(s.per_club.Malaga||{}).NewContracts < (s.per_club.Malaga||{}).EndedContracts?'bad':'good'}">${((s.per_club.Malaga||{}).NewContracts||0) - ((s.per_club.Malaga||{}).EndedContracts||0)}</span></div>
+      <div class="stat-row"><span class="stat-label">Ellenbrook net</span><span class="stat-val ${(s.per_club.Ellenbrook||{}).NewContracts < (s.per_club.Ellenbrook||{}).EndedContracts?'bad':'good'}">${((s.per_club.Ellenbrook||{}).NewContracts||0) - ((s.per_club.Ellenbrook||{}).EndedContracts||0)}</span></div>
+    </div>
+    <div class="insight teal">
+      <div class="insight-label">Win-Back Pool — Recoverable Members</div>
+      ${cw.available
+        ? `<b>${winBack} of ${cw.total_responses||0}</b> recently-cancelled members said <b>Yes or Unsure</b> when asked "would you return to CB247?"
+          <div class="stat-row" style="margin-top:8px"><span class="stat-label">Yes — warm</span><span class="stat-val good">${wouldReturn.Yes||0}</span></div>
+          <div class="stat-row"><span class="stat-label">Unsure — convertible</span><span class="stat-val">${wouldReturn.Unsure||0}</span></div>
+          <div class="stat-row"><span class="stat-label">No — closed</span><span class="stat-val bad">${wouldReturn.No||0}</span></div>
+          <br><b>Action:</b> Reach out to all "Yes" within 7 days · drip campaign to "Unsure" over 30 days.`
+        : `CleverWaiver data not available this week. Drop <code>Cleverwaiver.xlsx</code> into the inbox to surface the win-back pool.`}
+    </div>
+  </div>`;
+
+  // ── 3. Per-Club Scorecard ─────────────────────────────────────────────
+  html += sectionTitle('Per-Club Scorecard');
+  html += `<div class="card mb"><table>
+    <thead><tr>
+      <th>Club</th>
+      <th class="num">New</th>
+      <th class="num">Ended</th>
+      <th class="num">Net</th>
+      <th class="num">Suspended</th>
+      <th class="num">Future Canc</th>
+      <th>Future vs New</th>
+    </tr></thead><tbody>
+    ${['Malaga','Ellenbrook'].map(club => {
+      const c = s.per_club[club] || {};
+      const cNew = c.NewContracts || 0;
+      const cEnd = c.EndedContracts || 0;
+      const cNet = cNew - cEnd;
+      const cFut = c.FutureCancellations || 0;
+      const ratio = cNew > 0 ? (cFut / cNew) : 0;
+      return `<tr>
+        <td style="font-weight:600">${club}</td>
+        <td class="num">${fmt(cNew,'n')}</td>
+        <td class="num bad">${fmt(cEnd,'n')}</td>
+        <td class="num ${cNet<0?'bad':'good'}"><b>${cNet>=0?'+':''}${cNet}</b></td>
+        <td class="num" style="color:var(--muted)">${fmt(c.SuspendedContracts||0,'n')}</td>
+        <td class="num" style="color:#92400e">${fmt(cFut,'n')}</td>
+        <td><span style="font-size:9px;background:${ratio>2?'#fef2f2':'#fef9c3'};color:${ratio>2?'#991b1b':'#92400e'};padding:2px 7px;border-radius:3px;font-weight:700">${ratio.toFixed(1)}× higher</span></td>
+      </tr>`;
+    }).join('')}
+    <tr style="background:#fafafa;font-weight:700">
+      <td>Total</td>
+      <td class="num">${fmt(t.NewContracts,'n')}</td>
+      <td class="num bad">${fmt(t.EndedContracts,'n')}</td>
+      <td class="num ${netNow<0?'bad':'good'}">${netNow>=0?'+':''}${netNow}</td>
+      <td class="num" style="color:var(--muted)">${fmt(t.SuspendedContracts,'n')}</td>
+      <td class="num" style="color:#92400e">${fmt(t.FutureCancellations,'n')}</td>
+      <td><span style="font-size:9px;background:#fef2f2;color:#991b1b;padding:2px 7px;border-radius:3px;font-weight:700">${futVsNew.toFixed(1)}× higher</span></td>
+    </tr>
+    </tbody></table>
+    <p style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">
+      Base unique people (excludes add-ons + Kids Hub + Employee Free + Fitness Passport, deduped by user):
+      Malaga ${(s.unique_base&&s.unique_base.new&&s.unique_base.new.Malaga)||0} new ·
+      Ellenbrook ${(s.unique_base&&s.unique_base.new&&s.unique_base.new.Ellenbrook)||0} new ·
+      Total ${(s.unique_base&&s.unique_base.new&&s.unique_base.new.Total)||0} new.
+      Suspended contracts shown but excluded from net movement.
+    </p>
+  </div>`;
+
+  // ── 4. Cancellation Reasons (CleverWaiver) ─────────────────────────────
+  if (cw.available && reasonsList.length > 0) {
+    const maxCount = Math.max(...reasonsList.map(([_,v]) => v));
+    html += sectionTitle('Cancellation Reasons — CleverWaiver Survey');
+    html += `<div class="grid-2 mb">
+      <div class="card">
+        <div class="card-h">Top Reasons (all responses)</div>
+        ${reasonsList.map(([reason, count]) => {
+          const pct = Math.round((count/maxCount)*100);
+          return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:3px">
+              <span style="font-size:12px">${reason}</span>
+              <span style="font-size:11px;font-weight:700">${count} <span style="color:var(--muted);font-weight:400">(${Math.round(count/cw.total_responses*100)}%)</span></span>
+            </div>
+            <div style="background:#f0f2f5;border-radius:4px;height:8px;overflow:hidden">
+              <div style="background:#b91c1c;width:${pct}%;height:100%"></div>
+            </div>
+          </div>`;
+        }).join('')}
+        <p style="font-size:10.5px;color:var(--muted);margin-top:8px">Source: ${cw.total_responses} cancellation survey responses · ${period}</p>
+      </div>
+      <div class="card">
+        <div class="card-h">"What would have helped you stay longer?"</div>
+        ${Object.entries(cw.would_have_helped||{}).slice(0,8).map(([item, count]) => `
+          <div class="stat-row">
+            <span class="stat-label">${item}</span>
+            <span class="stat-val">${count}</span>
+          </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 0">No actionable feedback this week (most responses were "Nothing specific" or "N/A").</div>'}
+        <p style="font-size:10.5px;color:var(--muted);margin-top:8px">Filtered: excludes "Nothing specific" and "N/A" responses.</p>
+      </div>
+    </div>`;
+  }
+
+  // ── 5. Add-On Performance ──────────────────────────────────────────────
+  if (ctx.available && ctx.addon_active) {
+    const addons = Object.entries(ctx.addon_active);
+    if (addons.length > 0) {
+      html += sectionTitle('Add-On Performance — Currently Live');
+      html += `<div class="card mb"><table>
+        <thead><tr><th>Add-On</th><th class="num">Malaga</th><th class="num">Ellenbrook</th><th class="num">Combined</th><th style="font-size:10px">Note</th></tr></thead><tbody>
+        ${addons.map(([cat, total]) => {
+          const malC = (ctx.addon_by_club.Malaga||{})[cat] || 0;
+          const ellC = (ctx.addon_by_club.Ellenbrook||{})[cat] || 0;
+          let note = '';
+          if (cat.includes('Recovery')) note = 'Strongest add-on signal — sauna + ice bath bundle';
+          else if (cat.includes('Reformer')) note = 'Premium service · CB247 differentiator';
+          else if (cat.includes('Neon')) note = 'Group fitness add-on';
+          else if (cat.includes('ChasinRX')) note = 'Performance/HYROX add-on';
+          else if (cat.includes('Sauna Only')) note = 'Standalone sauna access';
+          return `<tr>
+            <td style="font-weight:600">${cat}</td>
+            <td class="num">${malC}</td>
+            <td class="num">${ellC}</td>
+            <td class="num"><b>${total}</b></td>
+            <td style="font-size:10.5px;color:var(--muted)">${note}</td>
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+        <p style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">Source: PGM AllContracts where Membership Status = Live. Excludes ended / suspended add-ons.</p>
+      </div>`;
+    }
+  }
+
+  // ── 6. Next 2 Weeks action list ────────────────────────────────────────
+  const _membershipActions = [];
+
+  if (t.FutureCancellations > 200) {
+    _membershipActions.push({
+      title: `Save call programme — ${t.FutureCancellations} future cancellations`,
+      why: `Pipeline at ${t.FutureCancellations} queued cancellations (${futVsNew.toFixed(1)}× this week's new sign-ups). Saving 30% = ${Math.round(t.FutureCancellations*0.3)} contracts retained = ~$${Math.round(t.FutureCancellations*0.3*48)}/week in saved revenue (at $48/month avg). Single highest-leverage retention action.`,
+      owner: 'Member Experience (Reception + Save Team)',
+      effort: 'L',
+      impact: `Direct +${Math.round(t.FutureCancellations*0.3)} retained members · ~$${Math.round(t.FutureCancellations*0.3*48)}/wk preserved revenue`,
+    });
+  }
+
+  if (cw.available && topReason) {
+    _membershipActions.push({
+      title: `Build playbook for "${topReason}" objection`,
+      why: `Current #1 cancellation reason (${reasons[topReason]||0} of ${cw.total_responses||0} responses · ${Math.round((reasons[topReason]||0)/(cw.total_responses||1)*100)}%). Specific objection-handling script + concession menu (freeze · downgrade · transfer) directly addresses what's driving people out the door.`,
+      owner: 'Brand Manager + Member Experience',
+      effort: 'M',
+      impact: `Address ${Math.round((reasons[topReason]||0)/(cw.total_responses||1)*100)}% of current cancellations with one playbook`,
+    });
+  }
+
+  if (winBack > 30) {
+    _membershipActions.push({
+      title: `Win-back campaign for ${winBack} warm leavers`,
+      why: `${wouldReturn.Yes||0} said "Yes — would return" and ${wouldReturn.Unsure||0} said "Unsure" in cancel surveys. Combined ${winBack} people who explicitly indicated openness. Yes pool needs immediate outreach (within 7 days of cancel · 50%+ conversion possible); Unsure pool needs 30-day drip.`,
+      owner: 'Marketing (email) + Save Team (phone)',
+      effort: 'M',
+      impact: `Convert ${Math.round((wouldReturn.Yes||0)*0.5 + (wouldReturn.Unsure||0)*0.15)} ex-members back · $${Math.round(((wouldReturn.Yes||0)*0.5 + (wouldReturn.Unsure||0)*0.15)*48)}/wk recovered revenue`,
+    });
+  }
+
+  const malNet = ((s.per_club.Malaga||{}).NewContracts||0) - ((s.per_club.Malaga||{}).EndedContracts||0);
+  const ellNet = ((s.per_club.Ellenbrook||{}).NewContracts||0) - ((s.per_club.Ellenbrook||{}).EndedContracts||0);
+  if (Math.abs(malNet - ellNet) > 30) {
+    const worse = malNet < ellNet ? 'Malaga' : 'Ellenbrook';
+    const better = malNet < ellNet ? 'Ellenbrook' : 'Malaga';
+    _membershipActions.push({
+      title: `Investigate ${worse} vs ${better} performance gap`,
+      why: `${worse} net ${malNet < ellNet ? malNet : ellNet} vs ${better} net ${malNet < ellNet ? ellNet : malNet} — ${Math.abs(malNet-ellNet)} point spread. Check whether the gap is acquisition (paid + organic) or retention (cancel reasons by club). Different fixes for each.`,
+      owner: 'Tia + Club Managers',
+      effort: 'M',
+      impact: 'Identifies club-specific intervention before the gap compounds',
+    });
+  }
+
+  if (ctx.available && ctx.addon_active && ctx.addon_active['Recovery (Sauna + Ice Bath)']) {
+    const recovery = ctx.addon_active['Recovery (Sauna + Ice Bath)'];
+    _membershipActions.push({
+      title: `Scale Recovery add-on — currently ${recovery} active`,
+      why: `Recovery (Sauna + Ice Bath) is the strongest add-on signal. At $20/fortnight, each new conversion = $40/month recurring revenue with zero CAC. Promote to existing base members via in-app prompts + reception pitch on every check-in this week.`,
+      owner: 'Brand Manager + Reception',
+      effort: 'S',
+      impact: `Target +10 conversions/wk = +$200/wk recurring add-on revenue`,
+    });
+  }
+
+  _membershipActions.push({
+    title: 'Import meeting decisions into Action Tracker',
+    why: 'After Monday meeting, run `python scripts/import-meeting-minutes.py` to push approved actions into state/action-tracker.json. Decisions then become visible on the Action Tracker tab.',
+    owner: 'Tia',
+    effort: 'S',
+    impact: 'Closes the loop between meeting agreement and execution tracking',
+  });
+
+  const _effortBadge_mem = e => {
+    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
+    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
+  };
+
+  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
+  html += `<div class="card mb"><table>
+    <thead><tr>
+      <th style="width:24px">#</th>
+      <th>Action</th>
+      <th>Owner</th>
+      <th style="width:50px">Effort</th>
+      <th style="font-size:10px">Expected Impact</th>
+    </tr></thead><tbody>
+    ${_membershipActions.map((a,i) => `<tr>
+      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td>
+        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
+      </td>
+      <td style="font-size:11px"><b>${a.owner}</b></td>
+      <td>${_effortBadge_mem(a.effort)}</td>
+      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
+    </tr>`).join('')}
+    </tbody></table>
+    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Auto-generated from this week's data. Reviewed + reassigned in Monday meeting · agreed actions imported to Action Tracker via <code>import-meeting-minutes.py</code>.</p>
+  </div>`;
+
+  el.innerHTML = html;
 }
 const MWCC_CFG = {
   brand: 'My World Childcare', bizKey: 'mwcc',
@@ -11754,4 +12080,192 @@ function init() {
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
-</html>
+</html<script id="membership-data-block">
+// CB247 Membership stats — auto-generated by scripts/inject-membership-data.py
+// Source: state/membership-data.json (parsed from cb247-membership-inbox/*.xlsx)
+window.MEMBERSHIP_DATA = {
+  "parsed_at": "2026-06-06T01:28:08.187682+00:00",
+  "available": true,
+  "summary": {
+    "available": true,
+    "period": {
+      "raw": "2026-05-25 - 2026-05-31",
+      "start": "2026-05-25",
+      "end": "2026-05-31"
+    },
+    "per_club": {
+      "Malaga": {
+        "NewContracts": 123,
+        "EndedContracts": 189,
+        "SuspendedContracts": 93,
+        "FutureCancellations": 323,
+        "ProjectedCancellations": 264
+      },
+      "Ellenbrook": {
+        "NewContracts": 90,
+        "EndedContracts": 109,
+        "SuspendedContracts": 82,
+        "FutureCancellations": 201,
+        "ProjectedCancellations": 189
+      }
+    },
+    "totals": {
+      "NewContracts": 213,
+      "EndedContracts": 298,
+      "SuspendedContracts": 175,
+      "FutureCancellations": 524,
+      "ProjectedCancellations": 453
+    },
+    "unique_base": {
+      "new": {
+        "Malaga": 87,
+        "Ellenbrook": 60,
+        "Total": 147
+      },
+      "ended": {
+        "Malaga": 136,
+        "Ellenbrook": 84,
+        "Total": 220
+      },
+      "future": {
+        "Malaga": 254,
+        "Ellenbrook": 167,
+        "Total": 421
+      }
+    },
+    "cancel_reasons_pgm": {
+      "EndOfContract": 81,
+      "Other": 66,
+      "Relocating": 50,
+      "Not Using the membership enough": 23,
+      "TurnedOverToVindication": 21,
+      "2 Week Trial": 15,
+      "Time or schedule no longer suits": 11,
+      "Switched to another gym": 7,
+      "Work commitments": 5,
+      "Cancelld Via Debt Collection Stage 4": 4,
+      "Home gym or online training": 4,
+      "Extended travel away": 4,
+      "Medical/Injury": 2,
+      "EndOfPromotion": 1,
+      "EndedByManagment": 1,
+      "AnnualCancellation": 1,
+      "Facility or equipment issues": 1,
+      "UpgradeOfContract": 1
+    },
+    "rows_seen": {
+      "new": 213,
+      "ended": 298,
+      "future": 524
+    }
+  },
+  "cleverwaiver": {
+    "available": true,
+    "total_responses": 106,
+    "reasons": {
+      "Relocating / too far to travel": 45,
+      "Not using the membership enough": 26,
+      "Time or schedule no longer suits": 16,
+      "Switched to another gym": 13,
+      "Travel or extended time away": 12,
+      "Work commitments": 8,
+      "Financial pressure": 5,
+      "Injury or health": 5,
+      "Facility or equipment issues": 3,
+      "Pregnancy": 3,
+      "Home gym or online training": 3,
+      "Injury/Health": 1,
+      "Customer service experience": 1
+    },
+    "reasons_by_club": {
+      "Malaga": {
+        "Relocating / too far to travel": 36,
+        "Not using the membership enough": 18,
+        "Time or schedule no longer suits": 11,
+        "Travel or extended time away": 10,
+        "Switched to another gym": 8,
+        "Work commitments": 7,
+        "Injury or health": 5,
+        "Home gym or online training": 3,
+        "Pregnancy": 2,
+        "Facility or equipment issues": 2
+      },
+      "Ellenbrook": {
+        "Relocating / too far to travel": 9,
+        "Not using the membership enough": 8,
+        "Switched to another gym": 5,
+        "Time or schedule no longer suits": 5,
+        "Financial pressure": 4,
+        "Travel or extended time away": 2,
+        "Facility or equipment issues": 1,
+        "Work commitments": 1,
+        "Injury/Health": 1,
+        "Pregnancy": 1
+      }
+    },
+    "would_return": {
+      "Unsure": 46,
+      "Yes": 44,
+      "No": 16
+    },
+    "would_have_helped": {
+      "Pricing or value concerns": 5,
+      "More flexible membership options": 5
+    }
+  },
+  "contracts": {
+    "available": true,
+    "total_active_base": {
+      "Malaga": 108,
+      "Ellenbrook": 74
+    },
+    "total_active_base_combined": 182,
+    "addon_active": {
+      "Recovery (Sauna + Ice Bath)": 30,
+      "Reformer Pilates": 6,
+      "Neon / Group Fitness": 6,
+      "ChasinRX": 4
+    },
+    "addon_by_club": {
+      "Malaga": {
+        "Recovery (Sauna + Ice Bath)": 15,
+        "Reformer Pilates": 6,
+        "ChasinRX": 4,
+        "Neon / Group Fitness": 3
+      },
+      "Ellenbrook": {
+        "Recovery (Sauna + Ice Bath)": 15,
+        "Neon / Group Fitness": 3
+      }
+    }
+  },
+  "prior_week": {
+    "period": {
+      "raw": "2026-05-18 - 2026-05-24",
+      "start": "2026-05-18",
+      "end": "2026-05-24"
+    },
+    "totals": {
+      "NewContracts": 235,
+      "EndedContracts": 228,
+      "SuspendedContracts": 170,
+      "FutureCancellations": 494,
+      "ProjectedCancellations": 426
+    },
+    "per_club": {
+      "Malaga": {
+        "NewContracts": 135,
+        "EndedContracts": 116,
+        "FutureCancellations": 302
+      },
+      "Ellenbrook": {
+        "NewContracts": 100,
+        "EndedContracts": 112,
+        "FutureCancellations": 192
+      }
+    },
+    "_source": "bootstrap-from-existing-dashboard"
+  }
+};
+</script>
+>

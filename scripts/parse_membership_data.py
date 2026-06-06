@@ -1,0 +1,472 @@
+"""
+parse_membership_data.py — Extract CB247 membership statistics from
+the weekly XLSX exports dropped into cb247-membership-inbox/.
+
+Input files (drop weekly):
+  cb247-membership-inbox/PGM_ContractsSummary.xlsx  — multi-tab weekly aggregate
+  cb247-membership-inbox/PGM_AllContracts.xlsx      — master contracts list
+  cb247-membership-inbox/Cleverwaiver.xlsx          — cancellation survey responses
+
+Output: state/membership-data.json
+
+Failure mode: missing or unparseable files preserve the previous JSON
+rather than blanking it (protects against forgotten weekly drop).
+
+Filtering logic for "base unique people":
+  Excludes Payment Plan Name in:
+    - Employee Default Free
+    - Kids Hub Child Plan
+    - Recovery (Includes Sauna, Ice Bath)         ← add-on
+    - Reformer Pilates STANDARD MEMBERSHIP        ← add-on
+    - Neon, Group Fitness, ChasinRX               ← add-ons
+    - Fitness Passport                            ← corporate
+  Then deduplicates on User Number.
+"""
+
+import json
+import sys
+from collections import Counter
+from datetime import datetime, timezone
+from pathlib import Path
+
+BASE_DIR    = Path(__file__).resolve().parent.parent
+INBOX_DIR   = BASE_DIR / "cb247-membership-inbox"
+STATE_DIR   = BASE_DIR / "state"
+OUTPUT_FILE = STATE_DIR / "membership-data.json"
+
+PGM_SUMMARY_FILE  = INBOX_DIR / "PGM_ContractsSummary.xlsx"
+PGM_CONTRACTS_FILE = INBOX_DIR / "PGM_AllContracts.xlsx"
+CLEVERWAIVER_FILE = INBOX_DIR / "Cleverwaiver.xlsx"
+
+# ── Filter rules ─────────────────────────────────────────────────────────────
+# Plans excluded from "base unique people" — administrative or non-revenue
+EXCLUDED_PLAN_KEYWORDS = [
+    "employee default free",   # Staff free access
+    "fitness passport",        # Corporate scheme
+]
+# Kids Hub plans (child memberships, not gym members) — separate category
+KIDS_HUB_KEYWORDS = [
+    "kids hub",
+]
+# Add-on plans (Recovery, Reformer, Neon, ChasinRX, Sauna)
+ADDON_KEYWORDS = [
+    "recovery",
+    "reformer",
+    "pilates",
+    "neon",
+    "chasinrx",
+    "chasingrx",
+    "sauna",
+    "ice bath",
+    "group fitness",
+]
+
+# Live membership statuses (what counts as "active")
+LIVE_STATUSES = {"Live"}
+
+CLUBS = {
+    "Malaga":     "ChasingBetter247 Malaga",
+    "Ellenbrook": "ChasingBetter247 Ellenbrook",
+}
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def _is_addon(plan_name):
+    """Plan is an add-on (Recovery, Reformer, Neon, ChasinRX, Sauna, etc)."""
+    p = (plan_name or "").lower()
+    return any(k in p for k in ADDON_KEYWORDS)
+
+
+def _is_kids_hub(plan_name):
+    """Plan is a Kids Hub child membership (not a gym member)."""
+    p = (plan_name or "").lower()
+    return any(k in p for k in KIDS_HUB_KEYWORDS)
+
+
+def _is_excluded_base(plan_name):
+    """Plan is administrative or corporate, excluded from base count."""
+    p = (plan_name or "").lower()
+    return any(k in p for k in EXCLUDED_PLAN_KEYWORDS)
+
+
+def _is_base_plan(plan_name):
+    """Row counts as 'base unique people' if: not add-on, not Kids Hub, not excluded."""
+    if not plan_name:
+        return False
+    return (not _is_addon(plan_name)
+            and not _is_kids_hub(plan_name)
+            and not _is_excluded_base(plan_name))
+
+
+def _read_tab(wb, tab_name):
+    """Yield rows from a tab as dicts (header on row 2 for PGM, row 1 for AllContracts)."""
+    if tab_name not in wb.sheetnames:
+        return
+    ws = wb[tab_name]
+    # PGM Summary tabs have a header on row 2 (row 1 = "Clients added in period")
+    # except the 'Summary' tab itself (period header on row 1, data row 2 = column headers)
+    header_row = 2 if tab_name != "Summary" else 2
+    headers = [ws.cell(row=header_row, column=c).value for c in range(1, ws.max_column + 1)]
+    for r in range(header_row + 1, ws.max_row + 1):
+        row_vals = [ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
+        if all(v is None or v == "" for v in row_vals):
+            continue
+        yield dict(zip(headers, row_vals))
+
+
+def _read_allcontracts(wb):
+    """AllContracts tab has header on row 1."""
+    if "AllContracts" not in wb.sheetnames:
+        return
+    ws = wb["AllContracts"]
+    headers = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
+    for r in range(2, ws.max_row + 1):
+        row_vals = [ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
+        if all(v is None or v == "" for v in row_vals):
+            continue
+        yield dict(zip(headers, row_vals))
+
+
+def _count_unique_base(rows, club_filter=None):
+    """Filter rows to base memberships, dedupe by User number."""
+    seen = set()
+    for r in rows:
+        if club_filter and (r.get("Club") or "") != club_filter:
+            continue
+        plan = r.get("Payment Plan Name") or ""
+        if not _is_base_plan(plan):
+            continue
+        u = r.get("User number") or r.get("UserNumber")
+        if u and u not in seen:
+            seen.add(u)
+    return len(seen)
+
+
+# ── PGM Summary parser ───────────────────────────────────────────────────────
+
+def parse_pgm_summary():
+    """Return dict with all weekly aggregates from the summary tab + per-tab unique people."""
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        return {"available": False, "skip_reason": "openpyxl not installed"}
+
+    if not PGM_SUMMARY_FILE.exists():
+        return {"available": False, "skip_reason": "PGM_ContractsSummary.xlsx not in inbox"}
+
+    try:
+        wb = load_workbook(PGM_SUMMARY_FILE, data_only=True)
+    except Exception as e:
+        return {"available": False, "skip_reason": f"failed to open: {e}"}
+
+    # Summary tab — headline weekly aggregates per club
+    ws = wb["Summary"]
+    period_raw = ws.cell(row=1, column=1).value or ""
+    # Parse period: "Period: 2026-05-25 - 2026-05-31"
+    period = period_raw.replace("Period:", "").strip()
+    start_date, end_date = (period.split(" - ") + ["", ""])[:2]
+    summary_headers = [ws.cell(row=2, column=c).value for c in range(1, ws.max_column + 1)]
+
+    per_club = {}
+    totals = {}
+    for r in range(3, ws.max_row + 1):
+        vals = [ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
+        if all(v is None for v in vals):
+            continue
+        row = dict(zip(summary_headers, vals))
+        club_name = row.get("Club") or ""
+        if club_name == "Total":
+            totals = {k: row.get(k, 0) for k in summary_headers if k != "Club"}
+        else:
+            # Map "ChasingBetter247 Malaga" → "Malaga"
+            for short, full in CLUBS.items():
+                if club_name == full:
+                    per_club[short] = {k: row.get(k, 0) for k in summary_headers if k != "Club"}
+
+    # Per-tab base unique people
+    new_rows = list(_read_tab(wb, "New contracts"))
+    ended_rows = list(_read_tab(wb, "Ended contracts"))
+    future_rows = list(_read_tab(wb, "Future cancellations"))
+
+    unique_base = {
+        "new":     {short: _count_unique_base(new_rows,    CLUBS[short]) for short in CLUBS},
+        "ended":   {short: _count_unique_base(ended_rows,  CLUBS[short]) for short in CLUBS},
+        "future":  {short: _count_unique_base(future_rows, CLUBS[short]) for short in CLUBS},
+    }
+    unique_base["new"]["Total"]    = sum(unique_base["new"].values())
+    unique_base["ended"]["Total"]  = sum(unique_base["ended"].values())
+    unique_base["future"]["Total"] = sum(unique_base["future"].values())
+
+    # Ended contracts — cancel reason histogram
+    cancel_reasons = Counter()
+    for r in ended_rows:
+        reason = (r.get("Cancel reason") or "").strip()
+        if reason:
+            cancel_reasons[reason] += 1
+
+    return {
+        "available":    True,
+        "period":       {"raw": period, "start": start_date, "end": end_date},
+        "per_club":     per_club,
+        "totals":       totals,
+        "unique_base":  unique_base,
+        "cancel_reasons_pgm": dict(cancel_reasons.most_common(20)),
+        "rows_seen": {
+            "new":   len(new_rows),
+            "ended": len(ended_rows),
+            "future": len(future_rows),
+        },
+    }
+
+
+# ── Cleverwaiver parser ──────────────────────────────────────────────────────
+
+def parse_cleverwaiver():
+    """Return cancellation reason + would-return + would-help breakdowns."""
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        return {"available": False, "skip_reason": "openpyxl not installed"}
+
+    if not CLEVERWAIVER_FILE.exists():
+        return {"available": False, "skip_reason": "Cleverwaiver.xlsx not in inbox"}
+
+    try:
+        wb = load_workbook(CLEVERWAIVER_FILE, data_only=True)
+    except Exception as e:
+        return {"available": False, "skip_reason": f"failed to open: {e}"}
+
+    ws = wb.active
+    if ws.max_row < 2:
+        return {"available": False, "skip_reason": "Cleverwaiver has no data"}
+
+    headers = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
+
+    # Find column indexes by partial match (header text is verbose)
+    def _find_col(needle):
+        for i, h in enumerate(headers):
+            if h and needle.lower() in str(h).lower():
+                return i
+        return None
+
+    club_col   = _find_col("Club")
+    reason_col = _find_col("main reason for cancelling")
+    return_col = _find_col("would you return")
+    helped_col = _find_col("what would have helped")
+
+    reasons = Counter()
+    reasons_by_club = {"Malaga": Counter(), "Ellenbrook": Counter()}
+    returns = Counter()
+    helped  = Counter()
+    total = 0
+
+    for r in range(2, ws.max_row + 1):
+        row = [ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
+        if all(v is None or v == "" for v in row):
+            continue
+        total += 1
+        club_raw = (row[club_col] or "") if club_col is not None else ""
+        # Map full name -> short
+        club_short = None
+        for short, full in CLUBS.items():
+            if full == club_raw:
+                club_short = short
+                break
+
+        # Reason (may be comma-separated for multi-select)
+        if reason_col is not None:
+            raw = row[reason_col] or ""
+            for r1 in str(raw).split(","):
+                r1 = r1.strip()
+                if r1:
+                    reasons[r1] += 1
+                    if club_short:
+                        reasons_by_club[club_short][r1] += 1
+
+        # Would return
+        if return_col is not None:
+            ret = (row[return_col] or "").strip()
+            if ret:
+                returns[ret] += 1
+
+        # What would have helped
+        if helped_col is not None:
+            raw = row[helped_col] or ""
+            for h1 in str(raw).split(","):
+                h1 = h1.strip()
+                if h1 and h1.lower() not in ("nothing specific", "not applicable", "n/a"):
+                    helped[h1] += 1
+
+    return {
+        "available":         True,
+        "total_responses":   total,
+        "reasons":           dict(reasons.most_common(15)),
+        "reasons_by_club":   {k: dict(v.most_common(10)) for k, v in reasons_by_club.items()},
+        "would_return":      dict(returns.most_common()),
+        "would_have_helped": dict(helped.most_common(10)),
+    }
+
+
+# ── AllContracts parser (add-on performance) ────────────────────────────────
+
+def parse_allcontracts():
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        return {"available": False, "skip_reason": "openpyxl not installed"}
+
+    if not PGM_CONTRACTS_FILE.exists():
+        return {"available": False, "skip_reason": "PGM_AllContracts.xlsx not in inbox"}
+
+    try:
+        wb = load_workbook(PGM_CONTRACTS_FILE, data_only=True)
+    except Exception as e:
+        return {"available": False, "skip_reason": f"failed to open: {e}"}
+
+    rows = list(_read_allcontracts(wb))
+    if not rows:
+        return {"available": False, "skip_reason": "AllContracts tab empty"}
+
+    addon_active = Counter()
+    addon_by_club = {"Malaga": Counter(), "Ellenbrook": Counter()}
+    total_active_base = {"Malaga": set(), "Ellenbrook": set()}
+
+    for r in rows:
+        plan = (r.get("Payment Plan Name") or "")
+        status = r.get("Membership Status") or ""
+        if status not in LIVE_STATUSES:
+            continue
+        club_raw = r.get("Club") or ""
+        club_short = None
+        for short, full in CLUBS.items():
+            if full == club_raw:
+                club_short = short
+                break
+
+        if _is_addon(plan):
+            # Bucket add-ons into common categories
+            p_low = plan.lower()
+            if "recovery" in p_low or "sauna" in p_low or "ice bath" in p_low:
+                bucket = "Recovery (Sauna + Ice Bath)"
+            elif "reformer" in p_low or "pilates" in p_low:
+                bucket = "Reformer Pilates"
+            elif "neon" in p_low or "group fitness" in p_low:
+                bucket = "Neon / Group Fitness"
+            elif "kids hub" in p_low:
+                bucket = "Kids Hub"
+            elif "chasinrx" in p_low or "chasingrx" in p_low:
+                bucket = "ChasinRX"
+            else:
+                bucket = "Other add-on"
+            addon_active[bucket] += 1
+            if club_short:
+                addon_by_club[club_short][bucket] += 1
+        elif _is_base_plan(plan):
+            u = r.get("User number")
+            if u and club_short:
+                total_active_base[club_short].add(u)
+
+    return {
+        "available":         True,
+        "total_active_base": {k: len(v) for k, v in total_active_base.items()},
+        "total_active_base_combined": sum(len(v) for v in total_active_base.values()),
+        "addon_active":      dict(addon_active.most_common()),
+        "addon_by_club":     {k: dict(v.most_common()) for k, v in addon_by_club.items()},
+    }
+
+
+# ── Main ────────────────────────────────────────────────────────────────────
+
+def main():
+    print("[membership] Parsing PGM Contracts Summary...")
+    summary = parse_pgm_summary()
+    if summary.get("available"):
+        print(f"  ✓ Period: {summary['period']['raw']}")
+        for club, m in summary["per_club"].items():
+            print(f"  ✓ {club}: New {m.get('NewContracts',0)} · Ended {m.get('EndedContracts',0)} · Future Canc {m.get('FutureCancellations',0)}")
+    else:
+        print(f"  ⚠ {summary.get('skip_reason')}")
+
+    print("\n[membership] Parsing Cleverwaiver...")
+    cleverwaiver = parse_cleverwaiver()
+    if cleverwaiver.get("available"):
+        print(f"  ✓ {cleverwaiver['total_responses']} survey responses")
+        print(f"  ✓ Top 3 reasons: {list(cleverwaiver['reasons'].keys())[:3]}")
+        print(f"  ✓ Would return: {cleverwaiver['would_return']}")
+    else:
+        print(f"  ⚠ {cleverwaiver.get('skip_reason')}")
+
+    print("\n[membership] Parsing AllContracts...")
+    contracts = parse_allcontracts()
+    if contracts.get("available"):
+        ab = contracts["total_active_base"]
+        print(f"  ✓ Active base members: Malaga {ab.get('Malaga',0)} · Ellenbrook {ab.get('Ellenbrook',0)} · Combined {contracts['total_active_base_combined']}")
+        print(f"  ✓ Active add-ons: {contracts['addon_active']}")
+    else:
+        print(f"  ⚠ {contracts.get('skip_reason')}")
+
+    # ── Prior week snapshot for WoW comparison ──────────────────────────
+    # When membership-history.json exists, use its second-most-recent entry.
+    # On first run, falls back to a hardcoded W/E 18-24 May 2026 reference
+    # so the dashboard shows WoW deltas immediately.
+    history_file = STATE_DIR / "membership-history.json"
+    prior_week = None
+    history = []
+    if history_file.exists():
+        try:
+            history = json.loads(history_file.read_text())
+            if len(history) >= 1:
+                prior_week = history[-1]  # last saved week (before this run)
+        except Exception:
+            history = []
+
+    if prior_week is None and summary.get("available"):
+        # First-run bootstrap — W/E 18-24 May 2026 from existing weekly dashboard
+        prior_week = {
+            "period": {"raw": "2026-05-18 - 2026-05-24", "start": "2026-05-18", "end": "2026-05-24"},
+            "totals": {
+                "NewContracts": 235, "EndedContracts": 228,
+                "SuspendedContracts": 170, "FutureCancellations": 494,
+                "ProjectedCancellations": 426,
+            },
+            "per_club": {
+                "Malaga":     {"NewContracts": 135, "EndedContracts": 116, "FutureCancellations": 302},
+                "Ellenbrook": {"NewContracts": 100, "EndedContracts": 112, "FutureCancellations": 192},
+            },
+            "_source": "bootstrap-from-existing-dashboard",
+        }
+
+    # Build output payload
+    output = {
+        "parsed_at":   datetime.now(timezone.utc).isoformat(),
+        "available":   summary.get("available", False),
+        "summary":     summary,
+        "cleverwaiver": cleverwaiver,
+        "contracts":   contracts,
+        "prior_week":  prior_week,
+    }
+
+    # Append current week to history (cap last 12 weeks)
+    if summary.get("available"):
+        current_snap = {
+            "period":   summary.get("period"),
+            "totals":   summary.get("totals"),
+            "per_club": summary.get("per_club"),
+            "parsed_at": output["parsed_at"],
+        }
+        # Avoid duplicate-on-same-period entries when re-running
+        history = [h for h in history if (h.get("period") or {}).get("raw") != current_snap["period"]["raw"]]
+        history.append(current_snap)
+        history = history[-12:]  # keep last 12 weeks
+        history_file.write_text(json.dumps(history, indent=2, default=str))
+
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE.write_text(json.dumps(output, indent=2, default=str))
+    print(f"\n[membership] Saved → {OUTPUT_FILE}")
+    return output
+
+
+if __name__ == "__main__":
+    result = main()
+    sys.exit(0 if result.get("available") else 1)

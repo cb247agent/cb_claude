@@ -44,3 +44,6 @@ node_modules/
 # CB247 Metricool inbox — contains private analytics PDFs
 cb247-inbox/metricool.pdf
 cb247-inbox/*.pdf
+
+# CB247 membership inbox — contains private member data
+cb247-membership-inbox/*.xlsx

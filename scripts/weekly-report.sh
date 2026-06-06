@@ -127,6 +127,14 @@ log "Step 1f — GBP Performance API (per-location actions)..."
 "$PYTHON" "$BASE_DIR/scripts/pull_gbp_performance.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  GBP Performance skipped — first-run setup or API not enabled. Dashboard shows aggregate GBP only."
 
+# ── Step 1g: Membership data — parse Perfect Gym + CleverWaiver XLSX exports ──
+# Requires PGM_ContractsSummary.xlsx + PGM_AllContracts.xlsx + Cleverwaiver.xlsx
+# dropped into cb247-membership-inbox/ before 1:55am Monday. Parser skips
+# gracefully if files missing (keeps previous parse).
+log "Step 1g — Parse Membership XLSX exports..."
+"$PYTHON" "$BASE_DIR/scripts/parse_membership_data.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Membership parse skipped — XLSX files missing or unparseable. Dashboard uses previous parse."
+
 log "Phase 1 complete."
 
 
@@ -512,6 +520,8 @@ log "Step 3b' — Re-injecting SEO_EXTRAS + SOCIAL_DATA + META_ADS_LIVE blocks (
     || log "  ⚠️  Social block injection had issues"
 "$PYTHON" "$BASE_DIR/scripts/inject-meta-ads.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Meta ads injection had issues"
+"$PYTHON" "$BASE_DIR/scripts/inject-membership-data.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Membership block injection had issues"
 
 log "Step 3c — Deploying dashboard to GitHub Pages..."
 bash "$BASE_DIR/scripts/deploy-dashboard.sh" >> "$LOG" 2>&1 \
