@@ -139,6 +139,27 @@ def run_all():
         except Exception as e:
             log(f"inject: {script} skipped: {e}", "SKIP")
 
+    # ── Session 3: Work Queue measurement runner ──────────────────────────
+    # Checks for Done actions whose measurement window has elapsed and
+    # computes verdicts using the fresh state/*.json data. Idempotent
+    # (skips items already measured). Safe to run every 6 hours.
+    print("\n--- Work Queue measurement (post-Done verdicts) ---")
+    try:
+        result = subprocess.run(
+            [sys.executable, str(BASE_DIR / "scripts" / "work_queue" / "measurement_runner.py")],
+            capture_output=True, text=True, timeout=120
+        )
+        if result.returncode == 0:
+            log("measurement runner OK")
+            # Show last few lines of summary
+            for line in (result.stdout or "").splitlines()[-3:]:
+                if line.strip():
+                    print(f"  {line}")
+        else:
+            log(f"measurement runner warning: {(result.stderr or result.stdout)[-200:]}", "SKIP")
+    except Exception as e:
+        log(f"measurement runner skipped: {e}", "SKIP")
+
     print(f"\n{'='*50}")
     successes = [k for k, v in results.items() if v == "success"]
     print(f"Done. {len(successes)}/{len(results)} sources pulled successfully.")
