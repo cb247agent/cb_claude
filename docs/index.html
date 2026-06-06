@@ -337,15 +337,7 @@ tbody tr:hover td{background:#fafafa}
 .cb-live-dot.reconnecting::before{background:#f59e0b}
 .cb-live-dot.offline::before{background:#dc2626}
 @keyframes cb-pulse{0%{box-shadow:0 0 0 0 rgba(63,166,154,.4)}70%{box-shadow:0 0 0 6px rgba(63,166,154,0)}100%{box-shadow:0 0 0 0 rgba(63,166,154,0)}}
-/* ── Supabase test panel (Phase A only — removed after Phase B) ─ */
-.cb-test-panel{background:#fffbeb;border:1px dashed #f59e0b;border-radius:6px;padding:14px 18px;margin-top:24px;font-size:11px;color:var(--text-2)}
-.cb-test-panel-h{font-weight:700;color:#92400e;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;font-size:10px}
-.cb-test-panel-desc{margin-bottom:12px;font-size:11px;color:#92400e;line-height:1.55}
-.cb-test-btn{background:#fff;border:1px solid #d97706;color:#92400e;padding:6px 14px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;margin-right:8px;font-family:inherit}
-.cb-test-btn:hover{background:#fef3c7}
-.cb-test-btn:disabled{opacity:.5;cursor:wait}
-.cb-test-output{margin-top:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:var(--text);background:#fff;border:1px solid #fde68a;border-radius:3px;padding:10px;max-height:200px;overflow-y:auto;white-space:pre-wrap;display:none;line-height:1.5}
-.cb-test-output.show{display:block}
+/* (Phase A test panel CSS removed — replaced by real Supabase planner sync in Phase B) */
 </style>
 </head>
 <body>
@@ -6819,6 +6811,15 @@ function _initSupabase() {
     _channels.push(ch);
 
     console.log('[cbState] Supabase client created — URL:', _SUPABASE_URL);
+
+    // Phase B: fire planner sync layer once the client exists. It internally
+    // migrates from localStorage, hydrates the cache, and subscribes to realtime.
+    if (window.cbState && window.cbState.planner) {
+      window.cbState.planner.init();
+    } else {
+      // cbState defined later in script — defer
+      setTimeout(() => { if (window.cbState?.planner) window.cbState.planner.init(); }, 100);
+    }
   } catch (e) {
     console.error('[cbState] init failed:', e);
     _setConnStatus('offline');
@@ -6922,6 +6923,146 @@ window.cbState = {
         _supa.removeChannel(ch);
       }, 3000);
     });
+  },
+
+  // ── Phase B: Planner sync layer ─────────────────────────────────────────
+  // Mirrors PLANNER_STATUS_KEY / PLANNER_APPROVAL_KEY between localStorage
+  // (read cache) and Supabase (source of truth + realtime broadcast).
+  planner: {
+    PLANNER_STATUS_KEY:   'cb247-planner-status',
+    PLANNER_APPROVAL_KEY: 'cb247-planner-approval',
+    _initialized: false,
+    _rerender: null,
+
+    setRerenderFn(fn) { this._rerender = fn; },
+
+    async _hydrate() {
+      if (!_supa) return;
+      const [statuses, approvals] = await Promise.all([
+        _supa.from('planner_status').select('*'),
+        _supa.from('planner_approval').select('*'),
+      ]);
+      if (statuses.data) {
+        const map = {};
+        statuses.data.forEach(r => { map[r.item_id] = r.status; });
+        localStorage.setItem(this.PLANNER_STATUS_KEY, JSON.stringify(map));
+      }
+      if (approvals.data) {
+        const map = {};
+        approvals.data.forEach(r => { map[r.item_id] = { status: r.decision, notes: r.notes || '' }; });
+        localStorage.setItem(this.PLANNER_APPROVAL_KEY, JSON.stringify(map));
+      }
+      console.log('[cbState.planner] hydrated:', (statuses.data||[]).length, 'statuses,', (approvals.data||[]).length, 'approvals');
+    },
+
+    async _migrateIfNeeded() {
+      if (!_supa) return;
+      // Skip migration if Supabase already has data
+      const probe = await _supa.from('planner_status').select('item_id', { head: true, count: 'exact' });
+      if (probe.count && probe.count > 0) {
+        console.log('[cbState.planner] Supabase already has', probe.count, 'rows — skipping migration');
+        return;
+      }
+      const me = window.cbState.whoAmI() || 'migration';
+      const ts = new Date().toISOString();
+      const status   = JSON.parse(localStorage.getItem(this.PLANNER_STATUS_KEY) || '{}');
+      const approval = JSON.parse(localStorage.getItem(this.PLANNER_APPROVAL_KEY) || '{}');
+      const statusRows = Object.entries(status).map(([item_id, s]) => ({
+        item_id, status: s, updated_by: me, updated_at: ts
+      }));
+      const approvalRows = Object.entries(approval).map(([item_id, val]) => ({
+        item_id, decision: val.status || null, notes: val.notes || null, updated_by: me, updated_at: ts
+      }));
+      if (statusRows.length)   await _supa.from('planner_status').upsert(statusRows);
+      if (approvalRows.length) await _supa.from('planner_approval').upsert(approvalRows);
+      if (statusRows.length || approvalRows.length) {
+        console.log('[cbState.planner] migrated', statusRows.length, 'statuses +', approvalRows.length, 'approvals from localStorage to Supabase');
+      }
+    },
+
+    _subscribe() {
+      if (!_supa) return;
+      const self = this;
+      _supa.channel('cb-planner-status-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_status' }, (payload) => {
+          const map = JSON.parse(localStorage.getItem(self.PLANNER_STATUS_KEY) || '{}');
+          if (payload.eventType === 'DELETE' && payload.old && payload.old.item_id) {
+            delete map[payload.old.item_id];
+          } else if (payload.new && payload.new.item_id) {
+            map[payload.new.item_id] = payload.new.status;
+          }
+          localStorage.setItem(self.PLANNER_STATUS_KEY, JSON.stringify(map));
+          if (self._rerender) self._rerender();
+        })
+        .subscribe();
+      _supa.channel('cb-planner-approval-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'planner_approval' }, (payload) => {
+          const map = JSON.parse(localStorage.getItem(self.PLANNER_APPROVAL_KEY) || '{}');
+          if (payload.eventType === 'DELETE' && payload.old && payload.old.item_id) {
+            delete map[payload.old.item_id];
+          } else if (payload.new && payload.new.item_id) {
+            map[payload.new.item_id] = { status: payload.new.decision, notes: payload.new.notes || '' };
+          }
+          localStorage.setItem(self.PLANNER_APPROVAL_KEY, JSON.stringify(map));
+          if (self._rerender) self._rerender();
+        })
+        .subscribe();
+    },
+
+    async init() {
+      if (this._initialized) return;
+      if (!_supa) { setTimeout(() => this.init(), 500); return; }
+      this._initialized = true;
+
+      // Default rerender callback: refresh Planner + Review if they exist
+      if (!this._rerender) {
+        this._rerender = () => {
+          try {
+            if (typeof renderPlanner       === 'function') renderPlanner();
+            if (typeof renderContentReview === 'function') renderContentReview();
+          } catch (e) { console.warn('[cbState.planner] rerender failed:', e); }
+        };
+      }
+
+      await this._migrateIfNeeded();
+      await this._hydrate();
+      this._subscribe();
+      this._rerender();
+      console.log('[cbState.planner] Phase B sync layer active');
+    },
+
+    // Optimistic write: update localStorage immediately, push to Supabase in background.
+    setStatus(itemId, status) {
+      const map = JSON.parse(localStorage.getItem(this.PLANNER_STATUS_KEY) || '{}');
+      map[itemId] = status;
+      localStorage.setItem(this.PLANNER_STATUS_KEY, JSON.stringify(map));
+      if (!_supa) return Promise.resolve();
+      const me = window.cbState.whoAmI();
+      return _supa.from('planner_status').upsert({
+        item_id: itemId, status, updated_by: me, updated_at: new Date().toISOString()
+      }).then(r => { if (r.error) console.warn('[cbState.planner] setStatus failed:', r.error); });
+    },
+
+    // Optimistic write: notes/decision merged with existing record (preserves prior values when passed undefined).
+    setApproval(itemId, decision, notes) {
+      const map  = JSON.parse(localStorage.getItem(this.PLANNER_APPROVAL_KEY) || '{}');
+      const prev = map[itemId] || {};
+      const merged = {
+        status: (decision !== undefined && decision !== null) ? decision : prev.status,
+        notes:  (notes    !== undefined)                      ? notes    : prev.notes,
+      };
+      map[itemId] = merged;
+      localStorage.setItem(this.PLANNER_APPROVAL_KEY, JSON.stringify(map));
+      if (!_supa) return Promise.resolve();
+      const me = window.cbState.whoAmI();
+      return _supa.from('planner_approval').upsert({
+        item_id: itemId,
+        decision: merged.status || null,
+        notes:    merged.notes  || null,
+        updated_by: me,
+        updated_at: new Date().toISOString()
+      }).then(r => { if (r.error) console.warn('[cbState.planner] setApproval failed:', r.error); });
+    },
   },
 };
 
@@ -10093,11 +10234,17 @@ window.saveModalAndClose = () => {
 
   const notes = ($('modal-notes').value || '').trim();
 
-  // Always persist notes + approval decision to localStorage
-  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
-  const current = approval[_modalItemId]||{};
-  approval[_modalItemId] = {...current, notes, status: _pendingApproval||current.status};
-  localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(approval));
+  // Phase B: write through cbState — handles localStorage cache + Supabase push.
+  // setApproval preserves prior values when args are undefined; we always pass notes
+  // (possibly empty string), and decision only if user picked one this open.
+  if (window.cbState?.planner) {
+    cbState.planner.setApproval(_modalItemId, _pendingApproval || undefined, notes);
+  } else {
+    const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
+    const current = approval[_modalItemId]||{};
+    approval[_modalItemId] = {...current, notes, status: _pendingApproval||current.status};
+    localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(approval));
+  }
 
   // If "Needs Adjustment" was selected and there are notes + a draft link, auto-apply
   if(_pendingApproval === 'adjustment' && notes) {
@@ -10207,8 +10354,13 @@ window.setModalApproval = (val) => {
     newStatus = 'Idea';
   }
   if(newStatus !== curr) {
-    saved[_modalItemId] = newStatus;
-    localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+    // Phase B: write through cbState (localStorage + Supabase + broadcast)
+    if (window.cbState?.planner) {
+      cbState.planner.setStatus(_modalItemId, newStatus);
+    } else {
+      saved[_modalItemId] = newStatus;
+      localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+    }
     // Update status pill in modal to reflect new position
     const sc = PLANNER_STATUS_COLORS[newStatus]||'#f3f4f6';
     $('modal-status-pill').innerHTML = `<span style="background:${sc};border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700">${newStatus}</span>`;
@@ -10219,10 +10371,14 @@ window.setModalApproval = (val) => {
     renderPlanner();
   }
 
-  // Also save approval decision to storage
-  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
-  approval[_modalItemId] = {...(approval[_modalItemId]||{}), status: val};
-  localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(approval));
+  // Phase B: save approval decision through cbState (preserves notes)
+  if (window.cbState?.planner) {
+    cbState.planner.setApproval(_modalItemId, val);
+  } else {
+    const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
+    approval[_modalItemId] = {...(approval[_modalItemId]||{}), status: val};
+    localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(approval));
+  }
 };
 
 function _refreshApprovalPills(val) {
@@ -10239,8 +10395,13 @@ window.cycleFromModal = () => {
   const curr = saved[_modalItemId]||'Idea';
   const idx = KANBAN_COLS.findIndex(c=>c.key===curr);
   const next = KANBAN_COLS[(idx+1)%KANBAN_COLS.length].key;
-  saved[_modalItemId] = next;
-  localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+  // Phase B: write through cbState
+  if (window.cbState?.planner) {
+    cbState.planner.setStatus(_modalItemId, next);
+  } else {
+    saved[_modalItemId] = next;
+    localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+  }
   const sc = PLANNER_STATUS_COLORS[next]||'#f3f4f6';
   $('modal-status-pill').innerHTML = `<span style="background:${sc};border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700">${next}</span>`;
   const nextIdx = KANBAN_COLS.findIndex(c=>c.key===next);
@@ -10519,20 +10680,6 @@ function renderPlanner() {
     </div>`;
   }
 
-  // ── PHASE A TEST PANEL — remove once Phase B (real Supabase wiring) lands ──
-  html += `
-    <div class="cb-test-panel" id="cb-test-panel">
-      <div class="cb-test-panel-h">Supabase connection — Phase A test panel</div>
-      <div class="cb-test-panel-desc">
-        Temporary. Two buttons that prove the dashboard can write to + receive realtime updates from your Supabase database. Once Phase B lands (real Planner approvals migrated), this panel goes away.<br>
-        <b>Tip:</b> open the dashboard in a second browser tab (or another laptop) and click "Test realtime" — you should see the event appear in both tabs at once.
-      </div>
-      <button class="cb-test-btn" onclick="cbState.testWrite(document.getElementById('cb-test-out'))">Test write</button>
-      <button class="cb-test-btn" onclick="cbState.testRealtime(document.getElementById('cb-test-out'))">Test realtime</button>
-      <div class="cb-test-output" id="cb-test-out"></div>
-    </div>
-  `;
-
   $('planner-content').innerHTML = html;
 }
 
@@ -10542,8 +10689,13 @@ window.advanceStatus = (id) => {
   const curr = saved[id] || 'Idea';
   const idx = KANBAN_COLS.findIndex(c=>c.key===curr);
   const next = KANBAN_COLS[(idx+1) % KANBAN_COLS.length].key;
-  saved[id] = next;
-  localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+  // Phase B: write through cbState (localStorage + Supabase + broadcast)
+  if (window.cbState?.planner) {
+    cbState.planner.setStatus(id, next);
+  } else {
+    saved[id] = next;
+    localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(saved));
+  }
   renderPlanner();
 };
 
