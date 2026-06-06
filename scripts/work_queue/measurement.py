@@ -29,6 +29,7 @@ HIGHER_IS_BETTER = {
     "gbp_reviews_count",
     "gbp_photos_count",
     "gbp_posts_per_week",
+    "gbp_rating",
     "ig_engagement_rate",
     "ig_followers",
     "membership_signups_weekly",
@@ -163,6 +164,16 @@ def _tolerance_for(metric: str) -> float:
         return 200            # 200 reach noise
     if metric == "ahrefs_domain_rating":
         return 0.5            # half a DR point
+    if metric == "gbp_reviews_count":
+        return 2              # 2 reviews noise
+    if metric == "gbp_photos_count":
+        return 1              # 1 photo noise
+    if metric == "gbp_rating":
+        return 0.05           # 0.05 star noise (4.6→4.65 = noise; 4.6→4.7 = real move)
+    if metric == "gbp_posts_per_week":
+        return 0.5            # half-post noise
+    if metric == "gbp_review_response_rate":
+        return 2              # 2pp noise
     return 0
 
 

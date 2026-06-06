@@ -50,6 +50,10 @@ from work_queue.baselines import (  # noqa: E402
     google_ads_combined_metric,
     google_ads_campaign_metric_for,
     google_ads_metric_from_field,
+    gbp_review_count_for,
+    gbp_photos_count_for,
+    gbp_rating_for,
+    gbp_metric_from_field,
 )
 from work_queue.measurement import (  # noqa: E402
     compute_kpi_status,
@@ -161,7 +165,17 @@ def _fetch_actual(metric: str, keyword: Optional[str], pattern: Optional[str]) -
             # campaign was paused / renamed — fall through to account-level
         return google_ads_combined_metric(field)
 
-    # Session 5c+: gbp_*, ig_*, membership_* lookups
+    # ── GBP (Session 5c) ── keyword field carries location name (malaga/ellenbrook)
+    if metric == "gbp_reviews_count" and keyword:
+        v = gbp_review_count_for(keyword)
+        return float(v) if v is not None else None
+    if metric == "gbp_photos_count" and keyword:
+        v = gbp_photos_count_for(keyword)
+        return float(v) if v is not None else None
+    if metric == "gbp_rating" and keyword:
+        return gbp_rating_for(keyword)
+
+    # Session 5d+: ig_*, membership_* lookups
     return None
 
 

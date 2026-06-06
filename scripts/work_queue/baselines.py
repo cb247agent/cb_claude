@@ -320,3 +320,47 @@ def gbp_rating_for(location: str) -> Optional[float]:
     loc = gbp.get(location.lower()) or {}
     r = loc.get("rating")
     return float(r) if r is not None else None
+
+
+def gbp_location_full(location: str) -> Optional[dict]:
+    """Return the full Apify-scraped profile block for a location."""
+    gbp = _load("gbp-data.json")
+    if not gbp:
+        return None
+    return gbp.get(location.lower())
+
+
+def gbp_competitors_for(location: str) -> list:
+    """Return competitor dicts scoped to this location (case-insensitive match
+    on the competitor's 'location' field). Returns [] if data missing."""
+    gbp = _load("gbp-data.json")
+    if not gbp:
+        return []
+    target = location.strip().lower()
+    return [
+        c for c in (gbp.get("competitors") or [])
+        if (c.get("location") or "").strip().lower() == target
+    ]
+
+
+def gbp_top_competitor(location: str, min_reviews: int = 30) -> Optional[dict]:
+    """Highest-rated competitor at the location with at least `min_reviews`
+    reviews (filters out small-volume rating noise). Returns None if no
+    competitor qualifies."""
+    competitors = [
+        c for c in gbp_competitors_for(location)
+        if (c.get("reviews") or 0) >= min_reviews
+        and c.get("rating") is not None
+    ]
+    if not competitors:
+        return None
+    return max(competitors, key=lambda c: float(c.get("rating") or 0))
+
+
+def gbp_metric_from_field(metric: str) -> Optional[str]:
+    """Map a VALID_METRICS name to the gbp-data.json field name."""
+    return {
+        "gbp_reviews_count": "reviews",
+        "gbp_photos_count":  "photos",
+        "gbp_rating":        "rating",
+    }.get(metric)

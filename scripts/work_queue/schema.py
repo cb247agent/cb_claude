@@ -37,6 +37,7 @@ VALID_METRICS = {
     "gbp_reviews_count",
     "gbp_photos_count",
     "gbp_posts_per_week",
+    "gbp_rating",
     "ig_engagement_rate",
     "ig_followers",
     "membership_signups_weekly",
