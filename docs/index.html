@@ -11642,11 +11642,17 @@ function openTrackerDetail(id) {
 // Re-render the detail panel content using the latest merged data.
 // Called by openTrackerDetail and by the cbState.actionTracker realtime callback.
 function _renderTrackerDetailInto(id) {
+  console.log('[tracker] _renderTrackerDetailInto called for id =', id);
   const inner = $('tracker-detail-inner');
-  if (!inner) return;
+  if (!inner) { console.warn('[tracker] no inner element'); return; }
   const actions = (D.tracker && D.tracker.actions) || [];
-  const a = _mergeActionWithTeamState(actions.find(x => x.id === id));
-  if (!a) return;
+  const rawA = actions.find(x => x.id === id);
+  if (!rawA) { console.warn('[tracker] action not found for id =', id, '; available:', actions.map(x=>x.id)); return; }
+  let a;
+  try { a = _mergeActionWithTeamState(rawA); }
+  catch (e) { console.error('[tracker] _mergeActionWithTeamState threw:', e); return; }
+  if (!a) { console.warn('[tracker] merge returned null'); return; }
+  console.log('[tracker] merged action ready; decision =', a.decision, 'status =', a.status);
 
   const decLabel  = { approved:'Approved', adjusted:'Needs Adjustment', rejected:'Rejected', pending:'Pending' }[a.decision] || 'Pending';
   const statLabel = { in_progress:'In Progress', completed:'Completed', cancelled:'Cancelled', pending:'Pending' }[a.status] || 'Pending';
@@ -11670,15 +11676,25 @@ function _renderTrackerDetailInto(id) {
     touchLine = `<div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:right">Last touched by <b>${a._team_updated_by || '—'}</b>${ago ? ' · ' + ago : ''}</div>`;
   }
 
-  // Decision pills
-  const decPill = (val, label, color) =>
-    `<button class="tracker-pill ${a.decision === val ? 'sel sel-' + val : ''}" style="${a.decision === val ? `border-color:${color};background:${color};color:#fff` : ''}" onclick="setTrackerDecision('${id}','${val}')">${label}</button>`;
+  // Decision pills (no nested template literals — safer across browsers)
+  const decPill = function(val, label, color) {
+    const sel = (a.decision === val);
+    const cls = sel ? 'sel sel-' + val : '';
+    const stl = sel ? ('border-color:' + color + ';background:' + color + ';color:#fff') : '';
+    return '<button class="tracker-pill ' + cls + '" style="' + stl + '" onclick="setTrackerDecision(\'' + id + '\',\'' + val + '\')">' + label + '</button>';
+  };
 
   // Outcome pills
-  const outPill = (val, label, color) =>
-    `<button class="tracker-pill ${a.outcome_verdict === val ? 'sel' : ''}" style="${a.outcome_verdict === val ? `border-color:${color};background:${color};color:#fff` : ''}" onclick="setTrackerOutcome('${id}','${val}')">${label}</button>`;
+  const outPill = function(val, label, color) {
+    const sel = (a.outcome_verdict === val);
+    const cls = sel ? 'sel' : '';
+    const stl = sel ? ('border-color:' + color + ';background:' + color + ';color:#fff') : '';
+    return '<button class="tracker-pill ' + cls + '" style="' + stl + '" onclick="setTrackerOutcome(\'' + id + '\',\'' + val + '\')">' + label + '</button>';
+  };
 
-  inner.innerHTML = `
+  let _htmlOut = '';
+  try {
+  _htmlOut = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
       <div>
         <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">${a.id} · ${a.category || ''} · ${a.priority || ''}</div>
@@ -11744,6 +11760,13 @@ function _renderTrackerDetailInto(id) {
 
     ${touchLine}
   `;
+  console.log('[tracker] template rendered, length =', _htmlOut.length);
+  } catch (e) {
+    console.error('[tracker] template build threw:', e);
+    _htmlOut = '<div style="color:red;padding:20px">Render error: ' + (e && e.message ? e.message : e) + '</div>';
+  }
+  inner.innerHTML = _htmlOut;
+  console.log('[tracker] innerHTML set; visible children =', inner.children.length);
 }
 
 function closeTrackerDetail() {
