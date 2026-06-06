@@ -47,6 +47,9 @@ from work_queue.baselines import (  # noqa: E402
     meta_combined_metric,
     meta_ad_metric_for,
     meta_metric_from_field,
+    google_ads_combined_metric,
+    google_ads_campaign_metric_for,
+    google_ads_metric_from_field,
 )
 from work_queue.measurement import (  # noqa: E402
     compute_kpi_status,
@@ -148,7 +151,17 @@ def _fetch_actual(metric: str, keyword: Optional[str], pattern: Optional[str]) -
             # to account-level so the verdict still resolves with directional info
         return meta_combined_metric(field)
 
-    # Session 5b+: google_ads_*, gbp_*, ig_*, membership_* lookups
+    # ── Google Ads (Session 5b) ──
+    field = google_ads_metric_from_field(metric)
+    if field is not None:
+        if keyword:
+            v = google_ads_campaign_metric_for(keyword, field)
+            if v is not None:
+                return v
+            # campaign was paused / renamed — fall through to account-level
+        return google_ads_combined_metric(field)
+
+    # Session 5c+: gbp_*, ig_*, membership_* lookups
     return None
 
 

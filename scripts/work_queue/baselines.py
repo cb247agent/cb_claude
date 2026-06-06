@@ -197,14 +197,23 @@ def meta_metric_from_field(metric: str) -> Optional[str]:
 # ── Google Ads ───────────────────────────────────────────────────────────────
 
 
-def google_ads_latest_week() -> Optional[dict]:
+def _google_ads_latest_week_full() -> Optional[dict]:
+    """Latest week's full Google Ads block (combined + per-location + campaigns)."""
     ads = _load("ads-data.json")
     if not ads:
         return None
     weeks = ads.get("google_ads") or []
     if not weeks:
         return None
-    return weeks[0].get("combined") or None
+    return weeks[0]
+
+
+def google_ads_latest_week() -> Optional[dict]:
+    """Latest week's combined Google Ads stats."""
+    wk = _google_ads_latest_week_full()
+    if not wk:
+        return None
+    return wk.get("combined") or None
 
 
 def google_ads_cpa_baseline() -> Optional[float]:
@@ -216,6 +225,70 @@ def google_ads_cpa_baseline() -> Optional[float]:
     if not conv:
         return None
     return round(spend / conv, 2)
+
+
+def google_ads_combined_metric(metric_field: str) -> Optional[float]:
+    """Account-level Google Ads metric. metric_field is the key in the combined
+    dict (cpa, conv, spend, clicks, impressions, ctr, cpc)."""
+    w = google_ads_latest_week()
+    if not w:
+        return None
+    v = w.get(metric_field)
+    return float(v) if v is not None else None
+
+
+def google_ads_all_campaigns_latest() -> list:
+    """Raw list of campaigns from the latest week. Each row has name, spend,
+    clicks, conv, cpa, status, location."""
+    wk = _google_ads_latest_week_full()
+    if not wk:
+        return []
+    return wk.get("campaigns") or []
+
+
+def _parse_scope(scope: str) -> tuple:
+    """Split 'Name [Loc]' into (name, location). 'Name' alone → (name, None)."""
+    if not scope:
+        return ("", None)
+    s = scope.strip()
+    if s.endswith("]") and "[" in s:
+        name, _, loc = s.rpartition("[")
+        return (name.strip(), loc.rstrip("]").strip())
+    return (s, None)
+
+
+def google_ads_campaign_metric_for(scope: str, metric_field: str) -> Optional[float]:
+    """Look up a campaign's metric_field. `scope` is either 'Campaign Name' or
+    'Campaign Name [Location]' (for PMax-style cross-location campaigns).
+    Case-insensitive exact-name match on `name`."""
+    name, loc = _parse_scope(scope)
+    if not name:
+        return None
+    needle = name.lower()
+    loc_needle = loc.lower() if loc else None
+
+    for c in google_ads_all_campaigns_latest():
+        cn = (c.get("name") or "").strip().lower()
+        cl = (c.get("location") or "").strip().lower()
+        if cn != needle:
+            continue
+        if loc_needle and cl != loc_needle:
+            continue
+        v = c.get(metric_field)
+        return float(v) if v is not None else None
+    return None
+
+
+def google_ads_metric_from_field(metric: str) -> Optional[str]:
+    """Map a VALID_METRICS name (google_ads_cpa, ...) to the JSON field name."""
+    return {
+        "google_ads_cpa":                  "cpa",
+        "google_ads_cpc":                  "cpc",
+        "google_ads_ctr":                  "ctr",
+        "google_ads_conversions_weekly":   "conv",
+        "google_ads_clicks_weekly":        "clicks",
+        "google_ads_spend_weekly":         "spend",
+    }.get(metric)
 
 
 # ── GBP (Google Business Profile) ────────────────────────────────────────────
