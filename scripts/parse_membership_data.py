@@ -64,6 +64,53 @@ ADDON_KEYWORDS = [
 # Live membership statuses (what counts as "active")
 LIVE_STATUSES = {"Live"}
 
+# Cancel reason categories — used to distinguish member-submitted cancellations
+# from contracts that ended naturally (promo expiry, trial ending, etc).
+#
+# MEMBER_SUBMITTED: member actively chose to leave (this is the "real" churn)
+# NATURAL_END:      contract ran its natural course (trial / promo expired)
+# DEBT_COLLECTION:  involuntary cancellation due to non-payment
+# MANAGEMENT_END:   ended by the club / system upgrade
+# UNKNOWN:          unclassified — counted in totals but flagged separately
+MEMBER_SUBMITTED_REASONS = {
+    "Relocating",
+    "Not Using the membership enough",
+    "Time or schedule no longer suits",
+    "Switched to another gym",
+    "Work commitments",
+    "Home gym or online training",
+    "Extended travel away",
+    "Medical/Injury",
+    "AnnualCancellation",
+    "Facility or equipment issues",
+    "Other",  # in this data set, Other almost always = member-submitted
+}
+NATURAL_END_REASONS = {
+    "EndOfContract",
+    "EndOfPromotion",
+    "2 Week Trial",
+    "UpgradeOfContract",
+}
+DEBT_COLLECTION_REASONS = {
+    "TurnedOverToVindication",
+    "Cancelld Via Debt Collection Stage 4",
+    "Cancelled Via Debt Collection Stage 4",  # spelling fix variant
+}
+MANAGEMENT_END_REASONS = {
+    "EndedByManagment",
+    "EndedByManagement",
+}
+
+
+def _classify_cancel_reason(reason):
+    """Return one of: 'submitted', 'natural', 'debt', 'management', 'unknown'."""
+    r = (reason or "").strip()
+    if r in MEMBER_SUBMITTED_REASONS:   return "submitted"
+    if r in NATURAL_END_REASONS:        return "natural"
+    if r in DEBT_COLLECTION_REASONS:    return "debt"
+    if r in MANAGEMENT_END_REASONS:     return "management"
+    return "unknown"
+
 CLUBS = {
     "Malaga":     "ChasingBetter247 Malaga",
     "Ellenbrook": "ChasingBetter247 Ellenbrook",
@@ -198,12 +245,65 @@ def parse_pgm_summary():
     unique_base["ended"]["Total"]  = sum(unique_base["ended"].values())
     unique_base["future"]["Total"] = sum(unique_base["future"].values())
 
-    # Ended contracts — cancel reason histogram
+    # ── Ended contracts classified by reason category ─────────────────────────
+    # One member can have multiple ended contracts in the same week (base +
+    # add-ons). We count UNIQUE PEOPLE per category, then sum contracts too
+    # so the dashboard can show both views.
     cancel_reasons = Counter()
+    contracts_by_category = Counter()
+    people_by_category = {  # category → club → set of user numbers
+        "submitted":  {"Malaga": set(), "Ellenbrook": set()},
+        "natural":    {"Malaga": set(), "Ellenbrook": set()},
+        "debt":       {"Malaga": set(), "Ellenbrook": set()},
+        "management": {"Malaga": set(), "Ellenbrook": set()},
+        "unknown":    {"Malaga": set(), "Ellenbrook": set()},
+    }
+    submitted_reasons_detail = Counter()  # reasons within "submitted" only
+
     for r in ended_rows:
         reason = (r.get("Cancel reason") or "").strip()
         if reason:
             cancel_reasons[reason] += 1
+        category = _classify_cancel_reason(reason)
+        contracts_by_category[category] += 1
+        if category == "submitted":
+            submitted_reasons_detail[reason] += 1
+
+        # Bucket the user into people_by_category, only if base plan
+        # (drops add-on rows so we don't double-count one person)
+        plan = r.get("Payment Plan Name") or ""
+        if not _is_base_plan(plan):
+            continue
+        user_num = r.get("User number")
+        club_raw = r.get("Club") or ""
+        club_short = None
+        for short, full in CLUBS.items():
+            if full == club_raw:
+                club_short = short
+                break
+        if user_num and club_short:
+            people_by_category[category][club_short].add(user_num)
+
+    # Flatten people sets to counts
+    submitted_cancellations = {
+        short: len(people_by_category["submitted"][short]) for short in CLUBS
+    }
+    submitted_cancellations["Total"] = sum(submitted_cancellations.values())
+
+    natural_endings = {
+        short: len(people_by_category["natural"][short]) for short in CLUBS
+    }
+    natural_endings["Total"] = sum(natural_endings.values())
+
+    debt_endings = {
+        short: len(people_by_category["debt"][short]) for short in CLUBS
+    }
+    debt_endings["Total"] = sum(debt_endings.values())
+
+    # Add new keys to unique_base for the frontend
+    unique_base["submitted_cancellation"] = submitted_cancellations
+    unique_base["natural_ending"]         = natural_endings
+    unique_base["debt_ending"]            = debt_endings
 
     return {
         "available":    True,
@@ -212,6 +312,20 @@ def parse_pgm_summary():
         "totals":       totals,
         "unique_base":  unique_base,
         "cancel_reasons_pgm": dict(cancel_reasons.most_common(20)),
+        # ── Ended-contract categorisation (user feedback: "Ended" includes
+        # natural promo expiries + debt collections, not just member-submitted
+        # cancellations). The frontend uses these to surface the real churn. ──
+        "ended_categorised": {
+            "contracts_by_category": dict(contracts_by_category),
+            "submitted_reasons_detail": dict(submitted_reasons_detail.most_common(10)),
+            "category_definitions": {
+                "submitted":  "Member actively chose to leave (real churn)",
+                "natural":    "Trial / promo expired (not member-submitted)",
+                "debt":       "Cancelled due to non-payment / debt collection",
+                "management": "Ended by the club or system upgrade",
+                "unknown":    "No reason code or unrecognised",
+            },
+        },
         "rows_seen": {
             "new":   len(new_rows),
             "ended": len(ended_rows),
