@@ -255,6 +255,20 @@ tbody tr:hover td{background:#fafafa}
 .tracker-card.decision-adjusted{border-left-color:var(--muted)}
 .tracker-card.decision-rejected{border-left-color:var(--muted-2);opacity:.55}
 .tracker-card.status-completed{border-left-color:var(--teal);background:var(--teal-mist)}
+/* Phase C: Action Tracker detail panel — team decision UI */
+.tracker-edit-section{margin-top:18px;padding:14px 16px;background:#fafafa;border:1px solid var(--border);border-radius:6px}
+.tracker-edit-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.tracker-pill-row{display:flex;flex-wrap:wrap;gap:6px}
+.tracker-pill{background:#fff;border:1px solid var(--border);color:var(--text-2);font-size:11px;font-weight:600;padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .12s;font-family:inherit}
+.tracker-pill:hover{border-color:var(--text);color:var(--text)}
+.tracker-pill.sel{box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tracker-textarea{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:12px;font-family:inherit;resize:vertical;min-height:60px;background:#fff}
+.tracker-textarea:focus{outline:none;border-color:var(--teal)}
+.tracker-select{width:100%;border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:12px;font-family:inherit;background:#fff;cursor:pointer}
+.tracker-select:focus{outline:none;border-color:var(--teal)}
+.tracker-save-btn{background:var(--teal);color:#fff;border:none;font-size:11px;font-weight:700;padding:6px 14px;border-radius:4px;cursor:pointer;margin-top:10px;font-family:inherit;transition:background .12s}
+.tracker-save-btn:hover{background:var(--teal-dim)}
+.tracker-save-btn:active{transform:translateY(1px)}
 .tracker-card-title{font-size:12px;font-weight:600;line-height:1.45;margin-bottom:7px;color:var(--text)}
 .tracker-card-meta{font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .tracker-tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#f0f0f0;color:var(--text-2)}
@@ -6812,14 +6826,14 @@ function _initSupabase() {
 
     console.log('[cbState] Supabase client created — URL:', _SUPABASE_URL);
 
-    // Phase B: fire planner sync layer once the client exists. It internally
-    // migrates from localStorage, hydrates the cache, and subscribes to realtime.
-    if (window.cbState && window.cbState.planner) {
-      window.cbState.planner.init();
-    } else {
-      // cbState defined later in script — defer
-      setTimeout(() => { if (window.cbState?.planner) window.cbState.planner.init(); }, 100);
-    }
+    // Phase B + C: fire the sync layers once the client exists. Each one
+    // internally hydrates its cache and subscribes to realtime independently.
+    const _bootSyncLayers = () => {
+      if (window.cbState?.planner)       window.cbState.planner.init();
+      if (window.cbState?.actionTracker) window.cbState.actionTracker.init();
+    };
+    if (window.cbState && window.cbState.planner) _bootSyncLayers();
+    else setTimeout(_bootSyncLayers, 100);   // cbState defined later in script — defer
   } catch (e) {
     console.error('[cbState] init failed:', e);
     _setConnStatus('offline');
@@ -7062,6 +7076,121 @@ window.cbState = {
         updated_by: me,
         updated_at: new Date().toISOString()
       }).then(r => { if (r.error) console.warn('[cbState.planner] setApproval failed:', r.error); });
+    },
+  },
+
+  // ── Phase C: Action Tracker sync layer ─────────────────────────────────
+  // Caches team decision + status + notes per action in localStorage,
+  // pushes to action_tracker_status, and broadcasts via realtime so other
+  // browsers re-render the tracker pipeline + cards instantly.
+  actionTracker: {
+    STATE_KEY: 'cb247-action-tracker-state',
+    _initialized: false,
+    _rerender: null,
+
+    setRerenderFn(fn) { this._rerender = fn; },
+
+    async _hydrate() {
+      if (!_supa) return;
+      const { data, error } = await _supa.from('action_tracker_status').select('*');
+      if (error) { console.warn('[cbState.actionTracker] hydrate failed:', error); return; }
+      const map = {};
+      (data || []).forEach(r => {
+        map[r.action_id] = {
+          decision:        r.decision,
+          status:          r.status,
+          decision_notes:  r.decision_notes,
+          adjusted_brief:  r.adjusted_brief,
+          outcome_verdict: r.outcome_verdict,
+          outcome_notes:   r.outcome_notes,
+          updated_by:      r.updated_by,
+          updated_at:      r.updated_at,
+        };
+      });
+      localStorage.setItem(this.STATE_KEY, JSON.stringify(map));
+      console.log('[cbState.actionTracker] hydrated', (data||[]).length, 'rows');
+    },
+
+    _subscribe() {
+      if (!_supa) return;
+      const self = this;
+      _supa.channel('cb-action-tracker-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'action_tracker_status' }, (payload) => {
+          const map = JSON.parse(localStorage.getItem(self.STATE_KEY) || '{}');
+          if (payload.eventType === 'DELETE' && payload.old && payload.old.action_id) {
+            delete map[payload.old.action_id];
+          } else if (payload.new && payload.new.action_id) {
+            map[payload.new.action_id] = {
+              decision:        payload.new.decision,
+              status:          payload.new.status,
+              decision_notes:  payload.new.decision_notes,
+              adjusted_brief:  payload.new.adjusted_brief,
+              outcome_verdict: payload.new.outcome_verdict,
+              outcome_notes:   payload.new.outcome_notes,
+              updated_by:      payload.new.updated_by,
+              updated_at:      payload.new.updated_at,
+            };
+          }
+          localStorage.setItem(self.STATE_KEY, JSON.stringify(map));
+          if (self._rerender) self._rerender();
+        })
+        .subscribe();
+    },
+
+    async init() {
+      if (this._initialized) return;
+      if (!_supa) { setTimeout(() => this.init(), 500); return; }
+      this._initialized = true;
+      if (!this._rerender) {
+        this._rerender = () => {
+          try {
+            if (typeof renderTracker === 'function') renderTracker();
+            // If a tracker detail panel is currently open, refresh its content
+            if (typeof refreshTrackerDetailIfOpen === 'function') refreshTrackerDetailIfOpen();
+          } catch (e) { console.warn('[cbState.actionTracker] rerender failed:', e); }
+        };
+      }
+      await this._hydrate();
+      this._subscribe();
+      this._rerender();
+      console.log('[cbState.actionTracker] Phase C sync layer active');
+    },
+
+    // Get merged team state for one action (returns {} if no team data)
+    get(actionId) {
+      const map = JSON.parse(localStorage.getItem(this.STATE_KEY) || '{}');
+      return map[actionId] || {};
+    },
+
+    // Returns true if anyone has touched this action (decision or status set)
+    isTouched(actionId) {
+      const s = this.get(actionId);
+      return !!(s.decision || s.status || s.decision_notes || s.adjusted_brief || s.outcome_verdict || s.outcome_notes);
+    },
+
+    // Save a partial update — merges with prior state. Returns a promise.
+    async save(actionId, patch) {
+      const map  = JSON.parse(localStorage.getItem(this.STATE_KEY) || '{}');
+      const prev = map[actionId] || {};
+      const me   = window.cbState.whoAmI();
+      const ts   = new Date().toISOString();
+      const merged = { ...prev, ...patch, updated_by: me, updated_at: ts };
+      map[actionId] = merged;
+      localStorage.setItem(this.STATE_KEY, JSON.stringify(map));
+      if (!_supa) return;
+      const row = {
+        action_id:       actionId,
+        decision:        merged.decision        || null,
+        status:          merged.status          || null,
+        decision_notes:  merged.decision_notes  || null,
+        adjusted_brief:  merged.adjusted_brief  || null,
+        outcome_verdict: merged.outcome_verdict || null,
+        outcome_notes:   merged.outcome_notes   || null,
+        updated_by:      me,
+        updated_at:      ts,
+      };
+      const r = await _supa.from('action_tracker_status').upsert(row);
+      if (r.error) console.warn('[cbState.actionTracker] save failed:', r.error);
     },
   },
 };
@@ -11348,7 +11477,10 @@ function renderTracker() {
   const container = $('tracker-content');
   if (!container) return;
 
-  const actions = (D.tracker && D.tracker.actions) || [];
+  // Merge each agent-recommended action with the team's Supabase-backed state
+  // (decision / status / notes / outcome). Team state wins if present.
+  const rawActions = (D.tracker && D.tracker.actions) || [];
+  const actions = rawActions.map(_mergeActionWithTeamState).filter(Boolean);
   const minutes = (D.tracker && D.tracker.meeting_minutes) || [];
 
   const catTag = c => {
@@ -11473,58 +11605,200 @@ function renderTracker() {
   if($('tracker-badge')) $('tracker-badge').textContent = pending||'';
 }
 
+// Track which action is currently open so realtime updates can refresh it
+let _openTrackerActionId = null;
+
+// Combine server-supplied action data with cbState.actionTracker team state.
+// Team state (Supabase) wins if present; server state is the baseline.
+function _mergeActionWithTeamState(serverAction) {
+  if (!serverAction) return null;
+  const team = (window.cbState?.actionTracker?.get(serverAction.id)) || {};
+  return {
+    ...serverAction,
+    decision:        team.decision        ?? serverAction.decision        ?? 'pending',
+    status:          team.status          ?? serverAction.status          ?? 'pending',
+    decision_notes:  team.decision_notes  ?? serverAction.decision_notes  ?? '',
+    adjusted_brief:  team.adjusted_brief  ?? serverAction.adjusted_brief  ?? '',
+    outcome_verdict: team.outcome_verdict ?? serverAction.outcome_verdict ?? '',
+    outcome_notes:   team.outcome_notes   ?? serverAction.outcome_notes   ?? '',
+    _team_updated_by: team.updated_by,
+    _team_updated_at: team.updated_at,
+  };
+}
+
 function openTrackerDetail(id) {
   const actions = (D.tracker && D.tracker.actions) || [];
-  const a = actions.find(x=>x.id===id);
+  const rawA = actions.find(x => x.id === id);
+  if (!rawA) return;
+  _openTrackerActionId = id;
+  _renderTrackerDetailInto(id);
+  const panel = $('tracker-detail-panel');
+  if (panel) {
+    panel.classList.add('open');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+// Re-render the detail panel content using the latest merged data.
+// Called by openTrackerDetail and by the cbState.actionTracker realtime callback.
+function _renderTrackerDetailInto(id) {
+  const inner = $('tracker-detail-inner');
+  if (!inner) return;
+  const actions = (D.tracker && D.tracker.actions) || [];
+  const a = _mergeActionWithTeamState(actions.find(x => x.id === id));
   if (!a) return;
 
-  const panel = $('tracker-detail-panel');
-  const inner = $('tracker-detail-inner');
-  if (!panel || !inner) return;
+  const decLabel  = { approved:'Approved', adjusted:'Needs Adjustment', rejected:'Rejected', pending:'Pending' }[a.decision] || 'Pending';
+  const statLabel = { in_progress:'In Progress', completed:'Completed', cancelled:'Cancelled', pending:'Pending' }[a.status] || 'Pending';
 
-  const decIcon = {approved:'Approved',adjusted:'Needs Adjustment',rejected:'Rejected',pending:'Pending'}[a.decision]||'Pending';
-  const statIcon = {in_progress:'In Progress',completed:'Completed',cancelled:'Cancelled',pending:'Pending'}[a.status]||'Pending';
-
+  // Impact table (read-only — agent-supplied)
   let impactHTML = '';
   if (a.projected_impact && Object.keys(a.projected_impact).length) {
-    const rows = Object.entries(a.projected_impact).map(([k,v])=>{
+    const rows = Object.entries(a.projected_impact).map(([k, v]) => {
       const actual = a.actual_impact && a.actual_impact[k];
-      return `<tr><td>${k}</td><td>${v.from||'—'} → ${v.to||'—'}</td>
-        <td>${actual ? (actual.actual||'—') : '<span style="color:var(--muted)">TBD</span>'}</td></tr>`;
+      return `<tr><td>${k}</td><td>${v.from || '—'} → ${v.to || '—'}</td>
+        <td>${actual ? (actual.actual || '—') : '<span style="color:var(--muted)">TBD</span>'}</td></tr>`;
     }).join('');
     impactHTML = `<div class="section-title" style="margin-top:16px">Impact Tracking</div>
       <table><thead><tr><th>KPI</th><th>Projected</th><th>Actual</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
+  // Last-touched line
+  let touchLine = '';
+  if (a._team_updated_by || a._team_updated_at) {
+    const ago = a._team_updated_at ? _humanRelTime(a._team_updated_at) : '';
+    touchLine = `<div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:right">Last touched by <b>${a._team_updated_by || '—'}</b>${ago ? ' · ' + ago : ''}</div>`;
+  }
+
+  // Decision pills
+  const decPill = (val, label, color) =>
+    `<button class="tracker-pill ${a.decision === val ? 'sel sel-' + val : ''}" style="${a.decision === val ? `border-color:${color};background:${color};color:#fff` : ''}" onclick="setTrackerDecision('${id}','${val}')">${label}</button>`;
+
+  // Outcome pills
+  const outPill = (val, label, color) =>
+    `<button class="tracker-pill ${a.outcome_verdict === val ? 'sel' : ''}" style="${a.outcome_verdict === val ? `border-color:${color};background:${color};color:#fff` : ''}" onclick="setTrackerOutcome('${id}','${val}')">${label}</button>`;
+
   inner.innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
       <div>
-        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">${a.id} · ${a.category||''} · ${a.priority||''}</div>
-        <div style="font-size:15px;font-weight:700;line-height:1.4">${a.recommendation||''}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px">${a.context||''}</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">${a.id} · ${a.category || ''} · ${a.priority || ''}</div>
+        <div style="font-size:15px;font-weight:700;line-height:1.4">${a.recommendation || ''}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">${a.context || ''}</div>
       </div>
       <button onclick="closeTrackerDetail()" style="font-size:18px;color:var(--muted);padding:4px 8px;flex-shrink:0;margin-left:12px">✕</button>
     </div>
-    <div class="outcome-grid">
-      <div class="outcome-cell"><div class="label">Owner</div><div class="val" style="font-size:13px">${a.owner||'—'} <span style="font-size:11px;font-weight:400;color:var(--muted)">${a.ownerRole||''}</span></div></div>
-      <div class="outcome-cell"><div class="label">Decision</div><div class="val" style="font-size:13px">${decIcon}</div></div>
-      <div class="outcome-cell"><div class="label">Status</div><div class="val" style="font-size:13px">${statIcon}</div></div>
-      <div class="outcome-cell"><div class="label">Due Date</div><div class="val" style="font-size:13px">${a.due_date||'—'}</div></div>
-    </div>
-    ${a.adjusted_brief?`<div style="margin-top:12px;background:#fffbeb;border-left:3px solid var(--amber);padding:10px 12px;border-radius:4px;font-size:12px"><strong>Adjustment:</strong> ${a.adjusted_brief}</div>`:''}
-    ${a.decision_notes?`<div style="margin-top:8px;font-size:12px;color:var(--muted)"><strong>Notes:</strong> ${a.decision_notes}</div>`:''}
-    ${impactHTML}
-    ${a.outcome_verdict?`<div style="margin-top:12px;font-size:13px;font-weight:700" class="verdict-${a.outcome_verdict}">Outcome: ${a.outcome_verdict.replace('_',' ')}</div>`:''}
-    ${a.outcome_notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px">${a.outcome_notes}</div>`:''}
-  `;
 
-  panel.classList.add('open');
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    <div class="outcome-grid">
+      <div class="outcome-cell"><div class="label">Owner</div><div class="val" style="font-size:13px">${a.owner || '—'} <span style="font-size:11px;font-weight:400;color:var(--muted)">${a.ownerRole || ''}</span></div></div>
+      <div class="outcome-cell"><div class="label">Decision</div><div class="val" style="font-size:13px">${decLabel}</div></div>
+      <div class="outcome-cell"><div class="label">Status</div><div class="val" style="font-size:13px">${statLabel}</div></div>
+      <div class="outcome-cell"><div class="label">Due Date</div><div class="val" style="font-size:13px">${a.due_date || '—'}</div></div>
+    </div>
+
+    <!-- ── TEAM DECISION ──────────────────────────────────────────────────── -->
+    <div class="tracker-edit-section">
+      <div class="tracker-edit-label">Team decision</div>
+      <div class="tracker-pill-row">
+        ${decPill('approved','Approve','#16a34a')}
+        ${decPill('adjusted','Needs Adjustment','#d97706')}
+        ${decPill('rejected','Reject','#dc2626')}
+      </div>
+      <div style="display:${a.decision === 'adjusted' ? 'block' : 'none'};margin-top:10px" id="tracker-adjust-wrap-${id}">
+        <div class="tracker-edit-label" style="font-size:10px;margin-bottom:4px">Adjustment brief</div>
+        <textarea class="tracker-textarea" id="tracker-adjust-${id}" placeholder="What specifically should change?">${a.adjusted_brief || ''}</textarea>
+      </div>
+      <div style="margin-top:10px">
+        <div class="tracker-edit-label" style="font-size:10px;margin-bottom:4px">Decision notes</div>
+        <textarea class="tracker-textarea" id="tracker-decnotes-${id}" placeholder="Why this decision? Optional.">${a.decision_notes || ''}</textarea>
+      </div>
+      <button class="tracker-save-btn" onclick="saveTrackerNotes('${id}')">Save notes</button>
+    </div>
+
+    <!-- ── EXECUTION STATUS ───────────────────────────────────────────────── -->
+    <div class="tracker-edit-section">
+      <div class="tracker-edit-label">Execution status</div>
+      <select class="tracker-select" id="tracker-status-${id}" onchange="setTrackerStatus('${id}', this.value)">
+        <option value="pending"     ${a.status === 'pending'     ? 'selected' : ''}>Pending — not started yet</option>
+        <option value="in_progress" ${a.status === 'in_progress' ? 'selected' : ''}>In Progress — work happening</option>
+        <option value="completed"   ${a.status === 'completed'   ? 'selected' : ''}>Completed — done</option>
+        <option value="cancelled"   ${a.status === 'cancelled'   ? 'selected' : ''}>Cancelled — won't do</option>
+      </select>
+    </div>
+
+    ${impactHTML}
+
+    <!-- ── OUTCOME (visible once completed) ───────────────────────────────── -->
+    <div class="tracker-edit-section" style="display:${a.status === 'completed' ? 'block' : 'none'}">
+      <div class="tracker-edit-label">Outcome verdict</div>
+      <div class="tracker-pill-row">
+        ${outPill('winner','Winner','#16a34a')}
+        ${outPill('no_change','No Change','#6b7280')}
+        ${outPill('underperforming','Underperforming','#dc2626')}
+      </div>
+      <div style="margin-top:10px">
+        <div class="tracker-edit-label" style="font-size:10px;margin-bottom:4px">Outcome notes</div>
+        <textarea class="tracker-textarea" id="tracker-outnotes-${id}" placeholder="What happened? Learnings for next cycle.">${a.outcome_notes || ''}</textarea>
+      </div>
+      <button class="tracker-save-btn" onclick="saveTrackerOutcomeNotes('${id}')">Save outcome notes</button>
+    </div>
+
+    ${touchLine}
+  `;
 }
 
 function closeTrackerDetail() {
   const panel = $('tracker-detail-panel');
   if (panel) panel.classList.remove('open');
+  _openTrackerActionId = null;
+}
+
+// Called by cbState.actionTracker realtime subscription when any row changes.
+function refreshTrackerDetailIfOpen() {
+  if (_openTrackerActionId) _renderTrackerDetailInto(_openTrackerActionId);
+}
+
+// ── Tracker save handlers (called from inline onclick / onchange) ──────────────
+window.setTrackerDecision = (id, decision) => {
+  if (!window.cbState?.actionTracker) return;
+  cbState.actionTracker.save(id, { decision });
+  _renderTrackerDetailInto(id);   // immediate UI feedback
+};
+
+window.setTrackerStatus = (id, status) => {
+  if (!window.cbState?.actionTracker) return;
+  cbState.actionTracker.save(id, { status });
+  _renderTrackerDetailInto(id);
+};
+
+window.setTrackerOutcome = (id, outcome_verdict) => {
+  if (!window.cbState?.actionTracker) return;
+  cbState.actionTracker.save(id, { outcome_verdict });
+  _renderTrackerDetailInto(id);
+};
+
+window.saveTrackerNotes = (id) => {
+  if (!window.cbState?.actionTracker) return;
+  const decision_notes = ($('tracker-decnotes-' + id)?.value || '').trim();
+  const adjusted_brief = ($('tracker-adjust-'   + id)?.value || '').trim();
+  cbState.actionTracker.save(id, { decision_notes, adjusted_brief });
+};
+
+window.saveTrackerOutcomeNotes = (id) => {
+  if (!window.cbState?.actionTracker) return;
+  const outcome_notes = ($('tracker-outnotes-' + id)?.value || '').trim();
+  cbState.actionTracker.save(id, { outcome_notes });
+};
+
+// Tiny relative-time helper for "Last touched by X · 2 min ago"
+function _humanRelTime(isoStr) {
+  if (!isoStr) return '';
+  const then = new Date(isoStr).getTime();
+  const now  = Date.now();
+  const sec  = Math.max(0, Math.floor((now - then) / 1000));
+  if (sec < 60)        return 'just now';
+  if (sec < 3600)      return Math.floor(sec / 60)    + ' min ago';
+  if (sec < 86400)     return Math.floor(sec / 3600)  + ' hr ago';
+  return Math.floor(sec / 86400) + ' days ago';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
