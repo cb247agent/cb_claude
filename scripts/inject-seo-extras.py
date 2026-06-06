@@ -134,14 +134,19 @@ def inject():
         action = "replaced"
     else:
         # First-run: insert just before window.DASHBOARD_DATA script (or </body> fallback)
-        anchor = 'window.DASHBOARD_DATA'
+        # Anchor on "window.DASHBOARD_DATA = {" not just "window.DASHBOARD_DATA"
+        # because other inject blocks' comments also contain "window.DASHBOARD_DATA".
+        anchor = 'window.DASHBOARD_DATA = {'
         idx = html.find(anchor)
         if idx == -1:
             updated = html.replace("</body>", new_block + "\n</body>")
         else:
             # Find the <script tag opening before DASHBOARD_DATA
             script_open = html.rfind("<script>", 0, idx)
-            updated = html[:script_open] + new_block + "\n" + html[script_open:]
+            if script_open == -1:
+                updated = html.replace("</body>", new_block + "\n</body>")
+            else:
+                updated = html[:script_open] + new_block + "\n" + html[script_open:]
         action = "inserted"
 
     if updated == html:

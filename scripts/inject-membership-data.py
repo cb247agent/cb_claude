@@ -59,14 +59,20 @@ def inject():
         )
         action = "replaced"
     else:
-        # Insert just before window.DASHBOARD_DATA — same pattern as sibling injectors
-        anchor = 'window.DASHBOARD_DATA'
+        # Insert just before the <script> tag that opens window.DASHBOARD_DATA.
+        # We anchor on the literal assignment "window.DASHBOARD_DATA = {" rather
+        # than just "window.DASHBOARD_DATA" because other inject blocks' comments
+        # also contain "window.DASHBOARD_DATA" and would match first.
+        anchor = 'window.DASHBOARD_DATA = {'
         idx = html.find(anchor)
         if idx == -1:
             updated = html.replace("</body>", new_block + "\n</body>")
         else:
             script_open = html.rfind("<script>", 0, idx)
-            updated = html[:script_open] + new_block + "\n" + html[script_open:]
+            if script_open == -1:
+                updated = html.replace("</body>", new_block + "\n</body>")
+            else:
+                updated = html[:script_open] + new_block + "\n" + html[script_open:]
         action = "inserted"
 
     if updated == html:

@@ -214,13 +214,16 @@ def inject():
         )
         action = "replaced"
     else:
-        anchor = 'window.DASHBOARD_DATA'
+        anchor = 'window.DASHBOARD_DATA = {'
         idx = html.find(anchor)
         if idx == -1:
             updated = html.replace("</body>", new_block + "\n</body>")
         else:
             script_open = html.rfind("<script>", 0, idx)
-            updated = html[:script_open] + new_block + "\n" + html[script_open:]
+            if script_open == -1:
+                updated = html.replace("</body>", new_block + "\n</body>")
+            else:
+                updated = html[:script_open] + new_block + "\n" + html[script_open:]
         action = "inserted"
 
     if updated == html:
