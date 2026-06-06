@@ -338,6 +338,53 @@ tbody tr:hover td{background:#fafafa}
 .cb-live-dot.offline::before{background:#dc2626}
 @keyframes cb-pulse{0%{box-shadow:0 0 0 0 rgba(63,166,154,.4)}70%{box-shadow:0 0 0 6px rgba(63,166,154,0)}100%{box-shadow:0 0 0 0 rgba(63,166,154,0)}}
 /* (Phase A test panel CSS removed — replaced by real Supabase planner sync in Phase B) */
+/* ── Session 4: Performance Review verdict cards ─────────────────── */
+.verdict-card{background:#fff;border:1px solid var(--border);border-left:4px solid var(--muted-2);border-radius:6px;padding:16px 18px;margin-bottom:12px}
+.verdict-card.verdict-winner          {border-left-color:#16a34a}
+.verdict-card.verdict-partial_win     {border-left-color:#d97706}
+.verdict-card.verdict-no_change       {border-left-color:#6b7280}
+.verdict-card.verdict-underperforming {border-left-color:#dc2626}
+.verdict-card.verdict-pending         {border-left-color:#9ca3af;background:#fafafa}
+.verdict-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.verdict-source-badge{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:3px;padding:2px 7px;background:#f3e8ff;color:#6b21a8;border:1px solid #c084fc}
+.verdict-source-badge.src-seo-organic     {background:#f3e8ff;color:#6b21a8;border-color:#c084fc}
+.verdict-source-badge.src-meta-ads        {background:#ede9fe;color:#5b21b6;border-color:#8b5cf6}
+.verdict-source-badge.src-google-ads      {background:#fef3c7;color:#92400e;border-color:#f59e0b}
+.verdict-source-badge.src-gbp             {background:rgba(63,166,154,.15);color:#3FA69A;border-color:#3FA69A}
+.verdict-source-badge.src-organic-social  {background:#fce7f3;color:#9d174d;border-color:#ec4899}
+.verdict-source-badge.src-membership      {background:#f0fdf4;color:#15803d;border-color:#22c55e}
+.verdict-pill{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:99px;padding:3px 10px;background:#f3f4f6;color:var(--muted)}
+.verdict-pill.pill-winner          {background:#dcfce7;color:#166534;border:1px solid #22c55e}
+.verdict-pill.pill-partial_win     {background:#fef3c7;color:#92400e;border:1px solid #f59e0b}
+.verdict-pill.pill-no_change       {background:#f3f4f6;color:#374151;border:1px solid #9ca3af}
+.verdict-pill.pill-underperforming {background:#fee2e2;color:#991b1b;border:1px solid #ef4444}
+.verdict-pill.pill-pending         {background:#fef3c7;color:#92400e;border:1px solid #f59e0b}
+.verdict-title{font-size:13px;font-weight:700;line-height:1.4;color:var(--text);flex:1;min-width:200px}
+.verdict-kpis{margin-top:10px;border-top:1px solid #f3f4f6;padding-top:10px}
+.verdict-kpi-row{display:grid;grid-template-columns:1.5fr 1.5fr 0.5fr;gap:10px;padding:5px 0;font-size:11.5px;align-items:center}
+.verdict-kpi-row + .verdict-kpi-row{border-top:1px dashed #f3f4f6}
+.verdict-kpi-name{color:var(--text-2);font-weight:600}
+.verdict-kpi-flow{color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
+.verdict-kpi-status{text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.verdict-kpi-status.kpi-winner          {color:#166534}
+.verdict-kpi-status.kpi-partial_win     {color:#92400e}
+.verdict-kpi-status.kpi-no_change       {color:#374151}
+.verdict-kpi-status.kpi-underperforming {color:#991b1b}
+.verdict-notes{margin-top:12px;border-top:1px solid #f3f4f6;padding-top:10px}
+.verdict-notes-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px}
+.verdict-notes-area{width:100%;border:1px solid var(--border);border-radius:4px;padding:7px 9px;font-size:12px;font-family:inherit;resize:vertical;min-height:50px}
+.verdict-notes-area:focus{outline:none;border-color:var(--teal)}
+.verdict-notes-save{background:var(--teal);color:#fff;border:none;font-size:10.5px;font-weight:700;padding:5px 12px;border-radius:3px;cursor:pointer;margin-top:6px;font-family:inherit}
+.verdict-notes-save:hover{background:var(--teal-dim)}
+.verdict-meta-line{font-size:10.5px;color:var(--muted);margin-top:10px;text-align:right}
+.verdict-aggregate{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.verdict-stat{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px 14px;text-align:center}
+.verdict-stat .label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
+.verdict-stat .value{font-size:22px;font-weight:800;color:var(--text);line-height:1.1}
+.verdict-stat.stat-winner          .value{color:#166534}
+.verdict-stat.stat-partial_win     .value{color:#92400e}
+.verdict-stat.stat-no_change       .value{color:#374151}
+.verdict-stat.stat-underperforming .value{color:#991b1b}
 </style>
 </head>
 <body>
@@ -7131,6 +7178,19 @@ window.cbState = {
       this._rerender();
       console.log('[cbState.workQueue] Session 2 sync layer active');
     },
+
+    // Session 4: human learnings/notes on a measured action.
+    // Updates Supabase; realtime subscription syncs the change to other browsers.
+    async setNotes(actionId, notes_human) {
+      if (!_supa) return;
+      const r = await _supa.from('work_queue_actions')
+        .update({ notes_human, updated_at: new Date().toISOString() })
+        .eq('id', actionId);
+      if (r.error) console.warn('[cbState.workQueue] setNotes failed:', r.error);
+      // Optimistic local update so the textarea reflects immediately
+      const idx = this._items.findIndex(x => x.id === actionId);
+      if (idx >= 0) this._items[idx] = { ...this._items[idx], notes_human };
+    },
   },
 };
 
@@ -10862,6 +10922,104 @@ window.advanceStatus = (id) => {
 };
 
 // ── Render: Content Review ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Session 4 helpers: Performance Review verdict cards
+// ══════════════════════════════════════════════════════════════════════════════
+
+// "2 hr ago" / "3 days ago" / "just now"
+function _humanAgo(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const then = new Date(isoStr).getTime();
+    const sec  = Math.max(0, Math.floor((Date.now() - then) / 1000));
+    if (sec < 60)    return 'just now';
+    if (sec < 3600)  return Math.floor(sec / 60) + ' min ago';
+    if (sec < 86400) return Math.floor(sec / 3600) + ' hr ago';
+    return Math.floor(sec / 86400) + ' days ago';
+  } catch (_) { return ''; }
+}
+
+// "seo-organic" → "SEO Organic"
+function _prettySource(s) {
+  return (s || '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Unknown';
+}
+
+// One measured outcome card with verdict pill + per-KPI breakdown + notes
+function _renderVerdictCard(row) {
+  const verdict = row.overall_verdict || 'pending';
+  const measuredAt = row.measured_at ? _humanAgo(row.measured_at) : '';
+  const kpis = row.actual_kpis || [];
+
+  const kpiRows = kpis.map(k => {
+    const baseline = (k.baseline !== null && k.baseline !== undefined) ? k.baseline : '?';
+    const actual   = (k.actual   !== null && k.actual   !== undefined) ? k.actual   : 'no data';
+    const target   = (k.target   !== null && k.target   !== undefined)
+      ? k.target
+      : (k.delta_min !== null && k.delta_min !== undefined ? `+${k.delta_min}–${k.delta_max}` : '?');
+    const kwLabel = k.keyword || k.keyword_pattern || '';
+    const statusLabel = (k.status || 'no_change').replace(/_/g, ' ');
+    return `<div class="verdict-kpi-row">
+      <div class="verdict-kpi-name">${k.metric || '—'}${kwLabel ? ` <span style="color:var(--muted);font-weight:400">(${kwLabel})</span>` : ''}</div>
+      <div class="verdict-kpi-flow">${baseline} → <b>${actual}</b> <span style="color:var(--muted)">(target ${target})</span></div>
+      <div class="verdict-kpi-status kpi-${k.status || 'no_change'}">${statusLabel}</div>
+    </div>`;
+  }).join('');
+
+  const notesId = `vw-notes-${row.id}`;
+  const notesValue = (row.notes_human || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  return `<div class="verdict-card verdict-${verdict}">
+    <div class="verdict-header">
+      <span class="verdict-source-badge src-${row.source_page || 'unknown'}">${_prettySource(row.source_page)}</span>
+      <span class="verdict-pill pill-${verdict}">${verdict.replace(/_/g, ' ')}</span>
+      <div class="verdict-title">${row.title || 'Untitled'}</div>
+    </div>
+    <div class="verdict-kpis">${kpiRows || '<div style="font-size:11px;color:var(--muted);padding:6px 0">No KPI data</div>'}</div>
+    <div class="verdict-notes">
+      <div class="verdict-notes-label">Learnings — for next cycle</div>
+      <textarea class="verdict-notes-area" id="${notesId}" placeholder="What did we learn? e.g. 'Title tag change worked — try same play on Ellenbrook.'">${notesValue}</textarea>
+      <button class="verdict-notes-save" onclick="saveOutcomeNotes('${row.id}', document.getElementById('${notesId}').value)">Save learnings</button>
+    </div>
+    <div class="verdict-meta-line">${measuredAt ? 'Measured ' + measuredAt + ' · ' : ''}${kpis.length} KPI${kpis.length !== 1 ? 's' : ''}</div>
+  </div>`;
+}
+
+// Card for actions Published but not yet measured
+function _renderPendingMeasurementCard(row) {
+  const kpis = row.projected_kpis || [];
+  const windowDays = kpis.length
+    ? Math.max.apply(null, kpis.map(k => k.measurement_window_days || 14))
+    : 14;
+
+  return `<div class="verdict-card verdict-pending">
+    <div class="verdict-header">
+      <span class="verdict-source-badge src-${row.source_page || 'unknown'}">${_prettySource(row.source_page)}</span>
+      <span class="verdict-pill pill-pending">Awaiting measurement</span>
+      <div class="verdict-title">${row.title || 'Untitled'}</div>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.6">
+      Verdict will appear automatically once the measurement window (<b>${windowDays} days</b>) elapses since this was marked Published. The runner fires every 6 hours via pull_all.py.<br>
+      <span style="font-size:10.5px">Force a verdict now: <code style="background:#f3f4f6;padding:1px 5px;border-radius:2px;font-size:10px">python scripts/work_queue/measurement_runner.py --force-id ${row.id}</code></span>
+    </div>
+  </div>`;
+}
+
+// Save notes back to Supabase + broadcast to other browsers
+window.saveOutcomeNotes = async (actionId, notes) => {
+  if (!window.cbState || !window.cbState.workQueue) {
+    console.warn('[outcome] cbState.workQueue not ready');
+    return;
+  }
+  await window.cbState.workQueue.setNotes(actionId, notes);
+  // Brief visual feedback
+  const els = document.querySelectorAll(`#vw-notes-${actionId} + button.verdict-notes-save`);
+  els.forEach(el => {
+    const orig = el.textContent;
+    el.textContent = 'Saved ✓';
+    setTimeout(() => { el.textContent = orig; }, 1500);
+  });
+};
+
 function renderContentReview() {
   const saved    = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
   const seo      = D.seo || {};
@@ -10880,6 +11038,16 @@ function renderContentReview() {
   const pendingDenver   = ALL.filter(i => saved[i.id]==='Denver Approval');
   const pendingQC       = [...pendingAngelaQC, ...pendingDenver];   // combined for the review-content badge
 
+  // Session 4: measured outcomes from work_queue_actions (verdicts computed by measurement_runner.py)
+  const wqRows = (window.cbState && window.cbState.workQueue && window.cbState.workQueue.getAll()) || [];
+  const measured       = wqRows.filter(r => r.actual_kpis && Array.isArray(r.actual_kpis) && r.actual_kpis.length > 0);
+  const awaitingMeasure = wqRows.filter(r => (!r.actual_kpis || r.actual_kpis.length === 0) && saved[r.id] === 'Published');
+  const verdictCounts  = measured.reduce((acc, r) => {
+    const v = r.overall_verdict || 'pending';
+    acc[v] = (acc[v] || 0) + 1;
+    return acc;
+  }, {});
+
   // Top performing GSC query
   const topQuery = [...gscQ].sort((a,b)=>(b.clicks||0)-(a.clicks||0))[0];
   const topPage  = [...gscPages].sort((a,b)=>(b.traffic||0)-(a.traffic||0))[0];
@@ -10890,13 +11058,53 @@ function renderContentReview() {
 
   let html = '';
 
+  // ══════════════════════════════════════════════════════════════════════
+  // SESSION 4: Measured Outcomes — verdict cards from work_queue_actions
+  // ══════════════════════════════════════════════════════════════════════
+  if (measured.length > 0 || awaitingMeasure.length > 0) {
+    html += sectionTitle(`Measured Outcomes — ${measured.length} actions verdict-ready`);
+
+    // ── Aggregate stats row ──
+    const totalMeasured = measured.length;
+    const winners       = verdictCounts.winner         || 0;
+    const partials      = verdictCounts.partial_win    || 0;
+    const noChanges     = verdictCounts.no_change      || 0;
+    const underperforms = verdictCounts.underperforming || 0;
+    const hitRate       = totalMeasured > 0 ? Math.round((winners / totalMeasured) * 100) : 0;
+
+    html += `<div class="verdict-aggregate">
+      <div class="verdict-stat stat-winner"><div class="label">Winners</div><div class="value">${winners}</div></div>
+      <div class="verdict-stat stat-partial_win"><div class="label">Partial wins</div><div class="value">${partials}</div></div>
+      <div class="verdict-stat stat-no_change"><div class="label">No change</div><div class="value">${noChanges}</div></div>
+      <div class="verdict-stat stat-underperforming"><div class="label">Underperforming</div><div class="value">${underperforms}</div></div>
+    </div>`;
+    if (totalMeasured > 0) {
+      html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+        <b>Hit rate this cycle:</b> ${winners} of ${totalMeasured} actions hit their primary target = <b>${hitRate}%</b>.
+        ${awaitingMeasure.length > 0 ? ` ${awaitingMeasure.length} more action${awaitingMeasure.length !== 1 ? 's' : ''} still awaiting measurement.` : ''}
+      </div>`;
+    }
+
+    // ── Per-item verdict cards (measured) ──
+    if (measured.length > 0) {
+      measured.sort((a, b) => (new Date(b.measured_at || 0)) - (new Date(a.measured_at || 0)));
+      html += measured.map(_renderVerdictCard).join('');
+    }
+
+    // ── Pending measurement cards ──
+    if (awaitingMeasure.length > 0) {
+      html += sectionTitle(`Awaiting Measurement — ${awaitingMeasure.length} Published action${awaitingMeasure.length !== 1 ? 's' : ''}`);
+      html += awaitingMeasure.map(_renderPendingMeasurementCard).join('');
+    }
+  }
+
   // ── Intro / How-to-use panel ─────────────────────────────────────────────
   html += `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:22px 26px;margin-bottom:22px">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
       <div style="flex:1;min-width:260px">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">What is Content Review?</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">What is Performance Review?</div>
         <p style="font-size:12px;color:var(--text-2);line-height:1.7;margin:0 0 14px">
-          Content Review is where the team checks performance after content goes live. Once an item is marked <b>Published</b> in the Content Planner, it appears here so you can see how it is tracking — clicks, impressions, and engagement — and decide what to do next.
+          Post-publish analysis only. When a Work Queue action reaches "Published" and its measurement window elapses, this page shows the verdict: did the projected KPI actually hit target? Use the notes field on each verdict card to capture team learnings that feed next cycle's plan.
         </p>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px">Review workflow</div>
         <div style="display:flex;flex-direction:column;gap:6px">
@@ -10946,11 +11154,11 @@ function renderContentReview() {
       No items published or scheduled yet. Use the <b>Content Planner</b> to advance items through the workflow.
     </div>`;
   } else {
+    // Session 4: Performance Review only shows post-publish state. Items in
+    // Waiting Angela QC / Waiting Denver belong on Work Queue, not here.
     const reviewGroups = [
       {label:'Published — check performance in 2 weeks', items: published, color:'#3FA69A', bg:'rgba(63,166,154,.08)'},
       {label:'Scheduled — going out soon', items: scheduled, color:'#3FA69A', bg:'rgba(63,166,154,.05)'},
-      {label:'Waiting Angela QC (brand)', items: pendingAngelaQC, color:'#111', bg:'#f9fafb'},
-      {label:'Waiting Denver sign-off (COO)', items: pendingDenver, color:'#7c2d12', bg:'rgba(124,45,18,.06)'},
     ];
     reviewGroups.forEach(g => {
       if (!g.items.length) return;
