@@ -387,6 +387,63 @@ tbody tr:hover td{background:#fafafa}
 .verdict-stat.stat-no_change       .value{color:#374151}
 .verdict-stat.stat-underperforming .value{color:#991b1b}
 .verdict-stat.stat-pending         .value{color:#92400e}
+/* ── Work Queue v2 — calendar-only with stage opacity ───────────────────── */
+.wq-legend{margin-bottom:14px;padding:12px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;display:flex;gap:18px;flex-wrap:wrap}
+.wq-legend-item{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-2)}
+.wq-legend-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+.wq-legend-swatch.s-idea{background:#f8fafc;border:1px dashed #cbd5e1;opacity:.5}
+.wq-legend-swatch.s-inprog{background:#fff;border:1px solid var(--border);border-left:3px solid #6b7280}
+.wq-legend-swatch.s-angela{background:#fffbeb;border:1px solid #f59e0b;border-left:3px solid #f59e0b}
+.wq-legend-swatch.s-denver{background:#fff5f5;border:1px solid #ef4444;border-left:3px solid #ef4444}
+.wq-legend-swatch.s-sched{background:#fff;border:1px solid #3FA69A;border-left:3px solid #3FA69A}
+.wq-legend-swatch.s-pub{background:#3FA69A;border:1px solid #3FA69A}
+
+.wq-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:12px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;align-items:center}
+.wq-filter-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-right:4px}
+.wq-filter-btn{padding:6px 12px;font-size:11.5px;font-weight:600;border:1px solid var(--border);background:#fff;border-radius:4px;cursor:pointer;transition:all .15s;font-family:inherit;display:flex;gap:6px;align-items:center}
+.wq-filter-btn:hover{border-color:var(--teal);color:var(--teal)}
+.wq-filter-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.wq-filter-btn .count{background:#f3f4f6;color:var(--muted);padding:1px 6px;border-radius:99px;font-size:10px;font-weight:700}
+.wq-filter-btn.active .count{background:rgba(255,255,255,.25);color:#fff}
+
+/* Calendar cards — stage variants */
+.wq-card{padding:7px 8px;margin-bottom:5px;border-radius:4px;cursor:pointer;font-size:10px;transition:transform .1s,box-shadow .15s}
+.wq-card:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.wq-card .src-badge{font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;display:inline-block;margin-bottom:3px;letter-spacing:.3px;background:#f3f4f6;color:#6b7280}
+.wq-card .title{font-weight:600;line-height:1.3;margin-bottom:3px;font-size:10px}
+.wq-card .stage-line{font-size:8.5px;font-weight:700;letter-spacing:.03em}
+.wq-card.s-idea{background:#f8fafc;border:1px dashed #cbd5e1;opacity:.5}
+.wq-card.s-idea:hover{opacity:1}
+.wq-card.s-idea .stage-line{color:var(--muted)}
+.wq-card.s-inprog{background:#fff;border:1px solid var(--border);border-left:3px solid #6b7280}
+.wq-card.s-inprog .stage-line{color:#6b7280}
+.wq-card.s-angela{background:#fffbeb;border:1px solid #f59e0b;border-left:3px solid #f59e0b}
+.wq-card.s-angela .stage-line{color:#92400e}
+.wq-card.s-denver{background:#fff5f5;border:1px solid #ef4444;border-left:3px solid #ef4444}
+.wq-card.s-denver .stage-line{color:#991b1b}
+.wq-card.s-sched{background:#fff;border:1px solid #3FA69A;border-left:3px solid #3FA69A;box-shadow:0 1px 3px rgba(63,166,154,.15)}
+.wq-card.s-sched .stage-line{color:var(--teal);font-weight:800}
+.wq-card.s-pub{background:#3FA69A;color:#fff;border:1px solid #3FA69A}
+.wq-card.s-pub .src-badge{background:rgba(255,255,255,.2);color:#fff}
+.wq-card.s-pub .stage-line{color:rgba(255,255,255,.85)}
+.wq-card.is-hidden{display:none}
+
+/* Operational backlog — fixed-height groups, internal scroll */
+.wq-backlog-help{font-size:11.5px;color:var(--muted);margin-bottom:14px;line-height:1.6;max-width:780px}
+.wq-backlog-groups{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.wq-backlog-group{background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;height:340px;display:flex;flex-direction:column;position:relative}
+.wq-backlog-group-title{flex-shrink:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text);margin-bottom:10px;display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.wq-backlog-group-title .src-name{color:var(--text)}
+.wq-backlog-group-title .count{background:#f3f4f6;padding:1px 7px;border-radius:99px;font-size:10px;color:var(--muted);font-weight:700}
+.wq-backlog-group-items{flex:1;overflow-y:auto;margin:0 -6px 0 -2px;padding:4px 6px 4px 2px}
+.wq-backlog-group-items::-webkit-scrollbar{width:6px}
+.wq-backlog-group-items::-webkit-scrollbar-track{background:transparent}
+.wq-backlog-group-items::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+.wq-backlog-group-items::-webkit-scrollbar-thumb:hover{background:#9ca3af}
+.wq-backlog-group .wq-card{margin-bottom:5px}
+.wq-backlog-group .wq-card:last-child{margin-bottom:0}
+.wq-backlog-group::after{content:'';position:absolute;left:14px;right:20px;bottom:14px;height:18px;background:linear-gradient(to bottom,transparent,#fff);pointer-events:none;border-radius:0 0 6px 6px}
+.wq-backlog-empty{font-size:11px;color:var(--muted);padding:24px 0;text-align:center;border:1px dashed var(--border);border-radius:4px;margin:6px 0}
 /* Session 5f: verdict picker for qualitative/pending actions */
 .verdict-picker{margin-top:12px;border-top:1px solid #f3f4f6;padding-top:10px;background:#fffaf0;margin-left:-16px;margin-right:-16px;padding:12px 16px;border-top:1px dashed #f59e0b}
 .verdict-picker-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#92400e;margin-bottom:8px}
@@ -10772,53 +10829,58 @@ function renderPlanner() {
     <b>Joanne</b> schedules social · <b>Mark</b> publishes Webflow · <b>Tia</b> posts GBP
   </div>`;
 
-  // ── Kanban board ──────────────────────────────────────────────────────
-  html += sectionTitle('Kanban Board');
-  html += `<div style="background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:200px">
-      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">What it is</div>
-      <div style="font-size:11px;color:var(--text-2);line-height:1.6">All content items grouped by workflow stage — Idea, In Progress, Angela QC, Scheduled, and Published. Card colour shows the platform type.</div>
-    </div>
-    <div style="flex:1;min-width:200px">
-      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">How to use it</div>
-      <div style="font-size:11px;color:var(--text-2);line-height:1.6">Click any card to open its brief, read the instructions, leave notes, and approve or reject it. Cards advance one stage at a time through the approval flow.</div>
-    </div>
+  // ── v2: Stage legend ──────────────────────────────────────────────────
+  html += `<div class="wq-legend">
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-idea"></span>Idea (needs Tia review)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-inprog"></span>In Progress</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-angela"></span>Angela QC (brand)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-denver"></span>Denver Approval</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-sched"></span>Scheduled (ready)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-pub"></span>Published</div>
   </div>`;
-  html += `<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:28px;align-items:start">`;
 
-  KANBAN_COLS.forEach(col => {
-    const items = ACTIVE_ITEMS.filter(item => (saved[item.id]||'Idea') === col.key);
-    html += `<div style="background:${col.color};border-top:3px solid ${col.border};border-radius:6px;padding:8px;min-height:100px">
-      <div style="font-size:10px;font-weight:700;margin-bottom:8px;color:var(--text);text-transform:uppercase;letter-spacing:.5px">${col.label} <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(${items.length})</span></div>
-      ${items.map(item => {
-        const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
-        const ac = ASSIGNEE_CFG[item.assignee] || {bg:'#f3f4f6',color:'#444'};
-        return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${pc.border||'#ccc'};border-radius:4px;padding:7px 8px;margin-bottom:6px;cursor:pointer;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
-          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="background:${pc.bg};color:${pc.color};border:1px solid ${pc.border||'#ccc'};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;letter-spacing:.3px">${item.platform.toUpperCase()}</span>
-            <span style="background:${ac.bg};color:${ac.color};font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px">${item.assignee}</span>
-          </div>
-          <div style="font-size:10px;font-weight:600;line-height:1.35;margin-bottom:3px;color:var(--text)">${item.title}</div>
-          <div style="font-size:9px;color:var(--muted)">Day ${item.day} · ${item.dueDate}</div>
-        </div>`;
-      }).join('')}
-      ${items.length===0 ? `<div style="font-size:10px;color:var(--muted);text-align:center;padding:16px 0;border:1px dashed var(--border);border-radius:4px">—</div>` : ''}
+  // ── v2: Filter strip ──────────────────────────────────────────────────
+  const _filter = window._planFilter || 'all';
+  const _stageCount = (key) => ALL_ITEMS.filter(i => (saved[i.id]||'Idea') === key).length;
+  const _btn = (key, label, count) => {
+    const isActive = _filter === key;
+    return `<button class="wq-filter-btn ${isActive?'active':''}" onclick="setPlanFilter('${key}')">${label}<span class="count">${count}</span></button>`;
+  };
+  html += `<div class="wq-filter">
+    <span class="wq-filter-label">Show:</span>
+    ${_btn('all',     'All',          ALL_ITEMS.length)}
+    ${_btn('Idea',    'Idea',         _stageCount('Idea'))}
+    ${_btn('In Progress','In Progress',_stageCount('In Progress'))}
+    ${_btn('Angela QC','Angela QC',    _stageCount('Angela QC'))}
+    ${_btn('Denver Approval','Denver', _stageCount('Denver Approval'))}
+    ${_btn('Scheduled','Scheduled',    _stageCount('Scheduled'))}
+    ${_btn('Published','Published',    _stageCount('Published'))}
+  </div>`;
+
+  // Helper: map stage label → CSS class
+  const _stageClass = (st) => ({
+    'Idea':'s-idea', 'In Progress':'s-inprog', 'Angela QC':'s-angela',
+    'Denver Approval':'s-denver', 'Scheduled':'s-sched', 'Published':'s-pub'
+  })[st] || 's-idea';
+
+  // Helper: render one stage-coloured card (used by calendar + backlog)
+  const _renderWqCard = (item) => {
+    const st = saved[item.id] || 'Idea';
+    if (_filter !== 'all' && _filter !== st) return '';   // filter hides
+    const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
+    const stLabel = st === 'Published' ? '✓ PUBLISHED' : st.toUpperCase();
+    const ownerLine = item.assignee ? ` · ${item.assignee}` : '';
+    const priorityLine = item.priority ? ` · ${item.priority}` : '';
+    return `<div class="wq-card ${_stageClass(st)}" onclick="openPlannerModal('${item.id}')">
+      <span class="src-badge" style="background:${pc.bg};color:${pc.color}">${(PLAT_CFG[item.platform]?.label || item.platform).toUpperCase()}</span>
+      <div class="title">${item.title}</div>
+      <div class="stage-line">${stLabel}${priorityLine}${ownerLine}</div>
     </div>`;
-  });
-  html += `</div>`;
+  };
 
-  // ── Mon-Sun calendar grid with week navigation ───────────────────────
-  html += sectionTitle('Weekly Content Calendar');
-  html += `<div style="background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:200px">
-      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">What it is</div>
-      <div style="font-size:11px;color:var(--text-2);line-height:1.6">A Monday-to-Sunday view of what is scheduled each day across all channels. Today's column is highlighted. Empty days show gaps in the plan.</div>
-    </div>
-    <div style="flex:1;min-width:200px">
-      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">How to use it</div>
-      <div style="font-size:11px;color:var(--text-2);line-height:1.6">Use Prev and Next to browse weeks. Click any card to open the brief. Content scheduled beyond this week appears in future weeks — keep clicking Next.</div>
-    </div>
-  </div>`;
+  // ── Content Calendar (kept — for items with publish dates) ───────────
+  html += sectionTitle('Content Calendar');
+  html += `<p class="wq-backlog-help">Content items with publish dates. Cards fade when they still need review, brighten when scheduled or live. Click any card to open its brief.</p>`;
 
   // Find Monday of the current week
   const _calToday = new Date(); _calToday.setHours(0,0,0,0);
@@ -10872,56 +10934,48 @@ function renderPlanner() {
             <div style="font-size:10px;color:var(--muted);margin-top:1px">${_colDateStr}</div>
           </div>
           <div style="padding:5px">
-            ${_colItems.map(item => {
-              const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444',border:'#ccc'};
-              const st = saved[item.id] || 'Idea';
-              const stColor = st==='Published'?'#3FA69A':st==='Scheduled'?'#3FA69A':st==='Denver Approval'?'#7c2d12':st==='Angela QC'?'#111':st==='In Progress'?'#3FA69A':'#999';
-              return `<div onclick="openPlannerModal('${item.id}')" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${pc.border};border-radius:4px;padding:6px 7px;margin-bottom:5px;cursor:pointer;font-size:10px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 6px rgba(0,0,0,.09)'" onmouseout="this.style.boxShadow='none'">
-                <div style="font-size:8px;font-weight:700;background:${pc.bg};color:${pc.color};border:1px solid ${pc.border};padding:1px 5px;border-radius:2px;display:inline-block;margin-bottom:4px;letter-spacing:.3px">${item.platform.toUpperCase()}</div>
-                <div style="font-weight:600;line-height:1.3;color:var(--text);margin-bottom:3px;font-size:10px">${item.title}</div>
-                <div style="font-size:9px;font-weight:700;color:${stColor}">${st}</div>
-              </div>`;
-            }).join('')}
-            ${_colItems.length===0 ? `<div style="height:36px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:4px;font-size:10px;color:var(--muted-2)">—</div>` : ''}
+            ${_colItems.map(_renderWqCard).filter(Boolean).join('') || `<div style="height:36px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:4px;font-size:10px;color:var(--muted-2)">—</div>`}
           </div>
         </div>`;
       }).join('')}
     </div>
   </div>`;
 
-  // ── All items list ─────────────────────────────────────────────────────
-  html += sectionTitle('All Content Items — ' + totalItems + ' items this cycle');
-  html += `<div style="background:#f9fafb;border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap">
-    <div style="flex:1;min-width:200px">
-      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">What it is</div>
-      <div style="font-size:11px;color:var(--text-2);line-height:1.6">A flat list of every content item in this cycle — platform, title, assignee, target keyword, day, and current status all in one place.</div>
-    </div>
-    <div style="flex:1;min-width:200px">
-      <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px">How to use it</div>
-      <div style="font-size:11px;color:var(--text-2);line-height:1.6">Click View to open the full brief. Use the arrow button (→ Stage) to advance a card to the next stage without opening it — useful for bulk updates.</div>
-    </div>
-  </div>`;
-  html += `<div class="card mb" style="overflow-x:auto"><table><thead><tr>
-    <th>Platform</th><th>Title</th><th>Assignee</th><th>Keyword</th><th class="num">Day</th><th>Status</th><th>Action</th>
-  </tr></thead><tbody>
-  ${ACTIVE_ITEMS.map(item => {
-    const st = saved[item.id] || 'Idea';
-    const stColor = st==='Published'?'#3FA69A':st==='Scheduled'?'#3FA69A':st==='Denver Approval'?'#7c2d12':st==='Angela QC'?'#111':st==='In Progress'?'#3FA69A':'#999';
-    const nextSt = KANBAN_COLS[(KANBAN_COLS.findIndex(c=>c.key===st)+1) % KANBAN_COLS.length].key;
-    return `<tr>
-      <td>${platBadge(item.platform)}</td>
-      <td style="font-size:12px;font-weight:600;max-width:200px">${item.title}</td>
-      <td>${assigneeBadge(item.assignee)}</td>
-      <td style="font-size:10px;color:var(--muted)">${item.kw||'–'}</td>
-      <td class="num">${item.day}</td>
-      <td><span style="font-size:10px;font-weight:700;color:${stColor}">${st}</span></td>
-      <td style="white-space:nowrap">
-        <button onclick="openPlannerModal('${item.id}')" style="font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:var(--bg-2)">View</button>
-        <button onclick="advanceStatus('${item.id}')" style="font-size:10px;padding:3px 8px;border:1px solid var(--teal);border-radius:4px;cursor:pointer;background:rgba(63,166,154,.08);color:var(--teal);margin-left:4px">→ ${nextSt}</button>
-      </td>
-    </tr>`;
-  }).join('')}
-  </tbody></table></div>`;
+  // ── Operational Backlog — actions grouped by source_page (NEW v2) ────
+  const _ACTIONS = ACTIVE_ITEMS.filter(i => i.kind === 'action');
+  if (_ACTIONS.length > 0) {
+    html += sectionTitle(`Operational Backlog — ${_ACTIONS.length} actions from Monday's emitters`);
+    html += `<p class="wq-backlog-help">
+      Operational fixes don't have a fixed publish date — they need doing this fortnight. Grouped by source so each owner sees their bucket. Cards follow the same stage colours: faded = needs Tia review, bright teal = scheduled, etc. Boxes are fixed height — when a group has many items, the inner list scrolls.
+    </p>`;
+
+    // Groups in fixed order so they always render the same way
+    const _SRC_GROUPS = [
+      {key:'seo-organic',     name:'SEO',            owners:'John + Mark'},
+      {key:'meta-ads',        name:'Meta Ads',        owners:'Joanne + Shauna'},
+      {key:'google-ads',      name:'Google Ads',      owners:'Tia + John'},
+      {key:'gbp',             name:'GBP',             owners:'Angela + Shauna'},
+      {key:'organic-social',  name:'Organic Social',  owners:'Shauna'},
+      {key:'membership',      name:'Membership',      owners:'Angela + Tia'},
+    ];
+    html += `<div class="wq-backlog-groups">`;
+    _SRC_GROUPS.forEach(g => {
+      const items = _ACTIONS.filter(a => a.sourcePage === g.key);
+      html += `<div class="wq-backlog-group">
+        <div class="wq-backlog-group-title">
+          <span class="src-name">${g.name} (${g.owners})</span>
+          <span class="count">${items.length}</span>
+        </div>
+        <div class="wq-backlog-group-items">
+          ${items.length === 0
+            ? `<div class="wq-backlog-empty">No ${g.name} actions this cycle</div>`
+            : items.map(_renderWqCard).filter(Boolean).join('') || `<div class="wq-backlog-empty">All filtered out</div>`
+          }
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
 
   // ── SEO Content Briefs ─────────────────────────────────────────────────
   const _ao_seo_p = D.raw_agent_outputs || {};
@@ -10948,6 +11002,13 @@ function renderPlanner() {
 
   $('planner-content').innerHTML = html;
 }
+
+// v2: filter state — which stage is currently selected ('all' shows everything)
+window._planFilter = window._planFilter || 'all';
+window.setPlanFilter = (stage) => {
+  window._planFilter = stage;
+  if (typeof renderPlanner === 'function') renderPlanner();
+};
 
 // Advance a planner item to next status without opening modal
 window.advanceStatus = (id) => {

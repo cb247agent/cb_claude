@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Work Queue v2 — Calendar-Only Mockup</title>
+<style>
+:root {
+  --teal: #3FA69A;
+  --teal-dim: #2d8478;
+  --text: #0d0d0d;
+  --text-2: #1a1a1a;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --border: #e5e7eb;
+  --bg: #fafafa;
+  --bg-2: #fff;
+  --card: #fff;
+  --radius: 8px;
+
+  /* Stage colors */
+  --stage-idea-bg: #f8fafc;
+  --stage-idea-border: #cbd5e1;
+  --stage-inprog-bg: #fff;
+  --stage-inprog-border: #6b7280;
+  --stage-angela-bg: #fffbeb;
+  --stage-angela-border: #f59e0b;
+  --stage-denver-bg: #fff5f5;
+  --stage-denver-border: #ef4444;
+  --stage-sched-bg: #fff;
+  --stage-sched-border: #3FA69A;
+  --stage-pub-bg: #3FA69A;
+  --stage-pub-text: #fff;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; }
+
+.layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar { background: #0d0d0d; color: #fff; padding: 18px; overflow-y: auto; }
+.sidebar-brand { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.sidebar-brand span { color: var(--teal); }
+.sidebar-tag { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted-2); margin-bottom: 22px; }
+.sidebar-section-label { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted-2); margin: 18px 0 8px; }
+.sidebar-item { padding: 8px 10px; font-size: 12px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; }
+.sidebar-item:hover { background: rgba(255,255,255,.05); }
+.sidebar-item.active { background: rgba(63,166,154,.15); color: var(--teal); border-left: 2px solid var(--teal); }
+
+/* Main */
+.main { padding: 28px 36px; overflow-y: auto; height: 100vh; }
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.topbar-tabs { display: flex; gap: 22px; font-size: 13px; }
+.topbar-tabs span { padding-bottom: 6px; cursor: pointer; color: var(--muted); }
+.topbar-tabs span.active { color: var(--text); font-weight: 700; border-bottom: 2px solid var(--teal); }
+.topbar-right { display: flex; gap: 14px; align-items: center; }
+.identity-pill { background: var(--bg-2); border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; font-size: 11px; display: flex; gap: 8px; align-items: center; }
+.live-pill { background: var(--bg-2); border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; font-size: 11px; color: var(--teal); display: flex; gap: 6px; align-items: center; }
+.live-pill::before { content: ''; width: 7px; height: 7px; background: var(--teal); border-radius: 50%; }
+
+h1 { font-size: 24px; margin: 4px 0 6px; }
+.page-intro { font-size: 12.5px; color: var(--text-2); line-height: 1.7; margin: 0 0 22px; max-width: 980px; }
+.page-intro b { font-weight: 700; }
+
+/* KPI bar */
+.kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+.kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; border-top: 2px solid var(--border); }
+.kpi-card.amber { border-top-color: #f59e0b; }
+.kpi-card.green { border-top-color: var(--teal); }
+.kpi-card .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+.kpi-card .value { font-size: 28px; font-weight: 800; line-height: 1.1; }
+.kpi-card .sub { font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+
+/* Approval flow */
+.flow-strip { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 22px; padding: 10px 14px; background: rgba(63,166,154,.06); border: 1px solid rgba(63,166,154,.2); border-radius: 6px; font-size: 11.5px; color: var(--text-2); }
+.flow-strip .label { font-weight: 700; color: var(--teal); }
+.flow-strip .arrow { color: var(--muted-2); }
+
+/* Filter strip */
+.filter-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; padding: 12px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; align-items: center; }
+.filter-strip .filter-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-right: 4px; }
+.filter-btn { padding: 6px 12px; font-size: 11.5px; font-weight: 600; border: 1px solid var(--border); background: var(--card); border-radius: 4px; cursor: pointer; transition: all .15s; }
+.filter-btn:hover { border-color: var(--teal); color: var(--teal); }
+.filter-btn.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+.filter-btn .count { background: rgba(255,255,255,.25); padding: 1px 6px; border-radius: 99px; margin-left: 5px; font-size: 10px; }
+.filter-btn:not(.active) .count { background: #f3f4f6; color: var(--muted); }
+
+/* Week nav */
+.week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; }
+.week-nav button { display: flex; align-items: center; gap: 5px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--card); font-size: 12px; font-weight: 600; cursor: pointer; }
+.week-nav button:hover { border-color: var(--teal); color: var(--teal); }
+.week-nav .week-label { text-align: center; }
+.week-nav .week-label .title { font-size: 14px; font-weight: 700; color: var(--text); }
+.week-nav .week-label .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* Calendar */
+.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 28px; }
+.cal-day { background: #f9fafb; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; min-height: 360px; }
+.cal-day.is-today { border-color: var(--teal); }
+.cal-day-header { padding: 8px 10px; background: var(--bg-2); border-bottom: 2px solid var(--border); }
+.cal-day.is-today .cal-day-header { background: rgba(63,166,154,.08); border-bottom-color: var(--teal); }
+.cal-day-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-2); }
+.cal-day.is-today .cal-day-name { color: var(--teal); }
+.cal-day-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.cal-day-items { padding: 6px; }
+.cal-empty { height: 36px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border); border-radius: 4px; font-size: 10px; color: var(--muted-2); }
+
+/* Card variants by stage — THE KEY VISUAL */
+.cal-card { padding: 7px 8px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-size: 10px; transition: transform .1s, box-shadow .15s; }
+.cal-card:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.cal-card .src-badge { font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 2px; display: inline-block; margin-bottom: 3px; letter-spacing: .3px; background: #f3f4f6; color: #6b7280; }
+.cal-card .title { font-weight: 600; line-height: 1.3; margin-bottom: 3px; font-size: 10px; }
+.cal-card .stage-line { font-size: 8.5px; font-weight: 700; letter-spacing: .03em; }
+
+/* IDEA - faded */
+.cal-card.s-idea { background: var(--stage-idea-bg); border: 1px dashed var(--stage-idea-border); opacity: 0.5; }
+.cal-card.s-idea .stage-line { color: var(--muted); }
+.cal-card.s-idea:hover { opacity: 1; }
+
+/* IN PROGRESS - grey solid */
+.cal-card.s-inprog { background: var(--stage-inprog-bg); border: 1px solid var(--border); border-left: 3px solid var(--stage-inprog-border); }
+.cal-card.s-inprog .stage-line { color: var(--stage-inprog-border); }
+
+/* ANGELA QC - amber */
+.cal-card.s-angela { background: var(--stage-angela-bg); border: 1px solid var(--stage-angela-border); border-left: 3px solid var(--stage-angela-border); }
+.cal-card.s-angela .stage-line { color: #92400e; }
+
+/* DENVER APPROVAL - red */
+.cal-card.s-denver { background: var(--stage-denver-bg); border: 1px solid var(--stage-denver-border); border-left: 3px solid var(--stage-denver-border); }
+.cal-card.s-denver .stage-line { color: #991b1b; }
+
+/* SCHEDULED - bright teal outline */
+.cal-card.s-sched { background: var(--stage-sched-bg); border: 1px solid var(--stage-sched-border); border-left: 3px solid var(--stage-sched-border); box-shadow: 0 1px 3px rgba(63,166,154,.15); }
+.cal-card.s-sched .stage-line { color: var(--teal); font-weight: 800; }
+
+/* PUBLISHED - teal filled */
+.cal-card.s-pub { background: var(--stage-pub-bg); color: var(--stage-pub-text); border: 1px solid var(--stage-pub-bg); }
+.cal-card.s-pub .src-badge { background: rgba(255,255,255,.2); color: #fff; }
+.cal-card.s-pub .stage-line { color: rgba(255,255,255,.85); }
+
+/* Hidden cards (when filter active) */
+.cal-card.is-hidden { display: none; }
+
+/* Stage legend */
+.legend { margin-bottom: 14px; padding: 12px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; display: flex; gap: 18px; flex-wrap: wrap; }
+.legend-item { display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--text-2); }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+.legend-swatch.s-idea { background: var(--stage-idea-bg); border: 1px dashed var(--stage-idea-border); opacity: 0.5; }
+.legend-swatch.s-inprog { background: var(--stage-inprog-bg); border-left: 3px solid var(--stage-inprog-border); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.legend-swatch.s-angela { background: var(--stage-angela-bg); border-left: 3px solid var(--stage-angela-border); border-top: 1px solid var(--stage-angela-border); border-right: 1px solid var(--stage-angela-border); border-bottom: 1px solid var(--stage-angela-border); }
+.legend-swatch.s-denver { background: var(--stage-denver-bg); border-left: 3px solid var(--stage-denver-border); border-top: 1px solid var(--stage-denver-border); border-right: 1px solid var(--stage-denver-border); border-bottom: 1px solid var(--stage-denver-border); }
+.legend-swatch.s-sched { background: var(--stage-sched-bg); border: 1px solid var(--stage-sched-border); border-left: 3px solid var(--stage-sched-border); }
+.legend-swatch.s-pub { background: var(--stage-pub-bg); border: 1px solid var(--stage-pub-bg); }
+
+/* Backlog section */
+h3 { font-size: 14px; font-weight: 700; margin: 24px 0 12px; color: var(--text); }
+.backlog-help { font-size: 11.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; max-width: 720px; }
+.backlog-groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+/* Fixed-height boxes — all 6 groups same height regardless of item count.
+   Inner items area scrolls when count exceeds box height. */
+.backlog-group { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 14px; height: 340px; display: flex; flex-direction: column; }
+.backlog-group-title { flex-shrink: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text); margin-bottom: 10px; display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.backlog-group-title .src-name { color: var(--text); }
+.backlog-group-title .count { background: #f3f4f6; padding: 1px 7px; border-radius: 99px; font-size: 10px; color: var(--muted); font-weight: 700; }
+
+/* Scrollable inner area — items list */
+.backlog-group-items { flex: 1; overflow-y: auto; margin: 0 -6px 0 -2px; padding: 4px 6px 4px 2px; position: relative; }
+.backlog-group-items::-webkit-scrollbar { width: 6px; }
+.backlog-group-items::-webkit-scrollbar-track { background: transparent; }
+.backlog-group-items::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+.backlog-group-items::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Tighter card spacing inside backlog (more density when scrolling) */
+.backlog-group .cal-card { margin-bottom: 5px; }
+.backlog-group .cal-card:last-child { margin-bottom: 0; }
+
+/* Subtle bottom fade hint when group is scrollable — pure CSS, no JS */
+.backlog-group { position: relative; }
+.backlog-group::after { content: ''; position: absolute; left: 14px; right: 20px; bottom: 14px; height: 18px; background: linear-gradient(to bottom, transparent, var(--card)); pointer-events: none; border-radius: 0 0 6px 6px; }
+
+/* Mockup notice */
+.mockup-notice { position: fixed; top: 20px; right: 20px; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; padding: 10px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,.1); z-index: 99; max-width: 280px; }
+.mockup-notice .label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 3px; }
+</style>
+</head>
+<body>
+
+<div class="mockup-notice">
+  <div class="label">Mockup — Option A</div>
+  Calendar-only view. Click filter buttons to test. Hover faded cards to preview. Stage colours apply to all 51 items.
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Chasing<span>Better</span></div>
+    <div class="sidebar-tag">MARKETING OS · Mockup v2</div>
+
+    <div class="sidebar-section-label">CB247 Gym</div>
+    <div class="sidebar-item">Group Overview</div>
+
+    <div class="sidebar-section-label">Overview</div>
+    <div class="sidebar-item">Dashboard</div>
+
+    <div class="sidebar-section-label">Clubs</div>
+    <div class="sidebar-item">Membership Statistics</div>
+
+    <div class="sidebar-section-label">Performance</div>
+    <div class="sidebar-item">SEO & Organic</div>
+    <div class="sidebar-item">Google Ads</div>
+    <div class="sidebar-item">Organic Social</div>
+    <div class="sidebar-item">Meta Ads</div>
+    <div class="sidebar-item">Google Business Profile</div>
+
+    <div class="sidebar-section-label">Team Workspace</div>
+    <div class="sidebar-item active">Work Queue</div>
+    <div class="sidebar-item">Performance Review</div>
+
+    <div class="sidebar-section-label">Help</div>
+    <div class="sidebar-item">How It Works</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-tabs">
+        <span class="active">CB247 Gym</span>
+        <span>My World Childcare</span>
+        <span>Karribank</span>
+        <span>Sparrows</span>
+      </div>
+      <div class="topbar-right">
+        <div class="identity-pill">Angela <span style="color:var(--muted)">▾</span></div>
+        <div class="live-pill">Live</div>
+      </div>
+    </div>
+
+    <h1>Work Queue</h1>
+    <p class="page-intro">
+      Every active piece of work in one calendar — <b>14 content items</b> (blogs, Instagram, TikTok, GBP posts, emails) and <b>37 operational fixes</b> (SEO, GBP, ads, website) for the cycle of <b>8–14 June 2026</b>. Cards fade when they need approval, brighten when they're ready to publish. Click any card to open its brief.
+    </p>
+
+    <!-- KPI bar -->
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="label">Total Items</div><div class="value">51</div><div class="sub">In this 2-week plan</div></div>
+      <div class="kpi-card amber"><div class="label">Pending Angela QC</div><div class="value">8</div><div class="sub">Waiting for brand QC</div></div>
+      <div class="kpi-card amber"><div class="label">Pending Denver</div><div class="value">4</div><div class="sub">Waiting for COO sign-off</div></div>
+      <div class="kpi-card green"><div class="label">Scheduled</div><div class="value">6</div><div class="sub">Approved + in scheduler</div></div>
+      <div class="kpi-card green"><div class="label">Published</div><div class="value">3</div><div class="sub">Live this cycle</div></div>
+    </div>
+
+    <!-- Approval flow -->
+    <div class="flow-strip">
+      <span class="label">Approval flow:</span>
+      <span>AI / team drafts</span><span class="arrow">→</span>
+      <b>Tia</b> reviews<span class="arrow">→</span>
+      In Progress<span class="arrow">→</span>
+      <b>Angela QC</b> (brand)<span class="arrow">→</span>
+      <b>Denver</b> sign-off<span class="arrow">→</span>
+      <b>Joanne</b> schedules social · <b>Mark</b> publishes Webflow · <b>Tia</b> posts GBP
+    </div>
+
+    <!-- Stage legend -->
+    <div class="legend">
+      <div class="legend-item"><span class="legend-swatch s-idea"></span>Idea (needs Tia review)</div>
+      <div class="legend-item"><span class="legend-swatch s-inprog"></span>In Progress</div>
+      <div class="legend-item"><span class="legend-swatch s-angela"></span>Angela QC (brand)</div>
+      <div class="legend-item"><span class="legend-swatch s-denver"></span>Denver Approval</div>
+      <div class="legend-item"><span class="legend-swatch s-sched"></span>Scheduled (ready)</div>
+      <div class="legend-item"><span class="legend-swatch s-pub"></span>Published</div>
+    </div>
+
+    <!-- Filter strip -->
+    <div class="filter-strip">
+      <span class="filter-label">Show:</span>
+      <button class="filter-btn active" onclick="setFilter('all', this)">All <span class="count">51</span></button>
+      <button class="filter-btn" onclick="setFilter('idea', this)">Idea <span class="count">30</span></button>
+      <button class="filter-btn" onclick="setFilter('inprog', this)">In Progress <span class="count">5</span></button>
+      <button class="filter-btn" onclick="setFilter('angela', this)">Angela QC <span class="count">8</span></button>
+      <button class="filter-btn" onclick="setFilter('denver', this)">Denver <span class="count">4</span></button>
+      <button class="filter-btn" onclick="setFilter('sched', this)">Scheduled <span class="count">6</span></button>
+      <button class="filter-btn" onclick="setFilter('pub', this)">Published <span class="count">3</span></button>
+    </div>
+
+    <h3>Content Calendar (publishing dates)</h3>
+    <p class="backlog-help">Content items with specific publish dates. Cards fade when not yet approved. Click any card to open its brief and approve / reject / edit.</p>
+
+    <!-- Week nav -->
+    <div class="week-nav">
+      <button>← Prev</button>
+      <div class="week-label">
+        <div class="title">8 Jun – 14 Jun 2026</div>
+        <div class="sub">14 content items this week</div>
+      </div>
+      <button>Next →</button>
+    </div>
+
+    <!-- Calendar Mon-Sun -->
+    <div class="calendar">
+      <!-- Monday -->
+      <div class="cal-day is-today">
+        <div class="cal-day-header">
+          <div class="cal-day-name">Mon · Today</div>
+          <div class="cal-day-date">8 Jun</div>
+        </div>
+        <div class="cal-day-items">
+          <div class="cal-card s-pub" data-stage="pub"><div class="src-badge">EMAIL</div><div class="title">Weekly Email Newsletter</div><div class="stage-line">✓ PUBLISHED</div></div>
+          <div class="cal-card s-sched" data-stage="sched"><div class="src-badge">GBP</div><div class="title">GBP Post — Sauna & Ice Bath</div><div class="stage-line">SCHEDULED · Tia posts</div></div>
+          <div class="cal-card s-angela" data-stage="angela"><div class="src-badge">INSTAGRAM</div><div class="title">Reel — FIFO Lifestyle</div><div class="stage-line">ANGELA QC · 1d</div></div>
+          <div class="cal-card s-inprog" data-stage="inprog"><div class="src-badge">BLOG</div><div class="title">Best Gym Malaga</div><div class="stage-line">IN PROGRESS · AI drafting</div></div>
+        </div>
+      </div>
+
+      <!-- Tuesday -->
+      <div class="cal-day">
+        <div class="cal-day-header">
+          <div class="cal-day-name">Tue</div>
+          <div class="cal-day-date">9 Jun</div>
+        </div>
+        <div class="cal-day-items">
+          <div class="cal-card s-sched" data-stage="sched"><div class="src-badge">INSTAGRAM</div><div class="title">IG — Kids Hub</div><div class="stage-line">SCHEDULED · Joanne</div></div>
+          <div class="cal-card s-denver" data-stage="denver"><div class="src-badge">INSTAGRAM</div><div class="title">Reel — Gym Tour</div><div class="stage-line">DENVER · awaiting sign-off</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge">GBP</div><div class="title">GBP Post — Reformer Pilates</div><div class="stage-line">IDEA · needs Tia review</div></div>
+        </div>
+      </div>
+
+      <!-- Wednesday -->
+      <div class="cal-day">
+        <div class="cal-day-header">
+          <div class="cal-day-name">Wed</div>
+          <div class="cal-day-date">10 Jun</div>
+        </div>
+        <div class="cal-day-items">
+          <div class="cal-card s-pub" data-stage="pub"><div class="src-badge">BLOG</div><div class="title">Recovery 101 — Sauna Benefits</div><div class="stage-line">✓ PUBLISHED</div></div>
+          <div class="cal-card s-angela" data-stage="angela"><div class="src-badge">INSTAGRAM</div><div class="title">Push the Tempo — Carousel</div><div class="stage-line">ANGELA QC · 2d</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge">EMAIL</div><div class="title">Member Reactivation Email</div><div class="stage-line">IDEA · needs Tia review</div></div>
+        </div>
+      </div>
+
+      <!-- Thursday -->
+      <div class="cal-day">
+        <div class="cal-day-header">
+          <div class="cal-day-name">Thu</div>
+          <div class="cal-day-date">11 Jun</div>
+        </div>
+        <div class="cal-day-items">
+          <div class="cal-card s-sched" data-stage="sched"><div class="src-badge">INSTAGRAM</div><div class="title">Reel — Member Story (Sarah)</div><div class="stage-line">SCHEDULED · Joanne</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge">GBP</div><div class="title">GBP Post — Ice Bath Demo</div><div class="stage-line">IDEA · needs Tia review</div></div>
+        </div>
+      </div>
+
+      <!-- Friday -->
+      <div class="cal-day">
+        <div class="cal-day-header">
+          <div class="cal-day-name">Fri</div>
+          <div class="cal-day-date">12 Jun</div>
+        </div>
+        <div class="cal-day-items">
+          <div class="cal-card s-pub" data-stage="pub"><div class="src-badge">INSTAGRAM</div><div class="title">FIFO Freeze Reel</div><div class="stage-line">✓ PUBLISHED</div></div>
+          <div class="cal-card s-angela" data-stage="angela"><div class="src-badge">BLOG</div><div class="title">Pilates Ellenbrook Landing Page</div><div class="stage-line">ANGELA QC · 1d</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge">INSTAGRAM</div><div class="title">Reel — Spin Class Energy</div><div class="stage-line">IDEA · needs Tia review</div></div>
+        </div>
+      </div>
+
+      <!-- Saturday -->
+      <div class="cal-day">
+        <div class="cal-day-header">
+          <div class="cal-day-name">Sat</div>
+          <div class="cal-day-date">13 Jun</div>
+        </div>
+        <div class="cal-day-items">
+          <div class="cal-card s-sched" data-stage="sched"><div class="src-badge">INSTAGRAM</div><div class="title">Saturday Energy Carousel</div><div class="stage-line">SCHEDULED · Joanne</div></div>
+        </div>
+      </div>
+
+      <!-- Sunday -->
+      <div class="cal-day">
+        <div class="cal-day-header">
+          <div class="cal-day-name">Sun</div>
+          <div class="cal-day-date">14 Jun</div>
+        </div>
+        <div class="cal-day-items">
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge">GBP</div><div class="title">GBP Post — Sunday Recovery</div><div class="stage-line">IDEA · needs Tia review</div></div>
+          <div class="cal-empty">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Operational backlog -->
+    <h3>Operational Backlog — 37 actions from Monday's emitters</h3>
+    <p class="backlog-help">
+      Operational fixes don't have a fixed publish date — they need doing this fortnight. Grouped by source so each owner sees their bucket. Cards still follow the same stage colours: faded = needs Tia review, bright teal = scheduled, etc. Click any card to open its brief.
+    </p>
+
+    <div class="backlog-groups">
+      <!-- SEO — 11 actions (5 OPTIMISE + 4 BUILD + 2 PROTECT) -->
+      <div class="backlog-group">
+        <div class="backlog-group-title"><span class="src-name">SEO (John + Mark)</span><span class="count">11</span></div>
+        <div class="backlog-group-items">
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Optimise on-page for 'pilates ellenbrook' — #4.3</div><div class="stage-line">IDEA · P2 · John</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Optimise on-page for 'gym malaga 24/7' — #6.1</div><div class="stage-line">IDEA · P2 · John</div></div>
+          <div class="cal-card s-inprog" data-stage="inprog"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Optimise on-page for 'sauna malaga' — #5.4</div><div class="stage-line">IN PROGRESS · John</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Optimise on-page for 'reformer pilates ellenbrook' — #8.2</div><div class="stage-line">IDEA · P2 · John</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Optimise on-page for 'ice bath malaga' — #11.7</div><div class="stage-line">IDEA · P2 · John</div></div>
+          <div class="cal-card s-inprog" data-stage="inprog"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Build /recovery/ page — sauna + ice bath</div><div class="stage-line">IN PROGRESS · AI drafting</div></div>
+          <div class="cal-card s-angela" data-stage="angela"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Build /kids-hub-malaga/ landing page</div><div class="stage-line">ANGELA QC · 0d</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Build /fifo-freeze/ landing page</div><div class="stage-line">IDEA · P2 · AI + Mark</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Build /crossfit-malaga/ page — 78 imp/wk</div><div class="stage-line">IDEA · P2 · AI + Mark</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Protect 'chasing better malaga' — #1.1</div><div class="stage-line">IDEA · P3 · John</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f3e8ff;color:#6b21a8">SEO</div><div class="title">Protect 'chasing better ellenbrook' — #1.4</div><div class="stage-line">IDEA · P3 · John</div></div>
+        </div>
+      </div>
+
+      <!-- Meta — 7 actions (1 PAUSE + 3 SCALE + 3 REFRESH) -->
+      <div class="backlog-group">
+        <div class="backlog-group-title"><span class="src-name">Meta Ads (Joanne + Shauna)</span><span class="count">7</span></div>
+        <div class="backlog-group-items">
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#ede9fe;color:#5b21b6">META</div><div class="title">Pause "Deep heat. Deep recovery." (Malaga) — CTR 1.04%</div><div class="stage-line">IDEA · P1 · Joanne</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#ede9fe;color:#5b21b6">META</div><div class="title">Scale "Push the Tempo (2)" (Ellenbrook) — CTR 3.07%</div><div class="stage-line">IDEA · P1 · Joanne</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#ede9fe;color:#5b21b6">META</div><div class="title">Scale "The difference between..." (Ellenbrook) — CTR 2.79%</div><div class="stage-line">IDEA · P1 · Joanne</div></div>
+          <div class="cal-card s-sched" data-stage="sched"><div class="src-badge" style="background:#ede9fe;color:#5b21b6">META</div><div class="title">Scale website promo (Ellenbrook) — CTR 2.27%</div><div class="stage-line">SCHEDULED · Joanne</div></div>
+          <div class="cal-card s-inprog" data-stage="inprog"><div class="src-badge" style="background:#ede9fe;color:#5b21b6">META</div><div class="title">Refresh creative for "Pilates Reel" (Malaga) — CTR 1.76%</div><div class="stage-line">IN PROGRESS · Shauna</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#ede9fe;color:#5b21b6">META</div><div class="title">Refresh creative for "Deep heat. Deep recovery..." (Malaga)</div><div class="stage-line">IDEA · P2 · Shauna</div></div>
+          <div class="cal-card s-angela" data-stage="angela"><div class="src-badge" style="background:#ede9fe;color:#5b21b6">META</div><div class="title">Refresh creative for "Better together" (Ellenbrook)</div><div class="stage-line">ANGELA QC · 1d</div></div>
+        </div>
+      </div>
+
+      <!-- Google Ads — 4 actions (1 PAUSE + 1 SCALE + 2 OPTIMISE) -->
+      <div class="backlog-group">
+        <div class="backlog-group-title"><span class="src-name">Google Ads (Tia + John)</span><span class="count">4</span></div>
+        <div class="backlog-group-items">
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#fef3c7;color:#92400e">GOOGLE</div><div class="title">Pause "Ellenbrook Gym" — CPA $40.20 on $121/wk</div><div class="stage-line">IDEA · P1 · Tia</div></div>
+          <div class="cal-card s-sched" data-stage="sched"><div class="src-badge" style="background:#fef3c7;color:#92400e">GOOGLE</div><div class="title">Scale "PMax Local Campaign" (Ellenbrook) — CPA $4.94</div><div class="stage-line">SCHEDULED · Tia executes</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#fef3c7;color:#92400e">GOOGLE</div><div class="title">Optimise "Malaga Gym" — CPA $23.74 vs $10.31 avg</div><div class="stage-line">IDEA · P2 · John</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#fef3c7;color:#92400e">GOOGLE</div><div class="title">Optimise "PMax Local Campaign" (Malaga) — CPA $21.29</div><div class="stage-line">IDEA · P2 · John</div></div>
+        </div>
+      </div>
+
+      <!-- GBP — 5 actions (2 REVIEW_GROWTH + 2 PHOTO_REFRESH + 1 COMPETITOR_GAP) -->
+      <div class="backlog-group">
+        <div class="backlog-group-title"><span class="src-name">GBP (Angela + Shauna)</span><span class="count">5</span></div>
+        <div class="backlog-group-items">
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:rgba(63,166,154,.15);color:#3FA69A">GBP</div><div class="title">Close GBP rating gap at Ellenbrook — Fitstop 4.9 vs CB247 4.7</div><div class="stage-line">IDEA · P1 · Tia + Angela</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:rgba(63,166,154,.15);color:#3FA69A">GBP</div><div class="title">Drive review growth at Malaga — 469 reviews, 4.6 stars</div><div class="stage-line">IDEA · P2 · Angela</div></div>
+          <div class="cal-card s-inprog" data-stage="inprog"><div class="src-badge" style="background:rgba(63,166,154,.15);color:#3FA69A">GBP</div><div class="title">Drive review growth at Ellenbrook — 226 reviews, 4.7 stars</div><div class="stage-line">IN PROGRESS · Angela</div></div>
+          <div class="cal-card s-inprog" data-stage="inprog"><div class="src-badge" style="background:rgba(63,166,154,.15);color:#3FA69A">GBP</div><div class="title">Refresh GBP photos at Malaga — 65 → 70</div><div class="stage-line">IN PROGRESS · Shauna</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:rgba(63,166,154,.15);color:#3FA69A">GBP</div><div class="title">Refresh GBP photos at Ellenbrook — 68 → 73</div><div class="stage-line">IDEA · P3 · Shauna</div></div>
+        </div>
+      </div>
+
+      <!-- Organic Social — 5 actions (3 TREND_RIDE + 2 CREATIVE_INSPO) -->
+      <div class="backlog-group">
+        <div class="backlog-group-title"><span class="src-name">Organic Social (Shauna)</span><span class="count">5</span></div>
+        <div class="backlog-group-items">
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#fce7f3;color:#9d174d">SOCIAL</div><div class="title">Trend-ride #gymmotivation — 24 hits this week</div><div class="stage-line">IDEA · P2 · Shauna</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#fce7f3;color:#9d174d">SOCIAL</div><div class="title">Trend-ride #gymtok — 19 hits</div><div class="stage-line">IDEA · P2 · Shauna</div></div>
+          <div class="cal-card s-inprog" data-stage="inprog"><div class="src-badge" style="background:#fce7f3;color:#9d174d">SOCIAL</div><div class="title">Trend-ride #fitnessjourney — 17 hits</div><div class="stage-line">IN PROGRESS · Shauna</div></div>
+          <div class="cal-card s-angela" data-stage="angela"><div class="src-badge" style="background:#fce7f3;color:#9d174d">SOCIAL</div><div class="title">Adapt high-engagement IG format — 186 engagement</div><div class="stage-line">ANGELA QC · 0d</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#fce7f3;color:#9d174d">SOCIAL</div><div class="title">Adapt high-engagement IG format — 49 engagement</div><div class="stage-line">IDEA · P3 · Shauna</div></div>
+        </div>
+      </div>
+
+      <!-- Membership — 5 actions (2 SAVE_CALL + 1 CHURN_REASON + 1 SWITCH + 1 ADDON) -->
+      <div class="backlog-group">
+        <div class="backlog-group-title"><span class="src-name">Membership (Angela + Tia)</span><span class="count">5</span></div>
+        <div class="backlog-group-items">
+          <div class="cal-card s-inprog" data-stage="inprog"><div class="src-badge" style="background:#f0fdf4;color:#15803d">MEM</div><div class="title">Save-call queue at Malaga — 323 pending exits</div><div class="stage-line">IN PROGRESS · Angela</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f0fdf4;color:#15803d">MEM</div><div class="title">Save-call queue at Ellenbrook — 201 pending exits</div><div class="stage-line">IDEA · P1 · Angela</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f0fdf4;color:#15803d">MEM</div><div class="title">Habit-build campaign — 49 'not using enough' churns</div><div class="stage-line">IDEA · P1 · Angela</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f0fdf4;color:#15803d">MEM</div><div class="title">Competitive defence — 20 switched to other gym</div><div class="stage-line">IDEA · P1 · Tia</div></div>
+          <div class="cal-card s-idea" data-stage="idea"><div class="src-badge" style="background:#f0fdf4;color:#15803d">MEM</div><div class="title">Grow Recovery addon — 30 → 60 in 28d</div><div class="stage-line">IDEA · P2 · Tia</div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// Filter behaviour — pure UI demo, no real data binding
+function setFilter(stage, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.cal-card').forEach(card => {
+    if (stage === 'all') {
+      card.classList.remove('is-hidden');
+    } else if (card.dataset.stage === stage) {
+      card.classList.remove('is-hidden');
+    } else {
+      card.classList.add('is-hidden');
+    }
+  });
+}
+</script>
+
+</body>
+</html>
