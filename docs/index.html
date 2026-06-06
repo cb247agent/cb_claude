@@ -10879,8 +10879,12 @@ function renderPlanner() {
   };
 
   // ── Content Calendar (kept — for items with publish dates) ───────────
+  // v2 fix: show ONLY content items (operational actions go in the Backlog
+  // below, not duplicated here). Show 14 days (full 2-week plan) so the
+  // calendar isn't half-empty when items are weighted toward week 2.
+  const _CONTENT = ACTIVE_ITEMS.filter(i => i.kind === 'content');
   html += sectionTitle('Content Calendar');
-  html += `<p class="wq-backlog-help">Content items with publish dates. Cards fade when they still need review, brighten when scheduled or live. Click any card to open its brief.</p>`;
+  html += `<p class="wq-backlog-help">Content items only — the ${_CONTENT.length} blogs, Instagram posts, Reels, TikToks, emails and GBP posts with publish dates. Cards fade when they still need review, brighten when scheduled or live. Click any card to open its brief. (Operational actions appear in the backlog below, not on the calendar — they don't have publish dates.)</p>`;
 
   // Find Monday of the current week
   const _calToday = new Date(); _calToday.setHours(0,0,0,0);
@@ -10889,56 +10893,69 @@ function renderPlanner() {
   const _thisMonday = new Date(_calToday);
   _thisMonday.setDate(_calToday.getDate() + _daysToMon);
 
-  // Displayed week start/end
+  // v2 fix: show full 2-week plan (14 days = 2 rows of Mon-Sun) instead of 1
+  // week. Real content items span days 0-23 so a 7-day calendar was mostly
+  // empty in the current week. _calWeekOffset now steps by 2 weeks at a time.
   const _wkStart = new Date(_thisMonday);
-  _wkStart.setDate(_thisMonday.getDate() + _calWeekOffset * 7);
+  _wkStart.setDate(_thisMonday.getDate() + _calWeekOffset * 14);   // 14-day stride
   const _wkEnd = new Date(_wkStart);
-  _wkEnd.setDate(_wkStart.getDate() + 6);
+  _wkEnd.setDate(_wkStart.getDate() + 13);   // 14 days = 2 weeks
 
   const _wkLabel = _wkStart.toLocaleDateString('en-AU',{day:'numeric',month:'short'}) + ' – ' + _wkEnd.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
   const _DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
-  // Count items in this week
-  const _wkItemCount = ACTIVE_ITEMS.filter(item => {
+  // Count CONTENT items in this 2-week period (calendar shows content only)
+  const _wkItemCount = _CONTENT.filter(item => {
     const d = new Date(_calToday); d.setDate(_calToday.getDate()+item.day); d.setHours(0,0,0,0);
     return d >= _wkStart && d <= _wkEnd;
   }).length;
 
-  html += `<div style="margin-bottom:28px">
+  // Helper: render a single 7-day row for one week (Mon-Sun)
+  const _renderWeekRow = (weekStartDate, weekNumber) => {
+    const rowLabel = weekStartDate.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+    let rowHtml = `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:${weekNumber===2?'14px':'0'} 0 6px">Week ${weekNumber} · starts ${rowLabel}</div>`;
+    rowHtml += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:700px">`;
+    rowHtml += _DOW.map((dayName, i) => {
+      const _colDate = new Date(weekStartDate);
+      _colDate.setDate(weekStartDate.getDate() + i);
+      _colDate.setHours(0,0,0,0);
+      const _isToday = _colDate.getTime() === _calToday.getTime();
+      const _colItems = _CONTENT.filter(item => {
+        const d = new Date(_calToday); d.setDate(_calToday.getDate()+item.day); d.setHours(0,0,0,0);
+        return d.getTime() === _colDate.getTime();
+      });
+      const _colDateStr = _colDate.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+      return `<div style="background:#f9fafb;border:1px solid ${_isToday?'#3FA69A':'var(--border)'};border-radius:6px;overflow:hidden">
+        <div style="padding:7px 8px;background:${_isToday?'rgba(63,166,154,.08)':'var(--bg)'};border-bottom:2px solid ${_isToday?'#3FA69A':'var(--border)'}">
+          <div style="font-size:10px;font-weight:700;color:${_isToday?'#3FA69A':'var(--text-2)'};text-transform:uppercase;letter-spacing:.05em">${dayName}${_isToday?' ·&nbsp;Today':''}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">${_colDateStr}</div>
+        </div>
+        <div style="padding:5px">
+          ${_colItems.map(_renderWqCard).filter(Boolean).join('') || `<div style="height:36px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:4px;font-size:10px;color:var(--muted-2)">—</div>`}
+        </div>
+      </div>`;
+    }).join('');
+    rowHtml += `</div>`;
+    return rowHtml;
+  };
 
-    <!-- Week nav bar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap">
-      <button onclick="if(_calWeekOffset>0){_calWeekOffset--;renderPlanner()}" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:${_calWeekOffset===0?'var(--muted)':'var(--text)'};font-size:12px;font-weight:600;cursor:${_calWeekOffset===0?'default':'pointer'};opacity:${_calWeekOffset===0?'.4':'1'}" ${_calWeekOffset===0?'disabled':''}>&#8592; Prev</button>
+  // Second week starts 7 days after first
+  const _wk2Start = new Date(_wkStart);
+  _wk2Start.setDate(_wkStart.getDate() + 7);
+
+  html += `<div style="margin-bottom:28px">
+    <!-- Week nav bar (steps 2 weeks at a time) -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+      <button onclick="if(_calWeekOffset>0){_calWeekOffset--;renderPlanner()}" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:${_calWeekOffset===0?'var(--muted)':'var(--text)'};font-size:12px;font-weight:600;cursor:${_calWeekOffset===0?'default':'pointer'};opacity:${_calWeekOffset===0?'.4':'1'};font-family:inherit" ${_calWeekOffset===0?'disabled':''}>&#8592; Prev 2 weeks</button>
       <div style="text-align:center">
         <div style="font-size:14px;font-weight:700;color:var(--text)">${_wkLabel}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${_wkItemCount} item${_wkItemCount!==1?'s':''} scheduled this week</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${_wkItemCount} content item${_wkItemCount!==1?'s':''} scheduled in this 2-week plan</div>
       </div>
-      <button onclick="_calWeekOffset++;renderPlanner()" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid #3FA69A;border-radius:4px;background:rgba(63,166,154,.08);color:#3FA69A;font-size:12px;font-weight:600;cursor:pointer">Next &#8594;</button>
+      <button onclick="_calWeekOffset++;renderPlanner()" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid #3FA69A;border-radius:4px;background:rgba(63,166,154,.08);color:#3FA69A;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Next 2 weeks &#8594;</button>
     </div>
 
-    <!-- 7-column Mon-Sun grid -->
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:700px;overflow-x:auto">
-      ${_DOW.map((dayName, i) => {
-        const _colDate = new Date(_wkStart);
-        _colDate.setDate(_wkStart.getDate() + i);
-        _colDate.setHours(0,0,0,0);
-        const _isToday = _colDate.getTime() === _calToday.getTime();
-        const _colItems = ACTIVE_ITEMS.filter(item => {
-          const d = new Date(_calToday); d.setDate(_calToday.getDate()+item.day); d.setHours(0,0,0,0);
-          return d.getTime() === _colDate.getTime();
-        });
-        const _colDateStr = _colDate.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
-        return `<div style="background:#f9fafb;border:1px solid ${_isToday?'#3FA69A':'var(--border)'};border-radius:6px;overflow:hidden">
-          <div style="padding:7px 8px;background:${_isToday?'rgba(63,166,154,.08)':'var(--bg)'};border-bottom:2px solid ${_isToday?'#3FA69A':'var(--border)'}">
-            <div style="font-size:10px;font-weight:700;color:${_isToday?'#3FA69A':'var(--text-2)'};text-transform:uppercase;letter-spacing:.05em">${dayName}${_isToday?' ·&nbsp;Today':''}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px">${_colDateStr}</div>
-          </div>
-          <div style="padding:5px">
-            ${_colItems.map(_renderWqCard).filter(Boolean).join('') || `<div style="height:36px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:4px;font-size:10px;color:var(--muted-2)">—</div>`}
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
+    ${_renderWeekRow(_wkStart, 1)}
+    ${_renderWeekRow(_wk2Start, 2)}
   </div>`;
 
   // ── Operational Backlog — actions grouped by source_page (NEW v2) ────
