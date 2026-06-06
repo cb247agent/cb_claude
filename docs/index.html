@@ -53,7 +53,7 @@ code{font-family:'SF Mono',Menlo,monospace;font-size:.85em;background:var(--bg);
 .biz-tab.coming-soon{opacity:.4;cursor:default}
 .biz-tab.coming-soon::after{content:'soon';font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:var(--border);color:var(--muted);padding:1px 5px;border-radius:3px;margin-left:5px}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.refresh-badge{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.refresh-badge{display:none}   /* hidden — same info shown in the footer; was clipping at right edge of topbar */
 .status-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;flex-shrink:0}
 .status-dot.warn{background:var(--muted)}
 .status-dot.error{background:var(--text-2)}
