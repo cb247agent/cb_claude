@@ -164,6 +164,20 @@ log "─── STEP 4.5b: MWCC Ahrefs Pull (supplementary) ───"
     || { FAILED_STEPS+=("mwcc-ahrefs"); log "  ⚠️  MWCC Ahrefs pull failed (units exhausted?) — check $LOG"; }
 
 # ─────────────────────────────────────────────────────────────────
+# STEP 4.6 — MWCC Metricool PDF parse (organic social)
+# Jordan drops mwcc-inbox/metricool.pdf each Monday. Parser extracts
+# FB + IG + GBP per-centre metrics. Graceful skip if no PDF.
+# ─────────────────────────────────────────────────────────────────
+log ""
+log "─── STEP 4.6: MWCC Metricool PDF Parse ───"
+if "$PYTHON" "$BASE_DIR/scripts/parse_mwcc_metricool_pdf.py" >> "$LOG" 2>&1; then
+    log "  ✅ MWCC Metricool parse complete → state/mwcc-social.json"
+else
+    FAILED_STEPS+=("mwcc-metricool")
+    log "  ⚠️  MWCC Metricool parse failed — check $LOG"
+fi
+
+# ─────────────────────────────────────────────────────────────────
 # STEP 4.7 — WORK QUEUE EMITTERS
 # ─────────────────────────────────────────────────────────────────
 log ""

@@ -1065,8 +1065,10 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
     # md.gsc / md.ahrefs but baker wasn't populating them, so page showed "Awaiting GSC")
     gsc    = _load("mwcc-gsc-data.json", default={})
     ahrefs = _load("mwcc-ahrefs.json",    default={})
+    social = _load("mwcc-social.json",    default={})
     if not isinstance(gsc,    dict): gsc    = {}
     if not isinstance(ahrefs, dict): ahrefs = {}
+    if not isinstance(social, dict): social = {}
 
     data = {
         "generated":    datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC"),
@@ -1080,6 +1082,7 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
         "ga4":          ga4,
         "gsc":          gsc,
         "ahrefs":       ahrefs,
+        "social":       social,
     }
     json_payload = json.dumps(data, indent=2, default=str)
 
