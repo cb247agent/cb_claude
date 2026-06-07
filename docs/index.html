@@ -24,6 +24,10 @@
 /* When the body has data-business=mwcc, swap CB247 teal accents for MWCC purple.
    Triggered automatically by nav() when user clicks a mwcc-* sidebar item.
    Pages that need extra MWCC-specific styling can use the --mwcc-* variables directly. */
+/* Brand accent cascade — inline `color:var(--brand-accent, var(--teal))` falls back
+   per body[data-business=...] without hardcoding the colour at every render site. */
+body{--brand-accent:var(--teal);--brand-accent-deep:var(--teal-dim)}
+body[data-business="mwcc"]{--brand-accent:var(--mwcc-purple);--brand-accent-deep:var(--mwcc-purple-deep)}
 body[data-business="mwcc"] a{color:var(--mwcc-purple)}
 body[data-business="mwcc"] .topbar-tab.active{border-bottom-color:var(--mwcc-purple);color:var(--mwcc-purple)}
 body[data-business="mwcc"] .kpi-card{border-top-color:var(--mwcc-purple)}
@@ -33,6 +37,25 @@ body[data-business="mwcc"] .section-title{color:var(--mwcc-purple-deep);border-b
 body[data-business="mwcc"] .card-h{color:var(--mwcc-purple-deep)}
 body[data-business="mwcc"] .insight.teal{background:#fff;border-color:var(--mwcc-purple-soft);border-left-color:var(--mwcc-purple);color:var(--mwcc-purple-deep)}
 body[data-business="mwcc"] .insight.teal .insight-label{color:var(--mwcc-purple-deep)}
+/* Numbers + currency + WoW arrows: swap teal to purple globally on MWCC pages */
+body[data-business="mwcc"] .stat-val.good{color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .kpi-change.up{color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .wow-up{color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .wow-new{color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .pos-1-3{background:#fff;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .stars{color:var(--mwcc-purple)}
+body[data-business="mwcc"] .rec-impact{color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .chip{background:#fff;border:1px solid var(--mwcc-purple-soft);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .platform-gbp{background:#fff;border:1px solid var(--mwcc-purple-soft);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .p-high{background:#fff;border:1px solid var(--mwcc-purple-soft);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .rec-tag.t-seo{background:#fff;border:1px solid var(--mwcc-purple-soft);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .status-new{border-color:var(--mwcc-purple);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .status-inprogress{background:#fff;border-color:var(--mwcc-purple);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .rec-status-btn:hover{border-color:var(--mwcc-purple);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .agent-box:hover{border-color:var(--mwcc-purple)}
+body[data-business="mwcc"] .agent-box.primary-agent{border-color:var(--mwcc-purple)}
+body[data-business="mwcc"] .content-card:hover{border-color:var(--mwcc-purple)}
+body[data-business="mwcc"] .rec-outcome-input:focus{outline-color:var(--mwcc-purple);border-color:var(--mwcc-purple)}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 a{color:var(--teal);text-decoration:none}
 a:hover{text-decoration:underline}
@@ -9108,7 +9131,7 @@ function renderOverview() {
     <div style="font-size:13px;line-height:1.7">
       <div><b>Where we are:</b> ${_vWhereWeAre}</div>
       <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
-      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_vPriority}</div>
     </div>
   </div>`;
 
@@ -9742,7 +9765,7 @@ function renderSEO() {
       <th style="font-size:10px">Expected Impact</th>
     </tr></thead><tbody>
     ${actions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
       <td>
         <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
@@ -9840,7 +9863,7 @@ function renderGAds() {
     <div style="font-size:13px;line-height:1.7">
       <div><b>Where we are:</b> ${_vWhereWeAre}</div>
       <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
-      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_vPriority}</div>
     </div>
   </div>`;
 
@@ -10512,7 +10535,7 @@ function renderGAds() {
       <th style="font-size:10px">Expected Impact</th>
     </tr></thead><tbody>
     ${_actions2w.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
       <td>
         <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
@@ -10979,7 +11002,7 @@ function renderOrgSocial() {
       <th style="font-size:10px">Expected Impact</th>
     </tr></thead><tbody>
     ${_socialActions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
       <td>
         <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
@@ -11129,7 +11152,7 @@ function renderMeta() {
     <div style="font-size:13px;line-height:1.7">
       <div><b>Where we are:</b> ${_vWhereWeAre}</div>
       <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
-      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_vPriority}</div>
     </div>
   </div>`;
 
@@ -11528,7 +11551,7 @@ function renderMeta() {
       <th style="font-size:10px">Expected Impact</th>
     </tr></thead><tbody>
     ${_metaActions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
       <td>
         <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
@@ -11637,7 +11660,7 @@ function renderGBP() {
     <div style="font-size:13px;line-height:1.7">
       <div><b>Where we are:</b> ${_vWhereWeAre}</div>
       <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
-      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_vPriority}</div>
     </div>
   </div>`;
 
@@ -11940,7 +11963,7 @@ function renderGBP() {
       <th style="font-size:10px">Expected Impact</th>
     </tr></thead><tbody>
     ${_gbpActions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
       <td>
         <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
@@ -12435,7 +12458,7 @@ function renderPlanner() {
 
   // ── Approval flow reminder ───────────────────────────────────────────────
   html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:11px;color:var(--text-2)">
-    <span style="font-weight:700;color:var(--teal)">Approval flow:</span>
+    <span style="font-weight:700;color:var(--brand-accent-deep)">Approval flow:</span>
     <span>AI / team drafts</span><span style="color:var(--muted)">→</span>
     <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
     In Progress<span style="color:var(--muted)">→</span>
@@ -12882,7 +12905,7 @@ function renderContentReview() {
         <div style="margin:14px 0 0;display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11.5px">
           Work Queue action <span style="color:var(--muted-2)">→</span>
           team executes <span style="color:var(--muted-2)">→</span>
-          marked <b style="color:var(--teal)">Published</b> <span style="color:var(--muted-2)">→</span>
+          marked <b style="color:var(--brand-accent-deep)">Published</b> <span style="color:var(--muted-2)">→</span>
           7–28 days pass <span style="color:var(--muted-2)">→</span>
           system measures actual vs projected KPI <span style="color:var(--muted-2)">→</span>
           verdict appears here
@@ -15237,7 +15260,7 @@ function renderCb247Membership() {
     <div style="font-size:13px;line-height:1.7">
       <div><b>Where we are:</b> ${_vWhereWeAre}</div>
       <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
-      <div style="margin-top:6px"><b style="color:var(--teal)">Top priority this week:</b> ${_vPriority}</div>
+      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_vPriority}</div>
     </div>
   </div>`;
 
@@ -15529,7 +15552,7 @@ function renderCb247Membership() {
       <th style="font-size:10px">Expected Impact</th>
     </tr></thead><tbody>
     ${_membershipActions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--teal)">${i+1}</td>
+      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
       <td>
         <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
@@ -16052,7 +16075,7 @@ function renderMwccContentPlanner() {
 
   // ── Approval flow ──
   html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:11px;color:var(--text-2)">
-    <span style="font-weight:700;color:var(--teal)">Approval flow:</span>
+    <span style="font-weight:700;color:var(--brand-accent-deep)">Approval flow:</span>
     <span>AI / team drafts</span><span style="color:var(--muted)">→</span>
     <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
     In Progress<span style="color:var(--muted)">→</span>
@@ -16226,7 +16249,7 @@ function renderMwccContentReview() {
       <div style="margin:14px 0 0;display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11.5px">
         MWCC Work Queue action <span style="color:var(--muted-2)">→</span>
         team executes <span style="color:var(--muted-2)">→</span>
-        marked <b style="color:var(--teal)">Published</b> <span style="color:var(--muted-2)">→</span>
+        marked <b style="color:var(--brand-accent-deep)">Published</b> <span style="color:var(--muted-2)">→</span>
         7–28 days <span style="color:var(--muted-2)">→</span>
         system measures actual vs projected KPI <span style="color:var(--muted-2)">→</span>
         verdict appears here
