@@ -501,6 +501,10 @@ tbody tr:hover td{background:#fafafa}
 .vp-btn.vp-no_change       {background:#f3f4f6;color:#374151;border-color:#9ca3af}
 .vp-btn.vp-underperforming {background:#fee2e2;color:#991b1b;border-color:#ef4444}
 
+/* ── How It Works — toggle CB247 vs MWCC version based on active business ── */
+body:not([data-business="mwcc"]) [data-readme-biz="mwcc"] { display: none; }
+body[data-business="mwcc"] [data-readme-biz="cb247"] { display: none; }
+
 /* ── Print stylesheet — Group Overview meeting summary (Tier 3) ───────────
    Triggered by window.print() from the "Print Meeting Summary" button.
    Hides chrome and unrelated pages so the printed PDF is exec-ready. */
@@ -13248,6 +13252,7 @@ function renderReadme() {
   if (!container) return;
 
   container.innerHTML = `
+  <div data-readme-biz="cb247">
 
   <!-- ══ SECTION 1: WEEKLY LOOP ══════════════════════════════════════════════ -->
   <div class="readme-section">
@@ -13640,6 +13645,474 @@ function renderReadme() {
     </div>
     <p style="font-size:11px;color:var(--muted);margin-top:10px">Type these phrases in Claude to activate the matching skill. Full list in <code>skills/manifest.json</code></p>
   </div>
+
+  </div><!-- /data-readme-biz=cb247 -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MWCC HOW IT WORKS — auto-shown when body[data-business="mwcc"]
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div data-readme-biz="mwcc">
+
+  <!-- ── Intro ─────────────────────────────────────────────────────────── -->
+  <div class="readme-section">
+    <div style="background:#fff;border-left:4px solid var(--mwcc-purple);padding:18px 22px;border-radius:6px;margin-bottom:20px">
+      <h2 style="margin-top:0;color:var(--mwcc-purple-deep)">My World Childcare — Marketing OS</h2>
+      <p style="font-size:13px;line-height:1.7;color:var(--text-2);margin-bottom:0">
+        MWCC runs a different architecture from CB247. Instead of 9 AI agents writing strategy docs,
+        the system runs <b>4 work-queue emitters</b> every Monday 2pm AWST that produce structured
+        <b>actions with owners, priorities and projected KPIs</b>. Each action travels through a
+        6-stage approval flow, then enters a 14-day measurement window. The <b>Performance Review</b>
+        page closes the loop with verdicts (Winner / Partial Win / No Change / Underperforming).
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Section 1: The Closed Loop ────────────────────────────────────── -->
+  <div class="readme-section">
+    <h2 style="color:var(--mwcc-purple-deep)">The Weekly Closed Loop</h2>
+    <div class="card" style="padding:24px">
+      <div class="loop-diagram">
+        <div class="loop-node">
+          <div class="loop-icon" style="border-color:var(--mwcc-purple);background:var(--mwcc-purple-mist)"><div class="loop-icon-inner" style="background:var(--mwcc-purple)"></div></div>
+          <div class="loop-label">Monday 2pm AWST</div>
+          <div class="loop-sub">Cron fires<br>weekly-report-mwcc.sh</div>
+        </div>
+        <div class="loop-arrow" style="color:var(--mwcc-purple)">→</div>
+        <div class="loop-node">
+          <div class="loop-icon" style="border-color:var(--mwcc-purple);background:var(--mwcc-purple-mist)"><div class="loop-icon-inner" style="background:var(--mwcc-purple)"></div></div>
+          <div class="loop-label">Pulls + Parsers</div>
+          <div class="loop-sub">GA4 · GSC · Meta · Ads<br>OWNA · Metricool · GBP</div>
+        </div>
+        <div class="loop-arrow" style="color:var(--mwcc-purple)">→</div>
+        <div class="loop-node">
+          <div class="loop-icon" style="border-color:var(--mwcc-purple);background:var(--mwcc-purple-mist)"><div class="loop-icon-inner" style="background:var(--mwcc-purple)"></div></div>
+          <div class="loop-label">4 Emitters</div>
+          <div class="loop-sub">SEO · Meta · Google<br>· Enrolment</div>
+        </div>
+        <div class="loop-arrow" style="color:var(--mwcc-purple)">→</div>
+        <div class="loop-node">
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
+          <div class="loop-label">Work Queue</div>
+          <div class="loop-sub">Actions with owners,<br>priorities, projected KPIs</div>
+        </div>
+        <div class="loop-arrow" style="color:var(--mwcc-purple)">→</div>
+        <div class="loop-node">
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
+          <div class="loop-label">Approval Flow</div>
+          <div class="loop-sub">Tia → Kelley QC →<br>Denver Approval</div>
+        </div>
+        <div class="loop-arrow" style="color:var(--mwcc-purple)">→</div>
+        <div class="loop-node">
+          <div class="loop-icon" style="background:#f4f4f4"><div class="loop-icon-inner" style="background:var(--muted-2)"></div></div>
+          <div class="loop-label">Team Executes</div>
+          <div class="loop-sub">Joanne schedules · Mark publishes<br>· Kelley + reception execute</div>
+        </div>
+        <div class="loop-arrow" style="color:var(--mwcc-purple)">→</div>
+        <div class="loop-node">
+          <div class="loop-icon" style="border-color:var(--mwcc-purple);background:var(--mwcc-purple-mist)"><div class="loop-icon-inner" style="background:var(--mwcc-purple)"></div></div>
+          <div class="loop-label">Performance Review</div>
+          <div class="loop-sub">14-day window<br>→ verdict</div>
+        </div>
+        <div class="loop-arrow" style="color:var(--mwcc-purple);font-size:14px">↺</div>
+      </div>
+      <div class="legend" style="margin-top:20px">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--mwcc-purple)"></div>Automated (cron + scripts)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--text-2)"></div>Team execution</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--mwcc-purple)"></div>Verdict → next cycle</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 2: Pipeline Phases ──────────────────────────────────── -->
+  <div class="readme-section">
+    <h2 style="color:var(--mwcc-purple-deep)">Pipeline — 5 Phases Every Monday</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
+      Each phase runs in order. Failures in one phase are tracked and the pipeline continues — so a Metricool PDF being missing doesn't stop the OWNA parse.
+    </p>
+
+    <div class="card" style="padding:20px">
+
+      <!-- Phase 1 -->
+      <div class="agent-phase">
+        <div class="agent-phase-label" style="color:var(--mwcc-purple-deep)">Phase 1 — Data Pull (live APIs)</div>
+        <div class="agent-row">
+          <div class="agent-box">
+            <div class="agent-name">pull_mwcc_ga4.py</div>
+            <div class="agent-desc">Website traffic from myworldcc.com.au · sessions · users · key events · per-page · per-channel</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">pull_mwcc_gsc.py</div>
+            <div class="agent-desc">Search Console — top queries · top pages · clicks · impressions · CTR · avg position</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">pull_mwcc_meta.py</div>
+            <div class="agent-desc">Meta Ads — campaign + ad-set + ad performance · per-centre breakdown · CTR · CPC · LPV</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">pull_mwcc_ads.py</div>
+            <div class="agent-desc">Google Ads — campaigns · conversions · CPA · 8-week history rotation</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">pull_mwcc_ahrefs.py</div>
+            <div class="agent-desc">Keyword gap analysis · competitor rankings · backlinks (when quota allows)</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">pull_mwcc_gbp_performance.py</div>
+            <div class="agent-desc">5 GBP centres — website clicks · calls · directions · impressions <br><b style="color:#b45309">Pending quota grant</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-arrow" style="color:var(--mwcc-purple)">↓ live data ready</div>
+
+      <!-- Phase 2 -->
+      <div class="agent-phase">
+        <div class="agent-phase-label" style="color:var(--mwcc-purple-deep)">Phase 2 — Inbox Parsers (manual drops)</div>
+        <div class="agent-row">
+          <div class="agent-box">
+            <div class="agent-name">parse_mwcc_ops.py</div>
+            <div class="agent-desc">Reads <code>mwcc-inbox/MYWORLD_REPORT.xlsx</code> + <code>utilisation.xlsx</code> dropped by Kelley each Monday.<br>Extracts 5-centre occupancy + enrolments + exits + enquiries.<br><b>Window: Mon–Fri</b> (centres operate weekdays only)</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">parse_mwcc_metricool_pdf.py</div>
+            <div class="agent-desc">Reads <code>mwcc-inbox/metricool.pdf</code> dropped by Jordan each Monday.<br>Extracts FB + IG followers · reach · engagement · top posts.<br>GBP per-centre (Seville Grove only — Metricool limit)</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">rotate_mwcc_ops_history.py</div>
+            <div class="agent-desc">Snapshots current ops → mwcc-ops-history.json (12-week rolling window).<br>Enables WoW deltas on dashboard.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-arrow" style="color:var(--mwcc-purple)">↓ all sources ready</div>
+
+      <!-- Phase 3 -->
+      <div class="agent-phase">
+        <div class="agent-phase-label" style="color:var(--mwcc-purple-deep)">Phase 3 — 4 Work-Queue Emitters</div>
+        <div class="agent-row">
+          <div class="agent-box">
+            <div class="agent-num" style="background:var(--mwcc-purple);color:#fff">01</div>
+            <div class="agent-name">mwcc_seo_emitter.py</div>
+            <div class="agent-desc">Reads GSC + Ahrefs → produces SEO actions (build pages for high-impr / low-rank queries · optimise top-3 climbers · protect rankings)</div>
+            <div class="agent-reads">Reads: mwcc-gsc-data.json · mwcc-ahrefs.json</div>
+            <div class="agent-out">→ work_queue (source_page='seo-organic')</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-num" style="background:var(--mwcc-purple);color:#fff">02</div>
+            <div class="agent-name">mwcc_meta_emitter.py</div>
+            <div class="agent-desc">Reads Meta Ads → produces ad-set-level actions (PAUSE underperformers · SCALE winners · REFRESH creative on fatigued sets)</div>
+            <div class="agent-reads">Reads: mwcc-meta.json + meta_history</div>
+            <div class="agent-out">→ work_queue (source_page='meta-ads')</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-num" style="background:var(--mwcc-purple);color:#fff">03</div>
+            <div class="agent-name">mwcc_google_ads_emitter.py</div>
+            <div class="agent-desc">Reads Google Ads → produces campaign actions (PAUSE · SCALE · OPTIMISE by CTR). MWCC conversions are account-level only — actions trigger on CTR not CPA</div>
+            <div class="agent-reads">Reads: mwcc-ads.json + ads_history</div>
+            <div class="agent-out">→ work_queue (source_page='google-ads')</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-num" style="background:var(--mwcc-purple);color:#fff">04</div>
+            <div class="agent-name">mwcc_enrolment_emitter.py</div>
+            <div class="agent-desc">Reads OWNA ops → produces operational actions (ENROLMENT_GAP for under-enrolled centres · OCCUPANCY_FILL for empty rooms)</div>
+            <div class="agent-reads">Reads: mwcc-ops.json</div>
+            <div class="agent-out">→ work_queue (source_page='enrolment')</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-arrow" style="color:var(--mwcc-purple)">↓ actions written</div>
+
+      <!-- Phase 4 -->
+      <div class="agent-phase">
+        <div class="agent-phase-label" style="color:var(--mwcc-purple-deep)">Phase 4 — Supabase Sync</div>
+        <div class="agent-row">
+          <div class="agent-box">
+            <div class="agent-name">mwcc_sync_to_supabase.py</div>
+            <div class="agent-desc">Upserts work_queue.json → Supabase mwcc_work_queue_actions table. Realtime postgres_changes notify the dashboard so the Work Queue page updates without a page reload.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-arrow" style="color:var(--mwcc-purple)">↓ persisted to cloud</div>
+
+      <!-- Phase 5 -->
+      <div class="agent-phase">
+        <div class="agent-phase-label" style="color:var(--mwcc-purple-deep)">Phase 5 — Bake + Deploy</div>
+        <div class="agent-row">
+          <div class="agent-box primary-agent" style="border-color:var(--mwcc-purple)">
+            <div class="agent-num" style="background:var(--mwcc-purple);color:#fff">05</div>
+            <div class="agent-name">bake-mwcc-report.py</div>
+            <div class="agent-desc">Loads all state/*.json → injects <code>window.MWCC_DATA</code> into docs/index.html. Git commit + push → GitHub Pages publishes to <code>cb247agent.github.io/cb_claude</code>. Team sees updated data on next refresh.</div>
+            <div class="agent-reads">Reads: ALL state/mwcc-*.json</div>
+            <div class="agent-out">→ docs/index.html (live)</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-left:3px solid var(--mwcc-purple);border-radius:8px;padding:14px;margin-top:6px;font-size:12px;line-height:1.6">
+        <strong>Total runtime: ~5–8 min.</strong> Most phases run in under 60 seconds. The bottleneck is Meta API rate limits (when fetching campaign + ad-set + ad data in one pass).
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 3: Data Sources ──────────────────────────────────────── -->
+  <div class="readme-section">
+    <h2 style="color:var(--mwcc-purple-deep)">Data Sources — What Each One Provides</h2>
+    <div class="card" style="padding:0">
+      <table style="width:100%;font-size:12.5px">
+        <thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
+          <th style="padding:10px 14px;text-align:left">Source</th>
+          <th style="padding:10px 14px;text-align:left">What it gives us</th>
+          <th style="padding:10px 14px;text-align:left">Cadence</th>
+          <th style="padding:10px 14px;text-align:left">Window</th>
+          <th style="padding:10px 14px;text-align:left">Status</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">GA4</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Sessions · users · key events · top pages · channel breakdown</td>
+            <td style="padding:10px 14px;color:var(--muted)">Live API, weekly pull</td>
+            <td style="padding:10px 14px;color:var(--muted)">Sat–Fri</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">Google Search Console</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Top queries · clicks · impressions · CTR · avg position</td>
+            <td style="padding:10px 14px;color:var(--muted)">Live API, weekly pull</td>
+            <td style="padding:10px 14px;color:var(--muted)">Sat–Fri</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">Meta Ads</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Campaigns · ad sets · ads · per-centre attribution · CTR · CPC · LPV</td>
+            <td style="padding:10px 14px;color:var(--muted)">Live API, weekly pull</td>
+            <td style="padding:10px 14px;color:var(--muted)">Sat–Fri</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">Google Ads</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Campaigns · spend · clicks · CTR · conversions (account-level)</td>
+            <td style="padding:10px 14px;color:var(--muted)">Live API, weekly pull</td>
+            <td style="padding:10px 14px;color:var(--muted)">Sat–Fri</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">OWNA Operations</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Per-centre occupancy · enrolments · exits · enquiries · per-room utilisation</td>
+            <td style="padding:10px 14px;color:var(--muted)">Manual XLSX drop, weekly</td>
+            <td style="padding:10px 14px;color:var(--muted)">Mon–Fri</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">Metricool PDF</td>
+            <td style="padding:10px 14px;color:var(--text-2)">FB + IG followers · reach · engagement · top posts · GBP Seville Grove only</td>
+            <td style="padding:10px 14px;color:var(--muted)">Manual PDF drop, weekly</td>
+            <td style="padding:10px 14px;color:var(--muted)">Sat–Fri</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">GBP Performance API</td>
+            <td style="padding:10px 14px;color:var(--text-2)">5 centres — website clicks · calls · directions · maps + search impressions</td>
+            <td style="padding:10px 14px;color:var(--muted)">Live API (when quota approved)</td>
+            <td style="padding:10px 14px;color:var(--muted)">Sat–Fri</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid #f59e0b;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">QUOTA PENDING</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">Ahrefs</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Keyword gap analysis · competitor rankings · backlink intel</td>
+            <td style="padding:10px 14px;color:var(--muted)">Live API, weekly pull</td>
+            <td style="padding:10px 14px;color:var(--muted)">7-day window</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid #f59e0b;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">UNITS PENDING</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Section 4: Approval Flow ─────────────────────────────────────── -->
+  <div class="readme-section">
+    <h2 style="color:var(--mwcc-purple-deep)">The 6-Stage Approval Flow</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
+      Every action in the Work Queue moves through these 6 stages. Each stage has an explicit owner so nothing gets stuck without a clear unblocker.
+    </p>
+    <div class="card" style="padding:24px">
+      <div style="display:flex;gap:8px;align-items:stretch;justify-content:space-between;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px;padding:14px;border:1px solid var(--border);border-radius:6px;text-align:center">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Stage 1</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">Idea</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">Emitter creates action. Awaiting Tia review</div>
+          <div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;margin-top:8px">Owner: Tia</div>
+        </div>
+        <div style="display:flex;align-items:center;color:var(--mwcc-purple)">→</div>
+        <div style="flex:1;min-width:140px;padding:14px;border:1px solid var(--border);border-radius:6px;text-align:center">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Stage 2</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">In Progress</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">Action assigned and started by team member</div>
+          <div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;margin-top:8px">Owner: per-action</div>
+        </div>
+        <div style="display:flex;align-items:center;color:var(--mwcc-purple)">→</div>
+        <div style="flex:1;min-width:140px;padding:14px;border:1px solid var(--border);border-radius:6px;text-align:center">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Stage 3</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">Kelley QC</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">Brand check + community-fit review</div>
+          <div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;margin-top:8px">Owner: Kelley</div>
+        </div>
+        <div style="display:flex;align-items:center;color:var(--mwcc-purple)">→</div>
+        <div style="flex:1;min-width:140px;padding:14px;border:1px solid var(--border);border-radius:6px;text-align:center">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Stage 4</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">Denver Approval</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">Strategic + budget sign-off</div>
+          <div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;margin-top:8px">Owner: Denver</div>
+        </div>
+        <div style="display:flex;align-items:center;color:var(--mwcc-purple)">→</div>
+        <div style="flex:1;min-width:140px;padding:14px;border:1px solid var(--border);border-radius:6px;text-align:center">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Stage 5</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">Scheduled</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">Queued in publishing/scheduling tool</div>
+          <div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;margin-top:8px">Owner: per-channel</div>
+        </div>
+        <div style="display:flex;align-items:center;color:var(--mwcc-purple)">→</div>
+        <div style="flex:1;min-width:140px;padding:14px;border:1px solid var(--border);border-radius:6px;text-align:center">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Stage 6</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px">Published</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">Live · 14-day measurement clock starts</div>
+          <div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;margin-top:8px">→ Performance Review</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 5: Team Roles ────────────────────────────────────────── -->
+  <div class="readme-section">
+    <h2 style="color:var(--mwcc-purple-deep)">Team Roles</h2>
+    <div class="card" style="padding:0">
+      <table style="width:100%;font-size:12.5px">
+        <thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
+          <th style="padding:10px 14px;text-align:left">Person</th>
+          <th style="padding:10px 14px;text-align:left">Role</th>
+          <th style="padding:10px 14px;text-align:left">Owns</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Tia</td>
+            <td style="padding:10px 14px">OS Owner</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Stage 1 review · Google Ads strategy · cross-business strategy · final sign-off</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Denver</td>
+            <td style="padding:10px 14px">COO</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Stage 4 approval · budget decisions · enrolment wage strategy (outside marketing OS)</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Kelley</td>
+            <td style="padding:10px 14px">Brand QC · Frontline ops</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Stage 3 brand check · OWNA report drop · community responses · GBP review responses · enrolment actions</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Joanne</td>
+            <td style="padding:10px 14px">Paid Social + Scheduling</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Meta Ads execution · pause/scale actions · scheduling published content</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Jordan</td>
+            <td style="padding:10px 14px">Content + Assets</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Metricool PDF drop · creative refresh briefs · IG content production · Reels</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">John</td>
+            <td style="padding:10px 14px">SEO · Web</td>
+            <td style="padding:10px 14px;color:var(--text-2)">SEO action execution · content brief writing · technical SEO fixes · GA4/GSC oversight</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Mark</td>
+            <td style="padding:10px 14px">Webflow Publishing</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Stage 6 publishing on myworldcc.com.au · page builds · content uploads</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Section 6: 5 Centres ─────────────────────────────────────────── -->
+  <div class="readme-section">
+    <h2 style="color:var(--mwcc-purple-deep)">5 Centres Tracked</h2>
+    <div class="data-grid">
+      <div class="data-card" style="border-left:3px solid var(--mwcc-purple)">
+        <div class="data-card-name">Armadale</div>
+        <div class="data-card-desc">OSHC only · Before/After School rooms</div>
+      </div>
+      <div class="data-card" style="border-left:3px solid var(--mwcc-purple)">
+        <div class="data-card-name">Midvale (+ Midland)</div>
+        <div class="data-card-desc">LDC + OSHC · Babies/Toddlers/Kindy + Before/After School</div>
+      </div>
+      <div class="data-card" style="border-left:3px solid var(--mwcc-purple)">
+        <div class="data-card-name">Rockingham</div>
+        <div class="data-card-desc">OSHC only · Before/After School rooms</div>
+      </div>
+      <div class="data-card" style="border-left:3px solid var(--mwcc-purple)">
+        <div class="data-card-name">Seville Grove</div>
+        <div class="data-card-desc">LDC + OSHC · all rooms · only centre tracked in Metricool</div>
+      </div>
+      <div class="data-card" style="border-left:3px solid var(--mwcc-purple)">
+        <div class="data-card-name">Waikiki</div>
+        <div class="data-card-desc">LDC only · Babies/Toddlers/Kindy rooms</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 7: Reporting Windows ─────────────────────────────────── -->
+  <div class="readme-section">
+    <h2 style="color:var(--mwcc-purple-deep)">Reporting Windows — Why Two</h2>
+    <div class="card" style="padding:18px 22px;border-left:4px solid var(--mwcc-purple)">
+      <p style="font-size:13px;line-height:1.7;color:var(--text-2);margin:0 0 12px">
+        MWCC operates on two different week windows depending on the data source. This is by design — we don't normalise because the underlying business reality is different.
+      </p>
+      <div class="grid-2">
+        <div>
+          <div style="font-weight:700;color:var(--mwcc-purple-deep);font-size:12px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">OWNA Centre Operations</div>
+          <div style="font-size:12.5px;color:var(--text)">Window: <b>Mon–Fri</b></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.6">Centres only operate weekdays. Sat/Sun = closed = always zero. Reporting Mon–Fri removes noise and aligns with how the team runs the business.</div>
+        </div>
+        <div>
+          <div style="font-weight:700;color:var(--mwcc-purple-deep);font-size:12px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Digital Marketing</div>
+          <div style="font-size:12.5px;color:var(--text)">Window: <b>Sat–Fri</b></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.6">GA4 · GSC · Meta · Google Ads · Metricool all use Sat–Fri to capture weekend digital activity (parents researching evenings/weekends).</div>
+        </div>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin:14px 0 0;line-height:1.6">
+        <b>Both windows end on the same Friday</b> so the dashboard tells one coherent week-on-week story. The OWNA window is just narrower because centres don't run weekends.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Section 8: Where to Look ─────────────────────────────────────── -->
+  <div class="readme-section">
+    <h2 style="color:var(--mwcc-purple-deep)">Where to Look for Each Question</h2>
+    <div class="card" style="padding:0">
+      <table style="width:100%;font-size:12.5px">
+        <thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
+          <th style="padding:10px 14px;text-align:left">If you want to know…</th>
+          <th style="padding:10px 14px;text-align:left">Go to</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">Group-level rollup, monthly goals, business comparisons</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Group Overview</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">"How is MWCC doing this week overall?"</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Dashboard</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">Per-centre + per-room occupancy detail</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Occupancy</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">Enrolments + exits + enquiries per centre</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Enrolments</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">SEO performance · top queries · build opportunities</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">SEO &amp; Organic</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">Google Ads campaigns · spend · bidding strategy</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Google Ads</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">Meta Ads ad sets · per-centre attribution</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Meta Ads</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">FB + IG + GBP organic social</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Organic Social</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">GBP per-centre actions · website clicks · calls</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Google Business Profile</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">"What does the team need to do this week?"</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Work Queue</td></tr>
+          <tr style="border-top:1px solid var(--border)"><td style="padding:10px 14px">"Did last week's actions actually work?"</td><td style="padding:10px 14px;color:var(--mwcc-purple-deep);font-weight:600">Performance Review</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  </div><!-- /data-readme-biz=mwcc -->
 
   `;
 }
