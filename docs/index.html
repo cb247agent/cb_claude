@@ -9042,6 +9042,15 @@ function switchBiz(el) {
   if(p) p.classList.add('active');
   const s = document.querySelector('[data-page="'+landingPage+'"]');
   if(s) s.classList.add('active');
+  // Persist landing page so refresh restores the current biz, not whatever
+  // sidebar item was clicked previously. Bug fix 07 Jun 2026.
+  localStorage.setItem('cb247-active-page', landingPage);
+  // Also set body brand attribute so refresh shows correct palette without flicker
+  const brand = biz === 'mwcc' ? 'mwcc'
+              : biz === 'karribank' ? 'kb'
+              : biz === 'sparrows' ? 'sp'
+              : 'cb247';
+  document.body.setAttribute('data-business', brand);
   window.scrollTo(0,0);
 }
 
