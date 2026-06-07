@@ -14395,55 +14395,177 @@ function renderMwccGads() {
 }
 
 function renderMwccOrgSocial() {
-  // ─── Purple-rebranded 07 Jun 2026 ───
+  // ─── Rebuilt 07 Jun 2026 (Tia direction): make page actionable while
+  //     awaiting Metricool — Jordan can run manual baseline + work queue ──
   const el = $('mwcc-orgsoc-content');
   if (!el) return;
-  el.innerHTML = `
-    <div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
-      <span><b>Organic Social</b> — awaiting Metricool credentials</span>
-      <span style="color:var(--muted)">Facebook + Instagram metrics will appear here once integration is live</span>
+
+  // ── Pull Work Queue actions for this page (if any) ──
+  let socialActions = [];
+  try {
+    const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
+    socialActions = wqItems
+      .filter(a => {
+        const sp = (a.source_page || '').toLowerCase();
+        return sp === 'social' || sp === 'organic-social' || sp === 'organic_social';
+      })
+      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'))
+      .slice(0, 8);
+  } catch (e) {
+    console.warn('[renderMwccOrgSocial] work-queue read failed:', e);
+  }
+
+  let html = '';
+
+  // ── Data freshness banner ──
+  html += `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>Organic Social</b> — awaiting Metricool</span>
+    <span><b>Platforms</b> Facebook · Instagram · 5 GBPs</span>
+    <span><b>Owner</b> Jordan (content) · Kelley (community)</span>
+    <span style="color:var(--muted)">Live metrics from Monday after Metricool wire</span>
+  </div>`;
+
+  // ── Executive Verdict ──
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Organic Social Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">Manual mode</div>
     </div>
-    <div class="insight neutral mb">
-      <div class="insight-label">Awaiting Integration</div>
-      Organic social metrics are pulled via <b>Metricool</b>. Once the integration is wired, this page will show follower growth, reach, engagement rate, top posts, and posting cadence per platform.
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> Metricool not yet wired. Page running in <b>manual baseline mode</b> — Jordan logs follower counts + post output + GBP signals weekly until automation is live.</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> No baseline to measure growth against. Every week without tracking is data lost forever.</div>
+      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> Jordan to complete the Manual Audit below (15 min) → log baseline numbers → repeat every Monday until Metricool live.</div>
     </div>
-    <div class="kpi-grid cols-4 mb">
-      ${kpiCard('','Followers','—',null,'Instagram + Facebook')}
-      ${kpiCard('','Reach','—',null,'This period')}
-      ${kpiCard('','Engagement Rate','—',null,'Avg across platforms')}
-      ${kpiCard('','Top Post Reach','—',null,'Best performing post')}
-    </div>
-    ${sectionTitle('Platforms Tracked')}
-    <div class="card mb" style="padding:0">
-      <table style="width:100%"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
-        <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Platform</th>
-        <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Page / Handle</th>
-        <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Metrics Planned</th>
-        <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Status</th>
+  </div>`;
+
+  // ── KPI cards (empty state) ──
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Followers','—',null,'Instagram + Facebook')}
+    ${kpiCard('','Reach','—',null,'This period')}
+    ${kpiCard('','Engagement Rate','—',null,'Avg across platforms')}
+    ${kpiCard('','Top Post Reach','—',null,'Best performing post')}
+  </div>`;
+
+  // ── Manual Audit This Week (actionable for Jordan) ──
+  html += sectionTitle('Manual Audit This Week — Run Every Monday');
+  const auditItems = [
+    { task: 'Open @myworldchildcare IG → log follower count + post count', owner: 'Jordan', time: '2 min', signal: 'Follower delta WoW' },
+    { task: 'Open My World Childcare FB page → log page likes + posts this week', owner: 'Jordan', time: '2 min', signal: 'Page like delta + post cadence' },
+    { task: 'Check each centre GBP → log new reviews + average rating per location', owner: 'Kelley', time: '8 min (5 centres × 1.5 min)', signal: 'Review velocity + rating drift' },
+    { task: 'Identify top-performing post (highest likes/reach) on IG this week', owner: 'Jordan', time: '2 min', signal: 'Format that resonates → replicate' },
+    { task: 'Note any negative comments / DMs requiring response on FB or IG', owner: 'Kelley', time: '5 min', signal: 'Community sentiment + response time' },
+  ];
+  html += `<div class="card mb" style="padding:0">
+    <table style="width:100%"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep);width:24px">#</th>
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Manual task</th>
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Owner</th>
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Time</th>
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Signal captured</th>
+    </tr></thead><tbody>
+    ${auditItems.map((a,i) => `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:10px 14px;font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
+      <td style="padding:10px 14px;font-size:12.5px;color:var(--text)">${a.task}</td>
+      <td style="padding:10px 14px;font-size:11.5px"><b>${a.owner}</b></td>
+      <td style="padding:10px 14px;font-size:11px;color:var(--muted)">${a.time}</td>
+      <td style="padding:10px 14px;font-size:11px;color:var(--text-2)">${a.signal}</td>
+    </tr>`).join('')}
+    </tbody></table>
+    <p style="font-size:10.5px;color:var(--muted);padding:10px 14px 6px;border-top:1px solid var(--border)"><b>Total time:</b> ~19 min/week. Log results into <code>mwcc-inbox/social-baseline.csv</code> or shared Google Sheet so historical baseline exists for when Metricool goes live.</p>
+  </div>`;
+
+  // ── MWCC Social Presence Context ──
+  html += sectionTitle('MWCC Social Presence — What Gets Tracked');
+  const presence = [
+    { platform: 'Facebook', handle: 'My World Childcare', metrics: 'Page likes · reach · post engagement · link clicks', status: 'PENDING' },
+    { platform: 'Instagram', handle: '@myworldchildcare', metrics: 'Followers · impressions · reach · engagement rate · top posts · stories', status: 'PENDING' },
+    { platform: 'GBP — Beechboro', handle: '5 centres', metrics: 'Per-centre actions · reviews · rating · photos · directions', status: 'PENDING' },
+    { platform: 'GBP — Ellenbrook', handle: '', metrics: 'Same as above', status: 'PENDING' },
+    { platform: 'GBP — Maddington', handle: '', metrics: 'Same as above', status: 'PENDING' },
+    { platform: 'GBP — Maylands', handle: '', metrics: 'Same as above', status: 'PENDING' },
+    { platform: 'GBP — Mirrabooka', handle: '', metrics: 'Same as above', status: 'PENDING' },
+  ];
+  html += `<div class="card mb" style="padding:0">
+    <table style="width:100%"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Platform</th>
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Page / Handle</th>
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Metrics planned</th>
+      <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Status</th>
+    </tr></thead><tbody>
+    ${presence.map(p => `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep);font-size:12px">${p.platform}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--muted)">${p.handle || '—'}</td>
+      <td style="padding:10px 14px;font-size:11.5px;color:var(--muted)">${p.metrics}</td>
+      <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid #f59e0b;color:#92400e;padding:2px 7px;border-radius:3px;font-weight:700">${p.status}</span></td>
+    </tr>`).join('')}
+    </tbody></table>
+  </div>`;
+
+  // ── What You'll See When Connected (preview) ──
+  html += sectionTitle('What You\'ll See When Metricool Is Connected');
+  html += `<div class="insight teal mb">
+    <div class="insight-label">Live page preview</div>
+    Once <code>MWCC_METRICOOL_TOKEN</code> is set and <code>pull_mwcc_social.py</code> runs Monday, this page becomes a full mirror of CB247's Organic Social page:
+    <ul style="margin:8px 0 0;padding-left:20px;line-height:1.7;font-size:12.5px">
+      <li><b>4 KPI cards</b> with WoW deltas — IG followers · FB followers · IG avg reach/day · GBP total actions</li>
+      <li><b>Executive Verdict</b> driven by actual data: which format is dominant, where engagement is collapsing, top priority for the week</li>
+      <li><b>Key Observations strip</b> — Stories vs Reels vs Posts performance, with concrete action prompts</li>
+      <li><b>Content Type Performance table</b> — published count, reach, engagement, verdict per format</li>
+      <li><b>GBP per-centre breakdown</b> — 5 cards showing actions, calls, directions, rating per centre</li>
+      <li><b>Top-performing posts</b> — what worked, what to replicate</li>
+    </ul>
+  </div>`;
+
+  // ── Next 2 Weeks — Prioritised Action List (from Work Queue, if any) ──
+  if (socialActions.length > 0) {
+    const effortBadge = e => {
+      const c = e === 'S' || e === 1 || e === 2 ? '#10b981'
+              : e === 'M' || (e>=3 && e<=6) ? '#f59e0b'
+              : '#ef4444';
+      const label = typeof e === 'number' ? (e<=2 ? 'S' : e<=6 ? 'M' : 'L') : e;
+      return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${label}</span>`;
+    };
+    html += sectionTitle('Next 2 Weeks — Prioritised Action List');
+    html += `<div class="card mb"><table>
+      <thead><tr>
+        <th style="width:24px">#</th>
+        <th>Action</th>
+        <th>Owner</th>
+        <th style="width:50px">Effort</th>
+        <th style="font-size:10px">Priority</th>
       </tr></thead><tbody>
-        <tr style="border-top:1px solid var(--border)">
-          <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Facebook</td>
-          <td style="padding:10px 14px;font-size:12px;color:var(--muted)">My World Childcare</td>
-          <td style="padding:10px 14px;font-size:12px;color:var(--muted)">Page likes, reach, post engagement, link clicks</td>
-          <td style="padding:10px 14px"><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td>
-        </tr>
-        <tr style="border-top:1px solid var(--border)">
-          <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Instagram</td>
-          <td style="padding:10px 14px;font-size:12px;color:var(--muted)">@myworldchildcare</td>
-          <td style="padding:10px 14px;font-size:12px;color:var(--muted)">Followers, impressions, reach, engagement rate, top posts</td>
-          <td style="padding:10px 14px"><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td>
-        </tr>
+      ${socialActions.map((a,i) => {
+        const prio = a.priority || 'P3';
+        const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
+        return `<tr>
+          <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
+          <td>
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title||'—'}</div>
+            ${a.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.6">${a.description}</div>` : ''}
+          </td>
+          <td style="font-size:11px"><b>${a.owner||'—'}</b>${a.owner_role?`<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>`:''}</td>
+          <td>${effortBadge(a.effort_hours||'M')}</td>
+          <td><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
+        </tr>`;
+      }).join('')}
       </tbody></table>
-    </div>
-    ${sectionTitle('Integration Required')}
-    <div class="card mb" style="padding:18px 24px;border-left:4px solid var(--mwcc-purple)">
-      <div style="font-size:12px;color:var(--mwcc-purple-deep);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em">Connect Metricool</div>
-      <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--text-2);line-height:1.8">
-        <li>Connect My World Childcare Facebook + Instagram pages in Metricool</li>
-        <li>Generate a Metricool API token and add to <code style="background:var(--mwcc-purple-mist);padding:1px 5px;border-radius:3px;color:var(--mwcc-purple-deep)">.env</code> as <code style="background:var(--mwcc-purple-mist);padding:1px 5px;border-radius:3px;color:var(--mwcc-purple-deep)">MWCC_METRICOOL_TOKEN</code></li>
-        <li>Run: <code style="background:var(--mwcc-purple-mist);padding:1px 6px;border-radius:3px;color:var(--mwcc-purple-deep)">python scripts/pull_mwcc_social.py</code></li>
-      </ol>
+      <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Auto-generated by the social emitter (when wired). Open <a href="#" onclick="nav(document.querySelector('[data-page=mwcc-content-planner]'));return false">Work Queue</a> to mark complete.</p>
     </div>`;
+  }
+
+  // ── Setup — Connect Metricool ──
+  html += sectionTitle('Setup — Connect Metricool');
+  html += `<div class="card mb" style="padding:18px 24px;border-left:4px solid var(--mwcc-purple)">
+    <div style="font-size:12px;color:var(--mwcc-purple-deep);font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em">3-step integration</div>
+    <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--text-2);line-height:1.9">
+      <li>Connect My World Childcare Facebook + Instagram + all 5 centre GBPs in Metricool</li>
+      <li>Generate a Metricool API token and add to <code>.env</code> as <code>MWCC_METRICOOL_TOKEN=...</code></li>
+      <li>Run: <code>python scripts/pull_mwcc_social.py</code> — populates <code>state/mwcc-social.json</code>, baker injects it into <code>window.MWCC_DATA.social</code></li>
+    </ol>
+    <p style="margin:14px 0 0;font-size:11.5px;color:var(--muted)"><b>Wire-up effort:</b> ~30 min once Metricool subscription includes MWCC pages. Then weekly Monday cron picks it up automatically.</p>
+  </div>`;
+
+  el.innerHTML = html;
 }
 
 function renderMwccWebsite() {
