@@ -16463,10 +16463,24 @@ function init() {
   // Group overview (reads from both DASHBOARD_DATA and MWCC_DATA)
   renderGroupOverview();
 
-  // Restore last active page
-  const lastPage = localStorage.getItem('cb247-active-page')||'overview';
+  // Restore last active page (and matching business tab)
+  // Bug fix 07 Jun 2026: nav() alone only sets the page panel + sidebar active class.
+  // The biz-tab at top + sidebar visibility need switchBiz() to update too — otherwise
+  // refreshing on an MWCC page shows the MWCC content but the chrome says CB247.
+  const lastPage = localStorage.getItem('cb247-active-page') || 'overview';
   const navItem = document.querySelector(`[data-page="${lastPage}"]`);
-  if(navItem) nav(navItem);
+  if (navItem) {
+    const biz = lastPage.startsWith('mwcc-') ? 'mwcc'
+              : lastPage.startsWith('kb-')   ? 'karribank'
+              : lastPage.startsWith('sp-')   ? 'sparrows'
+              : 'cb247';
+    const bizTab = document.querySelector(`.biz-tab[data-biz="${biz}"]`);
+    // Only switch if needed and the tab is reachable (skip 'coming-soon' tabs gracefully)
+    if (bizTab && !bizTab.classList.contains('active') && !bizTab.classList.contains('coming-soon')) {
+      switchBiz(bizTab);
+    }
+    nav(navItem);
+  }
 
   // Init review badge
   renderContentReview();
