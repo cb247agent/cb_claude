@@ -9200,6 +9200,153 @@ const insight = (type,label,text) => `
   </div>`;
 const sectionTitle = t => `<div class="section-title">${t}</div>`;
 
+// ── Standard Action List — 6-column format (Tia direction 07 Jun 2026) ─────
+// Accepts both CB247-shape ({title, why, owner, effort:'S'/'M'/'L', impact, priority?})
+// and MWCC-shape ({title, description, owner, owner_role, effort_hours, priority,
+// projected_kpis}). Normalises both into: # | Action | Owner | Effort | Priority |
+// Expected Impact.
+//
+// Usage:
+//   html += _renderActionList(actions, {
+//     title: 'Next 2 Weeks — Prioritised Action List',
+//     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days.',
+//     workQueueLink: { page: 'mwcc-content-planner' },  // optional
+//   });
+function _renderActionList(actions, opts = {}) {
+  if (!Array.isArray(actions) || actions.length === 0) return '';
+  const limit  = opts.limit  || 8;
+  const titleStr = opts.title || 'Next 2 Weeks — Prioritised Action List';
+  const items = actions.slice(0, limit);
+
+  // Effort badge
+  const effortBadge = (e) => {
+    if (e == null || e === '') return '<span style="color:var(--muted)">—</span>';
+    // Numeric hours → S/M/L conversion
+    let label = e;
+    if (typeof e === 'number') {
+      label = e <= 2 ? 'S' : e <= 6 ? 'M' : 'L';
+    }
+    const c = label === 'S' ? '#10b981'
+            : label === 'M' ? '#f59e0b'
+            : label === 'L' ? '#ef4444'
+            : 'var(--muted)';
+    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.02em">${label}</span>`;
+  };
+
+  // Priority pill
+  const priorityPill = (p) => {
+    if (!p) return '<span style="color:var(--muted)">—</span>';
+    const c = p === 'P1' ? '#ef4444' : p === 'P2' ? '#f59e0b' : p === 'P3' ? 'var(--mwcc-purple)' : '#9ca3af';
+    return `<span style="display:inline-block;background:${c};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${p}</span>`;
+  };
+
+  // Format projected_kpis → "Lift CTR 2.37 → 2.85% (14d)" style string
+  const _metricLabel = {
+    google_ads_ctr:               { name: 'CTR',            unit: '%',     fmt: 'pct' },
+    google_ads_clicks_weekly:     { name: 'Clicks/wk',      unit: '',      fmt: 'num' },
+    google_ads_spend_weekly:      { name: 'Spend/wk',       unit: '$',     fmt: 'usd' },
+    google_ads_cost_per_conv:     { name: 'Cost/conv',      unit: '$',     fmt: 'usd' },
+    google_ads_conversions:       { name: 'Conversions',    unit: '',      fmt: 'num' },
+    meta_ctr:                     { name: 'Meta CTR',       unit: '%',     fmt: 'pct' },
+    meta_cpc:                     { name: 'Meta CPC',       unit: '$',     fmt: 'usd' },
+    meta_spend:                   { name: 'Meta spend',     unit: '$',     fmt: 'usd' },
+    gsc_position:                 { name: 'GSC position',   unit: '#',     fmt: 'pos' },
+    gsc_clicks:                   { name: 'GSC clicks',     unit: '',      fmt: 'num' },
+    gsc_impressions:              { name: 'GSC impr',       unit: '',      fmt: 'num' },
+    mwcc_occupancy_pct:           { name: 'Occupancy',      unit: '%',     fmt: 'pct' },
+    mwcc_wage_ratio_pct:          { name: 'Wage ratio',     unit: '%',     fmt: 'pct' },
+    mwcc_enrolments_weekly:       { name: 'Enrolments/wk',  unit: '',      fmt: 'num' },
+    mwcc_enquiries_weekly:        { name: 'Enquiries/wk',   unit: '',      fmt: 'num' },
+    gbp_rating:                   { name: 'GBP rating',     unit: '★',     fmt: 'rating' },
+  };
+  const _fmtVal = (v, fmt) => {
+    if (v == null || v === '') return '–';
+    const n = typeof v === 'number' ? v : parseFloat(v);
+    if (isNaN(n)) return v;
+    switch (fmt) {
+      case 'pct':    return n.toFixed(2);
+      case 'usd':    return n.toFixed(2);
+      case 'num':    return Math.round(n).toLocaleString();
+      case 'pos':    return n.toFixed(1);
+      case 'rating': return n.toFixed(2);
+      default:       return String(n);
+    }
+  };
+  const _projectedKpiText = (kpis) => {
+    if (!Array.isArray(kpis) || kpis.length === 0) return '';
+    // Pick the first KPI that has both baseline and target
+    const k = kpis.find(x => x && x.baseline != null && x.target != null) || kpis[0];
+    if (!k) return '';
+    const meta = _metricLabel[k.metric] || { name: k.metric || 'metric', unit: '', fmt: 'num' };
+    const baseStr   = _fmtVal(k.baseline, meta.fmt);
+    const targetStr = _fmtVal(k.target,   meta.fmt);
+    const unit = meta.unit;
+    const direction = k.target > k.baseline ? 'Lift' : k.target < k.baseline ? 'Reduce' : 'Hold';
+    const windowDays = k.measurement_window_days ? ` (${k.measurement_window_days}d)` : '';
+    return `${direction} ${meta.name} ${baseStr} → ${targetStr}${unit}${windowDays}`;
+  };
+
+  // Normalise an action to a uniform shape
+  const _norm = (a) => {
+    // MWCC shape signals
+    if (a.description !== undefined || a.projected_kpis !== undefined || a.effort_hours !== undefined) {
+      return {
+        title:    a.title || '—',
+        desc:     a.description || '',
+        owner:    a.owner || '—',
+        owner_role: a.owner_role || '',
+        effort:   a.effort_hours,
+        priority: a.priority || null,
+        impact:   _projectedKpiText(a.projected_kpis) || a.expected_impact || '—',
+      };
+    }
+    // CB247 shape
+    return {
+      title:    a.title || '—',
+      desc:     a.why || '',
+      owner:    a.owner || '—',
+      owner_role: '',
+      effort:   a.effort,
+      priority: a.priority || null,
+      impact:   a.impact || '—',
+    };
+  };
+
+  let html = sectionTitle(titleStr);
+  html += `<div class="card mb"><table>
+    <thead><tr>
+      <th style="width:24px">#</th>
+      <th>Action</th>
+      <th>Owner</th>
+      <th style="width:60px">Effort</th>
+      <th style="width:60px">Priority</th>
+      <th style="font-size:10px">Expected Impact</th>
+    </tr></thead><tbody>
+    ${items.map((a, i) => {
+      const n = _norm(a);
+      return `<tr>
+        <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
+        <td>
+          <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${n.title}</div>
+          ${n.desc ? `<div style="font-size:11px;color:var(--muted);line-height:1.6">${n.desc}</div>` : ''}
+        </td>
+        <td style="font-size:11px"><b>${n.owner}</b>${n.owner_role ? `<div style="font-size:10px;color:var(--muted)">${n.owner_role}</div>` : ''}</td>
+        <td>${effortBadge(n.effort)}</td>
+        <td>${priorityPill(n.priority)}</td>
+        <td style="font-size:11px;color:var(--text-2)">${n.impact}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>
+    ${opts.footer || opts.workQueueLink
+      ? `<p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">
+          ${opts.footer || 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog.'}
+          ${opts.workQueueLink ? ` Open <a href="#" onclick="nav(document.querySelector('[data-page=${opts.workQueueLink.page || 'mwcc-content-planner'}]'));return false">Work Queue</a> to mark complete or change verdict.` : ''}
+        </p>`
+      : ''}
+  </div>`;
+  return html;
+}
+
 // ── Global shared helpers ──────────────────────────────────────────────────────
 function rankBadge(r) {
   if (!r) return '';
@@ -9967,33 +10114,11 @@ function renderSEO() {
     });
   }
 
-  const effortBadge = e => {
-    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
-    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
-  };
-
-  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th style="width:24px">#</th>
-      <th>Action</th>
-      <th>Owner</th>
-      <th style="width:50px">Effort</th>
-      <th style="font-size:10px">Expected Impact</th>
-    </tr></thead><tbody>
-    ${actions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
-      <td>
-        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
-      </td>
-      <td style="font-size:11px"><b>${a.owner}</b></td>
-      <td>${effortBadge(a.effort)}</td>
-      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
-    </tr>`).join('')}
-    </tbody></table>
-    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Review and reassign in next Monday meeting.</p>
-  </div>`;
+  // Default priorities by index — first 2 are P1, next 2 are P2, rest P3
+  actions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
+  html += _renderActionList(actions, {
+    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
+  });
 
   $('seo-content').innerHTML = html;
 }
@@ -10737,33 +10862,10 @@ function renderGAds() {
     });
   }
 
-  const _effortBadge_ga = e => {
-    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
-    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
-  };
-
-  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th style="width:24px">#</th>
-      <th>Action</th>
-      <th>Owner</th>
-      <th style="width:50px">Effort</th>
-      <th style="font-size:10px">Expected Impact</th>
-    </tr></thead><tbody>
-    ${_actions2w.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
-      <td>
-        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
-      </td>
-      <td style="font-size:11px"><b>${a.owner}</b></td>
-      <td>${_effortBadge_ga(a.effort)}</td>
-      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
-    </tr>`).join('')}
-    </tbody></table>
-    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Review and reassign in next Monday meeting.</p>
-  </div>`;
+  _actions2w.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
+  html += _renderActionList(_actions2w, {
+    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
+  });
 
   // ── Full Paid Ads Agent report (kept as collapsed reference) ────────────
   const _ao_ads = D.raw_agent_outputs || {};
@@ -11204,33 +11306,16 @@ function renderOrgSocial() {
     },
   ];
 
-  const _effortBadge_sx = e => {
-    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
-    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
-  };
-
-  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th style="width:24px">#</th>
-      <th>Action</th>
-      <th>Owner</th>
-      <th style="width:50px">Effort</th>
-      <th style="font-size:10px">Expected Impact</th>
-    </tr></thead><tbody>
-    ${_socialActions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
-      <td>
-        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
-      </td>
-      <td style="font-size:11px"><b>${a.owner}</b></td>
-      <td>${_effortBadge_sx(a.effort)}</td>
-      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
-    </tr>`).join('')}
-    </tbody></table>
-    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Review and reassign in next Monday meeting.</p>
-  </div>`;
+  // Assign priorities (P1 = highest-leverage actions)
+  _socialActions[0].priority = 'P1'; // batch-film original reels — highest leverage
+  _socialActions[1].priority = 'P2'; // stories cadence
+  _socialActions[2].priority = 'P3'; // stop FB
+  _socialActions[3].priority = 'P2'; // GBP review responses
+  _socialActions[4].priority = 'P3'; // GBP posts
+  _socialActions[5].priority = 'P2'; // A/B test reel hooks
+  html += _renderActionList(_socialActions, {
+    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog.',
+  });
 
   // ── Unavailable-metrics disclosure (honest gap statement) ───────────────
   if (SX.unavailable_metrics && SX.unavailable_metrics.length > 0) {
@@ -11753,33 +11838,10 @@ function renderMeta() {
     impact: 'Cost per Lead becomes visible · Meta optimises for actual conversion intent instead of click chasers',
   });
 
-  const _effortBadge_meta = e => {
-    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
-    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
-  };
-
-  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th style="width:24px">#</th>
-      <th>Action</th>
-      <th>Owner</th>
-      <th style="width:50px">Effort</th>
-      <th style="font-size:10px">Expected Impact</th>
-    </tr></thead><tbody>
-    ${_metaActions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
-      <td>
-        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
-      </td>
-      <td style="font-size:11px"><b>${a.owner}</b></td>
-      <td>${_effortBadge_meta(a.effort)}</td>
-      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
-    </tr>`).join('')}
-    </tbody></table>
-    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Review and reassign in next Monday meeting.</p>
-  </div>`;
+  _metaActions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
+  html += _renderActionList(_metaActions, {
+    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
+  });
 
   $('meta-content').innerHTML = html;
 
@@ -12165,33 +12227,10 @@ function renderGBP() {
     });
   }
 
-  const _effortBadge_gbp = e => {
-    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
-    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
-  };
-
-  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th style="width:24px">#</th>
-      <th>Action</th>
-      <th>Owner</th>
-      <th style="width:50px">Effort</th>
-      <th style="font-size:10px">Expected Impact</th>
-    </tr></thead><tbody>
-    ${_gbpActions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
-      <td>
-        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
-      </td>
-      <td style="font-size:11px"><b>${a.owner}</b></td>
-      <td>${_effortBadge_gbp(a.effort)}</td>
-      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
-    </tr>`).join('')}
-    </tbody></table>
-    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Review and reassign in next Monday meeting.</p>
-  </div>`;
+  _gbpActions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
+  html += _renderActionList(_gbpActions, {
+    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
+  });
 
   $('gbp-content').innerHTML = html;
 }
@@ -14003,14 +14042,23 @@ function renderMwccOverview() {
 }
 
 function renderMwccMeta() {
-  // ─── Cloned from CB247 renderMeta pattern (07 Jun 2026) ───
+  // ─── Rebuilt 07 Jun 2026 (Tia direction) — WoW deltas + standardised
+  //     action list + purple branding + improved campaign/ad-set tables ──
   const md = window.MWCC_DATA || {};
   const meta = md.meta || {};
+  const histAll = md.meta_history || [];
   const el = $('mwcc-meta-content');
   if (!el) return;
 
   if (!meta.summary?.spend) {
-    el.innerHTML = '<div class="insight neutral"><div class="insight-label">Awaiting Credentials</div>Add MWCC_META_AD_ACCOUNT_ID and MWCC_META_ACCESS_TOKEN to .env, then run: python scripts/pull_mwcc_meta.py</div>';
+    el.innerHTML = `
+      <div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+        <span><b>Meta Ads</b> — awaiting credentials</span>
+      </div>
+      <div class="insight neutral mb">
+        <div class="insight-label">Awaiting Meta credentials</div>
+        Add <code>MWCC_META_AD_ACCOUNT_ID</code> and <code>MWCC_META_ACCESS_TOKEN</code> to <code>.env</code>, then run <code>python scripts/pull_mwcc_meta.py</code>.
+      </div>`;
     return;
   }
   const s = meta.summary;
@@ -14019,10 +14067,21 @@ function renderMwccMeta() {
   const bc = meta.by_centre || {};
   const weekLabel = (meta.date_range?.start && meta.date_range?.end) ? `${meta.date_range.start} – ${meta.date_range.end}` : 'Latest week';
 
-  // ── Data freshness banner ──
+  // ── WoW deltas from meta_history ──
+  // history[0] is current week (just-baked), history[1] is the previous week
+  const prevTotals = (histAll.length > 1) ? (histAll[1].summary || {}) : {};
+  const chgPct = (cur, prev) => (prev > 0) ? +(((cur - prev) / prev) * 100).toFixed(1) : null;
+  const spendChg = chgPct(s.spend  || 0, prevTotals.spend  || 0);
+  const clicksChg = chgPct(s.clicks || 0, prevTotals.clicks || 0);
+  const ctrChg    = chgPct(s.ctr    || 0, prevTotals.ctr    || 0);
+  const cpcChg    = chgPct(s.cpc    || 0, prevTotals.cpc    || 0);
+
+  // ── Data freshness banner — 4 chips ──
   let html = `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>Meta Ads</b> ${meta.generated_at ? meta.generated_at.slice(0,10) : '–'} (${weekLabel})</span>
     <span><b>Account ID</b> ${meta.account_id || '–'}</span>
+    <span><b>Campaigns</b> ${cams.length} · <b>Ad sets</b> ${adSets.length}</span>
+    <span style="color:var(--muted)">${histAll.length >= 2 ? `WoW vs prior week` : 'WoW deltas appear from next Monday'}</span>
   </div>`;
 
   // ── Executive Verdict ──
@@ -14031,7 +14090,9 @@ function renderMwccMeta() {
   const _whereWeAre = `$${(s.spend||0).toFixed(0)} spent · ${_mwccFmt(s.clicks)} clicks · ${(s.ctr||0).toFixed(2)}% CTR · $${(s.cpc||0).toFixed(2)} CPC · ${_mwccFmt(s.reach)} reach across ${cams.length} campaigns / ${adSets.length} ad sets.`;
   const _risk = _worstByCtr && _worstByCtr.ctr < 0.8
     ? `<b>'${_worstByCtr.adset_name||'–'}' at ${(_worstByCtr.ctr||0).toFixed(2)}% CTR</b> (${_worstByCtr.centre||'–'}) — below 1% floor with $${(_worstByCtr.spend||0).toFixed(0)} spend. Pause and refresh creative.`
-    : `Watch for centre-specific CTR drift. ${Object.keys(bc).length} centres active — uneven performance can mask account-level issues.`;
+    : ctrChg !== null && ctrChg < -10
+      ? `<b>Account CTR down ${Math.abs(ctrChg).toFixed(1)}% WoW</b> — creative fatigue across the board. Brief Jordan to refresh top 2 ad sets.`
+      : `Watch for centre-specific CTR drift. ${Object.keys(bc).length} centres active — uneven performance can mask account-level issues.`;
   const _priority = _topByCtr && _topByCtr.ctr >= 2.0
     ? `Scale '${_topByCtr.adset_name||'–'}' (${_topByCtr.centre||'–'}) — ${(_topByCtr.ctr||0).toFixed(2)}% CTR at $${(_topByCtr.cpc||0).toFixed(2)} CPC. Lift budget 30–50%.`
     : `Brief Jordan on a creative refresh for the lowest-CTR ad sets. Run 7-day test before deciding.`;
@@ -14048,12 +14109,13 @@ function renderMwccMeta() {
     </div>
   </div>`;
 
-  // ── KPI Cards (CB247 parity: 4-card grid) ──
+  // ── KPI Cards with WoW deltas ──
+  // For CTR + CPC, "good" direction depends on metric — kpiCard's `change` arrow handles +/- visually
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Total Spend','$'+(s.spend||0).toFixed(2),null,`${meta.date_range?.start} – ${meta.date_range?.end}`, s.spend>0?'green':'')}
-    ${kpiCard('','Impressions',_mwccFmt(s.impr),null,`CPM $${(s.cpm||0).toFixed(2)}`)}
-    ${kpiCard('','Clicks',_mwccFmt(s.clicks),null,`CTR ${(s.ctr||0).toFixed(2)}%`, s.ctr>=2?'green':s.ctr<1?'red':'')}
-    ${kpiCard('','CPC','$'+(s.cpc||0).toFixed(2),null,`Reach ${_mwccFmt(s.reach)}`, s.cpc<0.5?'green':s.cpc>1?'red':'')}
+    ${kpiCard('','Total Spend','$'+(s.spend||0).toFixed(2), spendChg, weekLabel, s.spend>0?'green':'')}
+    ${kpiCard('','Clicks', _mwccFmt(s.clicks), clicksChg, `CTR ${(s.ctr||0).toFixed(2)}% · ${_mwccFmt(s.impr)} impr`, s.ctr>=2?'green':s.ctr<1?'red':'')}
+    ${kpiCard('','CTR', (s.ctr||0).toFixed(2)+'%', ctrChg, `${_mwccFmt(s.reach)} reach`, s.ctr>=2?'green':s.ctr<1?'red':'')}
+    ${kpiCard('','CPC', '$'+(s.cpc||0).toFixed(2), cpcChg && -cpcChg, `CPM $${(s.cpm||0).toFixed(2)}`, s.cpc<0.5?'green':s.cpc>1?'red':'')}
   </div>`;
 
   // ── Key Observations strip ──
@@ -14062,45 +14124,177 @@ function renderMwccMeta() {
     <div class="insight ${_worstByCtr && _worstByCtr.ctr < 0.8 ? 'red' : 'amber'}">
       <div class="insight-label">${_worstByCtr && _worstByCtr.ctr < 0.8 ? 'Underperformer — Pause or Refresh' : 'Monitor — Creative Fatigue Risk'}</div>
       ${_worstByCtr && _worstByCtr.ctr < 0.8
-        ? `<b>"${_worstByCtr.adset_name||'–'}"</b> (${_worstByCtr.centre||'–'}) — $${(_worstByCtr.spend||0).toFixed(0)} spend at <b>${(_worstByCtr.ctr||0).toFixed(2)}% CTR</b>. Pause and brief Jordan on new angle.`
+        ? `<b>"${_worstByCtr.adset_name||'–'}"</b> (${_worstByCtr.centre||'–'}) — $${(_worstByCtr.spend||0).toFixed(0)} spend at <b>${(_worstByCtr.ctr||0).toFixed(2)}% CTR</b>.
+           <br><br><b>Action:</b> Joanne pauses this ad set today. Jordan briefs a new creative angle by Wednesday.`
         : `No critical underperformers. Refresh any ad set after 14 days at the same CTR to prevent fatigue.`}
     </div>
     <div class="insight teal">
       <div class="insight-label">${_topByCtr && _topByCtr.ctr >= 2 ? 'Best Performing — Scale This' : 'Performance Baseline'}</div>
       ${_topByCtr && _topByCtr.ctr >= 2
-        ? `<b>"${_topByCtr.adset_name||'–'}"</b> (${_topByCtr.centre||'–'}) — ${(_topByCtr.ctr||0).toFixed(2)}% CTR at $${(_topByCtr.cpc||0).toFixed(2)} CPC. <br><br>Action: lift daily budget 30–50% while CTR stays above 1.5%.`
+        ? `<b>"${_topByCtr.adset_name||'–'}"</b> (${_topByCtr.centre||'–'}) — ${(_topByCtr.ctr||0).toFixed(2)}% CTR at $${(_topByCtr.cpc||0).toFixed(2)} CPC.
+           <br><br><b>Action:</b> Joanne lifts daily budget 30–50% while CTR stays above 1.5%. Jordan studies what made this creative work — replicate angle for lower-CTR sets.`
         : `Account CTR ${(s.ctr||0).toFixed(2)}% at $${(s.cpc||0).toFixed(2)} CPC. Strategy goal: lift CTR via creative-first iteration (Jordan briefs).`}
     </div>
   </div>`;
 
-  // By centre
+  // ── Spend by Centre — purple table styling ──
   if (MWCC_CENTRES.some(n=>bc[n])) {
-    html += '<div class="section-title">Spend by Centre</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Spend</th><th class="num">Impr</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">CPC</th><th class="num">LPV</th></tr></thead><tbody>';
+    html += sectionTitle('Spend by Centre');
+    html += `<div class="card mb" style="padding:0"><table style="width:100%">
+      <thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
+        <th style="text-align:left;padding:10px 14px">Centre</th>
+        <th class="num" style="padding:10px 14px">Spend</th>
+        <th class="num" style="padding:10px 14px">Impr</th>
+        <th class="num" style="padding:10px 14px">Clicks</th>
+        <th class="num" style="padding:10px 14px">CTR %</th>
+        <th class="num" style="padding:10px 14px">CPC</th>
+        <th class="num" style="padding:10px 14px">LPV</th>
+      </tr></thead><tbody>`;
     for (const name of MWCC_CENTRES) {
       const c = bc[name]; if (!c) continue;
-      html += `<tr><td style="font-weight:600">${name}</td><td class="num">$${(c.spend||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.impr)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">$${(c.cpc||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.lpv)}</td></tr>`;
+      const ctrCls = (c.ctr||0) >= 2 ? 'good' : (c.ctr||0) < 1 ? 'bad' : '';
+      html += `<tr style="border-top:1px solid var(--border)">
+        <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">${name}</td>
+        <td class="num" style="padding:10px 14px">$${(c.spend||0).toFixed(2)}</td>
+        <td class="num" style="padding:10px 14px">${_mwccFmt(c.impr)}</td>
+        <td class="num" style="padding:10px 14px">${_mwccFmt(c.clicks)}</td>
+        <td class="num" style="padding:10px 14px"><span class="stat-val ${ctrCls}">${(c.ctr||0).toFixed(2)}%</span></td>
+        <td class="num" style="padding:10px 14px">$${(c.cpc||0).toFixed(2)}</td>
+        <td class="num" style="padding:10px 14px"><span class="stat-val good">${_mwccFmt(c.lpv)}</span></td>
+      </tr>`;
     }
     if (bc['Other']) {
       const c = bc['Other'];
-      html += `<tr style="color:var(--muted)"><td>Other / Unattributed</td><td class="num">$${(c.spend||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.impr)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">$${(c.cpc||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.lpv)}</td></tr>`;
+      html += `<tr style="border-top:1px solid var(--border);color:var(--muted)">
+        <td style="padding:10px 14px">Other / Unattributed</td>
+        <td class="num" style="padding:10px 14px">$${(c.spend||0).toFixed(2)}</td>
+        <td class="num" style="padding:10px 14px">${_mwccFmt(c.impr)}</td>
+        <td class="num" style="padding:10px 14px">${_mwccFmt(c.clicks)}</td>
+        <td class="num" style="padding:10px 14px">${(c.ctr||0).toFixed(2)}%</td>
+        <td class="num" style="padding:10px 14px">$${(c.cpc||0).toFixed(2)}</td>
+        <td class="num" style="padding:10px 14px">${_mwccFmt(c.lpv)}</td>
+      </tr>`;
     }
     html += '</tbody></table></div>';
   }
 
-  // Campaigns
+  // ── Campaigns — purple table + CPM colour signal ──
   if (cams.length) {
-    html += '<div class="section-title">Campaigns</div><div class="card mb"><table><thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Impr</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">CPM</th></tr></thead><tbody>';
-    for (const c of cams) html += `<tr><td style="font-size:11.5px">${c.name}</td><td class="num">$${(c.spend||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.impr)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">$${(c.cpm||0).toFixed(2)}</td></tr>`;
+    html += sectionTitle('Campaigns');
+    html += `<div class="card mb" style="padding:0"><table style="width:100%">
+      <thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
+        <th style="text-align:left;padding:10px 14px">Campaign</th>
+        <th class="num" style="padding:10px 14px">Spend</th>
+        <th class="num" style="padding:10px 14px">Impr</th>
+        <th class="num" style="padding:10px 14px">Clicks</th>
+        <th class="num" style="padding:10px 14px">CTR %</th>
+        <th class="num" style="padding:10px 14px">CPM</th>
+      </tr></thead><tbody>`;
+    for (const c of cams) {
+      const ctrCls = (c.ctr||0) >= 2 ? 'good' : (c.ctr||0) < 1 ? 'bad' : '';
+      html += `<tr style="border-top:1px solid var(--border)">
+        <td style="padding:10px 14px;font-size:11.5px">${c.name}</td>
+        <td class="num" style="padding:10px 14px">$${(c.spend||0).toFixed(2)}</td>
+        <td class="num" style="padding:10px 14px">${_mwccFmt(c.impr)}</td>
+        <td class="num" style="padding:10px 14px">${_mwccFmt(c.clicks)}</td>
+        <td class="num" style="padding:10px 14px"><span class="stat-val ${ctrCls}">${(c.ctr||0).toFixed(2)}%</span></td>
+        <td class="num" style="padding:10px 14px">$${(c.cpm||0).toFixed(2)}</td>
+      </tr>`;
+    }
     html += '</tbody></table></div>';
   }
 
-  // Top ads
+  // ── Top Ads by CTR — purple table ──
   const topAds = meta.top_ads || [];
   if (topAds.length) {
-    html += '<div class="section-title">Top Ads by CTR</div><div class="card mb"><table><thead><tr><th>Ad</th><th>Centre</th><th class="num">CTR %</th><th class="num">CPC</th><th class="num">Clicks</th><th class="num">Spend</th></tr></thead><tbody>';
-    for (const a of topAds.slice(0,10)) html += `<tr><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${a.name}</td><td style="font-size:11.5px">${a.centre||'—'}</td><td class="num">${(a.ctr||0).toFixed(2)}%</td><td class="num">$${(a.cpc||0).toFixed(2)}</td><td class="num">${_mwccFmt(a.clicks)}</td><td class="num">$${(a.spend||0).toFixed(2)}</td></tr>`;
+    html += sectionTitle('Top Ads by CTR');
+    html += `<div class="card mb" style="padding:0"><table style="width:100%">
+      <thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
+        <th style="text-align:left;padding:10px 14px">Ad</th>
+        <th style="text-align:left;padding:10px 14px">Centre</th>
+        <th class="num" style="padding:10px 14px">CTR %</th>
+        <th class="num" style="padding:10px 14px">CPC</th>
+        <th class="num" style="padding:10px 14px">Clicks</th>
+        <th class="num" style="padding:10px 14px">Spend</th>
+      </tr></thead><tbody>`;
+    for (const a of topAds.slice(0,10)) {
+      const ctrCls = (a.ctr||0) >= 2 ? 'good' : (a.ctr||0) < 1 ? 'bad' : '';
+      html += `<tr style="border-top:1px solid var(--border)">
+        <td style="padding:10px 14px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${a.name}</td>
+        <td style="padding:10px 14px;font-size:11.5px;color:var(--mwcc-purple-deep)">${a.centre||'—'}</td>
+        <td class="num" style="padding:10px 14px"><span class="stat-val ${ctrCls}">${(a.ctr||0).toFixed(2)}%</span></td>
+        <td class="num" style="padding:10px 14px">$${(a.cpc||0).toFixed(2)}</td>
+        <td class="num" style="padding:10px 14px">${_mwccFmt(a.clicks)}</td>
+        <td class="num" style="padding:10px 14px">$${(a.spend||0).toFixed(2)}</td>
+      </tr>`;
+    }
     html += '</tbody></table></div>';
   }
+
+  // ── Next 2 Weeks — Prioritised Action List (standardised 6-column format) ──
+  try {
+    const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
+    const metaActions = wqItems
+      .filter(a => {
+        const sp = (a.source_page || '').toLowerCase();
+        return sp === 'meta-ads' || sp === 'meta_ads' || sp === 'meta' || sp === 'metaads';
+      })
+      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
+    if (metaActions.length > 0) {
+      html += _renderActionList(metaActions, {
+        workQueueLink: { page: 'mwcc-content-planner' },
+        footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Auto-generated by mwcc_meta_emitter.py every Monday.',
+      });
+    } else {
+      // Fallback: live signal-based recommendations
+      const fallbackActions = [];
+      if (_worstByCtr && _worstByCtr.ctr < 0.8) {
+        fallbackActions.push({
+          title: `Pause "${_worstByCtr.adset_name||'–'}" — CTR ${(_worstByCtr.ctr||0).toFixed(2)}%`,
+          description: `$${(_worstByCtr.spend||0).toFixed(0)} spent at ${(_worstByCtr.ctr||0).toFixed(2)}% CTR (below 1% floor). ${_worstByCtr.centre||'centre'} ad set. Pause today, brief Jordan on new creative angle by Wednesday.`,
+          owner: 'Joanne',
+          owner_role: 'Paid Social',
+          priority: 'P1',
+          effort_hours: 0.5,
+          expected_impact: `Stop $${(_worstByCtr.spend||0).toFixed(0)}/wk waste`,
+        });
+      }
+      if (_topByCtr && _topByCtr.ctr >= 2.0) {
+        fallbackActions.push({
+          title: `Scale "${_topByCtr.adset_name||'–'}" — CTR ${(_topByCtr.ctr||0).toFixed(2)}%`,
+          description: `Best CTR this week at $${(_topByCtr.cpc||0).toFixed(2)} CPC. Lift daily budget 30–50% while CTR stays above 1.5%. Jordan studies what made this creative work and clones the angle.`,
+          owner: 'Joanne + Jordan',
+          owner_role: 'Paid Social + Content',
+          priority: 'P2',
+          effort_hours: 1,
+          expected_impact: `Lift conv 30–50% at similar CTR`,
+        });
+      }
+      fallbackActions.push({
+        title: 'Refresh creative on ad sets older than 14 days',
+        description: 'Creative fatigue typically hits after 2 weeks at the same CTR. Jordan batches 2 new variants per stale ad set. Joanne runs 7-day test before deciding which to keep.',
+        owner: 'Jordan + Joanne',
+        owner_role: 'Content + Paid Social',
+        priority: 'P3',
+        effort_hours: 4,
+        expected_impact: `Sustain CTR through Q3 — avoid 0.5–1pt decay`,
+      });
+      fallbackActions.push({
+        title: 'Add suburb-name lookalike audiences per centre',
+        description: 'Build 5 lookalike audiences from each centre\'s existing enrolment list (parents within 6km radius). Local intent + behavioural match converts 2× higher than broad targeting.',
+        owner: 'Joanne',
+        owner_role: 'Paid Social',
+        priority: 'P3',
+        effort_hours: 2,
+        expected_impact: `2× CVR uplift on suburb-targeted spend`,
+      });
+      html += `<div style="padding:10px 14px;font-size:11px;color:var(--muted);margin-top:10px;border-left:3px solid var(--mwcc-purple);background:#fff">No emitter actions yet — showing live signal-based recommendations. The Monday emitter will replace these with persisted, owned actions.</div>`;
+      html += _renderActionList(fallbackActions, {});
+    }
+  } catch (e) {
+    console.warn('[renderMwccMeta] could not pull work-queue actions:', e);
+  }
+
   el.innerHTML = html;
 }
 
@@ -14482,9 +14676,7 @@ function renderMwccGads() {
     </div>
   </div>`;
 
-  // ── Next 2 Weeks — Prioritised Action List (pulled from Work Queue) ─────────
-  // mwcc_google_ads_emitter.py writes source_page='google-ads'; accept variants
-  // ('google_ads', 'google-ads', 'gads') so future renames don't drop actions.
+  // ── Next 2 Weeks — Prioritised Action List (standardised 6-column format) ──
   try {
     const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
     const adsActions = wqItems
@@ -14492,81 +14684,22 @@ function renderMwccGads() {
         const sp = (a.source_page || '').toLowerCase();
         return sp === 'google-ads' || sp === 'google_ads' || sp === 'gads' || sp === 'googleads';
       })
-      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'))
-      .slice(0, 8);
-
-    html += sectionTitle('Next 2 Weeks — Prioritised Action List');
+      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
     if (adsActions.length > 0) {
-      const effortBadge = e => {
-        const c = e === 'S' || e === 1 || e === 2 ? '#10b981'
-                : e === 'M' || (e>=3 && e<=6) ? '#f59e0b'
-                : '#ef4444';
-        const label = typeof e === 'number' ? (e<=2 ? 'S' : e<=6 ? 'M' : 'L') : e;
-        return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${label}</span>`;
-      };
-      html += `<div class="card mb"><table>
-        <thead><tr>
-          <th style="width:24px">#</th>
-          <th>Action</th>
-          <th>Owner</th>
-          <th style="width:50px">Effort</th>
-          <th style="font-size:10px">Priority</th>
-        </tr></thead><tbody>
-        ${adsActions.map((a,i) => {
-          const prio = a.priority || 'P3';
-          const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
-          return `<tr>
-            <td style="font-weight:700;color:var(--mwcc-purple-deep)">${i+1}</td>
-            <td>
-              <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title||'—'}</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.6">${a.description||''}</div>
-            </td>
-            <td style="font-size:11px"><b>${a.owner||'—'}</b>${a.owner_role?`<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>`:''}</td>
-            <td>${effortBadge(a.effort_hours||'M')}</td>
-            <td><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
-          </tr>`;
-        }).join('')}
-        </tbody></table>
-        <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Auto-generated by <code>mwcc_google_ads_emitter.py</code> every Monday. Open <a href="#" onclick="nav(document.querySelector('[data-page=mwcc-content-planner]'));return false" style="color:var(--mwcc-purple)">Work Queue</a> to mark complete.</p>
-      </div>`;
+      html += _renderActionList(adsActions, {
+        workQueueLink: { page: 'mwcc-content-planner' },
+        footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Auto-generated by mwcc_google_ads_emitter.py every Monday.',
+      });
     } else {
-      // Fallback: synthesise actions from this-week's signals if emitter hasn't produced any
+      // Live signal-based fallback (until emitter writes actions)
       const fallbackActions = [];
-      if (bestCamp) fallbackActions.push({ title:`Scale "${bestCamp.name}"`, desc:`Best CPA this week at $${bestCamp.cost_per_conv.toFixed(2)} on ${bestCamp.conversions.toFixed(1)} conv. Lift daily budget 20–30% while CPA stays under $50.`, owner:'Joanne', prio:'P2', effort:'S' });
-      if (wasteCamps.length > 0) fallbackActions.push({ title:`Review non-converting campaigns: ${wasteCamps.map(c=>c.name).join(', ')}`, desc:`$${wasteCamps.reduce((s,c)=>s+c.spend,0).toFixed(2)} spent with 0 conversions. Audit ad copy + landing page + audience. Pause if no improvement in 7 days.`, owner:'Joanne', prio:'P1', effort:'M' });
-      if (conv === 0 && spend > 0) fallbackActions.push({ title:'Verify conversion tracking', desc:`$${spend.toFixed(2)} spent with 0 conversions recorded. Check Google Ads → Tools → Conversions. Fix before running more spend.`, owner:'Joanne + John', prio:'P1', effort:'S' });
-      fallbackActions.push({ title:'Expand suburb-level keyword coverage', desc:'Add exact-match terms: "childcare beechboro", "long day care ellenbrook", "OSHC maddington", "daycare maylands", "early learning mirrabooka". Local intent converts 2–3× higher.', owner:'Joanne', prio:'P3', effort:'M' });
-      fallbackActions.push({ title:'Add CCS messaging to all headlines', desc:'"Child Care Subsidy approved" reduces price objections and lifts CTR among fee-conscious parents comparing options.', owner:'Joanne + Jordan', prio:'P3', effort:'S' });
-
-      const effortBadge = e => {
-        const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
-        return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
-      };
-      html += `<div class="card mb" style="padding:0">
-        <div style="padding:10px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border)">No emitter actions yet — showing live signal-based recommendations. The Monday emitter will replace these with persisted, owned actions.</div>
-        <table>
-        <thead><tr>
-          <th style="width:24px">#</th>
-          <th>Action</th>
-          <th>Owner</th>
-          <th style="width:50px">Effort</th>
-          <th style="font-size:10px">Priority</th>
-        </tr></thead><tbody>
-        ${fallbackActions.map((a,i) => {
-          const prioClr = a.prio === 'P1' ? '#ef4444' : a.prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
-          return `<tr>
-            <td style="font-weight:700;color:var(--mwcc-purple-deep)">${i+1}</td>
-            <td>
-              <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.desc}</div>
-            </td>
-            <td style="font-size:11px"><b>${a.owner}</b></td>
-            <td>${effortBadge(a.effort)}</td>
-            <td><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${a.prio}</span></td>
-          </tr>`;
-        }).join('')}
-        </tbody></table>
-      </div>`;
+      if (bestCamp) fallbackActions.push({ title:`Scale "${bestCamp.name}"`, description:`Best CPA this week at $${bestCamp.cost_per_conv.toFixed(2)} on ${bestCamp.conversions.toFixed(1)} conv. Lift daily budget 20–30% while CPA stays under $50.`, owner:'Joanne', owner_role:'Paid Ads', priority:'P2', effort_hours:1, expected_impact:`Lift conv 20–30% at similar CPA` });
+      if (wasteCamps.length > 0) fallbackActions.push({ title:`Review non-converting campaigns: ${wasteCamps.map(c=>c.name).join(', ')}`, description:`$${wasteCamps.reduce((s,c)=>s+c.spend,0).toFixed(2)} spent with 0 conversions. Audit ad copy + landing page + audience. Pause if no improvement in 7 days.`, owner:'Joanne', owner_role:'Paid Ads', priority:'P1', effort_hours:4, expected_impact:`Recover $${wasteCamps.reduce((s,c)=>s+c.spend,0).toFixed(0)} wasted/wk` });
+      if (conv === 0 && spend > 0) fallbackActions.push({ title:'Verify conversion tracking', description:`$${spend.toFixed(2)} spent with 0 conversions recorded. Check Google Ads → Tools → Conversions. Fix before running more spend.`, owner:'Joanne + John', owner_role:'Paid Ads + SEO/Web', priority:'P1', effort_hours:1, expected_impact:`Unlock attribution for $${spend.toFixed(0)} weekly spend` });
+      fallbackActions.push({ title:'Expand suburb-level keyword coverage', description:'Add exact-match terms: "childcare armadale", "long day care midvale", "OSHC rockingham", "daycare seville grove", "early learning waikiki". Local intent converts 2–3× higher.', owner:'Joanne', owner_role:'Paid Ads', priority:'P3', effort_hours:4, expected_impact:`2–3× conversion lift on suburb terms` });
+      fallbackActions.push({ title:'Add CCS messaging to all headlines', description:'"Child Care Subsidy approved" reduces price objections and lifts CTR among fee-conscious parents comparing options.', owner:'Joanne + Jordan', owner_role:'Paid Ads + Content', priority:'P3', effort_hours:1, expected_impact:`Lift CTR 0.5–1pt across account` });
+      html += `<div style="padding:10px 14px;font-size:11px;color:var(--muted);margin-top:10px;border-left:3px solid var(--mwcc-purple);background:#fff">No emitter actions yet — showing live signal-based recommendations. The Monday emitter will replace these with persisted, owned actions.</div>`;
+      html += _renderActionList(fallbackActions, {});
     }
   } catch (e) {
     console.warn('[renderMwccGads] could not pull work-queue actions:', e);
@@ -15018,41 +15151,12 @@ function renderMwccOrgSocialManualMode(el) {
     </ul>
   </div>`;
 
-  // ── Next 2 Weeks — Prioritised Action List (from Work Queue, if any) ──
+  // ── Next 2 Weeks — Prioritised Action List (standardised 6-column format) ──
   if (socialActions.length > 0) {
-    const effortBadge = e => {
-      const c = e === 'S' || e === 1 || e === 2 ? '#10b981'
-              : e === 'M' || (e>=3 && e<=6) ? '#f59e0b'
-              : '#ef4444';
-      const label = typeof e === 'number' ? (e<=2 ? 'S' : e<=6 ? 'M' : 'L') : e;
-      return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${label}</span>`;
-    };
-    html += sectionTitle('Next 2 Weeks — Prioritised Action List');
-    html += `<div class="card mb"><table>
-      <thead><tr>
-        <th style="width:24px">#</th>
-        <th>Action</th>
-        <th>Owner</th>
-        <th style="width:50px">Effort</th>
-        <th style="font-size:10px">Priority</th>
-      </tr></thead><tbody>
-      ${socialActions.map((a,i) => {
-        const prio = a.priority || 'P3';
-        const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
-        return `<tr>
-          <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
-          <td>
-            <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title||'—'}</div>
-            ${a.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.6">${a.description}</div>` : ''}
-          </td>
-          <td style="font-size:11px"><b>${a.owner||'—'}</b>${a.owner_role?`<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>`:''}</td>
-          <td>${effortBadge(a.effort_hours||'M')}</td>
-          <td><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
-        </tr>`;
-      }).join('')}
-      </tbody></table>
-      <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Auto-generated by the social emitter (when wired). Open <a href="#" onclick="nav(document.querySelector('[data-page=mwcc-content-planner]'));return false">Work Queue</a> to mark complete.</p>
-    </div>`;
+    html += _renderActionList(socialActions, {
+      workQueueLink: { page: 'mwcc-content-planner' },
+      footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Auto-generated by the social emitter when wired.',
+    });
   }
 
   // ── Setup — Connect Metricool ──
@@ -15459,35 +15563,18 @@ function renderMwccOccupancy() {
   }
   html += '</div>'; // end column
 
-  // ── Recommended Actions for Kelley (filtered to enrolment-only, NO wage actions) ──
+  // ── Next 2 Weeks — Prioritised Action List (standardised 6-column format) ──
   try {
     const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
     const enrolmentActions = wqItems
       .filter(a => a.source_page === 'enrolment')
-      // belt-and-braces filter: even if old wage actions exist from prior runs, drop them
       .filter(a => !(a.category||'').toLowerCase().includes('wage') && !(a.title||'').toLowerCase().includes('wage'))
       .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
     if (enrolmentActions.length) {
-      html += sectionTitle('Recommended Actions — Pulled from Work Queue');
-      html += '<div class="card mb" style="padding:0">';
-      html += '<table style="width:100%;font-size:12px"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">' +
-        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Priority</th>' +
-        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Action</th>' +
-        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Owner</th>' +
-        '<th style="text-align:right;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Effort</th>' +
-      '</tr></thead><tbody>';
-      for (const a of enrolmentActions.slice(0, 8)) {
-        const prio = a.priority || 'P3';
-        const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
-        html += `<tr style="border-top:1px solid var(--border)">
-          <td style="padding:10px 14px"><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
-          <td style="padding:10px 14px;color:var(--text)"><b>${a.title || '—'}</b>${a.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.6">${a.description}</div>` : ''}</td>
-          <td style="padding:10px 14px;color:var(--text-2);font-size:11px">${a.owner || '—'}${a.owner_role ? `<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>` : ''}</td>
-          <td style="text-align:right;padding:10px 14px;color:var(--muted);font-size:11px">${a.effort_hours ? a.effort_hours+'h' : '—'}</td>
-        </tr>`;
-      }
-      html += '</tbody></table></div>';
-      html += '<div style="font-size:10px;color:var(--muted);margin-bottom:18px"><b>Source:</b> auto-generated by <code>mwcc_enrolment_emitter.py</code> every Monday. To mark complete or change verdict, open <a href="#" onclick="nav(document.querySelector(\'[data-page=mwcc-work-queue]\'));return false" style="color:var(--mwcc-purple)">Work Queue</a>.</div>';
+      html += _renderActionList(enrolmentActions, {
+        workQueueLink: { page: 'mwcc-content-planner' },
+        footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Auto-generated by mwcc_enrolment_emitter.py every Monday.',
+      });
     }
   } catch (e) {
     console.warn('[renderMwccOccupancy] could not pull work-queue actions:', e);
@@ -15669,7 +15756,7 @@ function renderMwccEnrolments() {
   </tr>`;
   html += '</tbody></table></div>';
 
-  // ── Recommended Actions panel (enrolment-only, wage-filtered) ──
+  // ── Next 2 Weeks — Prioritised Action List (standardised 6-column format) ──
   try {
     const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
     const enrolmentActions = wqItems
@@ -15677,26 +15764,10 @@ function renderMwccEnrolments() {
       .filter(a => !(a.category||'').toLowerCase().includes('wage') && !(a.title||'').toLowerCase().includes('wage'))
       .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
     if (enrolmentActions.length) {
-      html += sectionTitle('Recommended Actions — Pulled from Work Queue');
-      html += '<div class="card mb" style="padding:0">';
-      html += '<table style="width:100%;font-size:12px"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">' +
-        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Priority</th>' +
-        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Action</th>' +
-        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Owner</th>' +
-        '<th style="text-align:right;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Effort</th>' +
-      '</tr></thead><tbody>';
-      for (const a of enrolmentActions.slice(0, 8)) {
-        const prio = a.priority || 'P3';
-        const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
-        html += `<tr style="border-top:1px solid var(--border)">
-          <td style="padding:10px 14px"><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
-          <td style="padding:10px 14px;color:var(--text)"><b>${a.title || '—'}</b>${a.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.6">${a.description}</div>` : ''}</td>
-          <td style="padding:10px 14px;color:var(--text-2);font-size:11px">${a.owner || '—'}${a.owner_role ? `<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>` : ''}</td>
-          <td style="text-align:right;padding:10px 14px;color:var(--muted);font-size:11px">${a.effort_hours ? a.effort_hours+'h' : '—'}</td>
-        </tr>`;
-      }
-      html += '</tbody></table></div>';
-      html += '<div style="font-size:10px;color:var(--muted);margin-bottom:18px"><b>Source:</b> auto-generated by <code>mwcc_enrolment_emitter.py</code> every Monday. Open <a href="#" onclick="nav(document.querySelector(\'[data-page=mwcc-work-queue]\'));return false" style="color:var(--mwcc-purple)">Work Queue</a> to mark complete or change verdict.</div>';
+      html += _renderActionList(enrolmentActions, {
+        workQueueLink: { page: 'mwcc-content-planner' },
+        footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Auto-generated by mwcc_enrolment_emitter.py every Monday.',
+      });
     }
   } catch (e) {
     console.warn('[renderMwccEnrolments] could not pull work-queue actions:', e);
@@ -16504,50 +16575,17 @@ function renderMwccSeo() {
     </div>`;
   }
 
-  // ── Next 2 Weeks — Prioritised Action List (pulled from Work Queue) ──
-  // mwcc_seo_emitter.py writes source_page='seo-organic'; accept both spellings
-  // so future renames don't silently drop actions.
+  // ── Next 2 Weeks — Prioritised Action List (standardised 6-column format) ──
   try {
     const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
     const seoActions = wqItems
       .filter(a => a.source_page === 'seo' || a.source_page === 'seo-organic')
-      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'))
-      .slice(0, 8);
-
+      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
     if (seoActions.length > 0) {
-      const effortBadge = e => {
-        const c = e === 'S' || e === 1 || e === 2 ? '#10b981'
-                : e === 'M' || (e>=3 && e<=6) ? '#f59e0b'
-                : '#ef4444';
-        const label = typeof e === 'number' ? (e<=2 ? 'S' : e<=6 ? 'M' : 'L') : e;
-        return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${label}</span>`;
-      };
-      html += sectionTitle('Next 2 Weeks — Prioritised Action List');
-      html += `<div class="card mb"><table>
-        <thead><tr>
-          <th style="width:24px">#</th>
-          <th>Action</th>
-          <th>Owner</th>
-          <th style="width:50px">Effort</th>
-          <th style="font-size:10px">Priority</th>
-        </tr></thead><tbody>
-        ${seoActions.map((a,i) => {
-          const prio = a.priority || 'P3';
-          const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
-          return `<tr>
-            <td style="font-weight:700;color:var(--mwcc-purple-deep)">${i+1}</td>
-            <td>
-              <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title||'—'}</div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.6">${a.description||''}</div>
-            </td>
-            <td style="font-size:11px"><b>${a.owner||'—'}</b>${a.owner_role?`<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>`:''}</td>
-            <td>${effortBadge(a.effort_hours||'M')}</td>
-            <td><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
-          </tr>`;
-        }).join('')}
-        </tbody></table>
-        <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Auto-generated by <code>mwcc_seo_emitter.py</code> every Monday. Open <a href="#" onclick="nav(document.querySelector('[data-page=mwcc-work-queue]'));return false" style="color:var(--mwcc-purple)">Work Queue</a> to mark complete.</p>
-      </div>`;
+      html += _renderActionList(seoActions, {
+        workQueueLink: { page: 'mwcc-content-planner' },
+        footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Auto-generated by mwcc_seo_emitter.py every Monday.',
+      });
     }
   } catch (e) {
     console.warn('[renderMwccSeo] could not pull work-queue actions:', e);
