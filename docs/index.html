@@ -14612,19 +14612,31 @@ const MWCC_CFG = {
   },
 };
 function renderMwccSeo() {
-  // ─── Cloned from CB247 renderSEO pattern (07 Jun 2026) ───
-  // Reads from window.MWCC_DATA.gsc + window.MWCC_DATA.ahrefs (when available)
-  // Pattern: executive verdict + KPI cards + key observations + quick wins table
+  // ─── Rebuilt 07 Jun 2026 (Tia direction): clone CB247 renderSEO structure 1:1 ──
+  // Sections in order: banner → verdict → KPIs (with GA4 organic + WoW)
+  //   → Key Observations → Quick Wins → Build Opportunities → Top 10 Keywords w/ pills
+  //   → Search Console + Top Pages side-by-side → Backlink Profile (placeholder)
+  //   → Next 2 Weeks Action List (from mwccWorkQueue source_page='seo')
   const md = window.MWCC_DATA || {};
   const gsc = md.gsc || {};
   const queries = gsc.top_queries || [];
   const pages = gsc.top_pages || [];
   const totals = gsc.totals || {clicks:0, impressions:0, ctr:0, position:0};
   const ah = md.ahrefs || {};
+  const ga4 = md.ga4 || {};
   const period = gsc.date_range ? `${gsc.date_range.start} – ${gsc.date_range.end}` : '7-day GSC';
 
   const el = $('mwcc-seo-content');
   if (!el) return;
+
+  // Empty state — keep early so the rest of the function is unconditional
+  if (queries.length === 0 && pages.length === 0) {
+    el.innerHTML = `<div class="insight neutral">
+      <div class="insight-label">Awaiting GSC Data</div>
+      <code>state/mwcc-gsc-data.json</code> is empty. Verify <code>cb_agent@chasingbetter.com.au</code> has Restricted user access on the myworldcc.com.au GSC property, then run <code>scripts/pull_mwcc_gsc.py</code> manually or wait for Monday cron.
+    </div>`;
+    return;
+  }
 
   // ── Computed groupings ──
   const _top3   = queries.filter(q => q.position && q.position <= 3);
@@ -14632,18 +14644,24 @@ function renderMwccSeo() {
                           .sort((a,b) => (b.impressions||0) - (a.impressions||0));
   const _build  = queries.filter(q => q.position && q.position >= 21 && q.impressions >= 3)
                           .sort((a,b) => (b.impressions||0) - (a.impressions||0));
-  const totalKw  = queries.length;
+  const totalKw = queries.length;
 
-  let html = '';
+  // Pull GA4 organic sessions from by_channel (matches CB247's Organic Sessions KPI)
+  const ga4Channels = ga4.by_channel || {};
+  const _organicChannelKey = Object.keys(ga4Channels).find(k => /organic|search/i.test(k)) || 'Organic Search';
+  const ga4OrgSessions = ga4Channels[_organicChannelKey]?.sessions || 0;
+  const ga4OrgUsers    = ga4Channels[_organicChannelKey]?.users    || 0;
 
   // ── Data freshness banner ──
-  html += `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>GSC</b> ${gsc.generated_at ? gsc.generated_at.slice(0,10) : '–'} (${period})</span>
+    <span><b>GA4</b> ${ga4.generated_at ? ga4.generated_at.slice(0,10) : '–'}</span>
     <span><b>Ahrefs</b> ${ah.generated_at ? ah.generated_at.slice(0,10) : 'awaiting Monday pull'}</span>
+    <span style="color:var(--muted)">${totalKw} keywords tracked</span>
   </div>`;
 
   // ── Executive Verdict ──
-  const _whereWeAre = `${totals.clicks||0} organic clicks across ${totals.impressions||0} impressions at avg position #${(totals.position||0).toFixed(1)} (${(totals.ctr||0).toFixed(2)}% CTR). ${totalKw} keywords tracking.`;
+  const _whereWeAre = `${_mwccFmt(totals.clicks)} organic clicks across ${_mwccFmt(totals.impressions)} impressions at avg position #${(totals.position||0).toFixed(1)} (${(totals.ctr||0).toFixed(2)}% CTR). GA4 organic sessions: ${_mwccFmt(ga4OrgSessions)}. ${totalKw} keywords tracking.`;
   const _risk = _qw.length > 5
     ? `<b>${_qw.length} keywords stuck at pos 4–20</b> with real impression volume — every one is a missed top-3 ranking. Build dedicated landing pages or tighten on-page H1 + meta.`
     : _build.length > 0
@@ -14667,15 +14685,15 @@ function renderMwccSeo() {
     </div>
   </div>`;
 
-  // ── 4 KPI cards ──
+  // ── 4 KPI cards (now mirrors CB247 — adds Organic Sessions, keeps Pos/Top-3/Page 1) ──
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Organic Clicks (7d)', _mwccFmt(totals.clicks), null, `${_mwccFmt(totals.impressions)} impressions`, totals.clicks>0?'green':'')}
-    ${kpiCard('','Avg Position', '#'+(totals.position||0).toFixed(1), null, `${(totals.ctr||0).toFixed(2)}% CTR`, totals.position<10?'green':totals.position<30?'amber':'red')}
-    ${kpiCard('','Top-3 Rankings', _top3.length, null, `${_qw.length} at pos 4–20 (quick wins)`, _top3.length>5?'green':'')}
-    ${kpiCard('','Build Opportunities', _build.length, null, 'Keywords at pos 21+ with impressions', _build.length>3?'amber':'')}
+    ${kpiCard('','Organic Sessions (7d)', _mwccFmt(ga4OrgSessions), null, `${_mwccFmt(ga4OrgUsers)} users · GA4`, ga4OrgSessions>0?'green':'')}
+    ${kpiCard('','Organic Clicks (7d)', _mwccFmt(totals.clicks), null, `${_mwccFmt(totals.impressions)} impr · ${(totals.ctr||0).toFixed(2)}% CTR · GSC`, totals.clicks>0?'green':'')}
+    ${kpiCard('','Avg Position', '#'+(totals.position||0).toFixed(1), null, `${totalKw} tracked keywords`, totals.position<10?'green':totals.position<30?'amber':'red')}
+    ${kpiCard('','Page 1 Keywords', _top3.length+_qw.length, null, `${_top3.length} top-3 · ${_qw.length} pos 4–20 · ${_build.length} build`, (_top3.length+_qw.length)>5?'green':'')}
   </div>`;
 
-  // ── Key Observations ──
+  // ── Key Observations (2-col) ──
   html += sectionTitle('Key Observations');
   html += `<div class="grid-2 mb">
     <div class="insight red">
@@ -14725,7 +14743,7 @@ function renderMwccSeo() {
     </tbody></table>
   </div>`;
 
-  // ── Build Opportunities Table ──
+  // ── Build Opportunities Table (MWCC-specific, useful) ──
   if (_build.length > 0) {
     html += sectionTitle('Build Opportunities — Deep-Ranked Keywords with Demand');
     html += `<div class="card mb">
@@ -14748,33 +14766,186 @@ function renderMwccSeo() {
     </div>`;
   }
 
-  // ── Top Pages ──
-  if (pages.length > 0) {
-    html += sectionTitle('Top Pages by Organic Clicks');
-    html += `<div class="card mb">
+  // ── Top 10 Keywords by Traffic (clones CB247 — status pills + action column) ──
+  const statusPill = {
+    'top-3':     '<span style="font-size:9px;background:var(--mwcc-purple-pale);color:var(--mwcc-purple-deep);padding:1px 6px;border-radius:3px;font-weight:700">Top 3</span>',
+    'quick-win': '<span style="font-size:9px;background:#fff8e1;color:#d97706;padding:1px 6px;border-radius:3px;font-weight:700">Quick Win</span>',
+    'growth':    '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 6px;border-radius:3px">Growth</span>',
+    'low':       '<span style="font-size:9px;background:#f0f2f5;color:var(--muted-2);padding:1px 6px;border-radius:3px">Low</span>',
+  };
+  const top10kw = [...queries]
+    .filter(q => (q.clicks||0) > 0 || (q.impressions||0) > 0)
+    .sort((a,b) => (b.clicks||0) - (a.clicks||0) || (b.impressions||0) - (a.impressions||0))
+    .slice(0,10)
+    .map(q => ({
+      keyword: q.query,
+      position: q.position,
+      impressions: q.impressions,
+      clicks: q.clicks,
+      ctr: q.ctr,
+      status: q.position <= 3 ? 'top-3' : q.position <= 10 ? 'quick-win' : q.position <= 20 ? 'growth' : 'low',
+    }));
+
+  html += sectionTitle('Top 10 Keywords by Traffic');
+  html += `<div class="card mb"><table>
+    <thead><tr>
+      <th>Keyword</th>
+      <th class="num">Pos</th>
+      <th class="num">Impressions</th>
+      <th class="num">Clicks (7d)</th>
+      <th class="num">CTR</th>
+      <th>Status</th>
+      <th style="font-size:10px">Action</th>
+    </tr></thead><tbody>
+    ${top10kw.length > 0 ? top10kw.map(kw => {
+      const pos = kw.position;
+      const isQW = kw.status === 'quick-win';
+      const action = pos <= 3
+        ? 'Protect — add internal links'
+        : pos <= 10
+          ? 'Optimise H1 + meta description'
+          : pos <= 20
+            ? 'Refresh content + add internal links'
+            : 'Build dedicated landing page';
+      return `<tr ${isQW?'style="background:#fffbeb"':''}>
+        <td style="font-weight:${pos<=3?'700':'400'};font-size:12px">${kw.keyword}</td>
+        <td class="num">${posBadge(pos)}</td>
+        <td class="num">${_mwccFmt(kw.impressions)}</td>
+        <td class="num" style="font-weight:600">${_mwccFmt(kw.clicks)}</td>
+        <td class="num">${(kw.ctr||0).toFixed(2)}%</td>
+        <td>${statusPill[kw.status]||'–'}</td>
+        <td style="font-size:10px;color:var(--text-2)">${action}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" style="color:var(--muted);padding:16px;text-align:center">No keyword traffic data yet.</td></tr>'}
+    </tbody></table>
+    <p style="font-size:10px;color:var(--muted);padding:8px 14px 0">Source: Google Search Console (${period}). Top 10 by clicks then impressions.</p>
+  </div>`;
+
+  // ── Search Console + Top Pages side-by-side (CB247 pattern) ──
+  html += sectionTitle('Search Console — Top Queries (' + period + ')');
+  html += `<div class="grid-2 mb">
+    <div class="card">
+      <div class="card-h">Top 10 Queries by Clicks</div>
       <table><thead><tr>
-        <th>#</th>
-        <th>Page</th>
-        <th class="num">Clicks</th>
-        <th class="num">Impressions</th>
-        <th class="num">Avg Pos</th>
+        <th>Query</th><th class="num">Clicks</th><th class="num">CTR</th><th class="num">Pos</th>
       </tr></thead><tbody>
-      ${pages.slice(0,10).map((p,i) => {
-        const url = (p.url||'').replace('https://www.myworldcc.com.au','') || '/';
+      ${queries.slice(0,10).map(q=>`<tr>
+        <td style="font-size:11px">${q.query}</td>
+        <td class="num">${_mwccFmt(q.clicks)}</td>
+        <td class="num">${(q.ctr||0).toFixed(2)}%</td>
+        <td class="num">${posBadge(q.position)}</td>
+      </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No GSC data — run pull_mwcc_gsc.py</td></tr>'}
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="card-h">Top Pages by Organic Traffic
+        <span class="card-period">Source: GSC clicks</span>
+      </div>
+      <table><thead><tr>
+        <th>Page</th><th class="num">Clicks</th><th class="num">Impr</th><th class="num">Pos</th>
+      </tr></thead><tbody>
+      ${pages.slice(0,10).map(p => {
+        const url = (p.url||'').replace('https://www.myworldcc.com.au','').replace('https://myworldcc.com.au','') || '/';
         return `<tr>
-          <td class="rank">#${i+1}</td>
-          <td style="font-family:monospace;font-size:11px;color:var(--mwcc-purple-deep)">${url}</td>
+          <td style="font-size:10px;color:var(--text-2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${url}</td>
           <td class="num">${_mwccFmt(p.clicks)}</td>
           <td class="num">${_mwccFmt(p.impressions)}</td>
-          <td class="num">#${(p.position||0).toFixed(1)}</td>
+          <td class="num">${posBadge(p.position)}</td>
         </tr>`;
-      }).join('')}
+      }).join('')||'<tr><td colspan="4" style="color:var(--muted)">No page data</td></tr>'}
       </tbody></table>
+    </div>
+  </div>`;
+
+  // ── Backlink Profile (placeholder until Ahrefs MWCC pull runs) ──
+  const ahDR        = ah.domain_rating;
+  const ahRefdoms   = ah.referring_domains || [];
+  const ahRecent    = ah.recent_backlinks  || [];
+  const hasAhrefs   = ahDR !== undefined || ahRefdoms.length > 0 || ahRecent.length > 0;
+  html += sectionTitle('Backlink Profile');
+  if (hasAhrefs) {
+    html += `<div class="grid-2 mb">
+      <div class="card">
+        <div class="card-h">Quality Referring Domains (DR 40+)<span class="card-period">Source: Ahrefs</span></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+          ${ahRefdoms.length||0} total referring domains · DR ${ahDR||'–'}
+        </div>
+        <table><thead><tr><th>Domain</th><th class="num">DR</th><th class="num">Links</th></tr></thead><tbody>
+        ${ahRefdoms.slice(0,8).map(d=>`<tr>
+          <td style="font-size:11px;font-weight:${(d.domain_rating||0)>=60?'600':'400'}">${d.domain||'–'}</td>
+          <td class="num"><span style="font-size:10px;background:${(d.domain_rating||0)>=60?'var(--mwcc-purple-pale)':'#f0f2f5'};color:${(d.domain_rating||0)>=60?'var(--mwcc-purple-deep)':'var(--muted)'};padding:1px 5px;border-radius:3px;font-weight:700">${d.domain_rating||'–'}</span></td>
+          <td class="num" style="color:var(--muted)">${d.dofollow_links||0}</td>
+        </tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted);padding:16px;text-align:center">No referring domain data.</td></tr>'}
+        </tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-h">Recent Backlinks (last 30 days)<span class="card-period">Source: Ahrefs</span></div>
+        <table><thead><tr><th>From domain</th><th class="num">DR</th><th>Date</th></tr></thead><tbody>
+        ${ahRecent.slice(0,8).map(b=>`<tr>
+          <td style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">${(b.url_from||'').replace(/https?:\/\//,'')}</td>
+          <td class="num">${b.domain_rating_source||'–'}</td>
+          <td style="font-size:10px;color:var(--muted)">${(b.first_seen||'').slice(0,10)}</td>
+        </tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted);padding:16px;text-align:center">No new backlinks in the last 30 days.</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="card mb" style="padding:18px 24px;border-left:4px solid var(--mwcc-purple)">
+      <div style="font-size:12px;color:var(--mwcc-purple-deep);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em">Awaiting Ahrefs Pull</div>
+      <p style="margin:0 0 10px;font-size:12.5px;color:var(--text-2);line-height:1.7">Backlink data appears here after the Monday Ahrefs pull (<code style="background:var(--mwcc-purple-mist);padding:1px 5px;border-radius:3px;color:var(--mwcc-purple-deep)">scripts/pull_mwcc_ahrefs.py</code>). Once live the cards will show:</p>
+      <ul style="margin:0;padding-left:18px;font-size:12px;color:var(--text-2);line-height:1.8">
+        <li>Quality referring domains (DR 40+) for myworldcc.com.au</li>
+        <li>Recent backlinks (last 30 days) with date + source DR</li>
+        <li>Outreach targets for local directories (kindicare.com, careforkids.com.au)</li>
+      </ul>
     </div>`;
   }
 
-  if (queries.length === 0 && pages.length === 0) {
-    html = '<div class="insight neutral"><div class="insight-label">Awaiting GSC Data</div>state/mwcc-gsc-data.json is empty. Verify cb_agent@chasingbetter.com.au has Restricted user access on myworldcc.com.au GSC property, then run scripts/pull_mwcc_gsc.py manually or wait for Monday cron.</div>';
+  // ── Next 2 Weeks — Prioritised Action List (pulled from Work Queue source_page='seo') ──
+  try {
+    const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
+    const seoActions = wqItems
+      .filter(a => a.source_page === 'seo')
+      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'))
+      .slice(0, 8);
+
+    if (seoActions.length > 0) {
+      const effortBadge = e => {
+        const c = e === 'S' || e === 1 || e === 2 ? '#10b981'
+                : e === 'M' || (e>=3 && e<=6) ? '#f59e0b'
+                : '#ef4444';
+        const label = typeof e === 'number' ? (e<=2 ? 'S' : e<=6 ? 'M' : 'L') : e;
+        return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${label}</span>`;
+      };
+      html += sectionTitle('Next 2 Weeks — Prioritised Action List');
+      html += `<div class="card mb"><table>
+        <thead><tr>
+          <th style="width:24px">#</th>
+          <th>Action</th>
+          <th>Owner</th>
+          <th style="width:50px">Effort</th>
+          <th style="font-size:10px">Priority</th>
+        </tr></thead><tbody>
+        ${seoActions.map((a,i) => {
+          const prio = a.priority || 'P3';
+          const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
+          return `<tr>
+            <td style="font-weight:700;color:var(--mwcc-purple-deep)">${i+1}</td>
+            <td>
+              <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title||'—'}</div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.5">${(a.description||'').substring(0,200)}${(a.description||'').length>200?'…':''}</div>
+            </td>
+            <td style="font-size:11px"><b>${a.owner||'—'}</b>${a.owner_role?`<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>`:''}</td>
+            <td>${effortBadge(a.effort_hours||'M')}</td>
+            <td><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+        <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Auto-generated by <code>mwcc_seo_emitter.py</code> every Monday. Open <a href="#" onclick="nav(document.querySelector('[data-page=mwcc-work-queue]'));return false" style="color:var(--mwcc-purple)">Work Queue</a> to mark complete.</p>
+      </div>`;
+    }
+  } catch (e) {
+    console.warn('[renderMwccSeo] could not pull work-queue actions:', e);
   }
 
   el.innerHTML = html;
