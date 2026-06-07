@@ -8,6 +8,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This applies to: cron jobs (`crontab -l`), scheduled tasks, scripts, config files, API status, file contents, environment state, or anything that exists on disk or in the system. Read it, then answer.
 
+### Trigger phrases — when these appear in a request, the FIRST tool call MUST be a verification
+
+| If the request contains... | The required first action |
+|---|---|
+| `audit` | grep + ls the area being audited BEFORE forming opinions |
+| `review` | Read the actual files involved BEFORE summarising |
+| `what's in` / `what does X have` | ls or Read on X |
+| `is there` / `do we have` | grep or ls to confirm |
+| `before we [build / change / refactor] X` | check what already exists for X |
+| `plan for X` | check what already exists for X |
+| `is X working` | run X, check its logs, or check its state |
+| `flag the flaw` / `find issues` | grep + Read the actual files |
+
+If any of these phrases appear and your first tool call is NOT a verification, you have already broken the rule.
+
+### Verified-by-checking prefix — required for any audit / review / recommendation response
+
+Any response that makes claims about the project state MUST start with a "Verified by checking:" section listing what was actually checked.
+
+```
+Verified by checking:
+- ls scripts/ (found X)
+- grep "Y" docs/index.html (found N matches)
+- Read state/Z.json (confirmed shape)
+```
+
+If this section is empty or you can't fill it honestly, you have not done the work yet. Stop, run the tools, then write the response.
+
+### Conversation history is NOT a source of truth about current state
+
+Previous summaries (mine or yours) describe what was true at some past moment. Project state changes between turns. Areas not directly touched in the recent turn may have changed without notice.
+
+- Re-check the current state, especially after gaps in the conversation, after auto-compact, or for areas not directly touched in recent turns.
+- Treat "the previous response said X" as a hypothesis to verify, not a fact to repeat.
+
+### Why these reinforcements exist
+
+The original "Check Before Asserting" rule was abstract enough to be ignored without noticing — particularly during long audits where the failure mode is "writing a confident plan based on assumptions." The trigger-phrase list + verified-by-checking prefix + history-is-not-truth rule make the failure mode visible at write time, not after the user catches it.
+
+If you catch yourself drafting an audit/recommendation/plan and there's no "Verified by checking:" prefix yet, stop drafting and run the verifications.
+
 ## Critical Behavior: Read ENGINEERING.md Before Architectural Changes
 
 **Before modifying ANY of these areas, read `ENGINEERING.md` first.** It contains cookbooks, dispatcher patterns, RLS rules, and the cbState frontend conventions that prevent silent breakage:
