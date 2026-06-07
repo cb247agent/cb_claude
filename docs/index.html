@@ -31,7 +31,7 @@ body[data-business="mwcc"] .kpi-card.green{border-top-color:var(--mwcc-purple)}
 body[data-business="mwcc"] .kpi-card.green .value{color:var(--mwcc-purple-deep)}
 body[data-business="mwcc"] .section-title{color:var(--mwcc-purple-deep);border-bottom-color:var(--mwcc-purple-soft)}
 body[data-business="mwcc"] .card-h{color:var(--mwcc-purple-deep)}
-body[data-business="mwcc"] .insight.teal{background:var(--mwcc-purple-pale);border-color:var(--mwcc-purple-soft);color:var(--mwcc-purple-deep)}
+body[data-business="mwcc"] .insight.teal{background:#fff;border-color:var(--mwcc-purple-soft);border-left-color:var(--mwcc-purple);color:var(--mwcc-purple-deep)}
 body[data-business="mwcc"] .insight.teal .insight-label{color:var(--mwcc-purple-deep)}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 a{color:var(--teal);text-decoration:none}
@@ -119,13 +119,14 @@ code{font-family:'SF Mono',Menlo,monospace;font-size:.85em;background:var(--bg);
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 
 /* ── Insight / alert box ─────────────────────────── */
-.insight{border-radius:var(--radius);padding:14px 16px;margin-bottom:var(--gap);font-size:12.5px;line-height:1.6;border:1px solid var(--border);background:var(--card)}
-.insight.teal{background:var(--teal-mist);border-color:rgba(63,166,154,.25);border-left:3px solid var(--teal)}
-.insight.green{background:var(--teal-mist);border-color:rgba(63,166,154,.25);border-left:3px solid var(--teal)}
-.insight.red{background:#fff5f5;border-color:#fecaca;border-left:3px solid #ef4444}
-.insight.amber{background:#fffbeb;border-color:#fde68a;border-left:3px solid #f59e0b}
-.insight.neutral{background:#f9f9f9;border-left:3px solid var(--border-strong)}
-.insight.warn{background:#fffbeb;border-color:#fde68a;border-left:3px solid #f59e0b}
+/* Insight cards: border-only — backgrounds removed 07 Jun 2026 (Tia direction) */
+.insight{border-radius:var(--radius);padding:14px 16px;margin-bottom:var(--gap);font-size:12.5px;line-height:1.6;border:1px solid var(--border);background:#fff}
+.insight.teal{background:#fff;border-color:rgba(63,166,154,.45);border-left:3px solid var(--teal)}
+.insight.green{background:#fff;border-color:rgba(63,166,154,.45);border-left:3px solid var(--teal)}
+.insight.red{background:#fff;border-color:#fca5a5;border-left:3px solid #ef4444}
+.insight.amber{background:#fff;border-color:#fcd34d;border-left:3px solid #f59e0b}
+.insight.neutral{background:#fff;border-color:var(--border);border-left:3px solid var(--border-strong)}
+.insight.warn{background:#fff;border-color:#fcd34d;border-left:3px solid #f59e0b}
 .insight-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px}
 .insight.red .insight-label{color:#b91c1c}
 .insight.amber .insight-label{color:#92400e}
@@ -133,7 +134,7 @@ code{font-family:'SF Mono',Menlo,monospace;font-size:.85em;background:var(--bg);
 
 /* ── Tables ──────────────────────────────────────── */
 table{width:100%;border-collapse:collapse;font-size:12px}
-thead th{text-align:left;padding:8px 12px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border-strong);background:#fafafa;white-space:nowrap}
+thead th{text-align:left;padding:8px 12px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:2px solid var(--border-strong);background:#fff;white-space:nowrap}
 tbody td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:#fafafa}
@@ -359,7 +360,7 @@ tbody tr:hover td{background:#fafafa}
 .verdict-card.verdict-partial_win     {border-left-color:#d97706}
 .verdict-card.verdict-no_change       {border-left-color:#6b7280}
 .verdict-card.verdict-underperforming {border-left-color:#dc2626}
-.verdict-card.verdict-pending         {border-left-color:#9ca3af;background:#fafafa}
+.verdict-card.verdict-pending         {border-left-color:#9ca3af;background:#fff}
 .verdict-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .verdict-source-badge{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:3px;padding:2px 7px;background:#f3e8ff;color:#6b21a8;border:1px solid #c084fc}
 .verdict-source-badge.src-seo-organic     {background:#f3e8ff;color:#6b21a8;border-color:#c084fc}
@@ -408,8 +409,8 @@ tbody tr:hover td{background:#fafafa}
 .wq-legend-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0}
 .wq-legend-swatch.s-idea{background:#f8fafc;border:1px dashed #cbd5e1;opacity:.5}
 .wq-legend-swatch.s-inprog{background:#fff;border:1px solid var(--border);border-left:3px solid #6b7280}
-.wq-legend-swatch.s-angela{background:#fffbeb;border:1px solid #f59e0b;border-left:3px solid #f59e0b}
-.wq-legend-swatch.s-denver{background:#fff5f5;border:1px solid #ef4444;border-left:3px solid #ef4444}
+.wq-legend-swatch.s-angela{background:#fff;border:1px solid #f59e0b;border-left:3px solid #f59e0b}
+.wq-legend-swatch.s-denver{background:#fff;border:1px solid #ef4444;border-left:3px solid #ef4444}
 .wq-legend-swatch.s-sched{background:#fff;border:1px solid #3FA69A;border-left:3px solid #3FA69A}
 .wq-legend-swatch.s-pub{background:#3FA69A;border:1px solid #3FA69A}
 
@@ -432,9 +433,9 @@ tbody tr:hover td{background:#fafafa}
 .wq-card.s-idea .stage-line{color:var(--muted)}
 .wq-card.s-inprog{background:#fff;border:1px solid var(--border);border-left:3px solid #6b7280}
 .wq-card.s-inprog .stage-line{color:#6b7280}
-.wq-card.s-angela{background:#fffbeb;border:1px solid #f59e0b;border-left:3px solid #f59e0b}
+.wq-card.s-angela{background:#fff;border:1px solid #f59e0b;border-left:3px solid #f59e0b}
 .wq-card.s-angela .stage-line{color:#92400e}
-.wq-card.s-denver{background:#fff5f5;border:1px solid #ef4444;border-left:3px solid #ef4444}
+.wq-card.s-denver{background:#fff;border:1px solid #ef4444;border-left:3px solid #ef4444}
 .wq-card.s-denver .stage-line{color:#991b1b}
 .wq-card.s-sched{background:#fff;border:1px solid #3FA69A;border-left:3px solid #3FA69A;box-shadow:0 1px 3px rgba(63,166,154,.15)}
 .wq-card.s-sched .stage-line{color:var(--teal);font-weight:800}
@@ -9061,7 +9062,7 @@ function renderOverview() {
 
   // ── Data freshness banner ──────────────────────────────────────────────
   const ts = D.timestamps || {};
-  $('overview-freshness').innerHTML = `<div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px">
+  $('overview-freshness').innerHTML = `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px">
     <span><b style="color:var(--text-2)">GA4</b> ${ts.ga4||'–'}</span>
     <span><b style="color:var(--text-2)">GSC</b> ${ts.gsc||'–'}</span>
     <span><b style="color:var(--text-2)">Google Ads</b> ${ts.google_ads||'–'}</span>
@@ -9285,7 +9286,7 @@ function renderSEO() {
   // ── Data freshness banner — honest about what's live vs frozen ──────────
   let html = '';
   if (ahAs) {
-    html += `<div style="background:#fff8e1;border:1px solid #fcd34d;border-radius:6px;padding:8px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px">
+    html += `<div style="background:#fff;border:1px solid #fcd34d;border-radius:6px;padding:8px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px">
       <div style="color:#92400e">
         <b>Ahrefs frozen at ${ahAs}</b> — last good pull. Token exhausted on next billing cycle.
         <span style="color:var(--muted);margin-left:8px">GSC + GA4 + Screaming Frog are live.</span>
@@ -9451,15 +9452,15 @@ function renderSEO() {
       <div class="card">
         <div class="card-h">Issue Summary</div>
         <div class="kpi-grid cols-3" style="gap:8px;margin-bottom:14px">
-          <div style="padding:10px;border:1px solid #fca5a5;background:#fef2f2;border-radius:4px;text-align:center">
+          <div style="padding:10px;border:1px solid #fca5a5;border-left:3px solid #ef4444;background:#fff;border-radius:4px;text-align:center">
             <div style="font-size:18px;font-weight:700;color:#991b1b">${tech.errors||0}</div>
             <div style="font-size:9px;color:#7f1d1d;text-transform:uppercase;letter-spacing:.06em">Errors</div>
           </div>
-          <div style="padding:10px;border:1px solid #fcd34d;background:#fef9c3;border-radius:4px;text-align:center">
+          <div style="padding:10px;border:1px solid #fcd34d;border-left:3px solid #f59e0b;background:#fff;border-radius:4px;text-align:center">
             <div style="font-size:18px;font-weight:700;color:#92400e">${tech.warnings||0}</div>
             <div style="font-size:9px;color:#78350f;text-transform:uppercase;letter-spacing:.06em">Warnings</div>
           </div>
-          <div style="padding:10px;border:1px solid var(--border);background:#f9fafb;border-radius:4px;text-align:center">
+          <div style="padding:10px;border:1px solid var(--border);background:#fff;border-radius:4px;text-align:center">
             <div style="font-size:18px;font-weight:700;color:var(--muted)">${tech.notices||0}</div>
             <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Notices</div>
           </div>
@@ -9521,7 +9522,7 @@ function renderSEO() {
         : pos<=10
           ? 'Optimise H1 + meta description'
           : 'Build dedicated landing page';
-      return `<tr ${isQW?'style="background:#fffbeb"':''}>
+      return `<tr ${isQW?'style="border-left:3px solid #f59e0b"':''}>
         <td style="font-weight:${pos<=3?'700':'400'}">${kw.keyword}</td>
         <td class="num">${posBadge(pos)}</td>
         ${kwSource!=='gsc'?`<td class="num" style="color:var(--muted)">${kw.volume?fmt(kw.volume,'n'):'–'}</td>`:''}
@@ -9762,7 +9763,7 @@ function renderGAds() {
   if (ads.api_status === 'rate_limited') {
     const lastWeek = ads.last_good_week ? ` — week of <strong>${ads.last_good_week}</strong>` : '';
     const pulledAt = ads.data_pulled_at ? `<span style="margin-left:8px;font-size:11px;background:rgba(146,64,14,.12);padding:2px 8px;border-radius:99px;font-weight:600">${ads.data_pulled_at}</span>` : '';
-    statusBanner = `<div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px">
+    statusBanner = `<div style="background:#fff;border:1px solid #fbbf24;border-left:4px solid #fbbf24;border-radius:8px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px">
       <div>
         <div style="font-weight:700;color:#92400e;margin-bottom:6px">Google Ads API — Pending access upgrade${pulledAt}</div>
         <div style="font-size:12.5px;color:#78350f;line-height:1.7">
@@ -9950,7 +9951,7 @@ function renderGAds() {
         <div class="stat-row"><span class="stat-label">CPA</span><span class="stat-val good">${fmt(_starCPA,'$2')}</span></div>
         <div class="stat-row"><span class="stat-label">CTR · CPC</span><span class="stat-val">${_starCampaign.ctr}% · ${fmt(_starCampaign.cpc,'$2')}</span></div>
         <div class="stat-row"><span class="stat-label">Share of account</span><span class="stat-val">${_starShare}% spend · ${_starConvShare}% conv</span></div>
-        <div style="margin-top:14px;padding:10px 12px;background:rgba(63,166,154,.08);border-radius:4px;font-size:11.5px;line-height:1.6">
+        <div style="margin-top:14px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.3);border-left:3px solid var(--teal);border-radius:4px;font-size:11.5px;line-height:1.6">
           <b>Action:</b> Lift daily budget +25–30% over 2 weeks. CPA is ${blendedCPA > 0 ? (blendedCPA / _starCPA).toFixed(1) : '–'}× cheaper than account blended — significant headroom before diminishing returns kick in.
         </div>
       ` : '<div style="color:var(--muted);font-size:12px">No converting campaigns this week.</div>'}
@@ -10018,14 +10019,14 @@ function renderGAds() {
   } else {
     html += `<div class="grid-2 mb">
       <div class="card" style="overflow-x:auto;padding:0">
-        <div style="padding:10px 14px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:#f0f2f5;border-radius:8px 8px 0 0">Malaga — Google Ads Account</div>
+        <div style="padding:10px 14px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border-strong)">Malaga — Google Ads Account</div>
         ${campTableHead}
         ${[...campShared,...campMalaga].map(campRow).join('')}
         ${pMaxRow}
         </tbody></table>
       </div>
       <div class="card" style="overflow-x:auto;padding:0">
-        <div style="padding:10px 14px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);background:rgba(63,166,154,.08);border-radius:8px 8px 0 0">Ellenbrook — Google Ads Account</div>
+        <div style="padding:10px 14px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);border-bottom:2px solid rgba(63,166,154,.3)">Ellenbrook — Google Ads Account</div>
         ${campTableHead}
         ${[...campShared,...campEll].map(campRow).join('')}
         ${pMaxRow}
@@ -10519,7 +10520,7 @@ function renderGAds() {
   const _ao_ads = D.raw_agent_outputs || {};
   if (_ao_ads.has_outputs && _ao_ads.paid_ads) {
     html += `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:11px;color:var(--muted);padding:8px 0">Full Paid Ads Agent Report — ${_ao_ads.date}</summary>
-      <div style="font-size:12px;line-height:1.7;margin-top:8px;padding:12px;background:#fafafa;border-radius:6px">
+      <div style="font-size:12px;line-height:1.7;margin-top:8px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:6px">
         ${formatAgentMd(_ao_ads.paid_ads)}
       </div>
     </details>`;
@@ -10568,16 +10569,16 @@ function renderOrgSocial() {
   const liveCount = (sxMetricool ? 1 : 0) + (sxIg ? 1 : 0) + (sxFb ? 1 : 0) + (sxGbp ? 1 : 0);
   const metricoolRange = (sxMetricool && sxMetricool.date_range && sxMetricool.date_range.raw) || '';
   if (sxMetricool) {
-    html += `<div style="background:#e8f5f4;border:1px solid var(--teal);border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11.5px;color:#0a5e54">
+    html += `<div style="background:#fff;border:1px solid var(--teal);border-left:4px solid var(--teal);border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11.5px;color:#0a5e54">
       <b>Metricool PDF parsed: ${metricoolRange}</b> — full private metrics live (stories impressions, reach, demographics, GBP actions).
       <span style="color:var(--muted);margin-left:8px">Supplements: Apify ${sxIg?'IG':''} ${sxFb?'+ FB':''} ${(sxIg||sxFb)?'public benchmarks':''} ${sxGbp?'· GBP API per-location':''}</span>
     </div>`;
   } else if (liveCount === 0) {
-    html += `<div style="background:#fff8e1;border:1px solid #fcd34d;border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11.5px;color:#92400e">
+    html += `<div style="background:#fff;border:1px solid #fcd34d;border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11.5px;color:#92400e">
       <b>Showing 25–31 May 2026 hardcoded data</b> — drop metricool.pdf in <code style="background:#fef9c3;padding:1px 5px;border-radius:3px">cb247-inbox/</code> + run <code style="background:#fef9c3;padding:1px 5px;border-radius:3px">parse_metricool_pdf.py</code> to refresh.
     </div>`;
   } else {
-    html += `<div style="background:#fff8e1;border:1px solid #fcd34d;border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11.5px;color:#92400e">
+    html += `<div style="background:#fff;border:1px solid #fcd34d;border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11.5px;color:#92400e">
       <b>Mixed data sources (no Metricool PDF this week)</b> — ${liveCount}/4 live (Metricool pending · Instagram ${sxIg?'OK':'pending'} · Facebook ${sxFb?'OK':'pending'} · GBP API ${sxGbp?'OK':'pending'}). Missing fields fall back to 25–31 May extract.
     </div>`;
   }
@@ -10986,7 +10987,7 @@ function renderOrgSocial() {
   if (SX.unavailable_metrics && SX.unavailable_metrics.length > 0) {
     html += `<details style="margin-top:10px;font-size:11px;color:var(--muted)">
       <summary style="cursor:pointer;padding:6px 0">Data limitations — what's not available via current sources</summary>
-      <div style="padding:8px 12px;background:#fafafa;border-radius:4px;line-height:1.7">
+      <div style="padding:8px 12px;background:#fff;border:1px solid var(--border);border-radius:4px;line-height:1.7">
         <b>Switched from Metricool to Apify + GBP API to remove subscription dependency.</b><br>
         The following Metricool fields are not accessible via public scraping:
         <ul style="margin:4px 0 0;padding-left:18px">
@@ -12424,7 +12425,7 @@ function renderPlanner() {
   </div>`;
 
   // ── Approval flow reminder ───────────────────────────────────────────────
-  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:11px;color:var(--text-2)">
+  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:11px;color:var(--text-2)">
     <span style="font-weight:700;color:var(--teal)">Approval flow:</span>
     <span>AI / team drafts</span><span style="color:var(--muted)">→</span>
     <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
@@ -12530,7 +12531,7 @@ function renderPlanner() {
         return d.getTime() === _colDate.getTime();
       });
       const _colDateStr = _colDate.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
-      return `<div style="background:#f9fafb;border:1px solid ${_isToday?'#3FA69A':'var(--border)'};border-radius:6px;overflow:hidden">
+      return `<div style="background:#fff;border:1px solid ${_isToday?'#3FA69A':'var(--border)'};${_isToday?'border-left:3px solid #3FA69A;':''}border-radius:6px;overflow:hidden">
         <div style="padding:7px 8px;background:${_isToday?'rgba(63,166,154,.08)':'var(--bg)'};border-bottom:2px solid ${_isToday?'#3FA69A':'var(--border)'}">
           <div style="font-size:10px;font-weight:700;color:${_isToday?'#3FA69A':'var(--text-2)'};text-transform:uppercase;letter-spacing:.05em">${dayName}${_isToday?' ·&nbsp;Today':''}</div>
           <div style="font-size:10px;color:var(--muted);margin-top:1px">${_colDateStr}</div>
@@ -12839,13 +12840,13 @@ function renderContentReview() {
       ${pendingStat}
     </div>`;
     if (decided > 0) {
-      html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+      html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
         <b>Hit rate this cycle:</b> ${winners} of ${decided} decided actions hit their primary target = <b>${hitRate}%</b>.
         ${pendingVerdict > 0 ? ` ${pendingVerdict} action${pendingVerdict !== 1 ? 's' : ''} still awaiting human verdict (qualitative).` : ''}
         ${awaitingMeasure.length > 0 ? ` ${awaitingMeasure.length} more action${awaitingMeasure.length !== 1 ? 's' : ''} still awaiting measurement.` : ''}
       </div>`;
     } else if (pendingVerdict > 0 || awaitingMeasure.length > 0) {
-      html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+      html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
         <b>No decided verdicts yet this cycle.</b>
         ${pendingVerdict > 0 ? `${pendingVerdict} qualitative action${pendingVerdict !== 1 ? 's' : ''} awaiting your verdict.` : ''}
         ${awaitingMeasure.length > 0 ? `${awaitingMeasure.length} action${awaitingMeasure.length !== 1 ? 's' : ''} still in the measurement window.` : ''}
@@ -12890,27 +12891,27 @@ function renderContentReview() {
       This page intentionally only shows verdicts. For raw performance numbers — top queries, ad spend, member churn, GBP reviews — open the dedicated page for that channel.
     </p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=seo]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=seo]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#f3e8ff;color:#6b21a8;padding:2px 7px;border-radius:3px;font-weight:700">SEO</span>
         SEO &amp; Organic
       </a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=google-ads]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=google-ads]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-weight:700">ADS</span>
         Google Ads
       </a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=meta-ads]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=meta-ads]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#ede9fe;color:#5b21b6;padding:2px 7px;border-radius:3px;font-weight:700">META</span>
         Meta Ads
       </a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=organic-social]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=organic-social]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#fce7f3;color:#9d174d;padding:2px 7px;border-radius:3px;font-weight:700">SOC</span>
         Organic Social
       </a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=gbp]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=gbp]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:rgba(63,166,154,.15);color:#3FA69A;padding:2px 7px;border-radius:3px;font-weight:700">GBP</span>
         Google Business Profile
       </a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=cb247-membership]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=cb247-membership]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#f0fdf4;color:#15803d;padding:2px 7px;border-radius:3px;font-weight:700">MEM</span>
         Membership Statistics
       </a>
@@ -13145,7 +13146,7 @@ function renderReadme() {
         </div>
       </div>
 
-      <div style="background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:8px;padding:14px;margin-top:4px;font-size:12px;line-height:1.6">
+      <div style="background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:8px;padding:14px;margin-top:4px;font-size:12px;line-height:1.6">
         <strong>Total runtime: ~60 min.</strong> Phase 1 ~20 min (API calls). Phase 2–4 ~40 min (9 AI agents sequential). Phase 5 bakes HTML report + dashboard, pushes to GitHub Pages, sends Tia's email.
       </div>
     </div>
@@ -13529,7 +13530,7 @@ function openTrackerDetail(id) {
       <div class="outcome-cell"><div class="label">Status</div><div class="val" style="font-size:13px">${statIcon}</div></div>
       <div class="outcome-cell"><div class="label">Due Date</div><div class="val" style="font-size:13px">${a.due_date||'—'}</div></div>
     </div>
-    ${a.adjusted_brief?`<div style="margin-top:12px;background:#fffbeb;border-left:3px solid var(--amber);padding:10px 12px;border-radius:4px;font-size:12px"><strong>Adjustment:</strong> ${a.adjusted_brief}</div>`:''}
+    ${a.adjusted_brief?`<div style="margin-top:12px;background:#fff;border:1px solid #fcd34d;border-left:3px solid var(--amber);padding:10px 12px;border-radius:4px;font-size:12px"><strong>Adjustment:</strong> ${a.adjusted_brief}</div>`:''}
     ${a.decision_notes?`<div style="margin-top:8px;font-size:12px;color:var(--muted)"><strong>Notes:</strong> ${a.decision_notes}</div>`:''}
     ${impactHTML}
     ${a.outcome_verdict?`<div style="margin-top:12px;font-size:13px;font-weight:700" class="verdict-${a.outcome_verdict}">Outcome: ${a.outcome_verdict.replace('_',' ')}</div>`:''}
@@ -13613,7 +13614,7 @@ function renderMwccOverview() {
   let html = '';
 
   // ── Data freshness banner ─────────────────────────────────────────────
-  html += `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  html += `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>OWNA Ops</b> ${ops.generated_at ? ops.generated_at.slice(0,10) : '–'}</span>
     <span><b>Meta Ads</b> ${meta.generated_at ? meta.generated_at.slice(0,10) : '–'}</span>
     <span><b>Google Ads</b> ${ads.generated_at ? ads.generated_at.slice(0,10) : '–'}</span>
@@ -13663,7 +13664,7 @@ function renderMwccOverview() {
 
   // ── Hero card: enquiry-to-enrolment funnel highlight (when good) ──────
   if (enqConvPct !== null && enqConvPct >= 40 && totalEnq > 0) {
-    html += `<div class="card mb" style="background:linear-gradient(135deg,var(--mwcc-purple-pale) 0%,#fff 70%);border:1px solid var(--mwcc-purple);padding:18px 24px">
+    html += `<div class="card mb" style="background:#fff;border:1px solid var(--mwcc-purple);border-left:4px solid var(--mwcc-purple);padding:18px 24px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">
         <div>
           <div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Strongest Funnel Story</div>
@@ -13770,7 +13771,7 @@ function renderMwccMeta() {
   const weekLabel = (meta.date_range?.start && meta.date_range?.end) ? `${meta.date_range.start} – ${meta.date_range.end}` : 'Latest week';
 
   // ── Data freshness banner ──
-  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>Meta Ads</b> ${meta.generated_at ? meta.generated_at.slice(0,10) : '–'} (${weekLabel})</span>
     <span><b>Account ID</b> ${meta.account_id || '–'}</span>
   </div>`;
@@ -13913,7 +13914,7 @@ function renderMwccGads() {
   const cpaChg   = chgPct(cpa,   pCPA);
 
   // ── Data freshness banner ──
-  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>Google Ads</b> ${ads.generated_at ? ads.generated_at.slice(0,10) : '–'} (${weekLabel})</span>
     <span><b>Customer ID</b> ${ads.customer_id || '–'}</span>
   </div>`;
@@ -14273,7 +14274,7 @@ function renderMwccOrgSocial() {
   const el = $('mwcc-orgsoc-content');
   if (!el) return;
   el.innerHTML = `
-    <div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
       <span><b>Organic Social</b> — awaiting Metricool credentials</span>
       <span style="color:var(--muted)">Facebook + Instagram metrics will appear here once integration is live</span>
     </div>
@@ -14289,7 +14290,7 @@ function renderMwccOrgSocial() {
     </div>
     ${sectionTitle('Platforms Tracked')}
     <div class="card mb" style="padding:0">
-      <table style="width:100%"><thead><tr style="background:var(--mwcc-purple-mist)">
+      <table style="width:100%"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
         <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Platform</th>
         <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Page / Handle</th>
         <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Metrics Planned</th>
@@ -14329,7 +14330,7 @@ function renderMwccWebsite() {
 
   if (ga4.available === false) {
     el.innerHTML = `
-      <div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+      <div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
         <span><b>Website Analytics</b> — awaiting GA4 connection</span>
         <span style="color:var(--muted)">GA4 property ID 315149021 ready; awaiting .env wire + service-account access</span>
       </div>
@@ -14347,7 +14348,7 @@ function renderMwccWebsite() {
       <div class="card mb" style="padding:18px 24px;border-left:4px solid var(--mwcc-purple)">
         <div style="font-size:12px;color:var(--mwcc-purple-deep);font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em">Required .env variable</div>
         <table style="width:100%;margin-bottom:14px">
-          <thead><tr style="background:var(--mwcc-purple-mist)">
+          <thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">
             <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Variable</th>
             <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Value</th>
           </tr></thead>
@@ -14375,7 +14376,7 @@ function renderMwccWebsite() {
 
   // ── Populated state ──
   const genDate = (ga4.generated_at || '').slice(0,10);
-  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>GA4</b> ${genDate || '–'}</span>
     <span><b>Property</b> 315149021</span>
     <span><b>Sessions</b> ${_mwccFmt(ga4.sessions)}</span>
@@ -14389,14 +14390,14 @@ function renderMwccWebsite() {
   const topPages = ga4.top_pages || [];
   if (topPages.length) {
     html += sectionTitle('Top Pages');
-    html += '<div class="card mb" style="padding:0"><table style="width:100%"><thead><tr style="background:var(--mwcc-purple-mist)"><th style="padding:10px 14px;text-align:left">Page</th><th class="num" style="padding:10px 14px">Sessions</th><th class="num" style="padding:10px 14px">Users</th><th class="num" style="padding:10px 14px">Events</th></tr></thead><tbody>';
+    html += '<div class="card mb" style="padding:0"><table style="width:100%"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)"><th style="padding:10px 14px;text-align:left">Page</th><th class="num" style="padding:10px 14px">Sessions</th><th class="num" style="padding:10px 14px">Users</th><th class="num" style="padding:10px 14px">Events</th></tr></thead><tbody>';
     for (const p of topPages.slice(0,10)) html += `<tr style="border-top:1px solid var(--border)"><td style="padding:8px 14px;font-size:11.5px">${p.page_path||p.page||'/'}</td><td class="num" style="padding:8px 14px">${_mwccFmt(p.sessions)}</td><td class="num" style="padding:8px 14px">${_mwccFmt(p.active_users||p.users)}</td><td class="num" style="padding:8px 14px">${_mwccFmt(p.key_events||p.events)}</td></tr>`;
     html += '</tbody></table></div>';
   }
   const channels = ga4.by_channel || {};
   if (Object.keys(channels).length) {
     html += sectionTitle('Traffic by Channel');
-    html += '<div class="card mb" style="padding:0"><table style="width:100%"><thead><tr style="background:var(--mwcc-purple-mist)"><th style="padding:10px 14px;text-align:left">Channel</th><th class="num" style="padding:10px 14px">Sessions</th><th class="num" style="padding:10px 14px">Users</th></tr></thead><tbody>';
+    html += '<div class="card mb" style="padding:0"><table style="width:100%"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)"><th style="padding:10px 14px;text-align:left">Channel</th><th class="num" style="padding:10px 14px">Sessions</th><th class="num" style="padding:10px 14px">Users</th></tr></thead><tbody>';
     for (const [ch,v] of Object.entries(channels)) html += `<tr style="border-top:1px solid var(--border)"><td style="padding:8px 14px">${ch}</td><td class="num" style="padding:8px 14px">${_mwccFmt(v.sessions)}</td><td class="num" style="padding:8px 14px">${_mwccFmt(v.users)}</td></tr>`;
     html += '</tbody></table></div>';
   }
@@ -14487,7 +14488,7 @@ function renderMwccOccupancy() {
   const avgOccDelta = priorAvgOcc !== null ? avgOcc - priorAvgOcc : null;
 
   // ── Data freshness banner (NO wage threshold mention) ──
-  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>OWNA Report</b> ${genDate} (${periodLabel})</span>
     <span><b>Centres</b> ${centreArr.length}</span>
     <span><b>Active rooms</b> ${activeRooms} / ${totalRooms}</span>
@@ -14720,7 +14721,7 @@ function renderMwccOccupancy() {
     if (enrolmentActions.length) {
       html += sectionTitle('Recommended Actions — Pulled from Work Queue');
       html += '<div class="card mb" style="padding:0">';
-      html += '<table style="width:100%;font-size:12px"><thead><tr style="background:var(--mwcc-purple-mist)">' +
+      html += '<table style="width:100%;font-size:12px"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">' +
         '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Priority</th>' +
         '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Action</th>' +
         '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Owner</th>' +
@@ -14793,7 +14794,7 @@ function renderMwccEnrolments() {
   const worstCentre = sortedByNet[sortedByNet.length-1];
 
   // ── Data freshness banner ──
-  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>OWNA Report</b> ${genDate} (${periodLabel})</span>
     <span><b>Centres</b> ${centreArr.length}</span>
     <span><b>Tour conv</b> ${enqConvPct!==null ? enqConvPct+'%' : '—'}</span>
@@ -14878,7 +14879,7 @@ function renderMwccEnrolments() {
 
   // ── Centre Detail table with WoW ──
   html += sectionTitle('Centre Detail');
-  html += '<div class="card mb" style="padding:0"><table><thead><tr style="background:var(--mwcc-purple-mist)">' +
+  html += '<div class="card mb" style="padding:0"><table><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">' +
     '<th style="padding:10px 14px;text-align:left">Centre</th>' +
     '<th class="num" style="padding:10px 14px">Enquiries</th>' +
     '<th class="num" style="padding:10px 14px">Enrolments</th>' +
@@ -14908,7 +14909,7 @@ function renderMwccEnrolments() {
       <td class="num" style="padding:10px 14px"><span class="stat-val ${occ>=70?'good':occ<50?'bad':''}">${occ}%</span></td>
     </tr>`;
   }
-  html += `<tr style="font-weight:700;border-top:2px solid var(--border-strong);background:var(--mwcc-purple-mist)">
+  html += `<tr style="font-weight:700;border-top:2px solid var(--border-strong);border-bottom:2px solid var(--mwcc-purple-soft)">
     <td style="padding:10px 14px;color:var(--mwcc-purple-deep)">TOTAL</td>
     <td class="num" style="padding:10px 14px">${totEnq}</td>
     <td class="num" style="padding:10px 14px">${totEnrol}</td>
@@ -14929,7 +14930,7 @@ function renderMwccEnrolments() {
     if (enrolmentActions.length) {
       html += sectionTitle('Recommended Actions — Pulled from Work Queue');
       html += '<div class="card mb" style="padding:0">';
-      html += '<table style="width:100%;font-size:12px"><thead><tr style="background:var(--mwcc-purple-mist)">' +
+      html += '<table style="width:100%;font-size:12px"><thead><tr style="border-bottom:2px solid var(--mwcc-purple-soft)">' +
         '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Priority</th>' +
         '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Action</th>' +
         '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Owner</th>' +
@@ -15109,7 +15110,7 @@ function renderCb247Membership() {
   const netContractsPrior = (pt.NewContracts||0) - (pt.EndedContracts||0);
 
   // ── Data freshness banner ──────────────────────────────────────────────
-  let html = `<div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px">
     <span><b style="color:var(--text-2)">PGM</b> ${period||'no data'}</span>
     <span><b style="color:var(--text-2)">Parsed</b> ${(M.parsed_at||'').slice(0,10)}</span>
     <span><b style="color:var(--text-2)">CleverWaiver</b> ${cw.available ? cw.total_responses + ' responses' : 'no responses'}</span>
@@ -15271,7 +15272,7 @@ function renderCb247Membership() {
         <td><span style="font-size:9px;background:${ratio>2.5?'#fef2f2':ratio>1.5?'#fef9c3':'#e8f5f4'};color:${ratio>2.5?'#991b1b':ratio>1.5?'#92400e':'#0a5e54'};padding:2px 7px;border-radius:3px;font-weight:700">${ratio.toFixed(1)}× higher</span></td>
       </tr>`;
     }).join('')}
-    <tr style="background:#fafafa;font-weight:700">
+    <tr style="border-top:2px solid var(--border-strong);font-weight:700">
       <td>Total</td>
       <td class="num"><b>${newPpl}</b><br><span style="font-size:10px;color:var(--muted);font-weight:400">${fmt(t.NewContracts,'n')} contracts</span></td>
       <td class="num bad"><b>${submPpl}</b><br><span style="font-size:10px;color:var(--muted);font-weight:400">of ${fmt(t.EndedContracts,'n')} ended</span></td>
@@ -15506,7 +15507,7 @@ function renderMwccSeo() {
   const ga4OrgUsers    = ga4Channels[_organicChannelKey]?.users    || 0;
 
   // ── Data freshness banner ──
-  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>GSC</b> ${gsc.generated_at ? gsc.generated_at.slice(0,10) : '–'} (${period})</span>
     <span><b>GA4</b> ${ga4.generated_at ? ga4.generated_at.slice(0,10) : '–'}</span>
     <span><b>Ahrefs</b> ${ah.generated_at ? ah.generated_at.slice(0,10) : 'awaiting Monday pull'}</span>
@@ -15660,7 +15661,7 @@ function renderMwccSeo() {
           : pos <= 20
             ? 'Refresh content + add internal links'
             : 'Build dedicated landing page';
-      return `<tr ${isQW?'style="background:#fffbeb"':''}>
+      return `<tr ${isQW?'style="border-left:3px solid #f59e0b"':''}>
         <td style="font-weight:${pos<=3?'700':'400'};font-size:12px">${kw.keyword}</td>
         <td class="num">${posBadge(pos)}</td>
         <td class="num">${_mwccFmt(kw.impressions)}</td>
@@ -15821,7 +15822,7 @@ function renderMwccGbp() {
 
   if (!hasAnyData) {
     el.innerHTML = `
-      <div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+      <div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
         <span><b>GBP</b> Awaiting first pull</span>
         <span><b>5 location IDs</b> configured in .env</span>
       </div>
@@ -15866,7 +15867,7 @@ function renderMwccGbp() {
   const totalPhotos  = centresData.reduce((s,c) => s + ((c && c.photos) || 0), 0);
   const lowRated     = centresData.filter(c => c && c.rating && c.rating < 4.5).length;
 
-  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+  let html = `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>GBP</b> ${gbp.generated_at ? gbp.generated_at.slice(0,10) : '–'}</span>
     <span><b>5 centres</b> tracked</span>
   </div>`;
@@ -15953,7 +15954,7 @@ function renderMwccContentPlanner() {
   </div>`;
 
   // ── Approval flow ──
-  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:11px;color:var(--text-2)">
+  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:11px;color:var(--text-2)">
     <span style="font-weight:700;color:var(--teal)">Approval flow:</span>
     <span>AI / team drafts</span><span style="color:var(--muted)">→</span>
     <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
@@ -16098,13 +16099,13 @@ function renderMwccContentReview() {
   </div>`;
 
   if (decided > 0) {
-    html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+    html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
       <b>Hit rate this cycle:</b> ${winners} of ${decided} decided actions hit their primary target = <b>${hitRate}%</b>.
       ${pendingVerdict > 0 ? ` ${pendingVerdict} qualitative awaiting your verdict.` : ''}
       ${awaitingMeasure.length > 0 ? ` ${awaitingMeasure.length} more awaiting measurement.` : ''}
     </div>`;
   } else if (pendingVerdict > 0 || awaitingMeasure.length > 0) {
-    html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+    html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
       <b>No decided verdicts yet this cycle.</b>
       ${pendingVerdict > 0 ? ` ${pendingVerdict} qualitative awaiting your verdict.` : ''}
       ${awaitingMeasure.length > 0 ? ` ${awaitingMeasure.length} action${awaitingMeasure.length !== 1 ? 's' : ''} still in measurement window.` : ''}
@@ -16143,17 +16144,17 @@ function renderMwccContentReview() {
       This page only shows verdicts on MWCC actions. For raw performance numbers — top queries, ad spend, occupancy, enrolments — open the dedicated MWCC page.
     </p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-seo]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-seo]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#f3e8ff;color:#6b21a8;padding:2px 7px;border-radius:3px;font-weight:700">SEO</span>SEO & Organic</a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-google-ads]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-google-ads]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-weight:700">ADS</span>Google Ads</a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-meta]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-meta]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#ede9fe;color:#5b21b6;padding:2px 7px;border-radius:3px;font-weight:700">META</span>Meta Ads</a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-enrolments]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-enrolments]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#f0fdf4;color:#15803d;padding:2px 7px;border-radius:3px;font-weight:700">MEM</span>Enrolments</a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-occupancy]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-occupancy]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:#fce7f3;color:#9d174d;padding:2px 7px;border-radius:3px;font-weight:700">OCC</span>Occupancy</a>
-      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-organic-social]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-organic-social]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
         <span style="font-size:10px;background:rgba(63,166,154,.15);color:#3FA69A;padding:2px 7px;border-radius:3px;font-weight:700">SOC</span>Organic Social</a>
     </div>
   </div>`;
