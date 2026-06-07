@@ -15763,81 +15763,213 @@ function renderMwccEnrolments() {
 
 // ── Group Overview ────────────────────────────────────────────────────────────
 function renderGroupOverview() {
+  // ─── Tier 1 rebuild 07 Jun 2026 (Tia direction):
+  //     · Remove wage-breach mention (rule)
+  //     · Border-only LIVE / SETUP badges (rule)
+  //     · Add data freshness banner
+  //     · Add Executive Verdict
+  //     · Add WoW deltas on spend KPIs
+  //     · Standardise Primary KPI column
+  //     · Clickable business rows → drill to that biz
   const el = $('group-overview-content');
   if (!el) return;
 
-  // CB247 spend from embedded DASHBOARD_DATA
-  const cb247Meta   = (D.meta && D.meta.total_spend) || 0;
-  const cb247Google = (D.google_ads && D.google_ads.spend) || 0;
-  const cb247Spend  = cb247Meta + cb247Google;
+  // ── CB247 data ────────────────────────────────────────────────────────────
+  const cb247Meta     = (D.meta && D.meta.total_spend) || 0;
+  const cb247Google   = (D.google_ads && D.google_ads.spend) || 0;
+  const cb247Spend    = cb247Meta + cb247Google;
+  const cb247Sessions = D.ga4?.sessions || 0;
+  // CB247 prior-week spend (graceful — fields vary across bakes)
+  const cb247MetaPrior   = D.meta?.previous_spend
+                        || D.meta?.history?.[1]?.totals?.spend
+                        || 0;
+  const cb247GooglePrior = D.google_ads?.previous_spend
+                        || D.google_ads?.history?.[1]?.totals?.spend
+                        || 0;
+  const cb247SpendPrior  = cb247MetaPrior + cb247GooglePrior;
+  // Membership net movement (if loaded)
+  const M = window.MEMBERSHIP_DATA;
+  const cb247NewMembers   = M?.summary?.unique_base?.new?.Total || 0;
+  const cb247Cancellations = M?.summary?.unique_base?.submitted_cancellation?.Total || 0;
+  const cb247NetMembers   = cb247NewMembers - cb247Cancellations;
 
-  // MWCC spend from MWCC_DATA
-  const md        = window.MWCC_DATA || {};
-  const mwccMeta  = md.meta?.summary?.spend || 0;
-  const mwccGoogle= md.ads?.totals?.spend   || 0;
-  const mwccSpend = mwccMeta + mwccGoogle;
+  // ── MWCC data ─────────────────────────────────────────────────────────────
+  const md          = window.MWCC_DATA || {};
+  const mwccMeta    = md.meta?.summary?.spend || 0;
+  const mwccGoogle  = md.ads?.totals?.spend   || 0;
+  const mwccSpend   = mwccMeta + mwccGoogle;
+  const mwccSessions = md.ga4?.sessions || 0;
   const mwccCentres = md.ops?.centres || {};
   const mwccCentreArr = Object.values(mwccCentres);
   const mwccAvgOcc = mwccCentreArr.length
     ? Math.round(mwccCentreArr.reduce((s,c)=>s+(c.occupancy?.Overall||0),0)/mwccCentreArr.length)
     : null;
+  const mwccNet         = md.ops?.network_summary?.net_movement;
+  const mwccEnrolments  = md.ops?.network_summary?.total_enrolments || 0;
+  const mwccMetaPrior   = md.meta_history?.[1]?.summary?.spend || 0;
+  const mwccGooglePrior = md.ads_history?.[1]?.totals?.spend || 0;
+  const mwccSpendPrior  = mwccMetaPrior + mwccGooglePrior;
 
-  const groupTotal = cb247Spend + mwccSpend;
+  // ── Group totals + WoW deltas ─────────────────────────────────────────────
+  const groupTotal      = cb247Spend + mwccSpend;
+  const groupTotalPrior = cb247SpendPrior + mwccSpendPrior;
+  const _wow = (cur, prev) => (prev > 0) ? +(((cur - prev) / prev) * 100).toFixed(1) : null;
+  const groupChg = _wow(groupTotal, groupTotalPrior);
+  const cb247Chg = _wow(cb247Spend, cb247SpendPrior);
+  const mwccChg  = _wow(mwccSpend,  mwccSpendPrior);
 
-  let html = `
-  <div class="section-title">Total Group Ad Spend</div>
-  <div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Group Total','$'+groupTotal.toFixed(0),null,'Meta + Google · all businesses')}
-    ${kpiCard('','CB247 Gym','$'+cb247Spend.toFixed(0),null,cb247Spend>0?`Meta $${cb247Meta.toFixed(0)} · Google $${cb247Google.toFixed(0)}`:'Connect credentials')}
-    ${kpiCard('','My World Childcare','$'+mwccSpend.toFixed(0),null,mwccSpend>0?`Meta $${mwccMeta.toFixed(0)} · Google $${mwccGoogle.toFixed(0)}`:'Partial data')}
-    ${kpiCard('','Karribank + Sparrows','—',null,'Not yet connected')}
-  </div>
+  // ── Freshness timestamps ──────────────────────────────────────────────────
+  const cb247Refresh = (D.timestamps?.refresh || D.timestamps?.refreshed || D.report_period || '').toString().slice(0,16) || '—';
+  const mwccRefresh  = (md.generated || md.generated_at || '').toString().slice(0,16) || '—';
 
-  <div class="section-title">Businesses</div>
-  <div class="card mb"><table>
-    <thead><tr><th>Business</th><th>Type</th><th class="num">Meta Spend</th><th class="num">Google Spend</th><th class="num">Total Spend</th><th class="num">Key Metric</th><th>Status</th></tr></thead>
+  // ── Connected biz count for verdict ───────────────────────────────────────
+  const liveBizCount = (cb247Spend > 0 ? 1 : 0) + (mwccSpend > 0 || mwccCentreArr.length ? 1 : 0);
+
+  let html = '';
+
+  // ── 1. Data freshness banner ──────────────────────────────────────────────
+  html += `<div style="background:#fff;border:1px solid var(--border);border-left:3px solid var(--brand-accent);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--text-2);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>CB247 refresh</b> ${cb247Refresh}</span>
+    <span><b>MWCC refresh</b> ${mwccRefresh}</span>
+    <span><b>${liveBizCount} of 4</b> businesses LIVE</span>
+    <span style="color:var(--muted)">Click any business row below to drill in</span>
+  </div>`;
+
+  // ── 2. Executive Verdict ──────────────────────────────────────────────────
+  // Where we are: high-level group state
+  const _vWhereWeAre = `Group spent <b>$${groupTotal.toFixed(0)}</b> across ${liveBizCount} live business${liveBizCount===1?'':'es'} this week${groupChg!==null?` (${groupChg>0?'+':''}${groupChg}% WoW)`:''}.
+    CB247 drove <b>${cb247Sessions.toLocaleString()} sessions</b>${cb247NewMembers?` and ${cb247NewMembers} new members`:''}.
+    MWCC drove <b>${mwccEnrolments} enrolments</b>${mwccAvgOcc!==null?` at <b>${mwccAvgOcc}% network occupancy</b>`:''} and <b>${mwccSessions.toLocaleString()} sessions</b>.`;
+  // Biggest movement detector
+  let _vRisk = '';
+  const cb247Abs = Math.abs(cb247Chg || 0);
+  const mwccAbs  = Math.abs(mwccChg || 0);
+  if (cb247Abs > 15 || mwccAbs > 15) {
+    if (cb247Abs > mwccAbs) {
+      _vRisk = `<b>CB247 ad spend ${cb247Chg > 0 ? 'up' : 'down'} ${cb247Abs.toFixed(1)}% WoW</b> — ${cb247Chg < 0 ? 'budget pulled or accounts paused?' : 'verify intentional ramp before next Monday'}.`;
+    } else {
+      _vRisk = `<b>MWCC ad spend ${mwccChg > 0 ? 'up' : 'down'} ${mwccAbs.toFixed(1)}% WoW</b> — ${mwccChg < 0 ? 'check for paused campaigns' : 'verify intentional ramp before next Monday'}.`;
+    }
+  } else if (cb247NetMembers < -5) {
+    _vRisk = `<b>CB247 net member movement ${cb247NetMembers}</b> — more cancellations than new joins. Membership team to investigate.`;
+  } else if (mwccNet !== undefined && mwccNet < 0) {
+    _vRisk = `<b>MWCC net enrolments ${mwccNet}</b> — exits outpace enrolments. Kelley to pull cancellation reasons from OWNA.`;
+  } else if (liveBizCount < 2) {
+    _vRisk = `Only ${liveBizCount} business${liveBizCount===1?'':'es'} reporting — others need credential wire-up before they show here.`;
+  } else {
+    _vRisk = 'No material WoW movement across the group. Standard cycle.';
+  }
+  // Top priority
+  let _vPriority = '';
+  if (mwccNet !== undefined && mwccNet < 0) {
+    _vPriority = `Kelley audits MWCC cancel reasons by Friday. If competitor-switching detected, escalate to Tia.`;
+  } else if (cb247NetMembers < -5) {
+    _vPriority = `Angela pulls CB247 cancellation patterns for Monday meeting. Review retention offers.`;
+  } else if (groupTotal === 0) {
+    _vPriority = `Wire up Meta + Google credentials for CB247 + MWCC. No spend means no measurement.`;
+  } else {
+    _vPriority = `Review each business's Work Queue for P1 actions. Drill into the row of biggest WoW change first.`;
+  }
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Group Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${liveBizCount} live · 4 total</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_vWhereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_vRisk}</div>
+      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_vPriority}</div>
+    </div>
+  </div>`;
+
+  // ── 3. KPI cards with WoW deltas ──────────────────────────────────────────
+  html += sectionTitle('Total Group Ad Spend');
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Group Total','$'+groupTotal.toFixed(0), groupChg, 'Meta + Google · all live businesses', groupChg!==null && groupChg>=0?'green':'')}
+    ${kpiCard('','CB247 Gym','$'+cb247Spend.toFixed(0), cb247Chg, cb247Spend>0?`Meta $${cb247Meta.toFixed(0)} · Google $${cb247Google.toFixed(0)}`:'Connect credentials', cb247Spend>0?'green':'')}
+    ${kpiCard('','My World Childcare','$'+mwccSpend.toFixed(0), mwccChg, mwccSpend>0?`Meta $${mwccMeta.toFixed(0)} · Google $${mwccGoogle.toFixed(0)}`:'Partial data', mwccSpend>0?'green':'')}
+    ${kpiCard('','Karribank + Sparrows','—', null, '0 of 2 connected · setup pending')}
+  </div>`;
+
+  // ── 4. Businesses table — clickable rows + standardised Primary KPI ──────
+  // LIVE / SETUP badges are now border-only (no fills per design rule)
+  const _liveBadge  = '<span style="font-size:10px;border:1px solid var(--teal);color:var(--teal-dim);padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.03em">LIVE</span>';
+  const _setupBadge = '<span style="font-size:10px;border:1px solid #f59e0b;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.03em">SETUP</span>';
+  // Clickable row helper — guards against missing biz tab
+  const _rowClick = (biz) => `style="cursor:pointer" onclick="(function(){const t=document.querySelector('.biz-tab[data-biz=\\'${biz}\\']');if(t&&!t.classList.contains('coming-soon'))switchBiz(t);})();return false"`;
+
+  // CB247 Primary KPI
+  const cb247Primary = cb247Sessions > 0
+    ? `<b>${cb247Sessions.toLocaleString()}</b> sessions${cb247NewMembers?`<div style="font-size:10px;color:var(--muted)">${cb247NewMembers} new · net ${cb247NetMembers>=0?'+':''}${cb247NetMembers} members</div>`:''}`
+    : '—';
+  // MWCC Primary KPI
+  const mwccPrimary = mwccSessions > 0 || mwccEnrolments > 0
+    ? `<b>${mwccSessions.toLocaleString()}</b> sessions<div style="font-size:10px;color:var(--muted)">${mwccEnrolments} enrolments · net ${mwccNet!==undefined?(mwccNet>=0?'+':'')+mwccNet:'—'}${mwccAvgOcc!==null?` · ${mwccAvgOcc}% occ`:''}</div>`
+    : '—';
+
+  html += sectionTitle('Businesses');
+  html += `<div class="card mb"><table>
+    <thead><tr>
+      <th>Business</th>
+      <th>Type</th>
+      <th class="num">Meta Spend</th>
+      <th class="num">Google Spend</th>
+      <th class="num">Total Spend</th>
+      <th>Primary KPI</th>
+      <th>Status</th>
+    </tr></thead>
     <tbody>
-      <tr>
+      <tr ${_rowClick('cb247')}>
         <td style="font-weight:600">CB247 Gym</td>
         <td style="font-size:11.5px;color:var(--muted)">24/7 Gym · Malaga + Ellenbrook</td>
         <td class="num">${cb247Meta>0?'$'+cb247Meta.toFixed(0):'—'}</td>
         <td class="num">${cb247Google>0?'$'+cb247Google.toFixed(0):'—'}</td>
         <td class="num" style="font-weight:600">${cb247Spend>0?'$'+cb247Spend.toFixed(0):'—'}</td>
-        <td class="num">${D.ga4?.sessions?D.ga4.sessions+' sessions':'—'}</td>
-        <td><span style="font-size:10px;background:#e6f4f1;color:var(--teal);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+        <td style="font-size:12px">${cb247Primary}</td>
+        <td>${_liveBadge}</td>
       </tr>
-      <tr>
+      <tr ${_rowClick('mwcc')}>
         <td style="font-weight:600">My World Childcare</td>
         <td style="font-size:11.5px;color:var(--muted)">Childcare · 5 centres · Perth WA</td>
         <td class="num">${mwccMeta>0?'$'+mwccMeta.toFixed(0):'—'}</td>
         <td class="num">${mwccGoogle>0?'$'+mwccGoogle.toFixed(0):'—'}</td>
         <td class="num" style="font-weight:600">${mwccSpend>0?'$'+mwccSpend.toFixed(0):'—'}</td>
-        <td class="num">${mwccAvgOcc!==null?mwccAvgOcc+'% occ':'—'}</td>
-        <td><span style="font-size:10px;background:#e6f4f1;color:var(--teal);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+        <td style="font-size:12px">${mwccPrimary}</td>
+        <td>${_liveBadge}</td>
       </tr>
-      <tr>
+      <tr ${_rowClick('karribank')}>
         <td style="font-weight:600">Karribank</td>
         <td style="font-size:11.5px;color:var(--muted)">Hospitality · Cafe · Restaurant · Accommodation</td>
-        <td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
-        <td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">SETUP</span></td>
+        <td class="num">—</td><td class="num">—</td><td class="num">—</td>
+        <td style="font-size:12px;color:var(--muted)">Not connected</td>
+        <td>${_setupBadge}</td>
       </tr>
-      <tr>
+      <tr ${_rowClick('sparrows')}>
         <td style="font-weight:600">Sparrows</td>
         <td style="font-size:11.5px;color:var(--muted)">RTO · VET + Non-VET programs</td>
-        <td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
-        <td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">SETUP</span></td>
+        <td class="num">—</td><td class="num">—</td><td class="num">—</td>
+        <td style="font-size:12px;color:var(--muted)">Not connected</td>
+        <td>${_setupBadge}</td>
       </tr>
     </tbody>
-  </table></div>
+  </table></div>`;
 
-  ${mwccCentreArr.length ? `
-  <div class="section-title">MWCC Centre Occupancy</div>
-  <div class="kpi-grid cols-5 mb">
-    ${mwccCentreArr.map(c=>{
-      const occ = c.occupancy?.Overall||0;
-      return kpiCard('',c.name||'Centre',occ+'%',null,c.wage_breach?'Wage breach':'OK');
-    }).join('')}
-  </div>` : ''}`;
+  // ── 5. MWCC Centre Occupancy (NO WAGE BREACH per rule) ───────────────────
+  if (mwccCentreArr.length) {
+    html += sectionTitle('MWCC Centre Occupancy');
+    html += `<div class="kpi-grid cols-5 mb">
+      ${mwccCentreArr.map(c => {
+        const occ = c.occupancy?.Overall || 0;
+        // Status now driven by compliance only (no wage mentions)
+        const atRisk = (c.rooms_detail && Object.values(c.rooms_detail).some(r =>
+          (r.capacity||0) > 0 && (r.compliance_risk || (r.occupancy_pct||0) >= 100)
+        ));
+        const subLabel = atRisk ? 'Compliance risk' : occ >= 70 ? 'Within capacity' : 'Below target';
+        const colorClass = atRisk ? 'red' : occ >= 70 ? 'green' : '';
+        return kpiCard('', c.name||'Centre', occ+'%', null, subLabel, colorClass);
+      }).join('')}
+    </div>`;
+  }
 
   el.innerHTML = html;
 }
