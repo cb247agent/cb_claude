@@ -30,6 +30,11 @@ body{--brand-accent:var(--teal);--brand-accent-deep:var(--teal-dim)}
 body[data-business="mwcc"]{--brand-accent:var(--mwcc-purple);--brand-accent-deep:var(--mwcc-purple-deep)}
 body[data-business="mwcc"] a{color:var(--mwcc-purple)}
 body[data-business="mwcc"] .topbar-tab.active{border-bottom-color:var(--mwcc-purple);color:var(--mwcc-purple)}
+/* Sidebar + nav — swap teal active indicator + logo accent on MWCC */
+body[data-business="mwcc"] .sidebar-brand .logo span{color:var(--mwcc-purple)}
+body[data-business="mwcc"] .sidebar-item.active{border-left-color:var(--mwcc-purple);background:rgba(139,111,217,.15)}
+body[data-business="mwcc"] .sidebar-item .badge{background:var(--mwcc-purple)}
+body[data-business="mwcc"] .biz-tab.active{color:var(--mwcc-purple);border-bottom-color:var(--mwcc-purple)}
 body[data-business="mwcc"] .kpi-card{border-top-color:var(--mwcc-purple)}
 body[data-business="mwcc"] .kpi-card.green{border-top-color:var(--mwcc-purple)}
 body[data-business="mwcc"] .kpi-card.green .value{color:var(--mwcc-purple-deep)}
