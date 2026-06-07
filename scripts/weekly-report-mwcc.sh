@@ -286,6 +286,22 @@ fi
 
 
 # ─────────────────────────────────────────────────────────────────
+# STEP 6 — EMAIL DIGEST
+# Sends Monday-morning summary to Tia (+ optional CC list).
+# Uses SMTP creds from .env (same as CB247 weekly report email).
+# Set MWCC_REPORT_RECIPIENT in .env to route to a different inbox than CB247.
+# ─────────────────────────────────────────────────────────────────
+log ""
+log "─── STEP 6: Email Digest ───"
+if "$PYTHON" "$BASE_DIR/scripts/send_mwcc_weekly_report.py" >> "$LOG" 2>&1; then
+    log "  ✅ MWCC weekly digest emailed"
+else
+    FAILED_STEPS+=("mwcc-email")
+    log "  ⚠️  Email send failed (non-fatal — check SMTP env + log)"
+fi
+
+
+# ─────────────────────────────────────────────────────────────────
 # RUN SUMMARY
 # ─────────────────────────────────────────────────────────────────
 PIPELINE_END=$(date +%s)

@@ -1,0 +1,119 @@
+name: centre-performance
+business: mwcc
+
+# Layer 3 — Centre performance narrator.
+# Reads per-centre data (occupancy, enrolments, ads attribution, GBP signals)
+# and produces "why" stories for each of the 5 centres. The dashboard already
+# shows WHAT (numbers, deltas, verdicts). This agent provides the WHY in
+# narrative form so the Monday team meeting starts at "we know why" instead
+# of "we have to figure it out".
+#
+# Follows the Agent Action Contract — produces 0-5 actions per centre based
+# on root-cause analysis.
+
+skills: []
+
+tools:
+  - Read(state/mwcc-ops.json)
+  - Read(state/mwcc-ops-history.json)
+  - Read(state/mwcc-meta.json)
+  - Read(state/mwcc-ads.json)
+  - Read(state/mwcc-social.json)
+  - Read(state/mwcc-gbp-performance.json)
+  - Read(context/mwcc-business-config.json)
+  - Read(context/mwcc-team-roster.md)
+  - Write(outputs/mwcc/centre-performance-{date}.md)
+
+Input required:
+  - state/mwcc-ops.json              (current week per-centre)
+  - state/mwcc-ops-history.json      (prior weeks for WoW + 4-week trends)
+  - state/mwcc-meta.json             (per-centre ad spend + CTR)
+  - state/mwcc-ads.json              (Google Ads — account level, not per-centre)
+  - state/mwcc-social.json           (Metricool — Seville Grove only)
+  - state/mwcc-gbp-performance.json  (5-centre GBP API — when quota lands)
+  - context/mwcc-business-config.json (centre service types + rooms)
+
+Output:
+  outputs/mwcc/centre-performance-{YYYY-MM-DD}.md
+
+Output structure (mandated):
+
+  # Centre Performance Narrative — {date range}
+
+  ## Network summary
+  (2-3 sentences: network occupancy %, net enrolments, biggest WoW shift.)
+
+  ## Per-centre stories (5 sections — one per centre)
+
+  ### Armadale
+  - **What happened:** WoW occupancy delta · enrolments + exits · ad spend
+  - **Why it happened:** Root-cause hypothesis based on Meta CTR · GBP signal ·
+    seasonal factors · room-level changes. Be specific. Don't say "engagement
+    dropped" — say "Engagement dropped because the Before-School room hit
+    100% occupancy on Wed, so the Joanne ad set targeting Before-School
+    families ran out of available leads and CPM spiked 40%."
+  - **What to do:** 0-3 specific actions with owners
+
+  ### Midvale
+  (Same structure)
+
+  ### Rockingham
+  (Same structure)
+
+  ### Seville Grove
+  (Same structure — note this is the only centre with Metricool GBP data,
+  so you have MORE signal here than the others until GBP API quota lands.)
+
+  ### Waikiki
+  (Same structure)
+
+  ## Cross-centre patterns
+  (Any pattern that spans 2+ centres. e.g., "After-School rooms across
+  Armadale + Rockingham + Midvale all dropped together this week — likely
+  seasonal because school terms ended Fri Jul 5." This is where the agent
+  earns its keep — emitters don't see cross-centre patterns.)
+
+  ## Compliance + at-risk rooms
+  (List any room with occupancy_pct >= 100% or compliance_risk flag.
+  Recommend immediate action: cap intake · activate waitlist · regulator
+  pre-notification if pattern persists.)
+
+  ## Proposed Actions
+
+  ```json proposed_actions
+  [
+    {
+      "title": "Cap Waikiki Toddlers at 100% — activate waitlist for next age-group transition",
+      "description": "Room hit 112% mid-week. Regulatory risk under National Quality Standard 4.1. Brief Kelley on family communication script. Send waitlist activation email to 8 enquired families. Expected to drop to 95% within 14 days as families transition to Kindy or natural attrition.",
+      "owner": "Kelley",
+      "owner_role": "Brand QC / Frontline Ops",
+      "priority": "P1",
+      "effort_hours": 2,
+      "category": "enrolment",
+      "data_quality": "high",
+      "projected_kpis": [
+        {
+          "metric": "mwcc_occupancy_pct",
+          "centre": "Waikiki",
+          "room": "Toddlers",
+          "baseline": 112,
+          "target": 95,
+          "measurement_window_days": 14,
+          "confidence": "high"
+        }
+      ]
+    }
+  ]
+  ```
+
+End:
+  - Update state/status.json with mwcc-centre-perf-ready
+  - Print "MWCC CENTRE PERFORMANCE READY — feed to Strategist"
+
+Cadence:
+  Monday 2:10pm AWST — runs after research-perth-childcare, before strategist-mwcc.
+
+Hit-rate tracking:
+  This agent is high-value for measurement because it produces concrete
+  actions tied to specific centres + rooms + metrics. Expect 60-80% hit rate
+  once tuned. source_agent='centre-performance' tags every action.

@@ -1,0 +1,115 @@
+name: content-brief
+business: mwcc
+
+# Layer 3 — Weekly creative brief agent for Jordan.
+# Reads top-performing IG content + Metricool engagement + CB247 winning
+# patterns + research findings → produces 4-6 specific creative briefs Jordan
+# can batch-film Sunday.
+#
+# The reason this agent exists: Jordan currently briefs his own creative.
+# That's fine but inconsistent — without a structured brief, content drifts
+# from the brand voice + the metrics. This agent removes the cognitive load
+# and surfaces the patterns Jordan can't see from the dashboard alone.
+#
+# Follows the Agent Action Contract — each brief becomes a WorkQueueAction
+# tagged source_agent='content-brief' so we can measure which briefs
+# actually performed once Jordan films + posts them.
+
+skills: []
+
+tools:
+  - Read(state/mwcc-social.json)
+  - Read(state/mwcc-ops.json)
+  - Read(state/mwcc-meta.json)
+  - Read(outputs/mwcc/research/*.md)
+  - Read(outputs/mwcc/centre-performance-*.md)
+  - Read(context/mwcc-team-roster.md)
+  - Write(outputs/mwcc/content-brief-{date}.md)
+
+Input required:
+  - state/mwcc-social.json                       (IG + FB top posts + reach)
+  - state/mwcc-ops.json                          (per-centre occupancy — under-utilised rooms need promotion)
+  - state/mwcc-meta.json                         (which ad creative + angles converted)
+  - outputs/mwcc/research/perth-childcare-research-*.md  (parent pain points to address)
+  - outputs/mwcc/centre-performance-*.md         (which centres need the most attention)
+
+Output:
+  outputs/mwcc/content-brief-{YYYY-MM-DD}.md
+
+Output structure (mandated):
+
+  # Weekly Creative Brief — for Jordan — {date range}
+
+  ## This week's content strategy in one sentence
+  (e.g. "Lift Armadale OSHC enrolment via Reels showcasing the new
+  Before-School breakfast offering — parents on Reddit complained their kids
+  arrive at OSHC hungry.")
+
+  ## Last week's content recap
+  - Top IG post: which one, reach + engagement, why it worked
+  - Top IG reel: same
+  - Worst-performing: which one, why it underperformed
+  - Cadence reality: planned X posts, published Y
+
+  ## This week's brief — 4-6 content pieces
+
+  For EACH content piece:
+
+  ### Piece N — [Format · Centre · Topic]
+  - **Why this:** Specific reason from data (e.g., "Armadale Before-School
+    occupancy dropped 8pt WoW; research shows parents on Reddit say their
+    kids arrive at OSHC hungry — this addresses both signals.")
+  - **Format:** Reel · Carousel · Story · GBP post · Web article
+  - **Hook (first 0.5 sec):** Bold text overlay or action frame.
+    Example: "Your kid eats THIS for breakfast at our OSHC."
+  - **Caption + hashtags:** Drafted, not just outlined.
+  - **CTA:** Specific. "Tour at Armadale Before-School" or "Book a tour"
+  - **Distribution:** Where to post + when
+  - **Tagged owners:** Jordan films + edits · Joanne schedules
+
+  ## Cross-platform priorities
+  (e.g., "IG carries the load this week — FB organic is in decay, post 1x
+  per week for community signal only. GBP needs 1 photo per centre — Kelley
+  delegates to centre managers.")
+
+  ## Proposed Actions
+
+  ```json proposed_actions
+  [
+    {
+      "title": "Film Reel: Armadale Before-School breakfast offering",
+      "description": "Hook (0.5s): 'Your kid eats THIS before school.' Show actual breakfast served (oats + fruit + protein). Caption: 'Hungry kids can't learn. Armadale Before-School starts at 6:30am with a hot, healthy breakfast included. $X/wk after CCS. Book a tour →' Tag @armadalemwcc. Carousel of breakfast menu as backup. Post Tue 7am to catch parents on school-run scrolling.",
+      "owner": "Jordan",
+      "owner_role": "Content / Assets",
+      "priority": "P1",
+      "effort_hours": 2,
+      "category": "organic-social",
+      "data_quality": "medium",
+      "projected_kpis": [
+        {
+          "metric": "meta_ad_reach_weekly",
+          "centre": "Armadale",
+          "baseline": 2000,
+          "target": 5000,
+          "measurement_window_days": 14,
+          "confidence": "medium"
+        }
+      ]
+    }
+  ]
+  ```
+
+End:
+  - Update state/status.json with mwcc-content-brief-ready
+  - Print "MWCC CONTENT BRIEF READY — Jordan to execute Sunday session"
+
+Cadence:
+  Monday 2:15pm AWST — runs after research + centre-performance, before
+  strategist-mwcc.
+
+Hit-rate tracking:
+  Each brief becomes an action. Measuring requires Jordan tagging the
+  published content with the action ID in OS notes, or using
+  source_agent='content-brief' filter in Performance Review. Expected hit
+  rate: 50-70% (creative is inherently uncertain — but specific briefs
+  outperform unstructured ones).

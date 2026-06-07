@@ -1,0 +1,82 @@
+name: research-perth-childcare
+business: mwcc
+
+# Layer 3 — Perth childcare market research agent.
+# Reads Perth-specific signals (competitors, ABS data, KindiCare reviews,
+# Reddit pain points, seasonal events) → produces weekly research narrative
+# that feeds the Strategist agent + creates research-backed action proposals.
+#
+# Follows the Agent Action Contract — output ends with a `json proposed_actions
+# block (often empty for research agents; the narrative is the primary value).
+
+skills: []
+
+tools:
+  - Read(context/mwcc-competitors.md)
+  - Read(context/mwcc-business-config.json)
+  - Read(state/mwcc-gsc-data.json)
+  - Read(state/mwcc-ops.json)
+  - WebFetch(*)
+  - Write(outputs/mwcc/research/perth-childcare-research-{date}.md)
+
+Input required:
+  - context/mwcc-competitors.md          (5 competitors: Midvale Hub, Goodstart,
+                                          Nido, Care for Kids, KindiCare)
+  - context/mwcc-business-config.json    (5 centres + suburbs)
+  - state/mwcc-gsc-data.json             (what parents are searching for)
+  - state/mwcc-ops.json                  (per-centre occupancy + enquiries)
+
+Output:
+  outputs/mwcc/research/perth-childcare-research-{YYYY-MM-DD}.md
+
+Output structure (mandated):
+
+  # Perth Childcare Research — {date range}
+
+  ## 1. Market signals this week
+  (2-4 paragraphs covering: what Perth childcare parents searched for,
+  shifts in competitor positioning, news about regulation or subsidy changes,
+  Reddit/Facebook group sentiment threads about childcare in our centres' suburbs.)
+
+  ## 2. Competitor moves
+  (Per-competitor: what changed on their websites, ads, Google reviews,
+  KindiCare ratings. Focus on Midvale Hub (most local) + Goodstart + Nido.
+  Identify any new locations opening that compete with our centres.)
+
+  ## 3. Seasonal context
+  (What time of year are we in? Term dates · school holidays · enrolment
+  push windows. Did anything seasonal launch this week — new govt subsidy,
+  childcare-related Perth events, school readiness campaigns from competitors?)
+
+  ## 4. Parent pain points
+  (Reddit threads from r/perth · r/AusFinance · Perth Mums Facebook groups
+  about childcare. What are parents complaining about? Waiting lists?
+  Fees? Educator turnover? CCS rebate confusion? These map to our content
+  + ad copy briefs.)
+
+  ## 5. Implications for MWCC
+  (1 paragraph synthesising: given the above, what should MWCC do
+  differently this fortnight? This feeds the Strategist agent.)
+
+  ## 6. Proposed Actions
+
+  ```json proposed_actions
+  []
+  ```
+  (Research agents typically propose 0 actions — they observe markets and
+  inform downstream agents. Include 1-2 actions only if the research surfaces
+  an immediate opportunity, e.g., "new govt subsidy launched — update all
+  centre landing pages this week".)
+
+End:
+  - Update state/status.json with mwcc-research-ready
+  - Print "MWCC RESEARCH READY — feed to Strategist"
+
+Cadence:
+  Monday 2:10pm AWST — runs before Strategist (Phase 3 of the MWCC pipeline,
+  after emitters but before strategist-mwcc).
+
+Hit-rate tracking:
+  Most outputs are 0-action narratives. When this agent DOES propose actions,
+  source_agent='research-perth-childcare' tags them so we can measure how
+  often its market-signal-driven proposals win.
