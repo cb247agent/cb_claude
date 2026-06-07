@@ -35,10 +35,10 @@ Every skill MUST include this "Brand-Aware Context Loading" section near the top
 | `context/team-roster.md` | `context/team-roster.md` | `context/mwcc-team-roster.md` |
 | `context/session-start.md` | `context/session-start.md` | `context/mwcc-session-start.md` |
 | `context/seasonal-calendar.md` | `context/seasonal-calendar.md` | `context/mwcc-seasonal-calendar.md` |
+| `context/psychology-triggers.md` | `context/psychology-triggers.md` | `context/mwcc-psychology-triggers.md` |
 
 3. Shared (brand-agnostic) files — always read these regardless of active business:
    - `context/utm-convention.md`
-   - `context/psychology-triggers.md` (currently CB247-flavoured — MWCC-specific version is Tier 2)
    - `context/strategy-pestle-swot.md` (cross-business strategy doc)
 ```
 

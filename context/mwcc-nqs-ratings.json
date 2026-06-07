@@ -1,0 +1,75 @@
+{
+  "_comment": "MWCC NQS rating tracker — source of truth for ACECQA National Quality Standard ratings per centre. Marketing copy that cites NQS ratings MUST match an entry here AND have ok_to_cite_in_marketing=true. The compliance gate (scripts/work_queue/compliance.py + nqs_ratings.py helper) checks against this file.",
+  "_schema_version": "1.0",
+  "_updated_at": "2026-06-07T00:00:00Z",
+  "_updated_by": "AI (scaffolding — Kelley to populate real ratings)",
+  "_valid_tiers": [
+    "Significant Improvement Required",
+    "Working Towards NQS",
+    "Meeting NQS",
+    "Exceeding NQS",
+    "Excellent"
+  ],
+  "ratings": [
+    {
+      "centre": "Armadale",
+      "current_rating": null,
+      "rating_tier": null,
+      "rating_date": null,
+      "next_assessment_due": null,
+      "evidence_url": "https://www.acecqa.gov.au/resources/national-registers/services",
+      "verified_by": null,
+      "verified_at": null,
+      "ok_to_cite_in_marketing": false,
+      "notes": "Pending Kelley verification — look up Armadale OSHC on ACECQA register and fill in current rating, date, and tier. Set ok_to_cite_in_marketing=true once verified."
+    },
+    {
+      "centre": "Midvale",
+      "current_rating": null,
+      "rating_tier": null,
+      "rating_date": null,
+      "next_assessment_due": null,
+      "evidence_url": "https://www.acecqa.gov.au/resources/national-registers/services",
+      "verified_by": null,
+      "verified_at": null,
+      "ok_to_cite_in_marketing": false,
+      "notes": "Pending Kelley verification — Midvale runs both LDC + OSHC so may have two separate ratings on the ACECQA register. Document both."
+    },
+    {
+      "centre": "Rockingham",
+      "current_rating": null,
+      "rating_tier": null,
+      "rating_date": null,
+      "next_assessment_due": null,
+      "evidence_url": "https://www.acecqa.gov.au/resources/national-registers/services",
+      "verified_by": null,
+      "verified_at": null,
+      "ok_to_cite_in_marketing": false,
+      "notes": "Pending Kelley verification."
+    },
+    {
+      "centre": "Seville Grove",
+      "current_rating": null,
+      "rating_tier": null,
+      "rating_date": null,
+      "next_assessment_due": null,
+      "evidence_url": "https://www.acecqa.gov.au/resources/national-registers/services",
+      "verified_by": null,
+      "verified_at": null,
+      "ok_to_cite_in_marketing": false,
+      "notes": "Pending Kelley verification — same as Midvale, may have LDC + OSHC separate ratings."
+    },
+    {
+      "centre": "Waikiki",
+      "current_rating": null,
+      "rating_tier": null,
+      "rating_date": null,
+      "next_assessment_due": null,
+      "evidence_url": "https://www.acecqa.gov.au/resources/national-registers/services",
+      "verified_by": null,
+      "verified_at": null,
+      "ok_to_cite_in_marketing": false,
+      "notes": "Pending Kelley verification — LDC only."
+    }
+  ]
+}
