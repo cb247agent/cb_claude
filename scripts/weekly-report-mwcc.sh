@@ -230,6 +230,14 @@ log "─── STEP 4.7d2: Extract Agent Action Proposals (Agent Action Contract
     && log "  ✅ MWCC agent action proposals extracted" \
     || { FAILED_STEPS+=("mwcc-agent-extract"); log "  ⚠️  Agent extraction failed (non-fatal)"; }
 
+log "─── STEP 4.7e0: Compute Enrolment Funnel ───"
+# Stitches GA4 + OWNA into a 5-stage funnel (sessions → conversions →
+# enquiries → enrolments — exits). Writes state/mwcc-funnel.json. Used
+# by the future dashboard widget + email digest "Funnel Health" block.
+"$PYTHON" "$BASE_DIR/scripts/compute_mwcc_funnel.py" >> "$LOG" 2>&1 \
+    && log "  ✅ Funnel computed → state/mwcc-funnel.json" \
+    || { FAILED_STEPS+=("mwcc-funnel"); log "  ⚠️  Funnel compute failed (non-fatal)"; }
+
 log "─── STEP 4.7e: Sync Work Queue → Supabase ───"
 "$PYTHON" "$BASE_DIR/scripts/work_queue/mwcc_sync_to_supabase.py" >> "$LOG" 2>&1 \
     && log "  ✅ MWCC Work Queue synced to Supabase" \

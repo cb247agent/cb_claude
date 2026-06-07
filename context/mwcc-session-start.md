@@ -98,10 +98,24 @@ Overview · SEO & Organic · Google Ads · Meta Ads · GBP · Occupancy · Enrol
 - Built 8-week MWCC content calendar anchored on Term 2 school holidays (4-17 Jul)
 - Ran full architecture audit MWCC vs CB247 → saved to `outputs/mwcc/audit-mwcc-vs-cb247-2026-06-07.md`
 - Confirmed: OWNA ingest stays manual (Tia commits Monday 12pm drop), photo consent registry NOT needed (MWCC does NOT publish child photos)
-- Tier 1 fixes shipped:
+- Tier 1 fixes shipped (`4702406`):
   1. ✅ Compliance gate in `mwcc_sync_to_supabase.py` (rejects "best childcare", "guaranteed", "award-winning", unverified NQS claims)
   2. ✅ This file (MWCC session start)
   3. ✅ `context/mwcc-seasonal-calendar.md`
+- Tier 2 fixes shipped (`2dba31b`, `bc5a9fa`, `46d859d`):
+  4. ✅ `context/mwcc-psychology-triggers.md` (9 childcare-specific triggers + objection reframes)
+  5. ✅ `context/mwcc-design-standards.md` (full lavender palette + per-centre rules + locked no-children policy)
+  6. ✅ `context/mwcc-nqs-ratings.json` + `scripts/work_queue/nqs_ratings.py` (registry helper)
+  7. ✅ 4 skills refactored brand-aware: content-writer, social-content-calendar (expanded from stub), paid-ads-creative-pipeline, local-seo-optimizer
+  8. ✅ 2 new agents: `performance-mwcc.yml` (budget allocation) + `seo-agent-mwcc.yml` (strategic briefs)
+- Tier 3 fixes shipped (`fce31cb`, pending this commit):
+  9. ✅ 2 lightweight subagents: `audience-intel-mwcc.yml` + `content-intel-mwcc.yml`
+  10. ✅ `ENGINEERING.md` MWCC parity section (~115 lines)
+  11. ✅ `CB_Brain/wiki/MWCC-Campaign-History.md` (narrative template + JSON schema)
+  12. ✅ `scripts/pull_mwcc_reviews.py` (scaffolded — blocked on GCP quota)
+  13. ✅ `context/mwcc-vacation-care-bookings.json` (booking tracker scaffold)
+  14. ✅ `scripts/compute_mwcc_funnel.py` + wired into cron (real sessions → conversions → enquiries → enrolments funnel)
+  15. ✅ `docs/mwcc-centre-deep-dive-spec.md` (full build spec for the per-centre deep-dive page, deferred until Kelley flags multi-page friction)
 
 ---
 

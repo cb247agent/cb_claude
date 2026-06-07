@@ -1,0 +1,83 @@
+{
+  "_comment": "Vacation Care booking tracker for the 4 MWCC OSHC centres. Updated by Kelley (or pulled from OWNA when integration lands) at the close of each booking day during the open window. Powers the Vacation Care funnel widget on the dashboard.",
+  "_schema_version": "1.0",
+  "_updated_at": "2026-06-07T00:00:00Z",
+  "_updated_by": "AI (scaffolding — populate as bookings flow)",
+
+  "windows": [
+    {
+      "window_id": "term2-jul-2026",
+      "label": "WA Term 2 School Holidays 2026",
+      "dates_start": "2026-07-04",
+      "dates_end":   "2026-07-17",
+      "booking_open_date": "2026-06-15",
+      "booking_close_date": "2026-07-03",
+      "theme": "Winter Explorers",
+      "centres": [
+        {
+          "centre": "Armadale",
+          "capacity_per_day": 30,
+          "days_in_programme": 10,
+          "capacity_total": 300,
+          "bookings_total": 0,
+          "fill_pct": 0.0,
+          "last_updated": null,
+          "verified_by": null,
+          "notes": "OSHC only. Theme: Winter Explorers."
+        },
+        {
+          "centre": "Midvale",
+          "capacity_per_day": 40,
+          "days_in_programme": 10,
+          "capacity_total": 400,
+          "bookings_total": 0,
+          "fill_pct": 0.0,
+          "last_updated": null,
+          "verified_by": null,
+          "notes": "LDC + OSHC centre — Vacation Care is OSHC programme only."
+        },
+        {
+          "centre": "Rockingham",
+          "capacity_per_day": 30,
+          "days_in_programme": 10,
+          "capacity_total": 300,
+          "bookings_total": 0,
+          "fill_pct": 0.0,
+          "last_updated": null,
+          "verified_by": null,
+          "notes": "OSHC only."
+        },
+        {
+          "centre": "Seville Grove",
+          "capacity_per_day": 40,
+          "days_in_programme": 10,
+          "capacity_total": 400,
+          "bookings_total": 0,
+          "fill_pct": 0.0,
+          "last_updated": null,
+          "verified_by": null,
+          "notes": "LDC + OSHC centre — Vacation Care is OSHC programme only."
+        }
+      ]
+    }
+  ],
+
+  "_dashboard_widget_spec": {
+    "location": "docs/index.html — new render function renderMwccVacationCareFunnel (call from renderMwccOverview right above Per-centre cards)",
+    "data_source": "context/mwcc-vacation-care-bookings.json (loaded into cbState.mwccVacationCare on page load)",
+    "render_shape": [
+      "1. Section title: 'Vacation Care — [window label]'",
+      "2. Header row: window dates · open booking window · current day vs close",
+      "3. Per-centre card grid (4 cards — Armadale, Midvale, Rockingham, Seville Grove)",
+      "4. Each card: centre name · fill bar (purple) · bookings_total / capacity_total · % fill · days to close",
+      "5. Alert row when any centre fill < 60% with ≤7 days to close — triggers automated emit via mwcc_enrolment_emitter"
+    ],
+    "alert_threshold_for_emitter": {
+      "fill_pct_below": 60,
+      "days_to_close_below": 7,
+      "action_archetype": "OCCUPANCY_FILL — pre-window pivot to Meta/Google ad reweighting",
+      "owner": "Joanne"
+    },
+    "future_emitter_integration": "scripts/work_queue/mwcc_vacation_care_emitter.py — reads this file weekly, emits OCCUPANCY_FILL actions when thresholds breach. NOT yet built."
+  }
+}
