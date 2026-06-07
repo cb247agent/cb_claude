@@ -1063,26 +1063,29 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
 
     # Load GSC + Ahrefs for SEO page (Tia direction 07 Jun 2026 — SEO page was reading
     # md.gsc / md.ahrefs but baker wasn't populating them, so page showed "Awaiting GSC")
-    gsc    = _load("mwcc-gsc-data.json", default={})
-    ahrefs = _load("mwcc-ahrefs.json",    default={})
-    social = _load("mwcc-social.json",    default={})
-    if not isinstance(gsc,    dict): gsc    = {}
-    if not isinstance(ahrefs, dict): ahrefs = {}
-    if not isinstance(social, dict): social = {}
+    gsc       = _load("mwcc-gsc-data.json", default={})
+    ahrefs    = _load("mwcc-ahrefs.json",    default={})
+    social    = _load("mwcc-social.json",    default={})
+    gbp_perf  = _load("mwcc-gbp-performance.json", default={})
+    if not isinstance(gsc,      dict): gsc      = {}
+    if not isinstance(ahrefs,   dict): ahrefs   = {}
+    if not isinstance(social,   dict): social   = {}
+    if not isinstance(gbp_perf, dict): gbp_perf = {}
 
     data = {
-        "generated":    datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC"),
-        "period":       ops.get("period") or ops.get("network_summary", {}).get("period", {}),
-        "ops":          ops,
-        "meta":         meta,
-        "ads":          ads,
-        "ads_history":  ads_history,
-        "meta_history": meta_history,
-        "ops_history":  ops_history,
-        "ga4":          ga4,
-        "gsc":          gsc,
-        "ahrefs":       ahrefs,
-        "social":       social,
+        "generated":       datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC"),
+        "period":          ops.get("period") or ops.get("network_summary", {}).get("period", {}),
+        "ops":             ops,
+        "meta":            meta,
+        "ads":             ads,
+        "ads_history":     ads_history,
+        "meta_history":    meta_history,
+        "ops_history":     ops_history,
+        "ga4":             ga4,
+        "gsc":             gsc,
+        "ahrefs":          ahrefs,
+        "social":          social,
+        "gbp_performance": gbp_perf,
     }
     json_payload = json.dumps(data, indent=2, default=str)
 

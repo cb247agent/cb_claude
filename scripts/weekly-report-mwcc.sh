@@ -177,6 +177,26 @@ else
     log "  ⚠️  MWCC Metricool parse failed — check $LOG"
 fi
 
+
+# ─────────────────────────────────────────────────────────────────
+# STEP 4.6b — MWCC GBP Performance API pull (all 5 centres)
+# Pulls website clicks, calls, directions, impressions per location.
+# Metricool only tracks 1 GBP per workspace (Seville Grove currently),
+# so this API pull covers all 5 — Armadale, Midvale, Rockingham,
+# Seville Grove, Waikiki.
+# Currently returns 429 (quota=0) — Tia to submit quota increase in GCP.
+# Script auto-fires the moment quota lands; until then, it writes an
+# "available:false" placeholder and the dashboard shows Metricool data.
+# ─────────────────────────────────────────────────────────────────
+log ""
+log "─── STEP 4.6b: MWCC GBP Performance API Pull (5 centres) ───"
+if "$PYTHON" "$BASE_DIR/scripts/pull_mwcc_gbp_performance.py" >> "$LOG" 2>&1; then
+    log "  ✅ MWCC GBP performance pull complete → state/mwcc-gbp-performance.json"
+else
+    FAILED_STEPS+=("mwcc-gbp-perf")
+    log "  ⚠️  MWCC GBP performance pull failed (quota=0?) — check $LOG"
+fi
+
 # ─────────────────────────────────────────────────────────────────
 # STEP 4.7 — WORK QUEUE EMITTERS
 # ─────────────────────────────────────────────────────────────────
