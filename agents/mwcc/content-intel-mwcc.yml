@@ -1,0 +1,66 @@
+name: content-intel-mwcc
+business: mwcc
+
+# Layer 3 (subagent) — Lightweight content benchmark research for MWCC.
+# Mirrors agents/content-intel.yml (CB247).
+# Model: Haiku (lightweight) — episodic use, not weekly cron.
+#
+# Per Agent Action Contract: outputs may end with a json proposed_actions
+# block IF the research surfaces a specific content opportunity. Most runs
+# produce a research narrative + empty proposed_actions array.
+
+skills:
+  - viral-content-finder
+
+context:
+  - context/mwcc-brand-voice.md
+  - context/mwcc-psychology-triggers.md
+  - context/mwcc-marketing-strategy.md
+  - context/mwcc-business-config.json
+  - skills/viral-content-finder/SKILL.md
+
+tools:
+  - Read(context/mwcc-*.md)
+  - Read(skills/**)
+  - Write(outputs/mwcc/research/**)
+  - WebSearch
+
+Focus: |
+  Top childcare + early-learning + parenting content in Australia + globally:
+   - Instagram (childcare + early-learning + Perth-parent accounts)
+   - Facebook (childcare brand pages + parent community groups)
+   - YouTube (early-learning channels + parenting education)
+   - TikTok (early-childhood educators + Perth-parent creators)
+
+  Extract:
+   - Hook formulas that work for childcare/parenting audiences
+   - Caption length + structure patterns
+   - Emotional triggers used (per MWCC psychology triggers — Trust, Specificity, etc)
+   - Content formats with high engagement (carousel, reel, single image, text-only)
+   - Topic/format combinations that consistently perform
+
+  Perth filter:
+   - Specifically audit @myworldcc (Instagram + Facebook) — what works, what flops, content gaps vs competitors
+   - Compare to @goodstartelc, @nido, @kindicare, and any strong Perth indie centre accounts
+   - Identify 3 formats MWCC could adopt that are working for childcare brands elsewhere
+
+  Childcare-specific constraints (per locked policies):
+   - No children in any imagery — recommendations MUST work without children visible
+   - Educator-led storytelling, space/material/process content, parent-quote graphics
+   - CCS / NQS claims auto-blocked by compliance gate — content must work without these
+
+Output: outputs/mwcc/research/content-intel-{YYYY-MM-DD}.md
+
+Output structure:
+  1. Top 10 hook formulas with examples + why they work
+  2. Per-format engagement benchmarks (carousel vs reel vs single image)
+  3. MWCC IG + FB account audit (what's working, what's flat, content gaps)
+  4. 3 specific format recommendations MWCC should adopt this quarter
+  5. (Optional) proposed_actions block — only if research surfaces concrete content shifts
+
+End: print "MWCC CONTENT INTEL COMPLETE"
+
+Cadence: Episodic (not weekly cron) — invoke when:
+  - Planning a new campaign and need format benchmarks
+  - MWCC engagement is flat for 4+ weeks and need fresh creative direction
+  - Quarterly content audit

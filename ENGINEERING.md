@@ -340,6 +340,135 @@ picks the real verdict via the picker UI on Performance Review.
 
 ---
 
+## MWCC parity — what differs from CB247
+
+As of 7 Jun 2026, MWCC runs the same 4-layer architecture as CB247
+with some MWCC-specific additions. Key delta:
+
+### Layer 1 — Data Pipeline
+
+| Source | CB247 script | MWCC script |
+|---|---|---|
+| GA4 | `pull_ga4.py` | `pull_mwcc_ga4.py` |
+| GSC | `pull_gsc.py` | `pull_mwcc_gsc.py` |
+| Google Ads | `pull_google_ads.py` | `pull_mwcc_ads.py` |
+| Meta | `pull_meta.py` | `pull_mwcc_meta.py` |
+| Ahrefs | `pull_ahrefs.py` | `pull_mwcc_ahrefs.py` |
+| GBP | `pull_gbp.py` + `pull_gbp_performance.py` | `pull_mwcc_gbp_performance.py` (quota pending) |
+| Local ops | `parse_membership_data.py` (CRM XLSX) | `parse_mwcc_ops.py` (OWNA XLSX — manual Mon-12pm drop) |
+| Social | `pull_apify.py` + `parse_metricool_pdf.py` | `parse_mwcc_metricool_pdf.py` (Seville Grove only — 1-GBP limit) |
+
+State outputs follow `state/mwcc-*.json` naming. All gitignored.
+
+### Layer 2 — Skills (Brand Contract)
+
+CB247-default skills work for MWCC IF they follow the Brand Contract
+(`skills/SKILLS_BRAND_CONTRACT.md`). Skills resolve generic context
+names (e.g., `brand-voice`) to brand-specific files based on
+`context/_active_business.txt`.
+
+As of 7 Jun 2026: **6 of 38 skills are brand-aware.**
+The remaining 32 still default to CB247 and will be lazily refactored
+as MWCC needs each one. Migration order is documented in the contract.
+
+To switch active business:
+```bash
+python3 scripts/set_active_business.py mwcc   # or cb247
+```
+
+### Layer 3 — Agents
+
+| Type | CB247 | MWCC |
+|---|---|---|
+| Weekly synthesis | `strategist.yml` | `strategist-mwcc.yml` |
+| Performance + budget | `performance.yml` (cross-channel budget allocation) | `performance-mwcc.yml` (same scope, 5 centres × 2 channels) |
+| SEO strategy | `seo-agent.yml` (reads emitter actions, writes briefs) | `seo-agent-mwcc.yml` (same pattern) |
+| Audience research | `audience-intel.yml` | `audience-intel-mwcc.yml` |
+| Content research | `content-intel.yml` | `content-intel-mwcc.yml` |
+| Market research | `research-agent.yml` | `research-perth-childcare.yml` |
+| Per-centre/location narrative | (none — CB247 only has 2 locations) | `centre-performance.yml` |
+| Content brief | (folded into strategist) | `content-brief.yml` |
+| Paid Ads | `paid-ads.yml` | (use `performance-mwcc.yml`) |
+
+MWCC has 6 agents (vs CB247's 9). Missing: dedicated Paid Ads (covered
+by performance-mwcc), competitor-spy (covered by research-perth-childcare),
+content-agent (deferred — episodic use).
+
+**Cron wiring:** CB247 cron invokes agents inline via `claude --print` in
+`scripts/weekly-report.sh`. MWCC cron (`scripts/weekly-report-mwcc.sh`)
+does NOT yet invoke agents directly — they're called manually from a
+Claude session via `run [agent-name]`. Cron wiring is queued as a
+follow-up.
+
+### Layer 4 — Emitters
+
+| Type | CB247 | MWCC |
+|---|---|---|
+| Meta ads | `meta_emitter.py` | `mwcc_meta_emitter.py` |
+| Google Ads | `google_ads_emitter.py` | `mwcc_google_ads_emitter.py` |
+| SEO | `seo_emitter.py` | `mwcc_seo_emitter.py` |
+| GBP | `gbp_emitter.py` | (pending quota) |
+| Social | `social_emitter.py` | (pending Metricool data) |
+| Membership | `membership_emitter.py` | (replaced by `mwcc_enrolment_emitter.py`) |
+| Enrolment (MWCC-specific) | n/a | `mwcc_enrolment_emitter.py` — per-room occupancy, wage breach, enrolment gap |
+
+MWCC emitters write to `state/mwcc-work-queue.json`. Sync goes to
+the `mwcc_work_queue_actions` Supabase table (separate from CB247's
+`work_queue_actions`). The two businesses cannot be mixed.
+
+### Compliance gate (MWCC-specific)
+
+Added 7 Jun 2026 in `scripts/work_queue/compliance.py`. Every action
+heading to Supabase is checked against banned MWCC language — ACL
+undefendable superlatives ("best childcare"), outcome guarantees
+("guarantee your child"), unverified award/NQS claims, competitor
+disparagement. Rejected actions log to
+`state/mwcc-compliance-rejections.json`.
+
+CB247 has no compliance gate yet (the `CB247_BANNED_PATTERNS` list
+in `compliance.py` is empty — placeholder for future rules).
+
+### NQS rating registry (MWCC-specific)
+
+`context/mwcc-nqs-ratings.json` is the source of truth for ACECQA
+ratings per centre. Helper at `scripts/work_queue/nqs_ratings.py`.
+Until each centre has a verified rating + `ok_to_cite_in_marketing=true`,
+all NQS claims auto-block at the compliance gate.
+
+### Locked policies (CB_Brain/wiki/MWCC-Knowledge-Base.md)
+
+- **NO child photos in any MWCC marketing** — period. All imagery must
+  be educators (with consent), spaces, materials, or branded graphics.
+- **OWNA file drop** — manual, Monday 12pm Perth deadline. Pipeline at 2pm has 2h buffer.
+- **Email digest** — single recipient (Tia only). Set via `WEEKLY_REPORT_RECIPIENT` env var.
+
+### Cron schedule
+
+| Business | Cron | Time |
+|---|---|---|
+| CB247 weekly | `0 10 * * 1` (crontab) | Mon 10am AWST |
+| CB247 social refresh | `30 11 * * 1` (crontab) | Mon 11:30am AWST |
+| MWCC weekly | `0 6 * * 1` (crontab) | Mon 2pm AWST (6am UTC) |
+| Data refresh (CB247) | launchd `com.cb247.data-refresh` | Daily |
+
+### Dashboard pages (renderMwcc* functions in docs/index.html)
+
+13 MWCC render functions (vs CB247's 9):
+
+`renderMwccOverview` · `renderMwccSeo` · `renderMwccGads` · `renderMwccMeta` ·
+`renderMwccGbp` · `renderMwccOccupancy` · `renderMwccEnrolments` ·
+`renderMwccContentPlanner` (Work Queue) · `renderMwccContentReview`
+(Performance Review) · `renderMwccActionTracker` (legacy) ·
+`renderMwccWebsite` · `renderMwccOrgSocial` · plus How It Works section.
+
+CSS toggle: `body[data-business="mwcc"]` swaps to lavender palette
+defined in `context/mwcc-design-standards.md`.
+
+`cbState.mwccWorkQueue` is a separate namespace from `cbState.workQueue`
+to prevent cross-contamination.
+
+---
+
 ## Frontend architecture (docs/index.html)
 
 A single ~13K-line HTML file. NOT a SPA, NOT a framework. Pure HTML +

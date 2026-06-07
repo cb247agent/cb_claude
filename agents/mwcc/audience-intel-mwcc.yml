@@ -1,0 +1,67 @@
+name: audience-intel-mwcc
+business: mwcc
+
+# Layer 3 (subagent) — Lightweight audience research for MWCC.
+# Mirrors agents/audience-intel.yml (CB247).
+# Model: Haiku (lightweight) — episodic use, not weekly cron.
+#
+# Per Agent Action Contract: outputs may end with a json proposed_actions
+# block IF the research surfaces a specific actionable opportunity. Most
+# runs will produce a research narrative + empty proposed_actions array.
+
+skills:
+  - audience-segmentation
+
+context:
+  - context/mwcc-marketing-strategy.md
+  - context/mwcc-psychology-triggers.md
+  - context/mwcc-business-config.json
+  - context/mwcc-brand-context.md
+  - state/mwcc-ga4.json
+  - state/mwcc-gsc-data.json
+  - skills/audience-segmentation/SKILL.md
+
+tools:
+  - Read(context/mwcc-*.md)
+  - Read(context/mwcc-business-config.json)
+  - Read(state/mwcc-ga4.json)
+  - Read(state/mwcc-gsc-data.json)
+  - Read(skills/**)
+  - Write(outputs/mwcc/research/**)
+  - WebSearch
+
+Focus: |
+  4 MWCC ICP profiles deep-dive (per mwcc-marketing-strategy.md):
+   - ICP 1: Working parents needing LDC — dual-income, kids 0-5, within 6km of centre
+   - ICP 2: School-age parents needing OSHC — primary-school kids 5-12
+   - ICP 3: CCS-aware budget-conscious families — comparison shoppers
+   - ICP 4: Vacation Care families — seasonal demand 4×/year
+
+  Per-suburb demographic enrichment for the 5 MWCC catchments:
+   - Armadale 6112 · Midvale 6056 · Rockingham 6168 · Seville Grove 6112 · Waikiki 6169
+
+  Surface real language from:
+   - KindiCare + Care for Kids parent reviews of MWCC + competitor centres
+   - Reddit r/Perth, r/AustralianParenting, r/Parenting
+   - Facebook groups (Perth Mums, Working Mums Perth, [Suburb] Local groups)
+   - Google reviews on MWCC GBP + Goodstart + Nido
+
+  Map the language to the 9 MWCC psychology triggers (per mwcc-psychology-
+  triggers.md). Identify which triggers parents repeat most in their own
+  words — that's where copy should focus.
+
+Output: outputs/mwcc/research/audience-analysis-{YYYY-MM-DD}.md
+
+Output structure:
+  1. Per-ICP language samples (5-7 verbatim parent quotes each)
+  2. Per-suburb demographic snapshot (median income, family composition)
+  3. Top 3 unmet needs per ICP (gap between what parents say they want vs what competitor + MWCC currently offer)
+  4. Trigger-mapping table (which of 9 triggers each ICP responds to strongest)
+  5. (Optional) proposed_actions block — only if a specific copy/positioning fix surfaces
+
+End: print "MWCC AUDIENCE INTEL COMPLETE"
+
+Cadence: Episodic (not weekly cron) — invoke when:
+  - New campaign brief is being built
+  - A centre is consistently under-enrolled and we need fresh audience read
+  - A competitor enters the catchment and we need to reposition
