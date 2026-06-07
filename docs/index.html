@@ -16843,10 +16843,108 @@ function renderMwccContentPlanner() {
     </div>`;
   };
 
-  // ── Operational Backlog (no content items for MVP — all are actions) ──
+  // ── Cycle Calendar — 14 days, items distributed by priority ──
+  // MWCC actions don't have publish dates, so we use priority as a temporal proxy:
+  //   P1 → spread Mon-Wed of this week (act now)
+  //   P2 → spread Mon-Fri of next week (next 2 weeks)
+  //   P3 → spread Wed-Fri of week 2 (backlog)
+  // The distribution is deterministic (by index within priority bucket) so the
+  // same item always lands on the same day across renders.
+  window._mwccCalOffset = window._mwccCalOffset || 0;
+  const _calOffset = window._mwccCalOffset;
+  const _calToday = new Date(); _calToday.setHours(0,0,0,0);
+  const _calDow = _calToday.getDay(); // 0=Sun,1=Mon..6=Sat
+  const _daysToMon = _calDow === 0 ? -6 : 1 - _calDow;
+  const _thisMonday = new Date(_calToday);
+  _thisMonday.setDate(_calToday.getDate() + _daysToMon);
+  const _calStart = new Date(_thisMonday);
+  _calStart.setDate(_thisMonday.getDate() + _calOffset * 14);
+  const _calEnd = new Date(_calStart);
+  _calEnd.setDate(_calStart.getDate() + 13);
+  const _calLabel = _calStart.toLocaleDateString('en-AU',{day:'numeric',month:'short'}) + ' – ' + _calEnd.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+
+  // Build a Map<dayIndex, items[]> for this 14-day window
+  // dayIndex 0..6 = week 1 Mon..Sun, 7..13 = week 2 Mon..Sun
+  const calBuckets = {};
+  for (let i = 0; i < 14; i++) calBuckets[i] = [];
+
+  // Assignment logic — only fires for ACTIVE items, and only when offset=0
+  // (because priority-based scheduling only makes sense for the current cycle)
+  if (_calOffset === 0) {
+    const byPrio = { P1: [], P2: [], P3: [], P4: [] };
+    ACTIVE.forEach(item => {
+      const p = (item.priority || 'P3').toUpperCase();
+      (byPrio[p] || byPrio.P3).push(item);
+    });
+
+    // P1 → Mon, Tue, Wed of week 1 (days 0, 1, 2)
+    byPrio.P1.forEach((item, i) => { calBuckets[i % 3].push(item); });
+    // P2 → Mon-Fri of week 2 (days 7-11)
+    byPrio.P2.forEach((item, i) => { calBuckets[7 + (i % 5)].push(item); });
+    // P3 → Wed-Fri of week 2 (days 9-11)
+    byPrio.P3.forEach((item, i) => { calBuckets[9 + (i % 3)].push(item); });
+    // P4 → Fri of week 2 (day 11)
+    byPrio.P4.forEach(item => { calBuckets[11].push(item); });
+  }
+
+  // Count items shown in this 2-week window
+  const _calItemCount = Object.values(calBuckets).reduce((s, items) => s + items.length, 0);
+
+  const _DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  // Helper to render one 7-day row
+  const _renderCalWeekRow = (weekStart, weekNumber, dayOffset) => {
+    const rowLabel = weekStart.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+    let row = `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mwcc-purple-deep);margin:${weekNumber===2?'14px':'0'} 0 6px">Week ${weekNumber} · starts ${rowLabel}</div>`;
+    row += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:700px">`;
+    row += _DOW.map((dayName, i) => {
+      const colDate = new Date(weekStart);
+      colDate.setDate(weekStart.getDate() + i);
+      colDate.setHours(0,0,0,0);
+      const isToday = colDate.getTime() === _calToday.getTime();
+      const isWeekend = i >= 5; // Sat, Sun
+      const dayItems = calBuckets[dayOffset + i] || [];
+      const colDateStr = colDate.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+      return `<div style="background:#fff;border:1px solid ${isToday?'var(--mwcc-purple)':'var(--border)'};${isToday?'border-left:3px solid var(--mwcc-purple);':''}border-radius:6px;overflow:hidden">
+        <div style="padding:7px 8px;border-bottom:2px solid ${isToday?'var(--mwcc-purple)':'var(--border)'}">
+          <div style="font-size:10px;font-weight:700;color:${isToday?'var(--mwcc-purple-deep)':isWeekend?'var(--muted)':'var(--text-2)'};text-transform:uppercase;letter-spacing:.05em">${dayName}${isToday?' · Today':''}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:1px">${colDateStr}</div>
+        </div>
+        <div style="padding:5px;min-height:50px">
+          ${dayItems.map(_renderCard).filter(Boolean).join('') ||
+            `<div style="height:36px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:4px;font-size:10px;color:var(--muted-2)">${isWeekend?'review':'—'}</div>`}
+        </div>
+      </div>`;
+    }).join('');
+    row += `</div>`;
+    return row;
+  };
+  const _wk2Start = new Date(_calStart);
+  _wk2Start.setDate(_calStart.getDate() + 7);
+
+  html += sectionTitle('Cycle Calendar — actions distributed by priority');
+  html += `<p class="wq-backlog-help" style="margin-bottom:14px">
+    MWCC actions don't have publish dates, so this calendar uses priority as a target schedule:
+    <b>P1</b> → act Mon–Wed this week · <b>P2</b> → next week Mon–Fri · <b>P3</b> → week 2 Wed–Fri (backlog).
+    Cards follow stage colours: faded = needs Tia review, bright purple = scheduled. Click any card to open its brief.
+  </p>`;
+  html += `<div style="margin-bottom:28px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+      <button onclick="if(window._mwccCalOffset>0){window._mwccCalOffset--;renderMwccContentPlanner()}" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:${_calOffset===0?'var(--muted)':'var(--text)'};font-size:12px;font-weight:600;cursor:${_calOffset===0?'default':'pointer'};opacity:${_calOffset===0?'.4':'1'};font-family:inherit" ${_calOffset===0?'disabled':''}>&#8592; Prev 2 weeks</button>
+      <div style="text-align:center">
+        <div style="font-size:14px;font-weight:700;color:var(--mwcc-purple-deep)">${_calLabel}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${_calItemCount} action${_calItemCount!==1?'s':''} ${_calOffset===0?'in this 2-week cycle':'(P-based scheduling only applies to current cycle)'}</div>
+      </div>
+      <button onclick="window._mwccCalOffset=(window._mwccCalOffset||0)+1;renderMwccContentPlanner()" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--mwcc-purple);border-radius:4px;background:#fff;color:var(--mwcc-purple-deep);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Next 2 weeks &#8594;</button>
+    </div>
+    ${_renderCalWeekRow(_calStart, 1, 0)}
+    ${_renderCalWeekRow(_wk2Start, 2, 7)}
+  </div>`;
+
+  // ── Operational Backlog (full source-grouped view, kept) ──
   html += sectionTitle(`Operational Backlog — ${ACTIVE.length} actions from Monday's emitters`);
   html += `<p class="wq-backlog-help">
-    Operational fixes for MWCC this fortnight. Grouped by source. Cards follow stage colours: faded = needs Tia review, bright teal = scheduled, etc. Boxes are fixed height — when a group has many items, the inner list scrolls.
+    Same items as the calendar, grouped by source so each owner sees their bucket. Use this view when you want to see all MWCC SEO actions together, or all Meta Ads actions. Boxes are fixed height — when a group has many items, the inner list scrolls.
   </p>`;
 
   const MWCC_GROUPS = [
