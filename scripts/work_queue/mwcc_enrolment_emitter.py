@@ -305,7 +305,10 @@ def emit_all() -> List[WorkQueueAction]:
 
     gap,      serial = _emit_enrolment_gap(centres, week, serial)
     occ,      serial = _emit_occupancy_fill(centres, week, serial)
-    wage,     serial = _emit_wage_ratio_alert(centres, week, serial)
+    # WAGE_RATIO_ALERT disabled (07 Jun 2026, Tia direction) — wages are an HR/finance
+    # concern, not a marketing concern. The marketing OS no longer surfaces wage actions.
+    # Function `_emit_wage_ratio_alert` is kept defined but never invoked.
+    wage: List[WorkQueueAction] = []
 
     return gap + occ + wage
 

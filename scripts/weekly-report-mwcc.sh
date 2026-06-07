@@ -134,6 +134,22 @@ fi
 
 
 # ─────────────────────────────────────────────────────────────────
+# STEP 4.1 — ROTATE OPS HISTORY (enables WoW deltas in dashboard)
+# Snapshots the freshly-parsed mwcc-ops.json into mwcc-ops-history.json.
+# Idempotent — re-running same week is safe (overwrites that week's entry).
+# Graceful: if mwcc-ops.json wasn't written this run, the script just no-ops.
+# ─────────────────────────────────────────────────────────────────
+log ""
+log "─── STEP 4.1: Rotate ops history ───"
+if "$PYTHON" "$BASE_DIR/scripts/rotate_mwcc_ops_history.py" >> "$LOG" 2>&1; then
+    log "  ✅ Ops history rotated → state/mwcc-ops-history.json"
+else
+    FAILED_STEPS+=("ops-rotate")
+    log "  ⚠️  Ops history rotation failed (non-fatal)"
+fi
+
+
+# ─────────────────────────────────────────────────────────────────
 # STEP 4.5 — GSC PULL + AHREFS PULL (SEO data sources)
 # ─────────────────────────────────────────────────────────────────
 log ""

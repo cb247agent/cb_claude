@@ -1053,20 +1053,23 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
     Sets window.MWCC_DATA = { generated, period, ops, meta, ads, ads_history, meta_history, ga4 }.
     """
     # Load rolling histories so the dashboard can render WoW deltas + 8-week trends
-    ads_history = _load("mwcc-ads-history.json", default=[])
+    ads_history  = _load("mwcc-ads-history.json", default=[])
     meta_history = _load("mwcc-meta-history.json", default=[])
-    if not isinstance(ads_history, list):  ads_history  = []
+    ops_history  = _load("mwcc-ops-history.json",  default=[])
+    if not isinstance(ads_history,  list): ads_history  = []
     if not isinstance(meta_history, list): meta_history = []
+    if not isinstance(ops_history,  list): ops_history  = []
 
     data = {
-        "generated": datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC"),
-        "period": ops.get("period") or ops.get("network_summary", {}).get("period", {}),
-        "ops": ops,
-        "meta": meta,
-        "ads": ads,
-        "ads_history": ads_history,
+        "generated":    datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC"),
+        "period":       ops.get("period") or ops.get("network_summary", {}).get("period", {}),
+        "ops":          ops,
+        "meta":         meta,
+        "ads":          ads,
+        "ads_history":  ads_history,
         "meta_history": meta_history,
-        "ga4": ga4,
+        "ops_history":  ops_history,
+        "ga4":          ga4,
     }
     json_payload = json.dumps(data, indent=2, default=str)
 

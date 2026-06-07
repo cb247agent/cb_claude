@@ -6675,7 +6675,7 @@ window.MWCC_DATA = {
     <div class="page" id="page-mwcc-occupancy">
       <div class="page-header">
         <h1>Centre Occupancy</h1>
-        <p>Per-centre &amp; per-room occupancy · compliance risk flags · wage breach monitor · OWNA data</p>
+        <p>Per-centre &amp; per-room occupancy · compliance risk flags · sorted by risk · OWNA data</p>
       </div>
       <div id="mwcc-occ-content"></div>
     </div>
@@ -12159,10 +12159,9 @@ function renderMwccOverview() {
   const el = $('mwcc-overview-content');
   if (!el) return;
 
-  // ── Computed top-level metrics ─────────────────────────────────────────
+  // ── Computed top-level metrics (NO wage data surfaced — marketing OS only) ─
   const centreArr   = Object.values(centres);
   const avgOcc      = centreArr.length ? Math.round(centreArr.reduce((s,c)=>s+(c.occupancy?.Overall||0),0)/centreArr.length) : null;
-  const breachList  = net.centres_in_wage_breach || [];
   const riskList    = net.rooms_with_compliance_risk || [];
   const metaSpend   = meta.summary?.spend || 0;
   const adsSpend    = ads.totals?.spend || ads.totals?.cost || 0;
@@ -12175,6 +12174,20 @@ function renderMwccOverview() {
   const enqConvPct  = totalEnq > 0 ? Math.round(totalEnr / totalEnq * 100) : null;
   const period      = ops.period?.label || ops.period?.raw || md.period || '7-day window';
   const refreshTs   = md.generated_at || md.parsed_at || 'unknown';
+
+  // ── WoW deltas from ops_history (rendered as small text next to KPIs) ──
+  const opsHistory  = Array.isArray(md.ops_history) ? md.ops_history : [];
+  const priorWeek   = opsHistory.length >= 2 ? opsHistory.slice(-2)[0] : null;
+  const priorNet    = priorWeek?.network_summary || {};
+  const priorAvgOcc = priorWeek
+    ? Math.round(Object.values(priorWeek.centres||{}).reduce((s,c)=>s+(c.occupancy?.Overall||0),0) / Math.max(1, Object.keys(priorWeek.centres||{}).length))
+    : null;
+  function _dStr(curr, prior, suffix) {
+    if (prior === undefined || prior === null || isNaN(prior)) return '';
+    const d = curr - prior;
+    if (Math.abs(d) < 0.5) return ' · WoW ±0';
+    return ` · WoW ${d>=0?'+':''}${d.toFixed(0)}${suffix||''}`;
+  }
 
   // ── Page header subtitle ──────────────────────────────────────────────
   if ($('mwcc-overview-period')) {
@@ -12191,25 +12204,22 @@ function renderMwccOverview() {
     <span><b>GA4</b> ${md.ga4?.generated_at ? md.ga4.generated_at.slice(0,10) : '–'}</span>
   </div>`;
 
-  // ── Executive Verdict ─────────────────────────────────────────────────
+  // ── Executive Verdict (wage-free; uses compliance + enrolment + conv only) ──
   const _hasCompliance = riskList.length > 0;
-  const _hasBreach     = breachList.length > 0;
   const _enrolDown     = netEnrol !== undefined && netEnrol < 0;
   const _whereWeAre = `${totalEnr} enrolments · ${totalExit} exits · ${totalEnq} enquiries (${enqConvPct !== null ? enqConvPct + '% conversion' : 'conv rate –'}) · ${avgOcc!==null ? avgOcc+'% network occupancy' : 'occ –'} · ${totalSpend>0 ? '$'+totalSpend.toFixed(0) : '$0'} ad spend.`;
   const _risk = _hasCompliance
     ? `<b>Compliance risk:</b> ${riskList.join(', ')} — room occupancy exceeds licensed ratio. Action this morning.`
-    : _hasBreach
-      ? `<b>Wage breach:</b> ${breachList.join(', ')} above 42% wage % target. Denver to call on roster optimisation OR enrolment push.`
-      : _enrolDown
-        ? `<b>Net enrolment ${netEnrol}:</b> losing members faster than gaining. Kelley investigates per-centre exit reasons via CleverWaiver equivalent.`
+    : _enrolDown
+      ? `<b>Net enrolment ${netEnrol}:</b> losing members faster than gaining. Kelley investigates per-centre exit reasons via CleverWaiver equivalent.`
+      : enqConvPct !== null && enqConvPct < 40
+        ? `<b>Tour-to-enrol conversion ${enqConvPct}%:</b> below 40% means leakage between enquiry and enrolment. Audit follow-up cadence.`
         : `Stable cycle. Focus shifts to filling under-occupied rooms and protecting CTR on Meta winners.`;
   const _priority = _hasCompliance
     ? 'Compliance audit FIRST. Cannot enrol more children into risk rooms.'
-    : _hasBreach
-      ? 'Wage breach review with Denver. Either reduce headcount or run enrolment push at those centres.'
-      : enqConvPct !== null && enqConvPct < 50
-        ? `Tour-to-enrol funnel: ${enqConvPct}% conversion. Kelley calls every enquiry within 24h.`
-        : 'Review Work Queue for this week\'s assigned actions across SEO / Meta / Google Ads / Enrolment.';
+    : enqConvPct !== null && enqConvPct < 50
+      ? `Tour-to-enrol funnel: ${enqConvPct}% conversion. Kelley calls every enquiry within 24h.`
+      : 'Review Work Queue for this week\'s assigned actions across SEO / Meta / Google Ads / Enrolment.';
 
   html += `<div class="insight teal mb" style="border-left-width:6px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
@@ -12223,14 +12233,16 @@ function renderMwccOverview() {
     </div>
   </div>`;
 
-  // ── 4 KPI cards ───────────────────────────────────────────────────────
+  // ── 4 KPI cards (wage-free; Compliance is binary OK/AT RISK only) ──
   const _enrolColor = _enrolDown ? 'red' : (netEnrol > 0 ? 'green' : '');
   const _occColor   = avgOcc !== null ? (avgOcc >= 80 ? 'green' : avgOcc < 50 ? 'red' : '') : '';
+  const _netDelta   = priorNet.net_movement !== undefined ? netEnrol - priorNet.net_movement : null;
+  const _enqConvSub = enqConvPct !== null ? `${enqConvPct}% conversion · ${totalEnq} enquiries` : `${totalEnq} enquiries`;
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Net Enrolments', netEnrol !== undefined ? enrolDir+netEnrol : '—', null, `${totalEnr} in · ${totalExit} out · ${totalEnq} enquiries`, _enrolColor)}
+    ${kpiCard('','Net Enrolments', netEnrol !== undefined ? enrolDir+netEnrol : '—', null, `${totalEnr} in · ${totalExit} out${_netDelta!==null && Math.abs(_netDelta)>=1 ? ` · WoW ${_netDelta>=0?'+':''}${_netDelta}` : ''}`, _enrolColor)}
     ${kpiCard('','Total Ad Spend', totalSpend>0 ? '$'+totalSpend.toFixed(0) : '—', null, totalSpend>0 ? `Meta $${metaSpend.toFixed(0)} · Google $${adsSpend.toFixed(0)}` : 'Configure ad credentials', totalSpend>0?'green':'')}
-    ${kpiCard('','Network Occupancy', avgOcc !== null ? avgOcc+'%' : '—', null, '5-centre average · 80% target', _occColor)}
-    ${kpiCard('','Compliance Status', _hasCompliance ? 'AT RISK' : _hasBreach ? 'WAGE BREACH' : 'OK', null, _hasCompliance ? riskList.join(' · ') : _hasBreach ? breachList.join(' · ') : 'No issues this cycle', _hasCompliance?'red':_hasBreach?'amber':'green')}
+    ${kpiCard('','Network Occupancy', avgOcc !== null ? avgOcc+'%' : '—', null, '5-centre average · 80% target' + _dStr(avgOcc, priorAvgOcc, 'pt'), _occColor)}
+    ${kpiCard('','Compliance Status', _hasCompliance ? 'AT RISK' : 'OK', null, _hasCompliance ? riskList.join(' · ') : 'All rooms within licensed capacity', _hasCompliance?'red':'green')}
   </div>`;
 
   // ── Hero card: enquiry-to-enrolment funnel highlight (when good) ──────
@@ -12251,17 +12263,15 @@ function renderMwccOverview() {
     </div>`;
   }
 
-  // ── Insight strip ──────────────────────────────────────────────────────
+  // ── Insight strip (wage-free) ──────────────────────────────────────────
   html += `<div class="grid-2 mb">
-    <div class="insight ${_hasCompliance || _hasBreach || _enrolDown ? 'red' : 'amber'}">
-      <div class="insight-label">${_hasCompliance ? 'Compliance — Act Now' : _hasBreach ? 'Wage Breach — Review' : _enrolDown ? 'Net Enrolment Loss' : 'Watch: Tour Conversion'}</div>
+    <div class="insight ${_hasCompliance || _enrolDown ? 'red' : 'amber'}">
+      <div class="insight-label">${_hasCompliance ? 'Compliance — Act Now' : _enrolDown ? 'Net Enrolment Loss' : 'Watch: Tour Conversion'}</div>
       ${_hasCompliance
         ? `<b>${riskList.join(', ')}</b> exceeds licensed capacity. Operations cannot enrol more children in these rooms until ratio compliance is restored.`
-        : _hasBreach
-          ? `<b>${breachList.join(', ')}</b> exceeds 42% wage target. Denver makes strategic call: reduce headcount via rostering OR push enrolment volume to dilute wage %.`
-          : _enrolDown
-            ? `<b>Net ${netEnrol}</b> — exits outpace enrolments. Kelley pulls cancel notes from OWNA; flag any competitor-switching pattern to Tia.`
-            : enqConvPct !== null ? `Enquiry-to-enrolment conversion ${enqConvPct}% — if below 50%, audit tour booking workflow + 24h follow-up cadence.` : 'No enquiries this cycle. Increase top-of-funnel via Meta + Google Ads + GBP.'}
+        : _enrolDown
+          ? `<b>Net ${netEnrol}</b> — exits outpace enrolments. Kelley pulls cancel notes from OWNA; flag any competitor-switching pattern to Tia.`
+          : enqConvPct !== null ? `Enquiry-to-enrolment conversion ${enqConvPct}% — if below 50%, audit tour booking workflow + 24h follow-up cadence.` : 'No enquiries this cycle. Increase top-of-funnel via Meta + Google Ads + GBP.'}
     </div>
     <div class="insight teal">
       <div class="insight-label">${avgOcc !== null && avgOcc >= 70 ? 'Occupancy On Track' : 'Centre Performance'}</div>
@@ -12272,22 +12282,25 @@ function renderMwccOverview() {
     </div>
   </div>`;
 
-  // ── Centre Summary table (existing logic, kept) ───────────────────────
+  // ── Centre Summary table (wage column removed; Status = compliance only) ──
   if (centreArr.length) {
     html += sectionTitle('Centre Summary');
-    html += '<div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Occ %</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Wage %</th><th>Status</th></tr></thead><tbody>';
+    html += '<div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Occ %</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Net</th><th>Compliance</th></tr></thead><tbody>';
     for (const name of MWCC_CENTRES) {
       const c = centres[name]; if (!c) continue;
       const occ = c.occupancy?.Overall||0;
       const occClass = occ>=90?'bad':occ>=70?'good':'';
+      const cNet = c.net_movement || 0;
+      // Centre-level compliance status — only from rooms_with_compliance_risk presence
+      const centreAtRisk = (c.rooms_detail && Object.values(c.rooms_detail).some(r => (r.capacity||0)>0 && (r.compliance_risk || (r.occupancy_pct||0) >= 100)));
       html += `<tr>
         <td style="font-weight:600">${name}</td>
         <td class="num"><span class="stat-val ${occClass}">${occ}%</span></td>
         <td class="num">${c.enquiries||0}</td>
         <td class="num">${c.enrolments||0}</td>
         <td class="num">${c.exits||0}</td>
-        <td class="num"><span class="stat-val ${c.wage_breach?'bad':''}">${(c.wage_exc_leave_pct||0).toFixed(1)}%</span></td>
-        <td>${c.wage_breach?'<span style="font-size:9px;background:#fff8e1;color:#b45309;padding:1px 6px;border-radius:3px;font-weight:700">BREACH</span>':'<span style="font-size:9px;color:var(--mwcc-purple-deep);font-weight:600">OK</span>'}</td>
+        <td class="num"><span class="stat-val ${cNet>0?'good':cNet<0?'bad':''}">${cNet>=0?'+':''}${cNet}</span></td>
+        <td>${centreAtRisk ? '<span style="font-size:9px;background:#fef2f2;color:#ef4444;padding:1px 6px;border-radius:3px;font-weight:700">AT RISK</span>' : '<span style="font-size:9px;color:var(--mwcc-purple-deep);font-weight:600">OK</span>'}</td>
       </tr>`;
     }
     html += '</tbody></table></div>';
@@ -12840,44 +12853,59 @@ function renderMwccGads() {
 }
 
 function renderMwccOrgSocial() {
+  // ─── Purple-rebranded 07 Jun 2026 ───
   const el = $('mwcc-orgsoc-content');
   if (!el) return;
   el.innerHTML = `
+    <div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+      <span><b>Organic Social</b> — awaiting Metricool credentials</span>
+      <span style="color:var(--muted)">Facebook + Instagram metrics will appear here once integration is live</span>
+    </div>
+    <div class="insight neutral mb">
+      <div class="insight-label">Awaiting Integration</div>
+      Organic social metrics are pulled via <b>Metricool</b>. Once the integration is wired, this page will show follower growth, reach, engagement rate, top posts, and posting cadence per platform.
+    </div>
     <div class="kpi-grid cols-4 mb">
       ${kpiCard('','Followers','—',null,'Instagram + Facebook')}
       ${kpiCard('','Reach','—',null,'This period')}
       ${kpiCard('','Engagement Rate','—',null,'Avg across platforms')}
       ${kpiCard('','Top Post Reach','—',null,'Best performing post')}
     </div>
-    <div class="section-title">Platforms Tracked</div>
-    <div class="card mb" style="padding:20px 24px">
-      <table><thead><tr><th>Platform</th><th>Page / Handle</th><th>Metrics Planned</th><th>Status</th></tr></thead><tbody>
-        <tr>
-          <td style="font-weight:600">Facebook</td>
-          <td style="font-size:12px;color:var(--muted)">My World Childcare</td>
-          <td style="font-size:12px;color:var(--muted)">Page likes, reach, post engagement, link clicks</td>
-          <td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td>
+    ${sectionTitle('Platforms Tracked')}
+    <div class="card mb" style="padding:0">
+      <table style="width:100%"><thead><tr style="background:var(--mwcc-purple-mist)">
+        <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Platform</th>
+        <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Page / Handle</th>
+        <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Metrics Planned</th>
+        <th style="text-align:left;padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Status</th>
+      </tr></thead><tbody>
+        <tr style="border-top:1px solid var(--border)">
+          <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Facebook</td>
+          <td style="padding:10px 14px;font-size:12px;color:var(--muted)">My World Childcare</td>
+          <td style="padding:10px 14px;font-size:12px;color:var(--muted)">Page likes, reach, post engagement, link clicks</td>
+          <td style="padding:10px 14px"><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td>
         </tr>
-        <tr>
-          <td style="font-weight:600">Instagram</td>
-          <td style="font-size:12px;color:var(--muted)">@myworldchildcare</td>
-          <td style="font-size:12px;color:var(--muted)">Followers, impressions, reach, engagement rate, top posts</td>
-          <td><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td>
+        <tr style="border-top:1px solid var(--border)">
+          <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">Instagram</td>
+          <td style="padding:10px 14px;font-size:12px;color:var(--muted)">@myworldchildcare</td>
+          <td style="padding:10px 14px;font-size:12px;color:var(--muted)">Followers, impressions, reach, engagement rate, top posts</td>
+          <td style="padding:10px 14px"><span style="font-size:10px;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">PENDING</span></td>
         </tr>
       </tbody></table>
     </div>
-    <div class="section-title">Integration Required</div>
-    <div class="card mb" style="padding:16px 24px">
-      <p style="margin:0 0 10px;font-size:13px;color:var(--muted)">Organic social metrics are pulled via <strong>Metricool</strong>. To connect:</p>
-      <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.8">
+    ${sectionTitle('Integration Required')}
+    <div class="card mb" style="padding:18px 24px;border-left:4px solid var(--mwcc-purple)">
+      <div style="font-size:12px;color:var(--mwcc-purple-deep);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em">Connect Metricool</div>
+      <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--text-2);line-height:1.8">
         <li>Connect My World Childcare Facebook + Instagram pages in Metricool</li>
-        <li>Generate a Metricool API token and add to <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">.env</code> as <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">MWCC_METRICOOL_TOKEN</code></li>
-        <li>Run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">python scripts/pull_mwcc_social.py</code></li>
+        <li>Generate a Metricool API token and add to <code style="background:var(--mwcc-purple-mist);padding:1px 5px;border-radius:3px;color:var(--mwcc-purple-deep)">.env</code> as <code style="background:var(--mwcc-purple-mist);padding:1px 5px;border-radius:3px;color:var(--mwcc-purple-deep)">MWCC_METRICOOL_TOKEN</code></li>
+        <li>Run: <code style="background:var(--mwcc-purple-mist);padding:1px 6px;border-radius:3px;color:var(--mwcc-purple-deep)">python scripts/pull_mwcc_social.py</code></li>
       </ol>
     </div>`;
 }
 
 function renderMwccWebsite() {
+  // ─── Purple-rebranded 07 Jun 2026 ───
   const md = window.MWCC_DATA || {};
   const ga4 = md.ga4 || {};
   const el = $('mwcc-website-content');
@@ -12885,27 +12913,42 @@ function renderMwccWebsite() {
 
   if (ga4.available === false) {
     el.innerHTML = `
+      <div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+        <span><b>Website Analytics</b> — awaiting GA4 connection</span>
+        <span style="color:var(--muted)">GA4 property ID 315149021 ready; awaiting .env wire + service-account access</span>
+      </div>
+      <div class="insight neutral mb">
+        <div class="insight-label">Awaiting GA4</div>
+        Add <code>MWCC_GA4_PROPERTY_ID=315149021</code> to <code>.env</code> and grant the service account in <code>secrets/</code> Viewer access to this GA4 property. Then run <code>python scripts/pull_mwcc_ga4.py</code>.
+      </div>
       <div class="kpi-grid cols-4 mb">
         ${kpiCard('','Active Users','—',null,'Connect GA4')}
         ${kpiCard('','Sessions','—',null,'Connect GA4')}
         ${kpiCard('','Key Events','—',null,'Connect GA4')}
         ${kpiCard('','Avg Session','—',null,'Connect GA4')}
       </div>
-      <div class="section-title">Connect GA4 — myworldcc.com.au</div>
-      <div class="card mb" style="padding:20px 24px">
-        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Add this variable to <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">.env</code> to enable website analytics for My World Childcare.</p>
-        <table style="width:100%"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody>
-          <tr><td><code>MWCC_GA4_PROPERTY_ID</code></td><td style="font-family:monospace;font-size:12px;color:var(--teal)">315149021</td></tr>
-        </tbody></table>
-        <p style="margin:14px 0 0;font-size:12px;color:var(--muted)">The service account in <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">secrets/</code> must also have Viewer access to this GA4 property. Then run: <code style="background:var(--bg-2);padding:1px 6px;border-radius:3px">python scripts/pull_mwcc_ga4.py</code></p>
+      ${sectionTitle('Setup — Connect GA4 (myworldcc.com.au)')}
+      <div class="card mb" style="padding:18px 24px;border-left:4px solid var(--mwcc-purple)">
+        <div style="font-size:12px;color:var(--mwcc-purple-deep);font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em">Required .env variable</div>
+        <table style="width:100%;margin-bottom:14px">
+          <thead><tr style="background:var(--mwcc-purple-mist)">
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Variable</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Value</th>
+          </tr></thead>
+          <tbody><tr style="border-top:1px solid var(--border)">
+            <td style="padding:8px 12px"><code>MWCC_GA4_PROPERTY_ID</code></td>
+            <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:var(--mwcc-purple)">315149021</td>
+          </tr></tbody>
+        </table>
+        <p style="margin:0;font-size:12px;color:var(--text-2)">The service account in <code style="background:var(--mwcc-purple-mist);padding:1px 5px;border-radius:3px;color:var(--mwcc-purple-deep)">secrets/</code> must also have Viewer access to this GA4 property. Then run: <code style="background:var(--mwcc-purple-mist);padding:1px 6px;border-radius:3px;color:var(--mwcc-purple-deep)">python scripts/pull_mwcc_ga4.py</code></p>
       </div>
-      <div class="section-title">What will appear here</div>
+      ${sectionTitle('What will appear here')}
       <div class="card mb" style="padding:16px 24px">
         <table><thead><tr><th>Page</th><th class="num">Sessions</th><th class="num">Users</th><th class="num">Key Events</th></tr></thead><tbody>
           <tr style="color:var(--muted)"><td colspan="4" style="text-align:center;padding:16px;font-size:12px">Top pages from myworldcc.com.au will appear here once GA4 is connected</td></tr>
         </tbody></table>
       </div>
-      <div class="section-title" style="margin-top:16px">Traffic by Channel</div>
+      ${sectionTitle('Traffic by Channel')}
       <div class="card mb" style="padding:16px 24px">
         <table><thead><tr><th>Channel</th><th class="num">Sessions</th><th class="num">Users</th></tr></thead><tbody>
           <tr style="color:var(--muted)"><td colspan="3" style="text-align:center;padding:16px;font-size:12px">Channel breakdown will appear here once GA4 is connected</td></tr>
@@ -12914,7 +12957,14 @@ function renderMwccWebsite() {
     return;
   }
 
-  let html = `<div class="kpi-grid cols-4 mb">
+  // ── Populated state ──
+  const genDate = (ga4.generated_at || '').slice(0,10);
+  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>GA4</b> ${genDate || '–'}</span>
+    <span><b>Property</b> 315149021</span>
+    <span><b>Sessions</b> ${_mwccFmt(ga4.sessions)}</span>
+  </div>`;
+  html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Active Users',_mwccFmt(ga4.active_users),null,'')}
     ${kpiCard('','Sessions',_mwccFmt(ga4.sessions),null,`Prior: ${_mwccFmt(ga4.p_sessions)}`)}
     ${kpiCard('','Key Events',_mwccFmt(ga4.key_events),null,'')}
@@ -12922,14 +12972,16 @@ function renderMwccWebsite() {
   </div>`;
   const topPages = ga4.top_pages || [];
   if (topPages.length) {
-    html += '<div class="section-title">Top Pages</div><div class="card mb"><table><thead><tr><th>Page</th><th class="num">Sessions</th><th class="num">Users</th><th class="num">Events</th></tr></thead><tbody>';
-    for (const p of topPages.slice(0,10)) html += `<tr><td style="font-size:11.5px">${p.page_path||p.page||'/'}</td><td class="num">${_mwccFmt(p.sessions)}</td><td class="num">${_mwccFmt(p.active_users||p.users)}</td><td class="num">${_mwccFmt(p.key_events||p.events)}</td></tr>`;
+    html += sectionTitle('Top Pages');
+    html += '<div class="card mb" style="padding:0"><table style="width:100%"><thead><tr style="background:var(--mwcc-purple-mist)"><th style="padding:10px 14px;text-align:left">Page</th><th class="num" style="padding:10px 14px">Sessions</th><th class="num" style="padding:10px 14px">Users</th><th class="num" style="padding:10px 14px">Events</th></tr></thead><tbody>';
+    for (const p of topPages.slice(0,10)) html += `<tr style="border-top:1px solid var(--border)"><td style="padding:8px 14px;font-size:11.5px">${p.page_path||p.page||'/'}</td><td class="num" style="padding:8px 14px">${_mwccFmt(p.sessions)}</td><td class="num" style="padding:8px 14px">${_mwccFmt(p.active_users||p.users)}</td><td class="num" style="padding:8px 14px">${_mwccFmt(p.key_events||p.events)}</td></tr>`;
     html += '</tbody></table></div>';
   }
   const channels = ga4.by_channel || {};
   if (Object.keys(channels).length) {
-    html += '<div class="section-title">Traffic by Channel</div><div class="card mb"><table><thead><tr><th>Channel</th><th class="num">Sessions</th><th class="num">Users</th></tr></thead><tbody>';
-    for (const [ch,v] of Object.entries(channels)) html += `<tr><td>${ch}</td><td class="num">${_mwccFmt(v.sessions)}</td><td class="num">${_mwccFmt(v.users)}</td></tr>`;
+    html += sectionTitle('Traffic by Channel');
+    html += '<div class="card mb" style="padding:0"><table style="width:100%"><thead><tr style="background:var(--mwcc-purple-mist)"><th style="padding:10px 14px;text-align:left">Channel</th><th class="num" style="padding:10px 14px">Sessions</th><th class="num" style="padding:10px 14px">Users</th></tr></thead><tbody>';
+    for (const [ch,v] of Object.entries(channels)) html += `<tr style="border-top:1px solid var(--border)"><td style="padding:8px 14px">${ch}</td><td class="num" style="padding:8px 14px">${_mwccFmt(v.sessions)}</td><td class="num" style="padding:8px 14px">${_mwccFmt(v.users)}</td></tr>`;
     html += '</tbody></table></div>';
   }
   if (!html.includes('<table>')) html += '<div class="insight neutral"><div class="insight-label">No Data</div>No website data available.</div>';
@@ -12937,9 +12989,11 @@ function renderMwccWebsite() {
 }
 
 function renderMwccOccupancy() {
-  // ─── Cloned from CB247 page pattern (07 Jun 2026) — purple-branded ───
+  // ─── Rebuilt 07 Jun 2026 (Tia direction): no wage refs, single-column,
+  //     sorted by compliance-risk severity, WoW deltas ───
   const md = window.MWCC_DATA || {};
   const ops = md.ops || {};
+  const opsHistory = Array.isArray(md.ops_history) ? md.ops_history : [];
   const net = ops.network_summary || {};
   const centres = ops.centres || {};
   const el = $('mwcc-occ-content');
@@ -12953,8 +13007,27 @@ function renderMwccOccupancy() {
     return;
   }
 
-  // ── Aggregates ──
-  const breachList = net.centres_in_wage_breach  || [];
+  // ── Resolve prior week from history (if available) for WoW deltas ──
+  const currentPeriodEnd = ops.period?.end;
+  const priorWeek = opsHistory.length >= 2
+    ? opsHistory.slice(-2)[0]                                         // penultimate snapshot
+    : opsHistory.find(h => (h.period?.end) !== currentPeriodEnd);     // any other snapshot
+  const priorCentres = priorWeek?.centres || {};
+  function _delta(curr, prior) {
+    if (prior === undefined || prior === null || isNaN(prior)) return null;
+    return curr - prior;
+  }
+  function _deltaBadge(delta, opts) {
+    if (delta === null || delta === undefined) return '';
+    const { goodIsUp = true, fmt = (v) => v.toFixed(1) } = opts || {};
+    if (Math.abs(delta) < 0.05) return `<span style="font-size:10px;color:var(--muted);margin-left:6px">±0</span>`;
+    const isGood = goodIsUp ? delta > 0 : delta < 0;
+    const arrow = delta > 0 ? '↑' : '↓';
+    const clr = isGood ? 'var(--mwcc-purple-deep)' : '#b91c1c';
+    return `<span style="font-size:10px;color:${clr};margin-left:6px;font-weight:600">${arrow} ${fmt(Math.abs(delta))} vs last week</span>`;
+  }
+
+  // ── Aggregates (NO wage data surfaced) ──
   const riskList   = net.rooms_with_compliance_risk || [];
   const centreArr  = Object.values(centres);
   const avgOcc     = Math.round(centreArr.reduce((s,c)=>s+(c.occupancy?.Overall||0),0)/centreArr.length);
@@ -12962,12 +13035,18 @@ function renderMwccOccupancy() {
   const genDate     = (ops.generated_at || '').slice(0,10);
 
   // Count active rooms (capacity > 0) vs total rooms across all centres
-  let activeRooms = 0, totalRooms = 0;
+  let activeRooms = 0, totalRooms = 0, lowRooms = 0, atRiskRooms = 0;
   for (const c of centreArr) {
     const rd = c.rooms_detail || {};
     for (const rname in rd) {
       totalRooms++;
-      if ((rd[rname].capacity || 0) > 0) activeRooms++;
+      const cap = rd[rname].capacity || 0;
+      if (cap > 0) {
+        activeRooms++;
+        const rOcc = rd[rname].occupancy_pct || 0;
+        if (rOcc < 70) lowRooms++;
+        if (rd[rname].compliance_risk || rOcc >= 100) atRiskRooms++;
+      }
     }
   }
 
@@ -12985,29 +13064,39 @@ function renderMwccOccupancy() {
     }
   }
 
-  // ── Data freshness banner (purple, matches Dashboard/SEO/Meta) ──
+  // Prior network avg for headline delta
+  const priorAvgOcc = priorWeek
+    ? Math.round(Object.values(priorCentres).reduce((s,c)=>s+(c.occupancy?.Overall||0),0)/Math.max(1,Object.values(priorCentres).length))
+    : null;
+  const avgOccDelta = priorAvgOcc !== null ? avgOcc - priorAvgOcc : null;
+
+  // ── Data freshness banner (NO wage threshold mention) ──
   let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
     <span><b>OWNA Report</b> ${genDate} (${periodLabel})</span>
     <span><b>Centres</b> ${centreArr.length}</span>
     <span><b>Active rooms</b> ${activeRooms} / ${totalRooms}</span>
-    <span style="color:var(--muted)">Wage-breach threshold: 42% (exc. leave) · Compliance risk: occupancy &gt; licensed capacity</span>
+    <span style="color:var(--muted)">Compliance risk = room occupancy &gt; licensed capacity</span>
+    ${priorWeek ? `<span style="color:var(--muted)">WoW vs ${(priorWeek.period?.end||'—')}</span>` : '<span style="color:var(--muted)">WoW deltas appear from next Monday</span>'}
   </div>`;
 
-  // ── Executive Verdict (purple-tinted teal insight, same as other MWCC pages) ──
-  const _whereWeAre = `${avgOcc}% average network occupancy across ${centreArr.length} centres / ${activeRooms} active rooms. ${breachList.length} wage breach${breachList.length===1?'':'es'}, ${riskList.length} compliance risk${riskList.length===1?'':'s'}.`;
+  // ── Executive Verdict (occupancy-focused only) ──
+  const deltaText = avgOccDelta !== null
+    ? ` (${avgOccDelta>=0?'+':''}${avgOccDelta}pt vs last week)`
+    : '';
+  const _whereWeAre = `${avgOcc}% average network occupancy${deltaText} across ${centreArr.length} centres / ${activeRooms} active rooms. ${riskList.length} compliance risk${riskList.length===1?'':'s'}, ${lowRooms} room${lowRooms===1?'':'s'} below 70% target.`;
   const _risk = riskList.length
     ? `<b>${riskList.join(', ')}</b> — over licensed capacity. Cap intake or activate waitlist before regulator review.`
-    : breachList.length
-      ? `<b>${breachList.join(', ')}</b> wage cost over 42% threshold. Roster review required this week.`
-      : worstRoom && worstRoom.occupancy_pct < 40
-        ? `<b>${worstRoom.centre} ${worstRoom.room}</b> sitting at ${worstRoom.occupancy_pct.toFixed(1)}% — ${(worstRoom.capacity - worstRoom.avg_daily).toFixed(0)} seats empty. Push meta ads to the suburb.`
-        : `No critical risks. Monitor wage % and at-risk rooms weekly.`;
+    : worstRoom && worstRoom.occupancy_pct < 40
+      ? `<b>${worstRoom.centre} ${worstRoom.room}</b> sitting at ${worstRoom.occupancy_pct.toFixed(1)}% — ${(worstRoom.capacity - worstRoom.avg_daily).toFixed(0)} seats empty. Push Meta ads to the suburb.`
+      : avgOccDelta !== null && avgOccDelta < -3
+        ? `Network occupancy dropped <b>${Math.abs(avgOccDelta)}pt</b> WoW. Pull cancel notes from OWNA to identify pattern.`
+        : `No critical risks. Monitor at-risk rooms weekly.`;
   const _priority = riskList.length
     ? `Kelley to cap ${riskList[0]} intake by Friday and brief families on transition.`
-    : breachList.length
-      ? `Kelley + Denver: roster review for ${breachList[0]} this week. Target wage % below 42%.`
-      : worstRoom && worstRoom.occupancy_pct < 60
-        ? `Brief Joanne to push paid spend to ${worstRoom.centre} (${worstRoom.room}, ${worstRoom.occupancy_pct.toFixed(0)}% occ) — lift weekly enrolments by 2–3.`
+    : worstRoom && worstRoom.occupancy_pct < 60
+      ? `Brief Joanne to push paid spend to ${worstRoom.centre} (${worstRoom.room}, ${worstRoom.occupancy_pct.toFixed(0)}% occ) — lift weekly enrolments by 2–3.`
+      : lowRooms >= 3
+        ? `${lowRooms} rooms below 70%. Cross-reference with paid-ad coverage and prioritise top 3 by absolute headroom.`
         : `Maintain. Watch for week-on-week dips next Monday.`;
 
   html += `<div class="insight teal mb" style="border-left-width:6px">
@@ -13022,15 +13111,15 @@ function renderMwccOccupancy() {
     </div>
   </div>`;
 
-  // ── KPI cards (purple via body[data-business="mwcc"] CSS swap) ──
+  // ── KPI cards (NO wage; replaced with Rooms Below Target) ──
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Avg Network Occupancy', avgOcc+'%', null, `${centreArr.length}-centre average`, avgOcc>=70?'green':'')}
-    ${kpiCard('','Wage Breaches', breachList.length+' centre'+(breachList.length===1?'':'s'), null, breachList.length ? breachList.join(', ') : 'All centres within 42% threshold', breachList.length?'red':'green')}
-    ${kpiCard('','Compliance Risks', riskList.length+' room'+(riskList.length===1?'':'s'), null, riskList.length ? 'Over licensed capacity' : 'All rooms within capacity', riskList.length?'red':'green')}
+    ${kpiCard('','Avg Network Occupancy', avgOcc+'%', null, priorAvgOcc!==null ? `Last week: ${priorAvgOcc}%` : `${centreArr.length}-centre average`, avgOcc>=70?'green':avgOcc<50?'red':'')}
+    ${kpiCard('','Rooms Below Target', lowRooms+' / '+activeRooms, null, lowRooms ? 'Under 70% occupancy — push enrolments' : 'All active rooms ≥ 70%', lowRooms>=3?'amber':lowRooms?'':'green')}
+    ${kpiCard('','At-Risk Rooms', atRiskRooms+' room'+(atRiskRooms===1?'':'s'), null, atRiskRooms ? 'At or over licensed capacity' : 'All rooms within capacity', atRiskRooms?'red':'green')}
     ${kpiCard('','Active Rooms', activeRooms+' / '+totalRooms, null, 'Rooms operating this week')}
   </div>`;
 
-  // ── Colour legend (single line, replaces guesswork) ──
+  // ── Colour legend ──
   html += `<div style="background:var(--mwcc-purple-mist);border-radius:4px;padding:6px 14px;margin-bottom:18px;font-size:10.5px;color:var(--text-2);display:flex;flex-wrap:wrap;gap:18px;align-items:center">
     <span style="color:var(--muted);font-weight:600">Colour key:</span>
     <span><span style="display:inline-block;width:10px;height:10px;background:var(--text-2);border-radius:2px;margin-right:5px;vertical-align:middle"></span>Below target &lt; 70%</span>
@@ -13039,7 +13128,7 @@ function renderMwccOccupancy() {
     <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:5px;vertical-align:middle"></span>Over capacity 100%+</span>
   </div>`;
 
-  // ── Compliance / wage alerts (with anchor links to centre cards) ──
+  // ── Compliance alerts (anchored, NO wage strip) ──
   if (riskList.length) {
     const links = riskList.map(r => {
       const centre = (r.split('—')[0] || r.split(/\s+/)[0] || '').trim();
@@ -13047,12 +13136,8 @@ function renderMwccOccupancy() {
     }).join(' · ');
     html += `<div class="insight red mb"><div class="insight-label">Compliance Risk</div>${links} — occupancy exceeds licensed room capacity. Cap intake immediately.</div>`;
   }
-  if (breachList.length) {
-    const links = breachList.map(c => `<a href="#mwcc-occ-${c.replace(/\s+/g,'-').toLowerCase()}" style="color:#b45309;font-weight:600;text-decoration:underline">${c}</a>`).join(' · ');
-    html += `<div class="insight amber mb"><div class="insight-label">Wage Breach</div>${links} — wage % exc. leave above 42% threshold. Review rostering this week.</div>`;
-  }
 
-  // ── Key Observations strip (2 cards side-by-side, matches CB247 pattern) ──
+  // ── Key Observations strip ──
   if (worstRoom || bestRoom) {
     html += sectionTitle('Key Observations');
     html += '<div class="grid-2 mb">';
@@ -13077,103 +13162,145 @@ function renderMwccOccupancy() {
     html += '</div>';
   }
 
-  // ── Centre cards grid ──
-  html += sectionTitle('Centre Occupancy Detail');
-  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">';
+  // ── Centre Occupancy Detail — SINGLE COLUMN, sorted by compliance risk severity ──
+  // Sort order: (1) centres with any at-risk room first
+  //             (2) then by max-room-occ descending (so highest-pressure centres surface)
+  //             (3) then by overall occupancy descending
+  function _centreRiskScore(c) {
+    const rd = c.rooms_detail || {};
+    let maxRoomOcc = 0, hasRisk = 0;
+    for (const r of Object.values(rd)) {
+      if ((r.capacity || 0) <= 0) continue;
+      const occ = r.occupancy_pct || 0;
+      if (occ > maxRoomOcc) maxRoomOcc = occ;
+      if (r.compliance_risk || occ >= 100) hasRisk = 1;
+    }
+    return { hasRisk, maxRoomOcc, overall: c.occupancy?.Overall || 0 };
+  }
+  const sortedCentres = MWCC_CENTRES
+    .filter(name => centres[name])
+    .map(name => ({ name, c: centres[name], score: _centreRiskScore(centres[name]) }))
+    .sort((a, b) => {
+      if (b.score.hasRisk !== a.score.hasRisk) return b.score.hasRisk - a.score.hasRisk;
+      if (b.score.maxRoomOcc !== a.score.maxRoomOcc) return b.score.maxRoomOcc - a.score.maxRoomOcc;
+      return b.score.overall - a.score.overall;
+    });
 
-  for (const name of MWCC_CENTRES) {
-    const c = centres[name]; if (!c) continue;
+  html += sectionTitle('Centre Occupancy Detail — sorted by compliance risk');
+  html += '<div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px">';
+
+  for (const { name, c } of sortedCentres) {
     const overallOcc = c.occupancy?.Overall || 0;
-    const breach     = c.wage_breach;
     const occClr     = overallOcc >= 100 ? '#ef4444' : overallOcc >= 90 ? '#f59e0b' : overallOcc >= 70 ? 'var(--mwcc-purple)' : 'var(--text-2)';
     const barPct     = Math.min(overallOcc, 100);
     const anchorId   = 'mwcc-occ-' + name.replace(/\s+/g,'-').toLowerCase();
 
-    html += `<div class="card" id="${anchorId}" style="padding:18px 20px;border-top:3px solid var(--mwcc-purple)">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--mwcc-purple-deep)">${name}</div>
-          ${breach ? '<div style="font-size:9px;font-weight:700;text-transform:uppercase;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;display:inline-block;margin-top:4px">Wage Breach</div>' : ''}
+    // Centre-level risk badge (compliance only — wages excluded)
+    const centreRooms = c.rooms_detail || {};
+    const centreAtRisk = Object.values(centreRooms).some(r => (r.capacity||0) > 0 && (r.compliance_risk || (r.occupancy_pct||0) >= 100));
+
+    // WoW delta on overall %
+    const priorCentre = priorCentres[name];
+    const priorOverall = priorCentre?.occupancy?.Overall;
+    const overallDelta = _delta(overallOcc, priorOverall);
+
+    html += `<div class="card" id="${anchorId}" style="padding:18px 22px;border-left:4px solid ${centreAtRisk ? '#ef4444' : 'var(--mwcc-purple)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:24px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div style="font-size:16px;font-weight:700;color:var(--mwcc-purple-deep)">${name}</div>
+            ${centreAtRisk ? '<span style="font-size:9px;font-weight:700;text-transform:uppercase;background:#fef2f2;color:#ef4444;padding:2px 7px;border-radius:3px;letter-spacing:.05em">Compliance Risk</span>' : ''}
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">${Object.values(centreRooms).filter(r=>(r.capacity||0)>0).length} active room${Object.values(centreRooms).filter(r=>(r.capacity||0)>0).length===1?'':'s'}</div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:26px;font-weight:700;color:${occClr};line-height:1">${overallOcc}%</div>
-          <div style="font-size:10px;color:var(--muted)">overall</div>
+        <div style="text-align:right;min-width:140px">
+          <div style="font-size:28px;font-weight:700;color:${occClr};line-height:1">${overallOcc}%${_deltaBadge(overallDelta, { goodIsUp: true, fmt: v => v.toFixed(0)+'pt' })}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">overall occupancy</div>
         </div>
       </div>
-      <div style="background:var(--border);border-radius:99px;height:5px;overflow:hidden;margin-bottom:14px">
+      <div style="background:var(--border);border-radius:99px;height:6px;overflow:hidden;margin-bottom:16px">
         <div style="background:${occClr};height:100%;border-radius:99px;width:${barPct}%;transition:width .4s"></div>
       </div>`;
 
-    // Rooms detail — HIDE rooms with capacity 0 (rooms not running this week)
-    const rooms = c.rooms_detail || {};
-    const activeRoomEntries = Object.entries(rooms).filter(([_, rd]) => (rd.capacity || 0) > 0);
+    // Rooms — hide capacity=0
+    const activeRoomEntries = Object.entries(centreRooms).filter(([_, rd]) => (rd.capacity || 0) > 0);
     if (activeRoomEntries.length) {
-      html += `<table style="width:100%;font-size:11px;margin-bottom:8px">
-        <thead><tr>
-          <th style="text-align:left;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Room</th>
-          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Occ%</th>
-          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Avg</th>
-          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Cap</th>
+      html += `<table style="width:100%;font-size:12px;margin-bottom:8px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:6px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Room</th>
+          <th style="text-align:right;padding:6px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Occ%</th>
+          <th style="text-align:right;padding:6px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">WoW</th>
+          <th style="text-align:right;padding:6px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Avg / Cap</th>
+          <th style="text-align:left;padding:6px 0 6px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Mon–Fri</th>
         </tr></thead>
         <tbody>`;
 
+      // Sort rooms within centre: risk → highest occ → lowest
+      activeRoomEntries.sort((a, b) => {
+        const [_a, ra] = a, [_b, rb] = b;
+        const aRisk = (ra.compliance_risk || (ra.occupancy_pct||0) >= 100) ? 1 : 0;
+        const bRisk = (rb.compliance_risk || (rb.occupancy_pct||0) >= 100) ? 1 : 0;
+        if (bRisk !== aRisk) return bRisk - aRisk;
+        return (rb.occupancy_pct||0) - (ra.occupancy_pct||0);
+      });
+
       for (const [rname, rd] of activeRoomEntries) {
         const rOcc  = rd.occupancy_pct || 0;
-        const rRisk = rd.compliance_risk;
+        const rRisk = rd.compliance_risk || rOcc >= 100;
         const rClr  = rRisk ? '#ef4444' : rOcc >= 90 ? '#f59e0b' : rOcc >= 70 ? 'var(--mwcc-purple)' : 'var(--text-2)';
 
-        html += `<tr>
-          <td style="padding:4px 0;color:var(--text)">${rname}${rRisk ? ' <span style="font-size:8px;font-weight:700;background:#fef2f2;color:#ef4444;padding:1px 5px;border-radius:2px;letter-spacing:.05em">RISK</span>' : ''}</td>
-          <td style="text-align:right;padding:4px 0;color:${rClr};font-weight:${rRisk?700:600}">${rOcc.toFixed(1)}%</td>
-          <td style="text-align:right;padding:4px 0;color:var(--text-2)">${(rd.avg_daily||0).toFixed(1)}</td>
-          <td style="text-align:right;padding:4px 0;color:var(--muted)">${rd.capacity||'—'}</td>
-        </tr>`;
+        // Room-level WoW delta
+        const priorRoomOcc = priorCentre?.rooms_detail?.[rname]?.occupancy_pct;
+        const roomDelta = _delta(rOcc, priorRoomOcc);
+        const roomDeltaTxt = roomDelta === null ? '<span style="color:var(--muted)">—</span>'
+          : Math.abs(roomDelta) < 0.5 ? '<span style="color:var(--muted)">±0</span>'
+          : `<span style="color:${roomDelta>0?'var(--mwcc-purple-deep)':'#b91c1c'};font-weight:600">${roomDelta>0?'↑':'↓'} ${Math.abs(roomDelta).toFixed(1)}pt</span>`;
 
-        // Mon-Fri mini trend bars (slightly taller now, easier to read)
+        // Mon-Fri inline trend bars (larger now since we have horizontal space)
         const daily = rd.daily_mon_fri || [];
-        if (daily.length) {
-          const cap = rd.capacity || 1;
-          html += `<tr><td colspan="4" style="padding:2px 0 10px">
-            <div style="display:flex;gap:3px;align-items:flex-end;height:26px">
-              ${daily.map((v,i) => {
-                const pctOfCap = Math.min((v / cap) * 100, 100);
-                const h    = Math.max(Math.round(pctOfCap), 6);
-                const over = cap > 0 && v > cap;
-                const barC = over ? '#ef4444' : pctOfCap >= 90 ? '#f59e0b' : pctOfCap >= 70 ? 'var(--mwcc-purple)' : 'var(--mwcc-purple-soft)';
-                return `<div title="${['Mon','Tue','Wed','Thu','Fri'][i]}: ${v} / ${cap}" style="flex:1;height:${h}%;background:${barC};border-radius:2px"></div>`;
-              }).join('')}
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted-2);margin-top:3px"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
-          </td></tr>`;
-        }
+        const cap = rd.capacity || 1;
+        const dailyHtml = daily.length ? `
+          <div style="display:flex;gap:3px;align-items:flex-end;height:24px;width:90px">
+            ${daily.map((v,i) => {
+              const pctOfCap = Math.min((v / cap) * 100, 100);
+              const h    = Math.max(Math.round(pctOfCap), 6);
+              const over = cap > 0 && v > cap;
+              const barC = over ? '#ef4444' : pctOfCap >= 90 ? '#f59e0b' : pctOfCap >= 70 ? 'var(--mwcc-purple)' : 'var(--mwcc-purple-soft)';
+              return `<div title="${['Mon','Tue','Wed','Thu','Fri'][i]}: ${v} / ${cap}" style="flex:1;height:${h}%;background:${barC};border-radius:2px"></div>`;
+            }).join('')}
+          </div>` : '<span style="font-size:10px;color:var(--muted)">—</span>';
+
+        html += `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:8px 0;color:var(--text)">${rname}${rRisk ? ' <span style="font-size:9px;font-weight:700;background:#fef2f2;color:#ef4444;padding:1px 5px;border-radius:2px;letter-spacing:.05em;margin-left:4px">RISK</span>' : ''}</td>
+          <td style="text-align:right;padding:8px 0;color:${rClr};font-weight:${rRisk?700:600}">${rOcc.toFixed(1)}%</td>
+          <td style="text-align:right;padding:8px 0;font-size:11px">${roomDeltaTxt}</td>
+          <td style="text-align:right;padding:8px 0;color:var(--text-2);font-size:11px">${(rd.avg_daily||0).toFixed(1)} / ${rd.capacity||'—'}</td>
+          <td style="padding:8px 0 8px 16px">${dailyHtml}</td>
+        </tr>`;
       }
       html += '</tbody></table>';
     } else {
-      html += '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0">No active rooms this week.</div>';
+      html += '<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0">No active rooms this week.</div>';
     }
 
-    // Show "rooms not running" if there are any zero-capacity rooms (informational)
-    const inactiveRooms = Object.entries(rooms).filter(([_, rd]) => (rd.capacity || 0) === 0).map(([n]) => n);
+    // Show "rooms not running" if any (informational)
+    const inactiveRooms = Object.entries(centreRooms).filter(([_, rd]) => (rd.capacity || 0) === 0).map(([n]) => n);
     if (inactiveRooms.length) {
-      html += `<div style="font-size:10px;color:var(--muted);padding:6px 0 4px;border-top:1px dashed var(--border);margin-top:4px"><b>Not running this week:</b> ${inactiveRooms.join(', ')}</div>`;
+      html += `<div style="font-size:10.5px;color:var(--muted);padding:8px 0 0;border-top:1px dashed var(--border);margin-top:8px"><b>Not running this week:</b> ${inactiveRooms.join(', ')}</div>`;
     }
-
-    // Wage footer (no emoji glyphs)
-    const wagePct = (c.wage_exc_leave_pct||0).toFixed(1);
-    html += `<div style="padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px">
-      <span style="color:var(--muted)">Wage exc. leave</span>
-      <span style="font-weight:600;color:${breach?'#b45309':'var(--mwcc-purple-deep)'}">${wagePct}% <span style="font-size:9.5px;color:var(--muted);font-weight:500">${breach ? 'over 42% threshold' : 'within threshold'}</span></span>
-    </div>`;
 
     html += '</div>'; // end card
   }
-  html += '</div>'; // end grid
+  html += '</div>'; // end column
 
-  // ── Recommended Actions for Kelley (auto-pulled from cbState.mwccWorkQueue) ──
+  // ── Recommended Actions for Kelley (filtered to enrolment-only, NO wage actions) ──
   try {
     const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
-    const enrolmentActions = wqItems.filter(a => a.source_page === 'enrolment')
-                                    .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
+    const enrolmentActions = wqItems
+      .filter(a => a.source_page === 'enrolment')
+      // belt-and-braces filter: even if old wage actions exist from prior runs, drop them
+      .filter(a => !(a.category||'').toLowerCase().includes('wage') && !(a.title||'').toLowerCase().includes('wage'))
+      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
     if (enrolmentActions.length) {
       html += sectionTitle('Recommended Actions — Pulled from Work Queue');
       html += '<div class="card mb" style="padding:0">';
@@ -13204,47 +13331,211 @@ function renderMwccOccupancy() {
 }
 
 function renderMwccEnrolments() {
+  // ─── Rebuilt 07 Jun 2026 (Tia direction): CB247 pattern + purple + WoW deltas + actions ───
   const md = window.MWCC_DATA || {};
   const ops = md.ops || {};
+  const opsHistory = Array.isArray(md.ops_history) ? md.ops_history : [];
   const net = ops.network_summary || {};
   const centres = ops.centres || {};
   const el = $('mwcc-enrol-content');
   if (!el) return;
 
   if (!Object.keys(centres).length) {
-    el.innerHTML = '<div class="insight neutral"><div class="insight-label">No Data</div>Drop MYWORLD_REPORT.xlsx into mwcc-inbox/ before running the pipeline.</div>';
+    el.innerHTML = `<div class="insight neutral">
+      <div class="insight-label">Awaiting OWNA Data</div>
+      Drop <code>MYWORLD_REPORT.xlsx</code> into <code>mwcc-inbox/</code> before running the pipeline.
+    </div>`;
     return;
   }
 
-  let html = `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Total Enquiries', net.total_enquiries||0, null, 'Network this week')}
-    ${kpiCard('','Total Enrolments', net.total_enrolments||0, null, 'Network this week')}
-    ${kpiCard('','Total Exits', net.total_exits||0, null, 'Network this week')}
-    ${kpiCard('','Net Movement', (net.net_movement||0)>=0?'+'+(net.net_movement||0):(net.net_movement||0), null, 'Enrolments minus exits')}
+  // ── Resolve prior week from history ──
+  const currentPeriodEnd = ops.period?.end;
+  const priorWeek = opsHistory.length >= 2 ? opsHistory.slice(-2)[0] : opsHistory.find(h => h.period?.end !== currentPeriodEnd);
+  const priorNet = priorWeek?.network_summary || {};
+  const priorCentres = priorWeek?.centres || {};
+
+  // ── Aggregates ──
+  const totalEnq = net.total_enquiries  || 0;
+  const totalEnr = net.total_enrolments || 0;
+  const totalExit = net.total_exits     || 0;
+  const totalNet = net.net_movement     || 0;
+  const enqConvPct = totalEnq > 0 ? Math.round(totalEnr / totalEnq * 100) : null;
+  const periodLabel = ops.period?.label || '—';
+  const genDate     = (ops.generated_at || '').slice(0,10);
+
+  function _dStr(curr, prior, suffix) {
+    if (prior === undefined || prior === null || isNaN(prior)) return '';
+    const d = curr - prior;
+    if (Math.abs(d) < 0.5) return ' · WoW ±0';
+    return ` · WoW ${d>=0?'+':''}${d}${suffix||''}`;
+  }
+
+  // Find best and worst centre by net_movement
+  const centreArr = MWCC_CENTRES.filter(n=>centres[n]).map(n => ({ name: n, c: centres[n] }));
+  const sortedByNet = [...centreArr].sort((a,b) => (b.c.net_movement||0) - (a.c.net_movement||0));
+  const bestCentre = sortedByNet[0];
+  const worstCentre = sortedByNet[sortedByNet.length-1];
+
+  // ── Data freshness banner ──
+  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>OWNA Report</b> ${genDate} (${periodLabel})</span>
+    <span><b>Centres</b> ${centreArr.length}</span>
+    <span><b>Tour conv</b> ${enqConvPct!==null ? enqConvPct+'%' : '—'}</span>
+    ${priorWeek ? `<span style="color:var(--muted)">WoW vs ${(priorWeek.period?.end||'—')}</span>` : '<span style="color:var(--muted)">WoW deltas appear from next Monday</span>'}
   </div>`;
 
-  html += '<div class="section-title">Centre Detail</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Enquiries</th><th class="num">Enrolments</th><th class="num">Exits</th><th class="num">Net</th><th class="num">Occupancy</th></tr></thead><tbody>';
+  // ── Executive Verdict ──
+  const _whereWeAre = `${totalEnr} enrolment${totalEnr===1?'':'s'} from ${totalEnq} enquir${totalEnq===1?'y':'ies'} (${enqConvPct!==null?enqConvPct+'% tour conversion':'conv —'}). ${totalExit} exit${totalExit===1?'':'s'}. Net ${totalNet>=0?'+':''}${totalNet} across ${centreArr.length} centres.`;
+  const _risk = totalNet < 0
+    ? `<b>Net ${totalNet}</b> — losing more children than gaining. Kelley to pull cancel reasons from OWNA exits and flag any competitor-switching pattern.`
+    : enqConvPct !== null && enqConvPct < 40
+      ? `<b>Tour-to-enrol conversion ${enqConvPct}%</b> — below 40% means leakage between enquiry and enrolment. Audit 24h follow-up cadence and tour booking workflow.`
+      : worstCentre && (worstCentre.c.net_movement||0) < 0
+        ? `<b>${worstCentre.name}</b> net ${worstCentre.c.net_movement} — only centre with negative movement. Kelley investigates centre-specific issues.`
+        : totalEnq === 0
+          ? `<b>0 enquiries this cycle.</b> Top-of-funnel gap — push Meta + Google + GBP.`
+          : `Stable cycle. Hold pace and protect existing conversion rate.`;
+  const _priority = totalNet < 0
+    ? `Kelley: cancel-reason analysis by Friday. Tia: identify competitor-switching pattern if any.`
+    : enqConvPct !== null && enqConvPct < 50
+      ? `Kelley: call every new enquiry within 24h. Joanne: keep paid spend steady on top-performing creatives.`
+      : bestCentre && (bestCentre.c.net_movement||0) > 0
+        ? `Double down on what's working at <b>${bestCentre.name}</b> (net +${bestCentre.c.net_movement}). Brief Jordan to clone winning creative across other centres.`
+        : `Review Work Queue → Enrolment for assigned actions this week.`;
+
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Enrolments Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${periodLabel}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_whereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_risk}</div>
+      <div style="margin-top:6px"><b style="color:var(--mwcc-purple-deep)">Top priority this week:</b> ${_priority}</div>
+    </div>
+  </div>`;
+
+  // ── 4 KPI cards with WoW deltas ──
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Total Enquiries', totalEnq, null, 'Network this week' + _dStr(totalEnq, priorNet.total_enquiries), totalEnq>=10?'green':totalEnq===0?'red':'')}
+    ${kpiCard('','Total Enrolments', totalEnr, null, 'Network this week' + _dStr(totalEnr, priorNet.total_enrolments), totalEnr>=3?'green':totalEnr===0?'red':'')}
+    ${kpiCard('','Total Exits', totalExit, null, 'Network this week' + _dStr(totalExit, priorNet.total_exits), totalExit===0?'green':totalExit>=5?'red':'')}
+    ${kpiCard('','Net Movement', (totalNet>=0?'+':'')+totalNet, null, 'Enrolments minus exits' + _dStr(totalNet, priorNet.net_movement), totalNet>0?'green':totalNet<0?'red':'')}
+  </div>`;
+
+  // ── Key Observations strip ──
+  if (bestCentre || worstCentre) {
+    html += sectionTitle('Key Observations');
+    html += '<div class="grid-2 mb">';
+    if (worstCentre && (worstCentre.c.net_movement||0) < 0) {
+      html += `<div class="insight red">
+        <div class="insight-label">Worst Net Movement — Investigate</div>
+        <b>${worstCentre.name}</b> net <b>${worstCentre.c.net_movement}</b> · ${worstCentre.c.enrolments||0} in / ${worstCentre.c.exits||0} out.
+        <br><br>Kelley to pull cancel notes from OWNA for this centre. Joanne to check if Meta + Google spend is reaching ${worstCentre.name}'s suburb radius.
+      </div>`;
+    } else if (worstCentre && (worstCentre.c.enquiries||0) === 0) {
+      html += `<div class="insight amber">
+        <div class="insight-label">Zero Enquiries — Top-of-funnel Gap</div>
+        <b>${worstCentre.name}</b> received <b>0 enquiries</b> this week.
+        <br><br>Push GBP posts (Kelley), check Meta delivery in suburb radius (Joanne), and verify SEO ranks for "[suburb] childcare" (John).
+      </div>`;
+    } else {
+      html += `<div class="insight neutral">
+        <div class="insight-label">No Critical Centres</div>
+        All ${centreArr.length} centres recorded enquiries this week. Lowest net movement: <b>${worstCentre?.name||'—'}</b> at ${worstCentre?.c.net_movement>=0?'+':''}${worstCentre?.c.net_movement||0}.
+      </div>`;
+    }
+    if (bestCentre && (bestCentre.c.net_movement||0) > 0) {
+      html += `<div class="insight teal">
+        <div class="insight-label">Best Net Movement — Replicate</div>
+        <b>${bestCentre.name}</b> net <b>+${bestCentre.c.net_movement}</b> · ${bestCentre.c.enrolments||0} in / ${bestCentre.c.exits||0} out.
+        <br><br>Jordan: study Meta + GBP content from ${bestCentre.name} this week — replicate the angle for the lower-performing centres.
+      </div>`;
+    } else {
+      html += `<div class="insight neutral">
+        <div class="insight-label">Best Performer This Week</div>
+        <b>${bestCentre?.name||'—'}</b> with ${bestCentre?.c.enquiries||0} enquiries / ${bestCentre?.c.enrolments||0} enrolments. Maintain pace.
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  // ── Centre Detail table with WoW ──
+  html += sectionTitle('Centre Detail');
+  html += '<div class="card mb" style="padding:0"><table><thead><tr style="background:var(--mwcc-purple-mist)">' +
+    '<th style="padding:10px 14px;text-align:left">Centre</th>' +
+    '<th class="num" style="padding:10px 14px">Enquiries</th>' +
+    '<th class="num" style="padding:10px 14px">Enrolments</th>' +
+    '<th class="num" style="padding:10px 14px">Exits</th>' +
+    '<th class="num" style="padding:10px 14px">Net</th>' +
+    '<th class="num" style="padding:10px 14px">Net WoW</th>' +
+    '<th class="num" style="padding:10px 14px">Occupancy</th>' +
+  '</tr></thead><tbody>';
   let totEnq=0, totEnrol=0, totExit=0, totNet=0;
-  for (const name of MWCC_CENTRES) {
-    const c = centres[name]; if (!c) continue;
+  for (const { name, c } of centreArr) {
     totEnq += c.enquiries||0; totEnrol += c.enrolments||0; totExit += c.exits||0; totNet += c.net_movement||0;
     const occ = c.occupancy?.Overall||0;
-    html += `<tr>
-      <td style="font-weight:600">${name}</td>
-      <td class="num">${c.enquiries||0}</td>
-      <td class="num">${c.enrolments||0}</td>
-      <td class="num">${c.exits||0}</td>
-      <td class="num"><span class="stat-val ${(c.net_movement||0)>0?'good':(c.net_movement||0)<0?'bad':''}">${(c.net_movement||0)>=0?'+':''}${c.net_movement||0}</span></td>
-      <td class="num"><span class="stat-val ${occ>=70?'good':''}">${occ}%</span></td>
+    const cNet = c.net_movement || 0;
+    const priorNetCentre = priorCentres[name]?.net_movement;
+    const netDelta = priorNetCentre !== undefined ? cNet - priorNetCentre : null;
+    const netDeltaTxt = netDelta === null
+      ? '<span style="color:var(--muted)">—</span>'
+      : Math.abs(netDelta) < 0.5 ? '<span style="color:var(--muted)">±0</span>'
+      : `<span style="color:${netDelta>0?'var(--mwcc-purple-deep)':'#b91c1c'};font-weight:600">${netDelta>0?'+':''}${netDelta}</span>`;
+    html += `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:10px 14px;font-weight:600;color:var(--mwcc-purple-deep)">${name}</td>
+      <td class="num" style="padding:10px 14px">${c.enquiries||0}</td>
+      <td class="num" style="padding:10px 14px">${c.enrolments||0}</td>
+      <td class="num" style="padding:10px 14px">${c.exits||0}</td>
+      <td class="num" style="padding:10px 14px"><span class="stat-val ${cNet>0?'good':cNet<0?'bad':''}">${cNet>=0?'+':''}${cNet}</span></td>
+      <td class="num" style="padding:10px 14px">${netDeltaTxt}</td>
+      <td class="num" style="padding:10px 14px"><span class="stat-val ${occ>=70?'good':occ<50?'bad':''}">${occ}%</span></td>
     </tr>`;
   }
-  html += `<tr style="font-weight:700;border-top:2px solid var(--border-strong);background:#fafafa">
-    <td>TOTAL</td>
-    <td class="num">${totEnq}</td><td class="num">${totEnrol}</td><td class="num">${totExit}</td>
-    <td class="num"><span class="stat-val ${totNet>0?'good':totNet<0?'bad':''}">${totNet>=0?'+':''}${totNet}</span></td>
-    <td class="num">—</td>
+  html += `<tr style="font-weight:700;border-top:2px solid var(--border-strong);background:var(--mwcc-purple-mist)">
+    <td style="padding:10px 14px;color:var(--mwcc-purple-deep)">TOTAL</td>
+    <td class="num" style="padding:10px 14px">${totEnq}</td>
+    <td class="num" style="padding:10px 14px">${totEnrol}</td>
+    <td class="num" style="padding:10px 14px">${totExit}</td>
+    <td class="num" style="padding:10px 14px"><span class="stat-val ${totNet>0?'good':totNet<0?'bad':''}">${totNet>=0?'+':''}${totNet}</span></td>
+    <td class="num" style="padding:10px 14px"><span style="color:var(--muted)">—</span></td>
+    <td class="num" style="padding:10px 14px"><span style="color:var(--muted)">—</span></td>
   </tr>`;
   html += '</tbody></table></div>';
+
+  // ── Recommended Actions panel (enrolment-only, wage-filtered) ──
+  try {
+    const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
+    const enrolmentActions = wqItems
+      .filter(a => a.source_page === 'enrolment')
+      .filter(a => !(a.category||'').toLowerCase().includes('wage') && !(a.title||'').toLowerCase().includes('wage'))
+      .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
+    if (enrolmentActions.length) {
+      html += sectionTitle('Recommended Actions — Pulled from Work Queue');
+      html += '<div class="card mb" style="padding:0">';
+      html += '<table style="width:100%;font-size:12px"><thead><tr style="background:var(--mwcc-purple-mist)">' +
+        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Priority</th>' +
+        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Action</th>' +
+        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Owner</th>' +
+        '<th style="text-align:right;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Effort</th>' +
+      '</tr></thead><tbody>';
+      for (const a of enrolmentActions.slice(0, 8)) {
+        const prio = a.priority || 'P3';
+        const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
+        html += `<tr style="border-top:1px solid var(--border)">
+          <td style="padding:10px 14px"><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
+          <td style="padding:10px 14px;color:var(--text)"><b>${a.title || '—'}</b>${a.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5">${a.description.substring(0,180)}${a.description.length>180?'…':''}</div>` : ''}</td>
+          <td style="padding:10px 14px;color:var(--text-2);font-size:11px">${a.owner || '—'}${a.owner_role ? `<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>` : ''}</td>
+          <td style="text-align:right;padding:10px 14px;color:var(--muted);font-size:11px">${a.effort_hours ? a.effort_hours+'h' : '—'}</td>
+        </tr>`;
+      }
+      html += '</tbody></table></div>';
+      html += '<div style="font-size:10px;color:var(--muted);margin-bottom:18px"><b>Source:</b> auto-generated by <code>mwcc_enrolment_emitter.py</code> every Monday. Open <a href="#" onclick="nav(document.querySelector(\'[data-page=mwcc-work-queue]\'));return false" style="color:var(--mwcc-purple)">Work Queue</a> to mark complete or change verdict.</div>';
+    }
+  } catch (e) {
+    console.warn('[renderMwccEnrolments] could not pull work-queue actions:', e);
+  }
+
   el.innerHTML = html;
 }
 
