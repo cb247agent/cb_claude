@@ -1050,7 +1050,8 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
     Inline injection avoids GitHub Pages CDN caching of a separate mwcc-data.js file.
     Also writes docs/mwcc-data.js as a backup / for local dev use.
 
-    Sets window.MWCC_DATA = { generated, period, ops, meta, ads, ads_history, meta_history, ga4 }.
+    Sets window.MWCC_DATA = { generated, period, ops, meta, ads, ads_history, meta_history,
+                              ops_history, ga4, gsc, ahrefs }.
     """
     # Load rolling histories so the dashboard can render WoW deltas + 8-week trends
     ads_history  = _load("mwcc-ads-history.json", default=[])
@@ -1059,6 +1060,13 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
     if not isinstance(ads_history,  list): ads_history  = []
     if not isinstance(meta_history, list): meta_history = []
     if not isinstance(ops_history,  list): ops_history  = []
+
+    # Load GSC + Ahrefs for SEO page (Tia direction 07 Jun 2026 — SEO page was reading
+    # md.gsc / md.ahrefs but baker wasn't populating them, so page showed "Awaiting GSC")
+    gsc    = _load("mwcc-gsc-data.json", default={})
+    ahrefs = _load("mwcc-ahrefs.json",    default={})
+    if not isinstance(gsc,    dict): gsc    = {}
+    if not isinstance(ahrefs, dict): ahrefs = {}
 
     data = {
         "generated":    datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC"),
@@ -1070,6 +1078,8 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
         "meta_history": meta_history,
         "ops_history":  ops_history,
         "ga4":          ga4,
+        "gsc":          gsc,
+        "ahrefs":       ahrefs,
     }
     json_payload = json.dumps(data, indent=2, default=str)
 
