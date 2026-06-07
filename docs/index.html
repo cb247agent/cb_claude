@@ -15954,7 +15954,127 @@ function renderGroupOverview() {
     </tbody>
   </table></div>`;
 
-  // ── 5. MWCC Centre Occupancy (NO WAGE BREACH per rule) ───────────────────
+  // ── 5. Net Movement + CAC strip (Tier 2 #8 + #10) ────────────────────────
+  // Net Movement = outcome metric for each biz (the real "did we grow?")
+  // CAC = Cost per Acquisition (Group Total Spend / converted members or enrolments)
+  const cb247Conv = (D.google_ads?.conversions || 0) + (D.meta?.conversions || 0);
+  const mwccConv  = (md.ads?.totals?.conversions || 0) + (md.meta?.summary?.conversions || 0);
+  const cb247CAC = cb247Conv > 0 ? cb247Spend / cb247Conv : null;
+  const mwccCAC  = mwccConv > 0 ? mwccSpend / mwccConv : null;
+  // Use enrolments as MWCC's "real CAC" proxy (acquisition outcome, not just conversion click)
+  const mwccCACEnrol = mwccEnrolments > 0 ? mwccSpend / mwccEnrolments : null;
+  const cb247CACMember = cb247NewMembers > 0 ? cb247Spend / cb247NewMembers : null;
+
+  html += sectionTitle('Net Movement + Acquisition Efficiency');
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','CB247 Net Members',
+      (cb247NetMembers>=0?'+':'')+cb247NetMembers, null,
+      `${cb247NewMembers} new · ${cb247Cancellations} cancellations`,
+      cb247NetMembers > 0 ? 'green' : cb247NetMembers < 0 ? 'red' : '')}
+    ${kpiCard('','MWCC Net Enrolments',
+      mwccNet !== undefined ? (mwccNet>=0?'+':'')+mwccNet : '—', null,
+      mwccEnrolments > 0 ? `${mwccEnrolments} enrolled this week` : 'Awaiting OWNA',
+      mwccNet > 0 ? 'green' : mwccNet < 0 ? 'red' : '')}
+    ${kpiCard('','CB247 Cost / Member',
+      cb247CACMember !== null ? '$' + cb247CACMember.toFixed(0) : '—', null,
+      cb247CACMember !== null ? `$${cb247Spend.toFixed(0)} spend ÷ ${cb247NewMembers} new` : 'Need spend + members',
+      cb247CACMember !== null && cb247CACMember < 50 ? 'green' : cb247CACMember > 150 ? 'red' : '')}
+    ${kpiCard('','MWCC Cost / Enrolment',
+      mwccCACEnrol !== null ? '$' + mwccCACEnrol.toFixed(0) : '—', null,
+      mwccCACEnrol !== null ? `$${mwccSpend.toFixed(0)} spend ÷ ${mwccEnrolments} enrolments` : 'Need spend + enrolments',
+      mwccCACEnrol !== null && mwccCACEnrol < 250 ? 'green' : mwccCACEnrol > 500 ? 'red' : '')}
+  </div>`;
+
+  // ── 6. 8-Week Group Spend Trend chart (Tier 2 #9) ────────────────────────
+  // Build 8-week timeline from histories. Each week shows CB247 + MWCC portions.
+  // Histories are usually newest-first; we reverse for left-to-right time order.
+  const cb247AdsHist  = (D.google_ads?.history || D.ads_history || []).slice(0, 8).reverse();
+  const cb247MetaHist = (D.meta?.history || D.meta_history || []).slice(0, 8).reverse();
+  const mwccAdsHist   = (md.ads_history  || []).slice(0, 8).reverse();
+  const mwccMetaHist  = (md.meta_history || []).slice(0, 8).reverse();
+  const _haveTrend = cb247AdsHist.length >= 2 || mwccAdsHist.length >= 2;
+  if (_haveTrend) {
+    html += sectionTitle('8-Week Group Spend Trend');
+    html += `<div class="card mb" style="padding:16px"><div style="height:280px"><canvas id="groupSpendChart"></canvas></div>
+      <p style="font-size:10px;color:var(--muted);padding:8px 4px 0;margin:0">Stacked bars: CB247 portion (teal) + MWCC portion (purple) of weekly group spend. Histories: ${cb247AdsHist.length+cb247MetaHist.length} CB247 weeks · ${mwccAdsHist.length+mwccMetaHist.length} MWCC weeks.</p>
+    </div>`;
+  }
+
+  // ── 7. Connected Sources health (Tier 2 #11 + #12) ────────────────────────
+  // For each biz, count populated data sources to give a "wire-up health"
+  // indicator. Helps prioritise which biz to connect next.
+  const SOURCE_DEFS = {
+    cb247: [
+      { key:'ga4',       label:'GA4',         live: (D.ga4?.sessions || 0) > 0 },
+      { key:'gsc',       label:'GSC',         live: (D.seo?.gsc_queries?.length || 0) > 0 },
+      { key:'meta',      label:'Meta Ads',    live: cb247Meta > 0 },
+      { key:'gads',      label:'Google Ads',  live: cb247Google > 0 },
+      { key:'gbp',       label:'GBP',         live: D.gbp?.malaga != null },
+      { key:'ahrefs',    label:'Ahrefs',      live: (D.seo?.domain_rating || 0) > 0 },
+      { key:'metricool', label:'Metricool',   live: (window.SOCIAL_DATA?.metricool?.available) || (D.organic_social?.metricool != null) },
+      { key:'membership',label:'Membership',  live: window.MEMBERSHIP_DATA?.summary?.available || false },
+    ],
+    mwcc: [
+      { key:'ga4',       label:'GA4',         live: (md.ga4?.sessions || 0) > 0 },
+      { key:'gsc',       label:'GSC',         live: (md.gsc?.top_queries?.length || 0) > 0 },
+      { key:'meta',      label:'Meta Ads',    live: mwccMeta > 0 },
+      { key:'gads',      label:'Google Ads',  live: mwccGoogle > 0 },
+      { key:'ops',       label:'OWNA Ops',    live: Object.keys(md.ops?.centres || {}).length > 0 },
+      { key:'social',    label:'Metricool',   live: md.social?.available === true },
+      { key:'gbp',       label:'GBP API',     live: md.gbp_performance?.available === true && Object.values(md.gbp_performance?.centres || {}).some(c => !c.error) },
+      { key:'ahrefs',    label:'Ahrefs',      live: (md.ahrefs?.domain_rating || 0) > 0 },
+    ],
+    karribank: [
+      { key:'placeholder', label:'All 8 sources', live: false },
+    ],
+    sparrows: [
+      { key:'placeholder', label:'All 8 sources', live: false },
+    ],
+  };
+  const _countLive = (defs) => defs.filter(d => d.live).length;
+  const cb247Live = _countLive(SOURCE_DEFS.cb247);
+  const cb247Total = SOURCE_DEFS.cb247.length;
+  const mwccLive  = _countLive(SOURCE_DEFS.mwcc);
+  const mwccTotal = SOURCE_DEFS.mwcc.length;
+  // Traffic light per biz: based on % connected + WoW spend stability + net movement
+  const _trafficLight = (biz) => {
+    if (biz === 'cb247') {
+      if (cb247Live < cb247Total * 0.5) return { dot: '#ef4444', label: 'Connection gaps' };
+      if (cb247NetMembers < -5 || (cb247Chg !== null && Math.abs(cb247Chg) > 25)) return { dot: '#f59e0b', label: 'Watch closely' };
+      return { dot: '#10b981', label: 'Healthy' };
+    }
+    if (biz === 'mwcc') {
+      if (mwccLive < mwccTotal * 0.5) return { dot: '#ef4444', label: 'Connection gaps' };
+      if ((mwccNet !== undefined && mwccNet < 0) || (mwccChg !== null && Math.abs(mwccChg) > 25)) return { dot: '#f59e0b', label: 'Watch closely' };
+      return { dot: '#10b981', label: 'Healthy' };
+    }
+    return { dot: '#9ca3af', label: 'Not connected' };
+  };
+  const _sourceChip = (s) => `<span style="display:inline-block;padding:2px 7px;margin:2px;border-radius:3px;font-size:10px;font-weight:600;${s.live ? 'border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep)' : 'border:1px solid var(--border);color:var(--muted)'}">${s.label}${s.live ? ' ✓' : ''}</span>`;
+  const _renderBizHealth = (bizKey, bizLabel, defs) => {
+    const liveCount = _countLive(defs);
+    const total = defs.length;
+    const tl = _trafficLight(bizKey);
+    return `<div class="card" style="padding:14px 18px;border-left:3px solid ${tl.dot}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700;font-size:13px;color:var(--text)">${bizLabel}</div>
+        <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${tl.dot}"></span>${tl.label}
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-2);margin-bottom:6px">${liveCount} of ${total} sources connected</div>
+      <div style="margin:-2px">${defs.map(_sourceChip).join('')}</div>
+    </div>`;
+  };
+  html += sectionTitle('Data Sources Health · Per Business');
+  html += `<div class="grid-2 mb">
+    ${_renderBizHealth('cb247',     'CB247 Gym',          SOURCE_DEFS.cb247)}
+    ${_renderBizHealth('mwcc',      'My World Childcare', SOURCE_DEFS.mwcc)}
+    ${_renderBizHealth('karribank', 'Karribank',          SOURCE_DEFS.karribank)}
+    ${_renderBizHealth('sparrows',  'Sparrows',           SOURCE_DEFS.sparrows)}
+  </div>`;
+
+  // ── 8. MWCC Centre Occupancy (NO WAGE BREACH per rule) ───────────────────
   if (mwccCentreArr.length) {
     html += sectionTitle('MWCC Centre Occupancy');
     html += `<div class="kpi-grid cols-5 mb">
@@ -15972,6 +16092,61 @@ function renderGroupOverview() {
   }
 
   el.innerHTML = html;
+
+  // ── Chart.js: Group spend stacked bar (rendered after DOM is in place) ───
+  if (_haveTrend) {
+    setTimeout(() => {
+      const canvas = document.getElementById('groupSpendChart');
+      if (!canvas || !window.Chart) return;
+      // Build week labels and per-biz totals (Meta + Google combined)
+      const weekCount = Math.max(cb247AdsHist.length, mwccAdsHist.length, 4);
+      const labels = [];
+      const cb247Data = [];
+      const mwccData = [];
+      for (let i = 0; i < weekCount; i++) {
+        // Use whichever history has a date
+        const cbW = cb247AdsHist[i] || {};
+        const mwW = mwccAdsHist[i]  || {};
+        const label = (cbW.week_label || mwW.week_label || `W-${weekCount - i - 1}`).replace(/ \d{4}/, '');
+        labels.push(label);
+        const cbGoogle = cb247AdsHist[i]?.totals?.spend || cb247AdsHist[i]?.spend || 0;
+        const cbMeta   = cb247MetaHist[i]?.summary?.spend || cb247MetaHist[i]?.totals?.spend || 0;
+        const mwGoogle = mwccAdsHist[i]?.totals?.spend  || 0;
+        const mwMeta   = mwccMetaHist[i]?.summary?.spend || 0;
+        cb247Data.push(cbGoogle + cbMeta);
+        mwccData.push(mwGoogle + mwMeta);
+      }
+      new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'CB247', data: cb247Data, backgroundColor: '#3FA69A', borderRadius: 4, stack: 'spend' },
+            { label: 'MWCC',  data: mwccData,  backgroundColor: '#8B6FD9', borderRadius: 4, stack: 'spend' },
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(0)}`,
+                footer: (items) => {
+                  const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                  return `Group total: $${total.toFixed(0)}`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: { stacked: true, ticks: { font: { size: 10 } }, grid: { display: false } },
+            y: { stacked: true, ticks: { callback: (v) => '$' + v, font: { size: 10 } }, grid: { color: 'rgba(0,0,0,.05)' } },
+          },
+        },
+      });
+    }, 50);
+  }
 }
 
 // ── Stubs: CB247 Membership, MWCC new pages ────────────────────────────────────
