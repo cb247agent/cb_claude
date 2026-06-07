@@ -9393,13 +9393,27 @@ function nav(el) {
   const page = document.getElementById('page-'+el.dataset.page);
   if(page) page.classList.add('active');
   localStorage.setItem('cb247-active-page', el.dataset.page);
-  // Brand-colour switch: pages prefixed with mwcc-, kb-, sp- get their own palette
-  // (07 Jun 2026 — MWCC purple to differentiate from CB247 teal)
+  // Brand-colour switch — preserves biz context for cross-business pages.
+  // Bug fix 07 Jun 2026 (Tia): "How It Works" was always forcing biz=cb247
+  // because slug 'readme' falls to the else branch. Now for cross-business
+  // pages (readme + group-overview), we read the currently-active biz-tab
+  // so the page keeps the user's brand context.
   const slug = el.dataset.page || '';
-  const business = slug.startsWith('mwcc-') ? 'mwcc'
-                 : slug.startsWith('kb-')   ? 'kb'
-                 : slug.startsWith('sp-')   ? 'sp'
-                 : 'cb247';
+  let business;
+  if (slug.startsWith('mwcc-'))    business = 'mwcc';
+  else if (slug.startsWith('kb-')) business = 'kb';
+  else if (slug.startsWith('sp-')) business = 'sp';
+  else if (slug === 'readme' || slug === 'group-overview') {
+    // Cross-biz page — keep whatever biz tab is currently active
+    const activeTab = document.querySelector('.biz-tab.active');
+    const tabBiz = activeTab?.getAttribute('data-biz') || 'cb247';
+    business = tabBiz === 'karribank' ? 'kb'
+             : tabBiz === 'sparrows'  ? 'sp'
+             : tabBiz === 'mwcc'      ? 'mwcc'
+             : 'cb247';
+  } else {
+    business = 'cb247';
+  }
   document.body.setAttribute('data-business', business);
   window.scrollTo(0,0);
 }
