@@ -9415,6 +9415,9 @@ function nav(el) {
     business = 'cb247';
   }
   document.body.setAttribute('data-business', business);
+  // Persist the biz context too so refresh on a cross-biz page lands correctly
+  // (e.g., "How It Works" or "Group Overview" while on MWCC tab)
+  localStorage.setItem('cb247-active-biz', business);
   window.scrollTo(0,0);
 }
 function switchBiz(el) {
@@ -9445,9 +9448,10 @@ function switchBiz(el) {
   if(p) p.classList.add('active');
   const s = document.querySelector('[data-page="'+landingPage+'"]');
   if(s) s.classList.add('active');
-  // Persist landing page so refresh restores the current biz, not whatever
+  // Persist landing page + biz so refresh restores the current biz, not whatever
   // sidebar item was clicked previously. Bug fix 07 Jun 2026.
   localStorage.setItem('cb247-active-page', landingPage);
+  localStorage.setItem('cb247-active-biz',  biz);
   // Also set body brand attribute so refresh shows correct palette without flicker
   const brand = biz === 'mwcc' ? 'mwcc'
               : biz === 'karribank' ? 'kb'
@@ -18308,16 +18312,30 @@ function init() {
   renderGroupOverview();
 
   // Restore last active page (and matching business tab)
-  // Bug fix 07 Jun 2026: nav() alone only sets the page panel + sidebar active class.
-  // The biz-tab at top + sidebar visibility need switchBiz() to update too — otherwise
-  // refreshing on an MWCC page shows the MWCC content but the chrome says CB247.
+  // Bug fix 07 Jun 2026 (Tia): cross-business pages (readme, group-overview)
+  // don't carry biz in their slug, so the slug-only inference lost biz context
+  // on refresh. Now we prefer the explicit biz saved in localStorage.
   const lastPage = localStorage.getItem('cb247-active-page') || 'overview';
+  const savedBiz = localStorage.getItem('cb247-active-biz');
   const navItem = document.querySelector(`[data-page="${lastPage}"]`);
   if (navItem) {
-    const biz = lastPage.startsWith('mwcc-') ? 'mwcc'
-              : lastPage.startsWith('kb-')   ? 'karribank'
-              : lastPage.startsWith('sp-')   ? 'sparrows'
-              : 'cb247';
+    // For biz-prefixed pages, slug is authoritative. For cross-biz pages,
+    // prefer savedBiz if available. Fall back to slug-based inference for
+    // pre-fix sessions where savedBiz wasn't stored yet.
+    let biz;
+    if (lastPage.startsWith('mwcc-'))    biz = 'mwcc';
+    else if (lastPage.startsWith('kb-')) biz = 'karribank';
+    else if (lastPage.startsWith('sp-')) biz = 'sparrows';
+    else if (lastPage === 'readme' || lastPage === 'group-overview') {
+      // Cross-biz page — use saved biz; map our short brand codes back to
+      // biz-tab data-biz values
+      biz = savedBiz === 'mwcc'      ? 'mwcc'
+          : savedBiz === 'kb'        ? 'karribank'
+          : savedBiz === 'sp'        ? 'sparrows'
+          : 'cb247';
+    } else {
+      biz = 'cb247';
+    }
     const bizTab = document.querySelector(`.biz-tab[data-biz="${biz}"]`);
     // Only switch if needed and the tab is reachable (skip 'coming-soon' tabs gracefully)
     if (bizTab && !bizTab.classList.contains('active') && !bizTab.classList.contains('coming-soon')) {
