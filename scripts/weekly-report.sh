@@ -169,6 +169,17 @@ log "Step 1h''''' — Emit Work Queue actions (Membership)..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/membership_emitter.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Membership emitter had issues — check $LOG"
 
+# ── Step 1h''''''  — Extract Agent Action Proposals (Agent Action Contract) ──
+# Layer 3 (Agents): when CB247 agents produce markdown output ending with a
+# ```json proposed_actions block, extract them as WorkQueueAction objects
+# and merge into state/work-queue.json. See agents/AGENT_ACTION_CONTRACT.md.
+# Graceful no-op if no agents have produced output yet (early days for the
+# new contract). Must run BEFORE sync_to_supabase so extracted actions get
+# pushed up.
+log "Step 1h'''''' — Extract Agent action proposals (Agent Action Contract)..."
+"$PYTHON" "$BASE_DIR/scripts/extract_agent_actions.py" --business cb247 >> "$LOG" 2>&1 \
+    || log "  ⚠️  Agent action extraction had issues — check $LOG (non-fatal)"
+
 # ── Step 1i: Sync Work Queue → Supabase ──
 # Pushes state/work-queue.json into the work_queue_actions table so the
 # dashboard renders fresh actions in real-time. Idempotent on PK (id).

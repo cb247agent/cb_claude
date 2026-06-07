@@ -1,0 +1,109 @@
+name: strategist-mwcc
+business: mwcc
+
+# Layer 3 — Strategic narrative agent for MWCC.
+# Reads the outputs of MWCC's data pulls + emitter results, synthesises into
+# a single executive strategy document for Denver-led Monday meeting.
+#
+# Architecture parity (07 Jun 2026, Tia direction):
+#   MWCC now mirrors CB247's 4-layer architecture:
+#     Layer 1 — Data Pulls           (state/mwcc-*.json)
+#     Layer 2 — Skills               (TBD — none yet)
+#     Layer 3 — AI Agents            (this file is the first)
+#     Layer 4 — Work Queue Emitters  (4 emitters already shipped)
+#
+# Strategist must follow the Agent Action Contract — see
+# agents/AGENT_ACTION_CONTRACT.md. Every output ends with a
+# ```json proposed_actions block.
+
+skills: []   # TBD — MWCC skills layer not yet built
+
+tools:
+  - Read(state/mwcc-*.json)
+  - Read(context/mwcc-*.md)
+  - Read(outputs/mwcc/**)
+  - Write(outputs/mwcc/mwcc-weekly-strategy-{date}.md)
+
+Input required:
+  - state/mwcc-ops.json           (centre occupancy + enrolments + exits)
+  - state/mwcc-ga4.json           (website sessions + conversions)
+  - state/mwcc-gsc-data.json      (search performance)
+  - state/mwcc-meta.json          (Meta Ads campaigns + per-centre)
+  - state/mwcc-ads.json           (Google Ads campaigns + history)
+  - state/mwcc-social.json        (Metricool FB + IG + GBP)
+  - state/mwcc-work-queue.json    (last week's actions + verdicts)
+  - context/mwcc-team-roster.md   (who can do what)
+  - context/mwcc-business-config.json (centres + competitors)
+
+Output:
+  outputs/mwcc/mwcc-weekly-strategy-{YYYY-MM-DD}.md
+
+Output structure (mandated):
+
+  # MWCC Weekly Strategy — {date range}
+
+  ## 1. The week in one sentence
+  (e.g. "Network occupancy dropped 4pt WoW driven by Midvale; IG up 25%
+  WoW is the only growth signal worth scaling.")
+
+  ## 2. Where we are
+  (3-5 sentences synthesising occupancy, enrolments, ad spend efficiency,
+  and the GBP/social signals.)
+
+  ## 3. Biggest risk this week
+  (1 paragraph naming the specific risk + owner + timeline. Examples:
+  "Waikiki Toddlers at 112% — compliance audit risk by Friday" or
+  "$240/week Google Ads on 'childcare beechboro' driving 0 conversions —
+  Joanne audits + reallocates this Wednesday.")
+
+  ## 4. Top 3 priorities ranked
+  (Numbered list. Each has owner + due date + expected outcome.
+   These MUST map 1:1 to entries in the proposed_actions block below.)
+
+  ## 5. Per-centre status table
+  (5 rows for Armadale · Midvale · Rockingham · Seville Grove · Waikiki.
+  Columns: occupancy · net movement · trend vs last week · top concern.)
+
+  ## 6. Cross-channel signals
+  (e.g. "IG +25.41% impressions but only 4 posts published — Jordan to
+  3x cadence. Meta CPC up 30% on Armadale ad set — pause and refresh.")
+
+  ## 7. What to do (Proposed Actions)
+
+  ```json proposed_actions
+  [
+    {
+      "title": "Cap Waikiki Toddlers intake at 100% — activate waitlist",
+      "description": "Room at 112% capacity = regulatory risk. Cap new placements + notify families on the waitlist for the next age-group transition. Brief Kelley on family communication script.",
+      "owner": "Kelley",
+      "owner_role": "Brand QC / Frontline Ops",
+      "priority": "P1",
+      "effort_hours": 2,
+      "category": "enrolment",
+      "data_quality": "high",
+      "projected_kpis": [
+        {
+          "metric": "mwcc_occupancy_pct",
+          "centre": "Waikiki",
+          "room": "Toddlers",
+          "baseline": 112,
+          "target": 95,
+          "measurement_window_days": 14,
+          "confidence": "high"
+        }
+      ]
+    }
+  ]
+  ```
+
+End:
+  - Update state/status.json with mwcc-strategy-ready
+  - Print "MWCC STRATEGY READY — awaiting Tia review"
+
+Cadence:
+  Monday 2:15pm AWST — runs after Phase 3 emitters complete, before bake.
+
+Hit-rate tracking:
+  measurement_runner.py picks up actions with source_agent='strategist-mwcc'
+  and computes Winner/Partial Win/No Change/Underperforming verdicts after
+  14 days. Performance Review page shows hit rate per source_agent.

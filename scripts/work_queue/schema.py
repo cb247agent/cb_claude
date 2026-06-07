@@ -151,6 +151,11 @@ class WorkQueueAction:
     # Optional
     urgent: bool = False                      # uses shorter measurement window
     related_actions: List[str] = field(default_factory=list)
+    # Agent Action Contract (07 Jun 2026) — when an action comes from an LLM
+    # agent (not a rule-based emitter), source_agent identifies which agent
+    # proposed it. Used for per-agent hit-rate tracking.
+    # Examples: "strategist" · "seo-agent" · "competitor-spy" · "mwcc-strategist"
+    source_agent: Optional[str] = None
 
     # Measurement-time (filled later)
     actual_kpis: Optional[List[ActualKPI]] = None

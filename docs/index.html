@@ -13678,10 +13678,10 @@ function renderReadme() {
     <div style="background:#fff;border-left:4px solid var(--mwcc-purple);padding:18px 22px;border-radius:6px;margin-bottom:20px">
       <h2 style="margin-top:0;color:var(--mwcc-purple-deep)">My World Childcare — Marketing OS</h2>
       <p style="font-size:13px;line-height:1.7;color:var(--text-2);margin-bottom:10px">
-        MWCC runs a <b>subset</b> of the CB247 architecture. CB247 has 4 layers (Data · Skills · AI Agents · Emitters). MWCC has just <b>Layer 1 (Data Pulls)</b> and <b>Layer 4 (Emitters)</b> — no Skills layer, no AI Agents.
+        <b>07 Jun 2026 — architecture parity achieved.</b> MWCC now runs the same 4-layer architecture as CB247: Data Pulls · Skills · AI Agents · Emitters. The Layer 3 agents follow the <b>Agent Action Contract</b> — every agent's markdown output ends with a structured JSON action block. The contract makes agent recommendations measurable (closes the "judgement call" loop).
       </p>
       <p style="font-size:13px;line-height:1.7;color:var(--text-2);margin-bottom:0">
-        The system runs <b>4 work-queue emitters</b> every Monday 2pm AWST that produce structured <b>actions with owners, priorities and projected KPIs</b>. Each action travels through a 6-stage approval flow, then enters a 14-day measurement window. <b>Performance Review</b> closes the loop with verdicts.
+        Monday 2pm AWST: pulls + parsers → 4 rule-based emitters (Layer 4) → LLM agents (Layer 3, when run) → both write to the same Work Queue → 6-stage approval flow → 14-day measurement window → <b>hit rate per agent + per emitter</b> on Performance Review.
       </p>
     </div>
   </div>
@@ -13712,9 +13712,9 @@ function renderReadme() {
           </tr>
           <tr style="border-top:1px solid var(--border)">
             <td style="padding:10px 14px;font-weight:600">3 · AI Agents</td>
-            <td style="padding:10px 14px;color:var(--text-2)"><b>Strategic narrative.</b> LLM-powered — read previous outputs, synthesise stories. Produce weekly-strategy.md, weekly-research.md, competitor-weekly.md, content briefs.</td>
+            <td style="padding:10px 14px;color:var(--text-2)"><b>Strategic narrative.</b> LLM-powered — read previous outputs, synthesise stories. Now ALL agents follow the <b>Agent Action Contract</b> — every markdown output ends with a <code>json proposed_actions</code> code block. Extracted actions enter the Work Queue + measurement loop.</td>
             <td style="padding:10px 14px;text-align:center"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">9 agents</span></td>
-            <td style="padding:10px 14px;text-align:center"><span style="font-size:10px;border:1px solid #9ca3af;color:#6b7280;padding:2px 7px;border-radius:3px;font-weight:700">NONE</span></td>
+            <td style="padding:10px 14px;text-align:center"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">1 agent (POC)</span></td>
           </tr>
           <tr style="border-top:1px solid var(--border)">
             <td style="padding:10px 14px;font-weight:600">4 · Work Queue Emitters</td>

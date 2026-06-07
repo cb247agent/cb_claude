@@ -63,6 +63,22 @@ are for **tactical to-dos** (the WHAT). The two were rescoped in Sessions
 5b-5h to eliminate overlap — see `CB_Brain/wiki/Work-Queue-Architecture.md`
 for the decision history.
 
+**The Agent Action Contract (07 Jun 2026):** Previously Layer 3 narrative
+was un-measurable — verdicts on agent recommendations were judgement calls.
+The contract fixes this by requiring every agent's markdown output to end
+with a ```json proposed_actions block. `scripts/extract_agent_actions.py`
+reads these blocks after each agent runs, validates them, and merges into
+the same Work Queue as Layer 4 emitters. The existing measurement runner
+then computes Winner/Partial Win/No Change/Underperforming verdicts after
+the projected window closes. Hit rate per agent becomes computable, making
+underperforming agents visible. Full spec: `agents/AGENT_ACTION_CONTRACT.md`.
+
+**Architecture parity (07 Jun 2026):** MWCC now runs the same 4-layer
+architecture as CB247. Previously MWCC had only Layers 1 + 4. The first
+MWCC agent (`agents/mwcc/strategist-mwcc.yml`) is shipped as a
+proof-of-concept. Adding more MWCC agents follows the same pattern as
+adding CB247 agents.
+
 ---
 
 ## Folder map

@@ -221,6 +221,15 @@ log "─── STEP 4.7d: MWCC Enrolment Emitter ───"
     && log "  ✅ Enrolment actions emitted" \
     || { FAILED_STEPS+=("mwcc-enrol-emit"); log "  ⚠️  Enrolment emitter failed"; }
 
+log "─── STEP 4.7d2: Extract Agent Action Proposals (Agent Action Contract) ───"
+# Layer 3 (Agents): when MWCC agents produce markdown output ending with a
+# ```json proposed_actions block, extract them as WorkQueueAction objects
+# and merge into mwcc-work-queue.json. See agents/AGENT_ACTION_CONTRACT.md.
+# Graceful no-op if no agents have produced output yet (early days).
+"$PYTHON" "$BASE_DIR/scripts/extract_agent_actions.py" --business mwcc >> "$LOG" 2>&1 \
+    && log "  ✅ MWCC agent action proposals extracted" \
+    || { FAILED_STEPS+=("mwcc-agent-extract"); log "  ⚠️  Agent extraction failed (non-fatal)"; }
+
 log "─── STEP 4.7e: Sync Work Queue → Supabase ───"
 "$PYTHON" "$BASE_DIR/scripts/work_queue/mwcc_sync_to_supabase.py" >> "$LOG" 2>&1 \
     && log "  ✅ MWCC Work Queue synced to Supabase" \
