@@ -15754,11 +15754,13 @@ function renderMwccSeo() {
     </div>`;
   }
 
-  // ── Next 2 Weeks — Prioritised Action List (pulled from Work Queue source_page='seo') ──
+  // ── Next 2 Weeks — Prioritised Action List (pulled from Work Queue) ──
+  // mwcc_seo_emitter.py writes source_page='seo-organic'; accept both spellings
+  // so future renames don't silently drop actions.
   try {
     const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
     const seoActions = wqItems
-      .filter(a => a.source_page === 'seo')
+      .filter(a => a.source_page === 'seo' || a.source_page === 'seo-organic')
       .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'))
       .slice(0, 8);
 
