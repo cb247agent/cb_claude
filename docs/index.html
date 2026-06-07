@@ -12324,6 +12324,7 @@ function renderMwccOverview() {
 }
 
 function renderMwccMeta() {
+  // ─── Cloned from CB247 renderMeta pattern (07 Jun 2026) ───
   const md = window.MWCC_DATA || {};
   const meta = md.meta || {};
   const el = $('mwcc-meta-content');
@@ -12334,11 +12335,63 @@ function renderMwccMeta() {
     return;
   }
   const s = meta.summary;
-  let html = `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Total Spend','$'+(s.spend||0).toFixed(2),null,`${meta.date_range?.start} – ${meta.date_range?.end}`)}
+  const cams = meta.campaigns || [];
+  const adSets = meta.ad_sets || [];
+  const bc = meta.by_centre || {};
+  const weekLabel = (meta.date_range?.start && meta.date_range?.end) ? `${meta.date_range.start} – ${meta.date_range.end}` : 'Latest week';
+
+  // ── Data freshness banner ──
+  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>Meta Ads</b> ${meta.generated_at ? meta.generated_at.slice(0,10) : '–'} (${weekLabel})</span>
+    <span><b>Account ID</b> ${meta.account_id || '–'}</span>
+  </div>`;
+
+  // ── Executive Verdict ──
+  const _topByCtr = [...adSets].filter(a => (a.spend||0) > 30).sort((a,b) => (b.ctr||0) - (a.ctr||0))[0];
+  const _worstByCtr = [...adSets].filter(a => (a.spend||0) > 30).sort((a,b) => (a.ctr||0) - (b.ctr||0))[0];
+  const _whereWeAre = `$${(s.spend||0).toFixed(0)} spent · ${_mwccFmt(s.clicks)} clicks · ${(s.ctr||0).toFixed(2)}% CTR · $${(s.cpc||0).toFixed(2)} CPC · ${_mwccFmt(s.reach)} reach across ${cams.length} campaigns / ${adSets.length} ad sets.`;
+  const _risk = _worstByCtr && _worstByCtr.ctr < 0.8
+    ? `<b>'${_worstByCtr.adset_name||'–'}' at ${(_worstByCtr.ctr||0).toFixed(2)}% CTR</b> (${_worstByCtr.centre||'–'}) — below 1% floor with $${(_worstByCtr.spend||0).toFixed(0)} spend. Pause and refresh creative.`
+    : `Watch for centre-specific CTR drift. ${Object.keys(bc).length} centres active — uneven performance can mask account-level issues.`;
+  const _priority = _topByCtr && _topByCtr.ctr >= 2.0
+    ? `Scale '${_topByCtr.adset_name||'–'}' (${_topByCtr.centre||'–'}) — ${(_topByCtr.ctr||0).toFixed(2)}% CTR at $${(_topByCtr.cpc||0).toFixed(2)} CPC. Lift budget 30–50%.`
+    : `Brief Jordan on a creative refresh for the lowest-CTR ad sets. Run 7-day test before deciding.`;
+
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Meta Ads Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${weekLabel}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_whereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_risk}</div>
+      <div style="margin-top:6px"><b style="color:var(--mwcc-purple-deep)">Top priority this week:</b> ${_priority}</div>
+    </div>
+  </div>`;
+
+  // ── KPI Cards (CB247 parity: 4-card grid) ──
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Total Spend','$'+(s.spend||0).toFixed(2),null,`${meta.date_range?.start} – ${meta.date_range?.end}`, s.spend>0?'green':'')}
     ${kpiCard('','Impressions',_mwccFmt(s.impr),null,`CPM $${(s.cpm||0).toFixed(2)}`)}
-    ${kpiCard('','Clicks',_mwccFmt(s.clicks),null,`CTR ${(s.ctr||0).toFixed(2)}%`)}
-    ${kpiCard('','CPC','$'+(s.cpc||0).toFixed(2),null,`Reach ${_mwccFmt(s.reach)}`)}
+    ${kpiCard('','Clicks',_mwccFmt(s.clicks),null,`CTR ${(s.ctr||0).toFixed(2)}%`, s.ctr>=2?'green':s.ctr<1?'red':'')}
+    ${kpiCard('','CPC','$'+(s.cpc||0).toFixed(2),null,`Reach ${_mwccFmt(s.reach)}`, s.cpc<0.5?'green':s.cpc>1?'red':'')}
+  </div>`;
+
+  // ── Key Observations strip ──
+  html += sectionTitle('Key Observations');
+  html += `<div class="grid-2 mb">
+    <div class="insight ${_worstByCtr && _worstByCtr.ctr < 0.8 ? 'red' : 'amber'}">
+      <div class="insight-label">${_worstByCtr && _worstByCtr.ctr < 0.8 ? 'Underperformer — Pause or Refresh' : 'Monitor — Creative Fatigue Risk'}</div>
+      ${_worstByCtr && _worstByCtr.ctr < 0.8
+        ? `<b>"${_worstByCtr.adset_name||'–'}"</b> (${_worstByCtr.centre||'–'}) — $${(_worstByCtr.spend||0).toFixed(0)} spend at <b>${(_worstByCtr.ctr||0).toFixed(2)}% CTR</b>. Pause and brief Jordan on new angle.`
+        : `No critical underperformers. Refresh any ad set after 14 days at the same CTR to prevent fatigue.`}
+    </div>
+    <div class="insight teal">
+      <div class="insight-label">${_topByCtr && _topByCtr.ctr >= 2 ? 'Best Performing — Scale This' : 'Performance Baseline'}</div>
+      ${_topByCtr && _topByCtr.ctr >= 2
+        ? `<b>"${_topByCtr.adset_name||'–'}"</b> (${_topByCtr.centre||'–'}) — ${(_topByCtr.ctr||0).toFixed(2)}% CTR at $${(_topByCtr.cpc||0).toFixed(2)} CPC. <br><br>Action: lift daily budget 30–50% while CTR stays above 1.5%.`
+        : `Account CTR ${(s.ctr||0).toFixed(2)}% at $${(s.cpc||0).toFixed(2)} CPC. Strategy goal: lift CTR via creative-first iteration (Jordan briefs).`}
+    </div>
   </div>`;
 
   // By centre
@@ -12432,8 +12485,42 @@ function renderMwccGads() {
   const convChg  = chgPct(conv,  pConv);
   const cpaChg   = chgPct(cpa,   pCPA);
 
-  // ── KPI Cards (CB247 parity: 4-card grid) ──────────────────────────────────
-  let html = `<div class="kpi-grid cols-4 mb">
+  // ── Data freshness banner ──
+  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>Google Ads</b> ${ads.generated_at ? ads.generated_at.slice(0,10) : '–'} (${weekLabel})</span>
+    <span><b>Customer ID</b> ${ads.customer_id || '–'}</span>
+  </div>`;
+
+  // ── Executive Verdict ──
+  const _whereWeAre = `$${spend.toFixed(0)} spent · ${conv.toFixed(1)} conversions · CPA $${cpa.toFixed(2)} · CTR ${ctr.toFixed(2)}% · ${_mwccFmt(clicks)} clicks across ${cams.length} active campaigns.`;
+  const _wasteSpend = cams.filter(c => (c.conversions||0) === 0 && (c.spend||0) > 50);
+  const _wasteTotal = _wasteSpend.reduce((s,c) => s + (c.spend||0), 0);
+  const _risk = _wasteTotal > 100
+    ? `<b>${_wasteSpend.length} campaign${_wasteSpend.length>1?'s':''} wasting $${_wasteTotal.toFixed(0)}</b> with zero conversions — '${_wasteSpend[0]?.name||'–'}'. Pause or restructure.`
+    : cpa > 50
+      ? `<b>CPA $${cpa.toFixed(2)} above $50 target.</b> Review per-campaign cost-per-conv to find the waste.`
+      : `Account healthy. Watch for CTR drift on Performance Max — auto-bidding can compound creative fatigue.`;
+  const _bestCampForVerdict = [...cams].filter(c => (c.conversions||0) > 0).sort((a,b)=>(a.cost_per_conv||999) - (b.cost_per_conv||999))[0];
+  const _priority = _wasteTotal > 100
+    ? `Pause '${_wasteSpend[0]?.name||'–'}' (zero conv on $${_wasteSpend[0]?.spend?.toFixed(0)||0} spend). Reallocate to winning campaigns.`
+    : _bestCampForVerdict
+      ? `Scale '${_bestCampForVerdict.name}' — CPA $${_bestCampForVerdict.cost_per_conv?.toFixed(2)||'–'} this week. Lift budget 20–30% while CPA holds.`
+      : `Verify conversion tracking is firing on tour booking + enrolment form pages.`;
+
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Google Ads Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${weekLabel}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_whereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_risk}</div>
+      <div style="margin-top:6px"><b style="color:var(--mwcc-purple-deep)">Top priority this week:</b> ${_priority}</div>
+    </div>
+  </div>`;
+
+  // ── KPI Cards (CB247 parity: 4-card grid) ──
+  html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Total Spend','$'+spend.toFixed(2), spendChg, `${_mwccFmt(clicks)} clicks · ${weekLabel}`)}
     ${kpiCard('','Conversions', conv.toFixed(1), convChg, `Blended CPA: $${cpa.toFixed(2)}`, cpa>50?'red':conv>0?'green':'')}
     ${kpiCard('','Avg CPC','$'+cpc.toFixed(2), null, `CTR ${ctr.toFixed(2)}%`)}
@@ -12450,7 +12537,7 @@ function renderMwccGads() {
   html += sectionTitle('Key Observations');
   html += `<div class="grid-2 mb">
     <div class="insight ${cpa>50 || wasteCamps.length>0 ? 'red' : 'amber'}">
-      <div class="insight-label">${cpa>50 ? '⚠️ Cost per Enrolment Above Target' : wasteCamps.length>0 ? '⚠️ Budget Waste — Campaigns with Zero Conversions' : '⚠️ Monitor — Account Stable'}</div>
+      <div class="insight-label">${cpa>50 ? 'Cost per Enrolment Above Target' : wasteCamps.length>0 ? 'Budget Waste — Campaigns with Zero Conversions' : 'Monitor — Account Stable'}</div>
       ${cpa>50
         ? `Blended cost per conversion is <b>$${cpa.toFixed(2)}</b> — above the $50 target for childcare enquiries. Review underperforming campaigns and shift budget to converters.`
         : wasteCamps.length>0
@@ -12460,7 +12547,7 @@ function renderMwccGads() {
       }
     </div>
     <div class="insight teal">
-      <div class="insight-label">✅ ${bestCamp ? 'Best Performing Campaign — Scale This' : 'Conversion Tracking Active'}</div>
+      <div class="insight-label">${bestCamp ? 'Best Performing Campaign — Scale This' : 'Conversion Tracking Active'}</div>
       ${bestCamp
         ? `<b>"${bestCamp.name}"</b> — ${bestCamp.conversions.toFixed(1)} conversions at <b>$${bestCamp.cost_per_conv.toFixed(2)} CPA</b> this week.
           Type: ${bestCamp.type||'–'} · CTR ${(bestCamp.ctr||0).toFixed(2)}% · CPC $${(bestCamp.cpc||0).toFixed(2)}.
@@ -13516,8 +13603,277 @@ const MWCC_CFG = {
     gbp:    'scripts/pull_mwcc_gbp.py',
   },
 };
-function renderMwccSeo()             { _perfSeoScaffold('mwcc-seo-content', MWCC_CFG); }
-function renderMwccGbp()             { _perfGbpScaffold('mwcc-gbp-content', MWCC_CFG); }
+function renderMwccSeo() {
+  // ─── Cloned from CB247 renderSEO pattern (07 Jun 2026) ───
+  // Reads from window.MWCC_DATA.gsc + window.MWCC_DATA.ahrefs (when available)
+  // Pattern: executive verdict + KPI cards + key observations + quick wins table
+  const md = window.MWCC_DATA || {};
+  const gsc = md.gsc || {};
+  const queries = gsc.top_queries || [];
+  const pages = gsc.top_pages || [];
+  const totals = gsc.totals || {clicks:0, impressions:0, ctr:0, position:0};
+  const ah = md.ahrefs || {};
+  const period = gsc.date_range ? `${gsc.date_range.start} – ${gsc.date_range.end}` : '7-day GSC';
+
+  const el = $('mwcc-seo-content');
+  if (!el) return;
+
+  // ── Computed groupings ──
+  const _top3   = queries.filter(q => q.position && q.position <= 3);
+  const _qw     = queries.filter(q => q.position && q.position >= 4 && q.position <= 20 && q.impressions > 0)
+                          .sort((a,b) => (b.impressions||0) - (a.impressions||0));
+  const _build  = queries.filter(q => q.position && q.position >= 21 && q.impressions >= 3)
+                          .sort((a,b) => (b.impressions||0) - (a.impressions||0));
+  const totalKw  = queries.length;
+
+  let html = '';
+
+  // ── Data freshness banner ──
+  html += `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>GSC</b> ${gsc.generated_at ? gsc.generated_at.slice(0,10) : '–'} (${period})</span>
+    <span><b>Ahrefs</b> ${ah.generated_at ? ah.generated_at.slice(0,10) : 'awaiting Monday pull'}</span>
+  </div>`;
+
+  // ── Executive Verdict ──
+  const _whereWeAre = `${totals.clicks||0} organic clicks across ${totals.impressions||0} impressions at avg position #${(totals.position||0).toFixed(1)} (${(totals.ctr||0).toFixed(2)}% CTR). ${totalKw} keywords tracking.`;
+  const _risk = _qw.length > 5
+    ? `<b>${_qw.length} keywords stuck at pos 4–20</b> with real impression volume — every one is a missed top-3 ranking. Build dedicated landing pages or tighten on-page H1 + meta.`
+    : _build.length > 0
+      ? `${_build.length} keywords ranking 21+ but with impression demand — MWCC has no dedicated page for these. Top opportunity: '${_build[0]?.query || '–'}'.`
+      : 'No keyword gaps detected — every tracked keyword is either top 3 (protect) or below pos 20 (build).';
+  const _priority = _qw.length > 0
+    ? `Optimise on-page for '${_qw[0]?.query || '–'}' — currently #${_qw[0]?.position?.toFixed(1) || '–'}. Quick win.`
+    : _build.length > 0
+      ? `Build new page for '${_build[0]?.query || '–'}' (${_build[0]?.impressions || 0} impressions/week ranking #${_build[0]?.position?.toFixed(0) || '–'}).`
+      : `Maintain ${_top3.length} top-3 rankings: internal linking + content freshness.`;
+
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — SEO Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">GSC period: ${period}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_whereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest opportunity:</b> ${_risk}</div>
+      <div style="margin-top:6px"><b style="color:var(--mwcc-purple-deep)">Top priority this week:</b> ${_priority}</div>
+    </div>
+  </div>`;
+
+  // ── 4 KPI cards ──
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Organic Clicks (7d)', _mwccFmt(totals.clicks), null, `${_mwccFmt(totals.impressions)} impressions`, totals.clicks>0?'green':'')}
+    ${kpiCard('','Avg Position', '#'+(totals.position||0).toFixed(1), null, `${(totals.ctr||0).toFixed(2)}% CTR`, totals.position<10?'green':totals.position<30?'amber':'red')}
+    ${kpiCard('','Top-3 Rankings', _top3.length, null, `${_qw.length} at pos 4–20 (quick wins)`, _top3.length>5?'green':'')}
+    ${kpiCard('','Build Opportunities', _build.length, null, 'Keywords at pos 21+ with impressions', _build.length>3?'amber':'')}
+  </div>`;
+
+  // ── Key Observations ──
+  html += sectionTitle('Key Observations');
+  html += `<div class="grid-2 mb">
+    <div class="insight red">
+      <div class="insight-label">Biggest Gap — Stuck at Pos 4–20</div>
+      ${_qw.length > 0
+        ? `<b>${_qw.length} keywords</b> ranking pos 4–20 with impression demand. Push to top 3 via on-page tuning.<br><br>` +
+          _qw.slice(0,5).map(q => `<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-weight:600">${q.query}</span><span>${posBadge(q.position)} · ${q.impressions} impr</span></div>`).join('')
+        : '<br><br><span style="color:var(--muted);font-size:12px">No quick-win keywords detected in current GSC pull.</span>'}
+    </div>
+    <div class="insight teal">
+      <div class="insight-label">Wins — Top-3 Rankings to Protect</div>
+      ${_top3.length > 0
+        ? '<br>' + _top3.slice(0,6).map(q=>`<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:5px 0;border-bottom:1px solid rgba(139,111,217,.12)"><span><b>${q.query}</b></span><span>${posBadge(q.position)} · ${_mwccFmt(q.clicks)} clicks</span></div>`).join('') +
+          '<br><b style="color:var(--mwcc-purple-deep)">Protect:</b> Add internal links from every new blog post back to these pages. Never change URL slugs without 301 redirects.'
+        : '<br><br><span style="color:var(--muted);font-size:12px">No top-3 rankings yet. Focus on Quick Wins below to climb into top 3.</span>'}
+    </div>
+  </div>`;
+
+  // ── Quick Wins Table ──
+  html += sectionTitle('Quick Wins — Positions 4–20 (Highest ROI)');
+  html += `<div class="card mb">
+    <div style="padding:8px 14px 0;font-size:11px;color:var(--muted)">
+      Keywords already ranking pos 4–20 — push to top 3 via on-page work. Sorted by impression opportunity.
+    </div>
+    <table><thead><tr>
+      <th>Keyword</th>
+      <th class="num">Pos</th>
+      <th class="num">Impressions</th>
+      <th class="num">Clicks (7d)</th>
+      <th class="num">CTR</th>
+      <th style="font-size:10px">Action</th>
+    </tr></thead><tbody>
+    ${_qw.length > 0 ? _qw.slice(0,15).map(q => {
+      const pos = q.position;
+      const action = pos <= 5 ? 'Update H1 + meta — push to top 3'
+                  : pos <= 10 ? 'Refresh content + add internal links'
+                  : 'Build dedicated landing page';
+      return `<tr>
+        <td style="font-weight:600;font-size:12px">${q.query}</td>
+        <td class="num">${posBadge(pos)}</td>
+        <td class="num">${_mwccFmt(q.impressions)}</td>
+        <td class="num">${_mwccFmt(q.clicks)}</td>
+        <td class="num">${(q.ctr||0).toFixed(2)}%</td>
+        <td style="font-size:10px;color:var(--text-2)">${action}</td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="6" style="color:var(--muted);padding:16px;text-align:center">No quick wins detected.</td></tr>`}
+    </tbody></table>
+  </div>`;
+
+  // ── Build Opportunities Table ──
+  if (_build.length > 0) {
+    html += sectionTitle('Build Opportunities — Deep-Ranked Keywords with Demand');
+    html += `<div class="card mb">
+      <div style="padding:8px 14px 0;font-size:11px;color:var(--muted)">
+        Keywords ranking pos 21+ with impression volume. MWCC has no dedicated page — building one targets the gap.
+      </div>
+      <table><thead><tr>
+        <th>Keyword</th>
+        <th class="num">Pos</th>
+        <th class="num">Impressions</th>
+        <th style="font-size:10px">Action</th>
+      </tr></thead><tbody>
+      ${_build.slice(0,10).map(q => `<tr>
+        <td style="font-weight:600;font-size:12px">${q.query}</td>
+        <td class="num">${posBadge(q.position)}</td>
+        <td class="num">${_mwccFmt(q.impressions)}</td>
+        <td style="font-size:10px;color:var(--text-2)">Build dedicated page · target top 10 in 4 weeks</td>
+      </tr>`).join('')}
+      </tbody></table>
+    </div>`;
+  }
+
+  // ── Top Pages ──
+  if (pages.length > 0) {
+    html += sectionTitle('Top Pages by Organic Clicks');
+    html += `<div class="card mb">
+      <table><thead><tr>
+        <th>#</th>
+        <th>Page</th>
+        <th class="num">Clicks</th>
+        <th class="num">Impressions</th>
+        <th class="num">Avg Pos</th>
+      </tr></thead><tbody>
+      ${pages.slice(0,10).map((p,i) => {
+        const url = (p.url||'').replace('https://www.myworldcc.com.au','') || '/';
+        return `<tr>
+          <td class="rank">#${i+1}</td>
+          <td style="font-family:monospace;font-size:11px;color:var(--mwcc-purple-deep)">${url}</td>
+          <td class="num">${_mwccFmt(p.clicks)}</td>
+          <td class="num">${_mwccFmt(p.impressions)}</td>
+          <td class="num">#${(p.position||0).toFixed(1)}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>
+    </div>`;
+  }
+
+  if (queries.length === 0 && pages.length === 0) {
+    html = '<div class="insight neutral"><div class="insight-label">Awaiting GSC Data</div>state/mwcc-gsc-data.json is empty. Verify cb_agent@chasingbetter.com.au has Restricted user access on myworldcc.com.au GSC property, then run scripts/pull_mwcc_gsc.py manually or wait for Monday cron.</div>';
+  }
+
+  el.innerHTML = html;
+}
+function renderMwccGbp() {
+  // ─── Cloned from CB247 renderGBP pattern (07 Jun 2026) ───
+  // Reads from window.MWCC_DATA.gbp when populated. Currently shows
+  // "awaiting data" — pull_mwcc_gbp.py needs to be built (post-launch).
+  // GBP location IDs already in .env for all 5 centres.
+  const md = window.MWCC_DATA || {};
+  const gbp = md.gbp || {};
+  const el = $('mwcc-gbp-content');
+  if (!el) return;
+
+  const centres = ['Waikiki','Seville Grove','Midvale','Armadale','Rockingham'];
+  const centresData = centres.map(name => gbp[name.toLowerCase().replace(' ','')] || gbp[name] || null);
+  const hasAnyData = centresData.some(c => c && c.rating);
+
+  if (!hasAnyData) {
+    el.innerHTML = `
+      <div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+        <span><b>GBP</b> Awaiting first pull</span>
+        <span><b>5 location IDs</b> configured in .env</span>
+      </div>
+
+      <div class="insight neutral mb">
+        <div class="insight-label">Awaiting GBP Data</div>
+        All 5 MWCC centre location IDs are configured in .env (GBP_MWCC_WAKIKI_ID, _SEVILLEGROVE_ID, _MIDVALE_AND_MIDLAND_ID, _ARMADALE_ID, _ROCKINGHAM_ID).
+        <br><br>
+        <b>To activate:</b> build <code>scripts/pull_mwcc_gbp.py</code> (clone of <code>scripts/pull_gbp.py</code> reading the 5 MWCC IDs), then run it manually or wait for Monday cron after wiring into <code>weekly-report-mwcc.sh</code>.
+      </div>
+
+      ${sectionTitle('5 MWCC Centres — GBP Tracking (when wired)')}
+      <div class="grid-2 mb">
+        ${centres.map(name => `<div class="card">
+          <div class="card-h">${name}</div>
+          <div class="stat-row"><span class="stat-label">Rating</span><span class="stat-val">—</span></div>
+          <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-val">—</span></div>
+          <div class="stat-row"><span class="stat-label">Photos</span><span class="stat-val">—</span></div>
+          <div class="stat-row"><span class="stat-label">Local pack</span><span class="stat-val">—</span></div>
+        </div>`).join('')}
+      </div>
+
+      ${sectionTitle('Why GBP Matters for MWCC')}
+      <div class="grid-2 mb">
+        <div class="insight teal">
+          <div class="insight-label">Local Search Dominance</div>
+          Parents searching "childcare near me" + "childcare [suburb]" trigger Google's local pack. MWCC's 5 listings (one per centre) compete against Goodstart, Nido, Care for Kids, KindiCare. Strong GBP listings + 4.5+ ratings tip the local pack toward MWCC.
+        </div>
+        <div class="insight teal">
+          <div class="insight-label">Free Lead Generation</div>
+          Every GBP review is a long-tail SEO signal. Every photo is a freshness signal. Frontline review acquisition (Kelley + reception) is the cheapest enquiry pipeline available.
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // ── Data-populated state (when pull_mwcc_gbp.py is wired) ──
+  // KPI Cards
+  const totalReviews = centresData.reduce((s,c) => s + ((c && c.reviews) || 0), 0);
+  const avgRating    = centresData.filter(c => c && c.rating).reduce((s,c) => s + c.rating, 0) / Math.max(1, centresData.filter(c => c && c.rating).length);
+  const totalPhotos  = centresData.reduce((s,c) => s + ((c && c.photos) || 0), 0);
+  const lowRated     = centresData.filter(c => c && c.rating && c.rating < 4.5).length;
+
+  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>GBP</b> ${gbp.generated_at ? gbp.generated_at.slice(0,10) : '–'}</span>
+    <span><b>5 centres</b> tracked</span>
+  </div>`;
+
+  // Executive Verdict
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — GBP Verdict</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> Avg rating ${avgRating.toFixed(1)}★ across 5 centres · ${totalReviews} total reviews · ${totalPhotos} photos.</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${lowRated > 0 ? `${lowRated} centre${lowRated>1?'s':''} below 4.5★ — affects local-pack ranking.` : 'Watch for review velocity. New centres need 50+ reviews to compete in local pack.'}</div>
+      <div style="margin-top:6px"><b style="color:var(--mwcc-purple-deep)">Top priority this week:</b> Drive ${Math.max(5, 25-lowRated*5)} new 5★ reviews this fortnight via Kelley + reception cadence.</div>
+    </div>
+  </div>`;
+
+  // KPI Cards
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Avg Rating', avgRating.toFixed(1)+'★', null, '5-centre average', avgRating>=4.7?'green':avgRating<4.4?'red':'amber')}
+    ${kpiCard('','Total Reviews', _mwccFmt(totalReviews), null, 'Across 5 GBP listings', totalReviews>500?'green':'')}
+    ${kpiCard('','Total Photos', _mwccFmt(totalPhotos), null, 'Across 5 GBP listings', totalPhotos>200?'green':'')}
+    ${kpiCard('','Centres <4.5★', lowRated, null, lowRated > 0 ? 'Action: focused review push' : 'All centres healthy', lowRated>0?'red':'green')}
+  </div>`;
+
+  // Per-centre cards
+  html += sectionTitle('5 Centres — GBP Performance');
+  html += `<div class="grid-2 mb">
+    ${centres.map((name, i) => {
+      const c = centresData[i];
+      if (!c) return '';
+      return `<div class="card">
+        <div class="card-h">${name} <span class="card-period">${c.rating ? c.rating + '★' : '–'}</span></div>
+        <div class="stat-row"><span class="stat-label">Rating</span><span class="stat-val ${c.rating>=4.7?'good':c.rating<4.4?'bad':''}">${c.rating || '–'}</span></div>
+        <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-val">${_mwccFmt(c.reviews)}</span></div>
+        <div class="stat-row"><span class="stat-label">Photos</span><span class="stat-val">${_mwccFmt(c.photos)}</span></div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  el.innerHTML = html;
+}
 // ── MWCC Work Queue (Content Planner) — mirrors CB247 renderPlanner pattern ──
 function renderMwccContentPlanner() {
   const container = $('mwcc-content-planner-content');
