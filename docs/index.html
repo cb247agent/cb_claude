@@ -500,6 +500,19 @@ tbody tr:hover td{background:#fafafa}
 .vp-btn.vp-partial_win     {background:#fef3c7;color:#92400e;border-color:#f59e0b}
 .vp-btn.vp-no_change       {background:#f3f4f6;color:#374151;border-color:#9ca3af}
 .vp-btn.vp-underperforming {background:#fee2e2;color:#991b1b;border-color:#ef4444}
+
+/* ── Print stylesheet — Group Overview meeting summary (Tier 3) ───────────
+   Triggered by window.print() from the "Print Meeting Summary" button.
+   Hides chrome and unrelated pages so the printed PDF is exec-ready. */
+@media print {
+  .sidebar, .topbar, .biz-tabs, .no-print { display: none !important; }
+  .page:not(.active) { display: none !important; }
+  .main { padding: 0 !important; margin: 0 !important; }
+  body { background: #fff !important; font-size: 11px !important; }
+  .kpi-card, .insight, .card { break-inside: avoid; box-shadow: none !important; }
+  .section-title { page-break-after: avoid; }
+  a { color: inherit !important; text-decoration: none !important; }
+}
 </style>
 </head>
 <body>
@@ -15825,14 +15838,37 @@ function renderGroupOverview() {
   // ── Connected biz count for verdict ───────────────────────────────────────
   const liveBizCount = (cb247Spend > 0 ? 1 : 0) + (mwccSpend > 0 || mwccCentreArr.length ? 1 : 0);
 
+  // ── Tier 3 #16: Group-wide P1 backlog count ──────────────────────────────
+  // Pulled from both work queues; falls back to 0 if cbState isn't initialised
+  let groupP1 = 0, groupP2 = 0, groupTotalQ = 0;
+  try {
+    const cb247Q = (window.cbState?.workQueue?.getAll?.() || []);
+    const mwccQ  = (window.cbState?.mwccWorkQueue?.getAll?.() || []);
+    const _isActive = (a) => {
+      // Exclude items marked Published in either local planner
+      const savedCb = JSON.parse(localStorage.getItem('cb247-planner-status') || '{}');
+      const savedMw = JSON.parse(localStorage.getItem('mwcc-planner-status') || '{}');
+      const st = savedCb[a.id] || savedMw[a.id] || 'Idea';
+      return st !== 'Published';
+    };
+    const active = [...cb247Q, ...mwccQ].filter(_isActive);
+    groupTotalQ = active.length;
+    groupP1 = active.filter(a => (a.priority||'').toUpperCase() === 'P1').length;
+    groupP2 = active.filter(a => (a.priority||'').toUpperCase() === 'P2').length;
+  } catch (e) { console.warn('[groupOverview] backlog read failed:', e); }
+
   let html = '';
 
-  // ── 1. Data freshness banner ──────────────────────────────────────────────
-  html += `<div style="background:#fff;border:1px solid var(--border);border-left:3px solid var(--brand-accent);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--text-2);display:flex;flex-wrap:wrap;gap:14px">
-    <span><b>CB247 refresh</b> ${cb247Refresh}</span>
-    <span><b>MWCC refresh</b> ${mwccRefresh}</span>
-    <span><b>${liveBizCount} of 4</b> businesses LIVE</span>
-    <span style="color:var(--muted)">Click any business row below to drill in</span>
+  // ── 1. Data freshness banner + Print button (Tier 3 #13) ─────────────────
+  html += `<div style="display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="background:#fff;border:1px solid var(--border);border-left:3px solid var(--brand-accent);border-radius:6px;padding:6px 14px;font-size:10.5px;color:var(--text-2);display:flex;flex-wrap:wrap;gap:14px;flex:1;min-width:300px">
+      <span><b>CB247 refresh</b> ${cb247Refresh}</span>
+      <span><b>MWCC refresh</b> ${mwccRefresh}</span>
+      <span><b>${liveBizCount} of 4</b> businesses LIVE</span>
+      <span><b>${groupP1}</b> P1 / <b>${groupP2}</b> P2 across group queues</span>
+      <span style="color:var(--muted)">Click any business row to drill in</span>
+    </div>
+    <button class="no-print" onclick="window.print()" style="padding:8px 14px;border:1px solid var(--brand-accent);background:#fff;color:var(--brand-accent-deep);font-size:12px;font-weight:600;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap">Print Meeting Summary</button>
   </div>`;
 
   // ── 2. Executive Verdict ──────────────────────────────────────────────────
@@ -16000,7 +16036,90 @@ function renderGroupOverview() {
     </div>`;
   }
 
-  // ── 7. Connected Sources health (Tier 2 #11 + #12) ────────────────────────
+  // ── 7a. Monthly Goal Tracking (Tier 3 #14) ────────────────────────────────
+  // Targets are project-level config. Tia can tune in the const below.
+  // Actual MTD uses weekly spend × 4.33 as a rough projection (no calendar-month
+  // data available; this is the same convention CB247 uses for monthly planning).
+  const GROUP_MONTHLY_TARGETS = {
+    cb247: { spend: 6000, newMembers: 60,  label: 'CB247 Gym' },
+    mwcc:  { spend: 8000, enrolments: 20,  label: 'My World Childcare' },
+  };
+  const _projMonthly = (weekly) => weekly * 4.33;
+  const _renderGoalBar = (label, currentVal, targetVal, unit) => {
+    const pct = targetVal > 0 ? Math.min((currentVal / targetVal) * 100, 100) : 0;
+    const onTrack = pct >= 80;
+    const behind  = pct < 50;
+    const barClr = behind ? '#ef4444' : onTrack ? '#10b981' : '#f59e0b';
+    const labelClr = behind ? '#b91c1c' : onTrack ? '#065f46' : '#92400e';
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+        <span style="color:var(--text-2);font-weight:500">${label}</span>
+        <span style="font-weight:700;color:${labelClr}">${unit}${currentVal.toLocaleString(undefined,{maximumFractionDigits:0})} / ${unit}${targetVal.toLocaleString()} <span style="color:var(--muted);font-weight:500">(${pct.toFixed(0)}%)</span></span>
+      </div>
+      <div style="background:var(--bg-2,#f3f4f6);border-radius:3px;height:8px;overflow:hidden">
+        <div style="background:${barClr};height:100%;border-radius:3px;width:${pct}%;transition:width .3s"></div>
+      </div>
+    </div>`;
+  };
+  html += sectionTitle('Monthly Goal Tracking — projected from weekly run-rate');
+  html += `<div class="grid-2 mb">
+    <div class="card" style="padding:18px 20px">
+      <div class="card-h" style="margin-bottom:14px">${GROUP_MONTHLY_TARGETS.cb247.label}</div>
+      ${_renderGoalBar('Ad spend',   _projMonthly(cb247Spend),    GROUP_MONTHLY_TARGETS.cb247.spend,      '$')}
+      ${_renderGoalBar('New members',_projMonthly(cb247NewMembers), GROUP_MONTHLY_TARGETS.cb247.newMembers, '')}
+      <p style="font-size:10px;color:var(--muted);margin:8px 0 0">Projection = weekly × 4.33. Targets tunable in code (GROUP_MONTHLY_TARGETS).</p>
+    </div>
+    <div class="card" style="padding:18px 20px">
+      <div class="card-h" style="margin-bottom:14px">${GROUP_MONTHLY_TARGETS.mwcc.label}</div>
+      ${_renderGoalBar('Ad spend',   _projMonthly(mwccSpend),     GROUP_MONTHLY_TARGETS.mwcc.spend,      '$')}
+      ${_renderGoalBar('Enrolments', _projMonthly(mwccEnrolments), GROUP_MONTHLY_TARGETS.mwcc.enrolments, '')}
+      <p style="font-size:10px;color:var(--muted);margin:8px 0 0">Projection = weekly × 4.33. Targets tunable in code.</p>
+    </div>
+  </div>`;
+
+  // ── 7b. Cross-Business Efficiency Comparisons (Tier 3 #15) ───────────────
+  // Compare same-channel CPC + CTR between businesses to surface where the
+  // group is over-paying. Renders only when both sides have data.
+  const cb247MetaCTR = D.meta?.ctr || 0;
+  const cb247MetaCPC = D.meta?.cpc || 0;
+  const mwccMetaCTR  = md.meta?.summary?.ctr || 0;
+  const mwccMetaCPC  = md.meta?.summary?.cpc || 0;
+  const cb247GadsCTR = D.google_ads?.ctr || 0;
+  const cb247GadsCPC = D.google_ads?.cpc || 0;
+  const mwccGadsCTR  = md.ads?.totals?.ctr || 0;
+  const mwccGadsCPC  = md.ads?.totals?.cpc || 0;
+  // Comparison helper: which is better, by how much
+  const _cmpEff = (cb247Val, mwccVal, lowerIsBetter, channel) => {
+    if (!cb247Val || !mwccVal) return null;
+    const winner = lowerIsBetter ? (cb247Val < mwccVal ? 'cb247' : 'mwcc') : (cb247Val > mwccVal ? 'cb247' : 'mwcc');
+    const diff = Math.abs(((cb247Val - mwccVal) / Math.max(cb247Val, mwccVal)) * 100);
+    return { winner, diff, cb247Val, mwccVal, channel };
+  };
+  const metaCpcCmp = _cmpEff(cb247MetaCPC, mwccMetaCPC, true, 'Meta CPC');
+  const metaCtrCmp = _cmpEff(cb247MetaCTR, mwccMetaCTR, false, 'Meta CTR');
+  const gadsCpcCmp = _cmpEff(cb247GadsCPC, mwccGadsCPC, true, 'Google CPC');
+  const gadsCtrCmp = _cmpEff(cb247GadsCTR, mwccGadsCTR, false, 'Google CTR');
+  const allCmps = [metaCpcCmp, metaCtrCmp, gadsCpcCmp, gadsCtrCmp].filter(Boolean);
+  if (allCmps.length > 0) {
+    html += sectionTitle('Cross-Business Efficiency — where each business wins');
+    html += `<div class="grid-2 mb">`;
+    for (const c of allCmps) {
+      const winLabel = c.winner === 'cb247' ? 'CB247' : 'MWCC';
+      const loseLabel = c.winner === 'cb247' ? 'MWCC' : 'CB247';
+      const winVal = c.winner === 'cb247' ? c.cb247Val : c.mwccVal;
+      const loseVal = c.winner === 'cb247' ? c.mwccVal : c.cb247Val;
+      const isCost = c.channel.includes('CPC');
+      const fmtVal = (v) => isCost ? '$' + v.toFixed(2) : v.toFixed(2) + '%';
+      html += `<div class="insight teal">
+        <div class="insight-label">${c.channel} — ${winLabel} more efficient</div>
+        <b>${winLabel} ${fmtVal(winVal)}</b> vs <b>${loseLabel} ${fmtVal(loseVal)}</b> — ${winLabel} is <b>${c.diff.toFixed(1)}% ${isCost ? 'cheaper' : 'higher CTR'}</b>.
+        <br><br><b>Action:</b> Study ${winLabel}'s top-performing ad creative + targeting → replicate the angle on ${loseLabel} accounts. Cross-business creative learnings move the slower side fastest.
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // ── 8. Connected Sources health (Tier 2 #11 + #12) ────────────────────────
   // For each biz, count populated data sources to give a "wire-up health"
   // indicator. Helps prioritise which biz to connect next.
   const SOURCE_DEFS = {
