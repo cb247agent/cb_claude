@@ -31,11 +31,13 @@ After reading all four files, confirm: **"MWCC context loaded. [Active window: X
 - `seo-blog-generator/SKILL.md` (lean pattern — points to brand contract)
 - Other 36 skills default to CB247 — refactor when MWCC needs them. See `skills/SKILLS_BRAND_CONTRACT.md` for the refactor pattern.
 
-**Layer 3 — Agents (4 built):**
+**Layer 3 — Agents (6 built):**
 - `agents/mwcc/strategist-mwcc.yml` — weekly synthesis
 - `agents/mwcc/research-perth-childcare.yml` — Perth market intel
 - `agents/mwcc/centre-performance.yml` — per-centre narrative
 - `agents/mwcc/content-brief.yml` — weekly creative brief for Jordan
+- `agents/mwcc/performance-mwcc.yml` — cross-channel budget allocation for Joanne (added 7 Jun 2026, Tier 2)
+- `agents/mwcc/seo-agent-mwcc.yml` — strategic SEO briefs expanding emitter actions for John (added 7 Jun 2026, Tier 2)
 
 **Layer 4 — Emitters (4 + 1 sync):**
 - `mwcc_google_ads_emitter.py` · `mwcc_meta_emitter.py` · `mwcc_seo_emitter.py` · `mwcc_enrolment_emitter.py` · `mwcc_sync_to_supabase.py`
@@ -85,9 +87,7 @@ Overview · SEO & Organic · Google Ads · Meta Ads · GBP · Occupancy · Enrol
 - **No NQS rating tracker** — `state/mwcc-nqs-ratings.json` not yet built (deferred to Tier 2)
 - **No MWCC psychology-triggers.md** — currently uses generic file (gym-flavoured)
 - **No MWCC design-standards.md** — marked todo in resolution table
-- **No MWCC SEO Agent** — CB247 has one, MWCC doesn't (Tier 2)
-- **No MWCC Performance Agent** — Tier 2 next-up
-- **5 missing agent equivalents vs CB247** (Performance, SEO, Paid Ads, audience-intel, content-intel)
+- **3 missing agent equivalents vs CB247** (Paid Ads · audience-intel · content-intel — non-blocking, episodic use)
 - **Apify (TikTok/Reddit/Trends/FB Ads) not configured for MWCC**
 - **Campaign history file not created** — `state/mwcc-campaign-history.json` not present (no campaigns ran yet)
 - **Email digest single-recipient** — Tia only. Kelley + Denver paused per Tia direction (7 Jun 2026)
@@ -139,12 +139,14 @@ python3 scripts/work_queue/mwcc_sync_to_supabase.py
 ```
 
 ### Agents (say `run [agent-name]`):
-| Say this | Output |
-|---|---|
-| `run strategist-mwcc` | Weekly synthesis → `outputs/research/strategist-mwcc-YYYY-MM-DD.md` |
-| `run research-perth-childcare` | Perth childcare market intel → `outputs/research/` |
-| `run centre-performance` | Per-centre narrative → `outputs/research/` |
-| `run content-brief` | Weekly brief for Jordan → `outputs/creatives/` |
+| Say this | Output | Reads |
+|---|---|---|
+| `run strategist-mwcc` | Weekly synthesis → `outputs/mwcc/mwcc-weekly-strategy-YYYY-MM-DD.md` | all state/mwcc-*.json + work queue |
+| `run research-perth-childcare` | Perth childcare market intel → `outputs/mwcc/research/` | competitor list + web |
+| `run centre-performance` | Per-centre narrative → `outputs/mwcc/research/` | state/mwcc-ops.json |
+| `run content-brief` | Weekly creative brief for Jordan → `outputs/mwcc/creatives/` | strategy + calendar |
+| `run performance-mwcc` | Cross-channel budget allocation for Joanne → `outputs/mwcc/budget-allocation-week-YYYY-MM-DD.md` | mwcc-ads + mwcc-meta + work queue |
+| `run seo-agent-mwcc` | Strategic SEO briefs for John → `outputs/mwcc/seo/strategic-briefs-YYYY-MM-DD.md` | mwcc-gsc + work queue SEO actions + competitors |
 
 ### Skill triggers (brand-aware — runs in MWCC mode if active business = mwcc):
 - `write landing page` / `build page` → `seo-landing-page-writer` (MWCC palette + voice when active)

@@ -1,0 +1,172 @@
+name: seo-agent-mwcc
+business: mwcc
+
+# Layer 3 — SEO strategic brief agent for MWCC.
+# Mirrors agents/seo-agent.yml (CB247) — reads SEO emitter actions from
+# state/mwcc-work-queue.json and expands each into a strategic brief
+# (competitor context, content structure, expected impact). Does NOT
+# invent a parallel action list.
+#
+# Architecture note (07 Jun 2026):
+# Like CB247's seo-agent, this agent is allowed to read state/mwcc-work-
+# queue.json — that's structured emitter output, not raw API data. The
+# Layer-2 boundary still holds.
+#
+# Why this agent exists:
+# mwcc_seo_emitter.py produces typed tactical SEO actions per week (e.g.
+# "Optimise /centres/midvale/ page for 'childcare midvale' — current pos
+# 11, target top 5"). The team (John for tuning + Mark for builds) needs
+# more than just the tactical card — they need the competitor context,
+# page structure recommendation, internal linking plan, expected impact,
+# and effort split. This agent produces that briefing layer.
+
+skills:
+  - competitor-seo-scraper
+  - seo-content-strategist
+  - seo-landing-page-writer  # for new-build briefs
+
+context:
+  - context/mwcc-seo-targets.md
+  - context/mwcc-seo-priorities.md
+  - context/mwcc-brand-voice.md
+  - context/mwcc-business-config.json
+  - context/mwcc-competitors.md
+  - state/mwcc-work-queue.json
+  - state/mwcc-gsc-data.json
+  - skills/competitor-seo-scraper/SKILL.md
+  - skills/seo-content-strategist/SKILL.md
+  - skills/seo-landing-page-writer/SKILL.md
+
+tools:
+  - Read(context/mwcc-*.md)
+  - Read(context/mwcc-business-config.json)
+  - Read(state/mwcc-work-queue.json)
+  - Read(state/mwcc-gsc-data.json)
+  - Read(state/mwcc-ahrefs-data.json)
+  - Read(skills/**)
+  - Read(outputs/mwcc/**)
+  - Write(outputs/mwcc/seo/**)
+  - WebFetch
+
+Inputs:
+  site_url: "https://myworldcc.com.au/"
+  centre_pages:
+    - centre: Armadale
+      url: "https://myworldcc.com.au/centres/armadale/"
+      services: [OSHC]
+    - centre: Midvale
+      url: "https://myworldcc.com.au/centres/midvale/"
+      services: [LDC, OSHC]
+    - centre: Rockingham
+      url: "https://myworldcc.com.au/centres/rockingham/"
+      services: [OSHC]
+    - centre: Seville Grove
+      url: "https://myworldcc.com.au/centres/seville-grove/"
+      services: [LDC, OSHC]
+    - centre: Waikiki
+      url: "https://myworldcc.com.au/centres/waikiki/"
+      services: [LDC]
+  service_hubs:
+    - "https://myworldcc.com.au/oshc/"
+    - "https://myworldcc.com.au/long-day-care/"
+    - "https://myworldcc.com.au/vacation-care/"
+    - "https://myworldcc.com.au/ccs/"
+  competitor_urls:
+    - url: "https://www.goodstart.org.au/centres/wa/"
+      name: "Goodstart WA centre directory"
+      type: national_chain
+    - url: "https://www.nido.edu.au/"
+      name: "Nido Early School"
+      type: national_premium
+    - url: "https://midvalehub.org.au/"
+      name: "Midvale Hub"
+      type: local
+    - url: "https://www.kindicare.com/"
+      name: "KindiCare (aggregator)"
+      type: aggregator
+    - url: "https://www.careforkids.com.au/"
+      name: "Care for Kids (aggregator)"
+      type: aggregator
+
+Workflow:
+  - name: ingest-emitter-actions
+    description: |
+      Read state/mwcc-work-queue.json and extract this week's SEO actions
+      (source_page='seo-organic' OR category='seo-organic'). These are the
+      typed tactical cards the team will execute — the agent's job is to
+      expand each into a strategic brief, NOT to invent a parallel list.
+      If no SEO actions exist for this week (emitter hasn't run yet), exit
+      with a clear message: "MWCC SEO Agent — no SEO emitter actions this
+      week, nothing to brief".
+    output: "(internal — held in context for next step)"
+
+  - name: competitor-analysis
+    description: |
+      For each SEO action's keyword, fetch how the relevant competitor
+      ranks. The competitor depends on the keyword type:
+       - "childcare [suburb]" → Goodstart (national chain) and any local
+         independent
+       - "oshc [suburb]" → Camp Australia (national OSHC chain) and council
+       - "vacation care [suburb]" → Camp Australia + local council
+       - "ccs childcare perth" → aggregators (KindiCare, Care for Kids)
+       - "early learning [suburb]" → Nido (premium positioning)
+      Document the gap MWCC must close per keyword cluster: title tag,
+      H1, word count, schema, internal linking, evidence signals.
+    skills: [competitor-seo-scraper]
+    output: "outputs/mwcc/seo/competitor-gap-analysis-{YYYY-MM-DD}.md"
+
+  - name: strategic-brief
+    description: |
+      For EACH emitter action from step 1, write a 1-page strategic brief
+      covering:
+       1. Why this matters (commercial impact — # of enrolment enquiries
+          driven by this keyword, competitive gap)
+       2. Page structure recommendation (H2s, word count benchmark vs
+          competitor, schema markup — LocalBusiness + EarlyChildhoodEducation
+          for centre pages, Service for hub pages)
+       3. Internal linking plan (centre page ↔ relevant service hub ↔
+          CCS calculator page)
+       4. Expected impact (position lift + click projection over 28 days)
+          and confidence (high / medium / low)
+       5. Effort split:
+            - John: keyword research + content briefing + on-page tuning
+            - Jordan: content production for any new-build sections
+            - AI: drafts via seo-blog-generator or seo-landing-page-writer
+            - Kelley: brand QC pass
+            - Denver: final sign-off
+            - Mark: Webflow build + publish
+       6. Compliance note (per MWCC brand voice) — never claim "best
+          childcare", any NQS rating must be verified per
+          context/mwcc-nqs-ratings.json, no fees without CCS disclaimer
+       7. Link back to the emitter action id (e.g. mwcc-seo-act-2026w23-001)
+          so the team can cross-reference.
+    skills: [seo-content-strategist, seo-landing-page-writer]
+    output: "outputs/mwcc/seo/strategic-briefs-{YYYY-MM-DD}.md"
+
+  - name: per-centre-priority-summary
+    description: |
+      One-table summary showing each of the 5 centres + group-level hub
+      and the top 1-2 SEO priorities for this week. Helps Kelley + Denver
+      see which centre is most exposed. Format:
+
+      | Centre | Top SEO action this week | Current rank | Target rank | Owner | Effort |
+      | Armadale | … | … | … | … | … |
+      | Midvale | … | … | … | … | … |
+      (etc.)
+    output: "(appended to strategic-briefs file as final section)"
+
+# Cadence — runs Monday 2:45pm AWST, AFTER SEO emitter has run AND
+# AFTER performance-mwcc has issued its budget recommendation. SEO
+# Agent uses the latest Work Queue actions + competitor analysis
+# to brief John for the week.
+
+Runs: Monday 2:45pm AWST (after Phase 4 emitters + performance-mwcc)
+
+End:
+  - Print "MWCC SEO AGENT COMPLETE — Strategic briefs for [N] emitter actions saved to outputs/mwcc/seo/"
+
+Hit-rate tracking:
+  measurement_runner.py picks up actions with source_agent='seo-agent-mwcc'
+  (currently a strategic-brief layer that doesn't propose its own actions —
+  but if it does propose new actions via the proposed_actions block in the
+  output, they're tracked the same way as strategist-mwcc actions).
