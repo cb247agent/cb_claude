@@ -8017,13 +8017,9 @@ window.MWCC_DATA = {
     <div class="sidebar-item" data-page="content-planner" onclick="nav(this)">Work Queue</div>
     <div class="sidebar-item" data-page="content-review" onclick="nav(this)">Performance Review</div>
   </div>
-  <!-- Action Tracker hidden — actions now flow into Work Queue alongside content items.
-       Page DIV (#page-action-tracker) and renderTracker() kept in place for sidebar
-       parity on other businesses and for the Meeting Minutes flow. -->
-  <div class="sidebar-section" data-biz-group="cb247" style="display:none">
-    <div class="sidebar-section-label">Operations</div>
-    <div class="sidebar-item" data-page="action-tracker" onclick="nav(this)">Action Tracker</div>
-  </div>
+  <!-- Action Tracker fully removed from sidebar 07 Jun 2026 (Tia direction).
+       Functionality merged into Performance Review. Page DIV + renderTracker()
+       kept in place for the Meeting Minutes flow + deep-link compatibility. -->
 
   <!-- ── MY WORLD CHILDCARE ────────────────────────────────── -->
   <div class="sidebar-section" data-biz-group="mwcc" style="display:none">
@@ -8044,13 +8040,9 @@ window.MWCC_DATA = {
     <div class="sidebar-item" data-page="mwcc-gbp" onclick="nav(this)">Google Business Profile</div>
   </div>
   <div class="sidebar-section" data-biz-group="mwcc" style="display:none">
-    <div class="sidebar-section-label">Content</div>
-    <div class="sidebar-item" data-page="mwcc-content-planner" onclick="nav(this)">Content Planner</div>
-    <div class="sidebar-item" data-page="mwcc-content-review" onclick="nav(this)">Content Review</div>
-  </div>
-  <div class="sidebar-section" data-biz-group="mwcc" style="display:none">
-    <div class="sidebar-section-label">Operations</div>
-    <div class="sidebar-item" data-page="mwcc-action-tracker" onclick="nav(this)">Action Tracker</div>
+    <div class="sidebar-section-label">Team Workspace</div>
+    <div class="sidebar-item" data-page="mwcc-content-planner" onclick="nav(this)">Work Queue</div>
+    <div class="sidebar-item" data-page="mwcc-content-review" onclick="nav(this)">Performance Review</div>
   </div>
 
   <!-- ── KARRIBANK ──────────────────────────────────────────── -->
@@ -8074,12 +8066,8 @@ window.MWCC_DATA = {
   </div>
   <div class="sidebar-section" data-biz-group="karribank" style="display:none">
     <div class="sidebar-section-label">Content</div>
-    <div class="sidebar-item" data-page="kb-content-planner" onclick="nav(this)">Content Planner</div>
-    <div class="sidebar-item" data-page="kb-content-review" onclick="nav(this)">Content Review</div>
-  </div>
-  <div class="sidebar-section" data-biz-group="karribank" style="display:none">
-    <div class="sidebar-section-label">Operations</div>
-    <div class="sidebar-item" data-page="kb-action-tracker" onclick="nav(this)">Action Tracker</div>
+    <div class="sidebar-item" data-page="kb-content-planner" onclick="nav(this)">Work Queue</div>
+    <div class="sidebar-item" data-page="kb-content-review" onclick="nav(this)">Performance Review</div>
   </div>
 
   <!-- ── SPARROWS ───────────────────────────────────────────── -->
@@ -8102,12 +8090,8 @@ window.MWCC_DATA = {
   </div>
   <div class="sidebar-section" data-biz-group="sparrows" style="display:none">
     <div class="sidebar-section-label">Content</div>
-    <div class="sidebar-item" data-page="sp-content-planner" onclick="nav(this)">Content Planner</div>
-    <div class="sidebar-item" data-page="sp-content-review" onclick="nav(this)">Content Review</div>
-  </div>
-  <div class="sidebar-section" data-biz-group="sparrows" style="display:none">
-    <div class="sidebar-section-label">Operations</div>
-    <div class="sidebar-item" data-page="sp-action-tracker" onclick="nav(this)">Action Tracker</div>
+    <div class="sidebar-item" data-page="sp-content-planner" onclick="nav(this)">Work Queue</div>
+    <div class="sidebar-item" data-page="sp-content-review" onclick="nav(this)">Performance Review</div>
   </div>
 
   <div class="sidebar-section" data-biz-group="group">
@@ -8360,19 +8344,20 @@ window.MWCC_DATA = {
 
     <!-- MWCC: Content Planner -->
     <div class="page" id="page-mwcc-content-planner">
-      <div class="page-header"><h1>Content Planner</h1><p>My World Childcare · scheduled posts · campaign calendar</p></div>
+      <div class="page-header"><h1>Work Queue</h1><p>My World Childcare · open actions emitted from Monday's cron · grouped by source page · 6-stage approval flow</p></div>
       <div id="mwcc-content-planner-content"></div>
     </div>
 
-    <!-- MWCC: Content Review -->
+    <!-- MWCC: Performance Review (was Content Review + Action Tracker — merged 07 Jun 2026) -->
     <div class="page" id="page-mwcc-content-review">
-      <div class="page-header"><h1>Content Review</h1><p>My World Childcare · drafts pending approval</p></div>
+      <div class="page-header"><h1>Performance Review</h1><p>My World Childcare · 14-day verdicts on completed actions · hit rate · learning loop</p></div>
       <div id="mwcc-content-review-content"></div>
     </div>
 
-    <!-- MWCC: Action Tracker -->
+    <!-- MWCC: Action Tracker — DEPRECATED (merged into Performance Review).
+         Page DIV kept to avoid breaking any deep-links; not in sidebar. -->
     <div class="page" id="page-mwcc-action-tracker">
-      <div class="page-header"><h1>Action Tracker</h1><p>My World Childcare · open actions · priorities · owners</p></div>
+      <div class="page-header"><h1>Action Tracker</h1><p>Deprecated — use Performance Review instead.</p></div>
       <div id="mwcc-action-tracker-content"></div>
     </div>
 
@@ -16698,6 +16683,9 @@ function renderMwccGbp() {
 }
 // ── MWCC Work Queue (Content Planner) — mirrors CB247 renderPlanner pattern ──
 function renderMwccContentPlanner() {
+  // ─── Improved 07 Jun 2026 (Tia direction) — Work Queue page.
+  //     Renamed from "Content Planner" sidebar label. Function name kept
+  //     for backward compatibility with init() + cbState rerender hooks. ──
   const container = $('mwcc-content-planner-content');
   if (!container) return;
 
@@ -16719,6 +16707,7 @@ function renderMwccContentPlanner() {
       instructions: r.description || '',
       priority:     r.priority || '',
       sourcePage:   r.source_page || '',
+      runAt:        r.source_run_at || '',
       _source:      r,
     };
   });
@@ -16729,19 +16718,75 @@ function renderMwccContentPlanner() {
   MWCC_STAGES.forEach(s => counts[s] = 0);
   ALL.forEach(item => { counts[saved[item.id]||'Idea'] = (counts[saved[item.id]||'Idea']||0) + 1; });
 
+  // ── Aggregates for verdict + freshness banner ──
+  const _runDates = ALL.map(a => a.runAt).filter(Boolean).sort();
+  const lastEmit = _runDates.length ? _runDates[_runDates.length-1].slice(0,10) : '–';
+  const _priorityCounts = { P1: 0, P2: 0, P3: 0, P4: 0 };
+  ACTIVE.forEach(a => { const p = (a.priority||'P3').toUpperCase(); if (_priorityCounts[p] !== undefined) _priorityCounts[p]++; });
+  const blockedKelley = counts['Kelley QC'] || 0;
+  const blockedDenver = counts['Denver Approval'] || 0;
+  const totalBlocked  = blockedKelley + blockedDenver;
+  const sourceBreakdown = {};
+  ACTIVE.forEach(a => { sourceBreakdown[a.sourcePage] = (sourceBreakdown[a.sourcePage]||0) + 1; });
+
   let html = '';
+
+  // ── Data freshness banner (purple, matches other MWCC pages) ──
+  html += `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>Work Queue</b> last emit ${lastEmit}</span>
+    <span><b>Active items</b> ${ACTIVE.length}${ALL.length > ACTIVE.length ? ` · <span style="color:var(--muted)">${ALL.length - ACTIVE.length} published</span>` : ''}</span>
+    <span><b>P1 / P2 / P3</b> ${_priorityCounts.P1} / ${_priorityCounts.P2} / ${_priorityCounts.P3}</span>
+    <span><b>Sources</b> ${Object.keys(sourceBreakdown).length}</span>
+  </div>`;
+
+  // ── Executive Verdict ──
+  const _whereWeAre = `${ACTIVE.length} active actions across ${Object.keys(sourceBreakdown).length} source pages. ${_priorityCounts.P1} P1 (act this week), ${_priorityCounts.P2} P2 (next 2 weeks), ${_priorityCounts.P3} P3 (backlog). ${counts['Published']||0} completed this cycle.`;
+  const _risk = totalBlocked >= 3
+    ? `<b>${totalBlocked} items blocked in approval</b> — ${blockedKelley} waiting Kelley QC, ${blockedDenver} waiting Denver sign-off. Weekly review meeting recommended Friday.`
+    : _priorityCounts.P1 > 5
+      ? `<b>${_priorityCounts.P1} P1 actions</b> stacking up — team capacity may be insufficient this cycle. Consider reassigning some P1s to next week or upgrading P2 → P1 only if essential.`
+      : ACTIVE.length === 0
+        ? `<b>No active actions</b> — either emitters haven't run this Monday yet, or last cycle is fully published. Next cron fires Monday 2pm AWST.`
+        : `Queue is healthy. Standard 14-day measurement window applies to all completed actions.`;
+  const _priority = _priorityCounts.P1 > 0
+    ? `Focus on the ${_priorityCounts.P1} P1 actions first. Cards below are sorted by priority within each source group — start at the top of each.`
+    : totalBlocked > 0
+      ? `${totalBlocked} items waiting on Kelley + Denver. Tia to chase + unblock by EOW Friday.`
+      : `Maintain pace. Watch Performance Review next Monday for verdicts on this cycle's actions.`;
+
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Work Queue Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">Cycle starting ${lastEmit}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_whereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_risk}</div>
+      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_priority}</div>
+    </div>
+  </div>`;
 
   // ── KPI bar ──
   html += `<div class="kpi-grid cols-5 mb">
     ${kpiCard('','Total Items', ACTIVE.length, null, 'In this cycle')}
-    ${kpiCard('','Pending Kelley QC', counts['Kelley QC']||0, null, 'Waiting brand QC', (counts['Kelley QC']||0)>0?'amber':'')}
-    ${kpiCard('','Pending Denver', counts['Denver Approval']||0, null, 'Waiting COO sign-off', (counts['Denver Approval']||0)>0?'amber':'')}
+    ${kpiCard('','Pending Kelley QC', blockedKelley, null, 'Waiting brand QC', blockedKelley>0?'amber':'')}
+    ${kpiCard('','Pending Denver', blockedDenver, null, 'Waiting COO sign-off', blockedDenver>0?'amber':'')}
     ${kpiCard('','Scheduled', counts['Scheduled']||0, null, 'Approved + queued', (counts['Scheduled']||0)>0?'green':'')}
     ${kpiCard('','Published', counts['Published']||0, null, 'Live this cycle', (counts['Published']||0)>0?'green':'')}
   </div>`;
 
-  // ── Approval flow ──
-  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:11px;color:var(--text-2)">
+  // ── Blocked-items insight (only renders if items are stuck > 0) ──
+  if (totalBlocked > 0) {
+    html += `<div class="insight amber mb">
+      <div class="insight-label">${totalBlocked} Item${totalBlocked===1?'':'s'} Blocked in Approval</div>
+      ${blockedKelley > 0 ? `<b>${blockedKelley} waiting Kelley QC</b> — brand check needed before Denver sees them.<br>` : ''}
+      ${blockedDenver > 0 ? `<b>${blockedDenver} waiting Denver sign-off</b> — strategic approval needed before scheduling.<br>` : ''}
+      <br><b>Unblock action:</b> Tia to ping Kelley + Denver in Friday standup. Each blocked item is roughly 7 days of leverage being lost.
+    </div>`;
+  }
+
+  // ── Approval flow (purple, no teal) ──
+  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;font-size:11px;color:var(--text-2)">
     <span style="font-weight:700;color:var(--brand-accent-deep)">Approval flow:</span>
     <span>AI / team drafts</span><span style="color:var(--muted)">→</span>
     <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
