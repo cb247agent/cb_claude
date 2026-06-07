@@ -16,18 +16,49 @@ Drop zone workflow:
   The 2pm cron runs this script automatically.
 
 Data notes:
-  - OWNA reports Mon–Sun. Digital marketing scripts report Sat–Fri.
-    Difference is 1 day overlap — noted in output JSON.
-  - Wage breach threshold: 42% (wage exc. leave)
+  - Reporting convention (agreed 07 Jun 2026):
+    · OWNA centre operations data → Mon–Fri (centres operate weekdays only).
+      For 07 Jun report: 01–05 Jun 2026.
+    · Digital marketing (GA4, GSC, Meta, Google Ads, Metricool/social) → Sat–Fri.
+      Captures weekend digital activity that centres don't have.
+      For 07 Jun report: 30 May – 05 Jun 2026.
+  - The parser overrides the OWNA file's native period with the computed Mon-Fri
+    window via compute_owna_week(). The original file-reported period is kept
+    in output['period']['owna_file_period'] for reference.
+  - Wage breach threshold: 42% (wage exc. leave) — NOT surfaced in marketing UI
+    (HR/finance concern, not marketing). Available in data for ops tooling.
   - Compliance risk: room occupancy > 100%
   - Centre name mapping: OWNA uses 'WAKIKI' — canonical name is 'Waikiki'
 """
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Tuple
+
+
+def compute_owna_week():
+    """Compute the Mon→Fri window for the last completed working week.
+
+    Convention agreed 07 Jun 2026 (Tia):
+      OWNA centre operations data is Mon–Fri because centres only operate
+      weekdays. Sat/Sun = closed = always zero. Reporting on Mon–Fri removes
+      noise and aligns with how the team actually runs the business.
+
+    Marketing scripts (GA4/GSC/Meta/Ads) report Sat–Fri (the wider 7-day
+    window that captures weekend digital activity). These are documented as
+    different windows by design.
+
+    Returns (start_date_str, end_date_str) in YYYY-MM-DD format.
+    end = last completed Friday
+    start = same week's Monday = end - 4 days
+    """
+    today = datetime.today()
+    days_since_friday = (today.weekday() - 4) % 7
+    end_date   = today - timedelta(days=days_since_friday)
+    start_date = end_date - timedelta(days=4)
+    return start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
 
 try:
     import openpyxl
@@ -402,7 +433,15 @@ def parse_mwcc_ops(inbox_path=None):
         if d.get("compliance_risk", False)
     ]
 
-    period_label = f"{period_start} to {period_end}" if period_start else "unknown"
+    # Override the period from the OWNA file with the canonical Mon-Fri window.
+    # Convention: centres operate Mon-Fri only. OWNA's native Mon-Sun export
+    # always has zeros for Sat/Sun anyway, so trimming to Mon-Fri removes noise
+    # and aligns with how the team reports the business. Computed deterministically
+    # from today's date so the dashboard always shows the canonical "last completed
+    # working week" regardless of what the OWNA export's header row contains.
+    file_period_start, file_period_end = period_start, period_end
+    period_start, period_end = compute_owna_week()
+    period_label = f"{period_start} to {period_end}"
 
     output = {
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -411,7 +450,8 @@ def parse_mwcc_ops(inbox_path=None):
             "start":  period_start,
             "end":    period_end,
             "label":  period_label,
-            "note":   "OWNA reports Mon–Sun. Digital marketing scripts report Sat–Fri (1-day offset).",
+            "note":   "OWNA centre operations data is Mon–Fri (centres operate weekdays only). Digital marketing scripts (GA4, GSC, Meta, Google Ads, Metricool) report Sat–Fri to capture weekend digital activity.",
+            "owna_file_period": f"{file_period_start} to {file_period_end}" if file_period_start else "unknown",
         },
         "network_summary": {
             "total_enquiries":            total_enquiries,
