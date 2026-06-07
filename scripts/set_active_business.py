@@ -42,6 +42,8 @@ RESOLUTION = {
         "design-standards":    "context/design-standards.md",
         "research-competitors":"context/research-competitors.md",
         "team-roster":         "context/team-roster.md",
+        "session-start":       "context/session-start.md",
+        "seasonal-calendar":   "context/seasonal-calendar.md",
     },
     "mwcc": {
         "brand-voice":         "context/mwcc-brand-voice.md",
@@ -51,6 +53,8 @@ RESOLUTION = {
         "design-standards":    "context/mwcc-design-standards.md (todo)",
         "research-competitors":"context/mwcc-competitors.md",
         "team-roster":         "context/mwcc-team-roster.md",
+        "session-start":       "context/mwcc-session-start.md",
+        "seasonal-calendar":   "context/mwcc-seasonal-calendar.md",
     },
     "kb": {
         "brand-voice":         "context/kb-brand-voice.md (todo — placeholder)",

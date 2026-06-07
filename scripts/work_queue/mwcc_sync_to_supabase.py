@@ -6,6 +6,14 @@ Mirrors sync_to_supabase.py exactly but targets the mwcc_ prefixed table.
 This keeps MWCC isolated from CB247 — a query that targets the wrong
 prefix returns wrong data, but the businesses cannot be mixed.
 
+Compliance gate (added 2026-06-07):
+    Every action is passed through scripts/work_queue/compliance.py before
+    upsert. Actions with banned language (per mwcc-brand-voice.md DON'Ts)
+    are rejected, logged to state/mwcc-compliance-rejections.json, and
+    NOT synced. Pattern set includes ACL undefendable superlatives ('best
+    childcare'), outcome guarantees ('guarantee your child will'), and
+    unverified award/NQS claims.
+
 Idempotent: upsert via id. Re-running with the same JSON is a no-op.
 
 Run:
@@ -16,6 +24,7 @@ Wired into: scripts/weekly-report-mwcc.sh (after emitters complete).
 
 from __future__ import annotations
 
+import datetime as _dt
 import json
 import os
 import sys
@@ -24,9 +33,14 @@ from typing import List
 
 import requests
 
+_HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(_HERE))  # so we can import compliance.py beside us
+from compliance import check_actions  # noqa: E402
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 STATE_DIR = BASE_DIR / "state"
 WORK_QUEUE_FILE = STATE_DIR / "mwcc-work-queue.json"
+REJECTIONS_FILE = STATE_DIR / "mwcc-compliance-rejections.json"
 
 SUPABASE_URL = os.environ.get(
     "SUPABASE_URL",
@@ -94,9 +108,48 @@ def main():
         print("[mwcc-sync] no actions to sync")
         sys.exit(0)
 
-    print(f"[mwcc-sync] {len(actions)} actions queued for upsert to {TABLE}")
+    # ── Compliance gate ────────────────────────────────────────────────
+    # Reject any action containing banned MWCC language (per
+    # mwcc-brand-voice.md DON'Ts + Australian Consumer Law).
+    clean_actions, rejected_actions = check_actions(actions, business="mwcc")
+    if rejected_actions:
+        print(f"[mwcc-sync] 🚫 COMPLIANCE: {len(rejected_actions)} action(s) blocked from sync:")
+        for r in rejected_actions:
+            print(f"  - {r.get('id', '?')[:24]:<24} | {r.get('title', '')[:60]}")
+            print(f"      reason: {r['_rejection_reason']}")
 
-    rows = [_to_db_row(a) for a in actions]
+        # Append to rejections log for audit. Never overwrite — only append.
+        existing_rejections = []
+        if REJECTIONS_FILE.exists():
+            try:
+                existing_rejections = json.loads(REJECTIONS_FILE.read_text()).get("rejections", [])
+            except Exception:
+                existing_rejections = []
+        now_iso = _dt.datetime.now(_dt.timezone.utc).isoformat()
+        for r in rejected_actions:
+            existing_rejections.append({
+                "rejected_at": now_iso,
+                "id": r.get("id"),
+                "title": r.get("title"),
+                "description": r.get("description"),
+                "source_agent": r.get("source_agent"),
+                "source_page": r.get("source_page"),
+                "reason": r["_rejection_reason"],
+            })
+        REJECTIONS_FILE.write_text(json.dumps(
+            {"updated_at": now_iso, "rejections": existing_rejections},
+            indent=2,
+            ensure_ascii=False,
+        ))
+        print(f"[mwcc-sync] logged rejections → {REJECTIONS_FILE.relative_to(BASE_DIR)}")
+
+    if not clean_actions:
+        print("[mwcc-sync] no clean actions remaining after compliance gate — nothing to sync")
+        sys.exit(0)
+
+    print(f"[mwcc-sync] {len(clean_actions)} actions cleared compliance, queued for upsert to {TABLE}")
+
+    rows = [_to_db_row(a) for a in clean_actions]
 
     BATCH = 50
     synced = 0
