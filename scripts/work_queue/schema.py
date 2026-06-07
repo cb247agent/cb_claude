@@ -44,6 +44,11 @@ VALID_METRICS = {
     "membership_cancellations_weekly",
     "membership_addon_active_count",
     "membership_future_cancellations",
+    # MWCC-specific (childcare metrics)
+    "mwcc_occupancy_pct",
+    "mwcc_wage_ratio_pct",
+    "mwcc_enrolments_weekly",
+    "mwcc_enquiries_weekly",
     "qualitative_assessment",
 }
 
@@ -54,6 +59,7 @@ VALID_SOURCE_PAGES = {
     "organic-social",
     "gbp",
     "membership",
+    "enrolment",     # MWCC-specific (childcare equivalent of membership)
     "overview",
 }
 

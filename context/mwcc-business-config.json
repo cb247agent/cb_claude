@@ -1,0 +1,95 @@
+{
+  "_comment": "MWCC business configuration — read by emitters at runtime. Locked 07 Jun 2026.",
+  "business": "mwcc",
+  "business_name": "My World Childcare",
+  "domain": "myworldcc.com.au",
+  "ahrefs_domain": "myworldcc.com.au/",
+
+  "centres": [
+    {"name": "Armadale", "suburb": "Armadale", "service_type": "OSHC", "rooms": ["Before School", "After School"]},
+    {"name": "Midvale", "suburb": "Midvale", "service_type": "LDC+OSHC", "rooms": ["Babies", "Toddlers", "Kindy", "Before School", "After School"]},
+    {"name": "Rockingham", "suburb": "Rockingham", "service_type": "OSHC", "rooms": ["Before School", "After School"]},
+    {"name": "Seville Grove", "suburb": "Seville Grove", "service_type": "LDC+OSHC", "rooms": ["Babies", "Toddlers", "Kindy", "Before School", "After School"]},
+    {"name": "Waikiki", "suburb": "Waikiki", "service_type": "LDC", "rooms": ["Babies", "Toddlers", "Kindy"]}
+  ],
+
+  "competitors": [
+    {"name": "Midvale Hub",       "domain": "midvalehub.org.au",   "type": "local"},
+    {"name": "Goodstart",         "domain": "goodstart.org.au",    "type": "national_chain"},
+    {"name": "Nido Early School", "domain": "nido.edu.au",         "type": "national_premium"},
+    {"name": "Care for Kids",     "domain": "careforkids.com.au",  "type": "aggregator"},
+    {"name": "KindiCare",         "domain": "kindicare.com",       "type": "aggregator"}
+  ],
+
+  "owners": {
+    "google_ads_pause":    {"name": "Tia",    "role": "OS Owner"},
+    "google_ads_scale":    {"name": "Tia",    "role": "OS Owner"},
+    "google_ads_optimise": {"name": "John",   "role": "SEO / Web"},
+    "meta_pause":          {"name": "Joanne", "role": "Paid Social + Scheduling"},
+    "meta_scale":          {"name": "Joanne", "role": "Paid Social + Scheduling"},
+    "meta_refresh":        {"name": "Jordan", "role": "Content / Assets"},
+    "seo_optimise":        {"name": "John",   "role": "SEO / Web"},
+    "seo_build":           {"name": "AI",     "role": "Content Agent (→ Jordan → Mark)"},
+    "seo_protect":         {"name": "John",   "role": "SEO / Web"},
+    "enrolment_gap":       {"name": "Kelley", "role": "Manager / Frontline Ops"},
+    "occupancy_fill":      {"name": "Kelley", "role": "Manager / Frontline Ops"},
+    "wage_ratio_alert":    {"name": "Denver", "role": "COO (Strategic) + Kelley (Execution)"}
+  },
+
+  "_comment_thresholds": "Per-emitter thresholds. Tunable as MWCC volume grows.",
+  "thresholds": {
+    "google_ads": {
+      "pause_cpa_multiplier": 3.0,
+      "pause_min_spend": 50.0,
+      "pause_zero_conv_min_clicks": 50,
+      "scale_cpa_multiplier": 0.5,
+      "scale_min_conv": 3,
+      "scale_min_spend": 50.0,
+      "optimise_cpa_min_multiplier": 1.5,
+      "optimise_cpa_max_multiplier": 3.0
+    },
+    "meta": {
+      "pause_min_spend": 20.0,
+      "pause_max_ctr": 1.30,
+      "scale_min_ctr": 2.00,
+      "scale_max_cpc": 0.80,
+      "scale_min_spend": 20.0,
+      "scale_min_clicks": 30,
+      "refresh_min_spend": 30.0,
+      "refresh_ctr_min": 1.30,
+      "refresh_ctr_max": 2.00
+    },
+    "seo": {
+      "max_optimise_actions": 5,
+      "max_build_actions": 4,
+      "max_protect_actions": 2,
+      "optimise_position_min": 4,
+      "optimise_position_max": 20,
+      "optimise_min_impressions": 1,
+      "build_min_position": 21,
+      "build_min_impressions": 3,
+      "protect_max_position": 3,
+      "protect_min_clicks": 20
+    },
+    "enrolment": {
+      "enrolment_gap_min_decline_pct": 20,
+      "enrolment_gap_window_weeks": 4,
+      "occupancy_fill_pct_floor": 80,
+      "occupancy_fill_window_days": 5,
+      "wage_ratio_target_pct": 50,
+      "wage_ratio_alert_breach_pct": 55
+    }
+  },
+
+  "_comment_kpi_targets": "MWCC-specific KPI definitions. Used by emitters for projected_kpis baseline + target language.",
+  "kpi_targets": {
+    "mwcc_enrolments_weekly": {"direction": "higher", "tolerance": 1},
+    "mwcc_exits_weekly":      {"direction": "lower",  "tolerance": 1},
+    "mwcc_enquiries_weekly":  {"direction": "higher", "tolerance": 2},
+    "mwcc_occupancy_pct":     {"direction": "higher", "tolerance": 2.0},
+    "mwcc_wage_ratio_pct":    {"direction": "lower",  "tolerance": 1.0}
+  },
+
+  "version": "1.0.0",
+  "locked_at": "2026-06-07"
+}

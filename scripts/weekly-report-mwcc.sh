@@ -134,6 +134,49 @@ fi
 
 
 # ─────────────────────────────────────────────────────────────────
+# STEP 4.5 — GSC PULL + AHREFS PULL (SEO data sources)
+# ─────────────────────────────────────────────────────────────────
+log ""
+log "─── STEP 4.5a: MWCC GSC Pull ───"
+"$PYTHON" "$BASE_DIR/scripts/pull_mwcc_gsc.py" >> "$LOG" 2>&1 \
+    && log "  ✅ MWCC GSC pull complete → state/mwcc-gsc-data.json" \
+    || { FAILED_STEPS+=("mwcc-gsc"); log "  ⚠️  MWCC GSC pull failed — check $LOG"; }
+
+log "─── STEP 4.5b: MWCC Ahrefs Pull (supplementary) ───"
+"$PYTHON" "$BASE_DIR/scripts/pull_mwcc_ahrefs.py" >> "$LOG" 2>&1 \
+    && log "  ✅ MWCC Ahrefs pull complete → state/mwcc-ahrefs-data.json" \
+    || { FAILED_STEPS+=("mwcc-ahrefs"); log "  ⚠️  MWCC Ahrefs pull failed (units exhausted?) — check $LOG"; }
+
+# ─────────────────────────────────────────────────────────────────
+# STEP 4.7 — WORK QUEUE EMITTERS
+# ─────────────────────────────────────────────────────────────────
+log ""
+log "─── STEP 4.7a: MWCC Google Ads Emitter ───"
+"$PYTHON" "$BASE_DIR/scripts/work_queue/mwcc_google_ads_emitter.py" >> "$LOG" 2>&1 \
+    && log "  ✅ Google Ads actions emitted" \
+    || { FAILED_STEPS+=("mwcc-gads-emit"); log "  ⚠️  Google Ads emitter failed"; }
+
+log "─── STEP 4.7b: MWCC Meta Emitter ───"
+"$PYTHON" "$BASE_DIR/scripts/work_queue/mwcc_meta_emitter.py" >> "$LOG" 2>&1 \
+    && log "  ✅ Meta actions emitted" \
+    || { FAILED_STEPS+=("mwcc-meta-emit"); log "  ⚠️  Meta emitter failed"; }
+
+log "─── STEP 4.7c: MWCC SEO Emitter ───"
+"$PYTHON" "$BASE_DIR/scripts/work_queue/mwcc_seo_emitter.py" >> "$LOG" 2>&1 \
+    && log "  ✅ SEO actions emitted" \
+    || { FAILED_STEPS+=("mwcc-seo-emit"); log "  ⚠️  SEO emitter failed"; }
+
+log "─── STEP 4.7d: MWCC Enrolment Emitter ───"
+"$PYTHON" "$BASE_DIR/scripts/work_queue/mwcc_enrolment_emitter.py" >> "$LOG" 2>&1 \
+    && log "  ✅ Enrolment actions emitted" \
+    || { FAILED_STEPS+=("mwcc-enrol-emit"); log "  ⚠️  Enrolment emitter failed"; }
+
+log "─── STEP 4.7e: Sync Work Queue → Supabase ───"
+"$PYTHON" "$BASE_DIR/scripts/work_queue/mwcc_sync_to_supabase.py" >> "$LOG" 2>&1 \
+    && log "  ✅ MWCC Work Queue synced to Supabase" \
+    || { FAILED_STEPS+=("mwcc-sync"); log "  ⚠️  Supabase sync failed"; }
+
+# ─────────────────────────────────────────────────────────────────
 # STEP 5 — BAKE REPORT
 # ─────────────────────────────────────────────────────────────────
 log ""

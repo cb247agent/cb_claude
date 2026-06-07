@@ -34,6 +34,10 @@ HIGHER_IS_BETTER = {
     "ig_followers",
     "membership_signups_weekly",
     "membership_addon_active_count",
+    # MWCC childcare metrics
+    "mwcc_occupancy_pct",
+    "mwcc_enrolments_weekly",
+    "mwcc_enquiries_weekly",
 }
 
 # Metrics where a LOWER number is better (improvement)
@@ -47,6 +51,8 @@ LOWER_IS_BETTER = {
     "google_ads_spend_weekly",
     "membership_cancellations_weekly",
     "membership_future_cancellations",
+    # MWCC: lower wage ratio is better
+    "mwcc_wage_ratio_pct",
 }
 
 
@@ -184,6 +190,12 @@ def _tolerance_for(metric: str) -> float:
         return 0.5            # half-post noise
     if metric == "gbp_review_response_rate":
         return 2              # 2pp noise
+    if metric == "mwcc_occupancy_pct":
+        return 2.0            # 2pp occupancy noise (3-5 children move daily)
+    if metric == "mwcc_wage_ratio_pct":
+        return 1.0            # 1pp wage % noise
+    if metric in ("mwcc_enrolments_weekly", "mwcc_enquiries_weekly"):
+        return 1              # 1-member noise at small volumes
     if metric in ("membership_signups_weekly", "membership_cancellations_weekly"):
         return 10             # 10-member noise at weekly cadence
     if metric == "membership_future_cancellations":

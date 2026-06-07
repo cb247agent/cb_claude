@@ -6936,8 +6936,10 @@ function _initSupabase() {
     // Phase B + Session 2: fire each sync layer once the client exists.
     // planner = team approvals; workQueue = agent-emitted actions.
     const _bootSyncLayers = () => {
-      if (window.cbState?.planner)   window.cbState.planner.init();
-      if (window.cbState?.workQueue) window.cbState.workQueue.init();
+      if (window.cbState?.planner)       window.cbState.planner.init();
+      if (window.cbState?.workQueue)     window.cbState.workQueue.init();
+      if (window.cbState?.mwccPlanner)   window.cbState.mwccPlanner.init();
+      if (window.cbState?.mwccWorkQueue) window.cbState.mwccWorkQueue.init();
     };
     if (window.cbState?.planner) _bootSyncLayers();
     else setTimeout(_bootSyncLayers, 100);   // cbState defined later in script — defer
@@ -7287,6 +7289,172 @@ window.cbState = {
         return;
       }
       // Optimistic local update so the card flips state immediately
+      const idx = this._items.findIndex(x => x.id === actionId);
+      if (idx >= 0) {
+        this._items[idx] = { ...this._items[idx], overall_verdict: verdict, measured_at };
+      }
+    },
+  },
+
+  // ── MWCC namespace (parallel to cbState.planner + cbState.workQueue) ──────
+  // Reads from mwcc_* prefixed Supabase tables for clean isolation from CB247.
+  // Renders into renderMwccContentPlanner + renderMwccContentReview.
+  mwccPlanner: {
+    PLANNER_STATUS_KEY:   'mwcc-planner-status',
+    PLANNER_APPROVAL_KEY: 'mwcc-planner-approval',
+    _initialized: false,
+    _rerender: null,
+
+    setRerenderFn(fn) { this._rerender = fn; },
+
+    async _hydrate() {
+      if (!_supa) return;
+      const [statuses, approvals] = await Promise.all([
+        _supa.from('mwcc_planner_status').select('*'),
+        _supa.from('mwcc_planner_approval').select('*'),
+      ]);
+      if (statuses.data) {
+        const map = {};
+        statuses.data.forEach(r => { map[r.item_id] = r.status; });
+        localStorage.setItem(this.PLANNER_STATUS_KEY, JSON.stringify(map));
+      }
+      if (approvals.data) {
+        const map = {};
+        approvals.data.forEach(r => { map[r.item_id] = { status: r.decision, notes: r.notes || '' }; });
+        localStorage.setItem(this.PLANNER_APPROVAL_KEY, JSON.stringify(map));
+      }
+      console.log('[cbState.mwccPlanner] hydrated', (statuses.data||[]).length, 'statuses,', (approvals.data||[]).length, 'approvals');
+    },
+
+    _subscribe() {
+      if (!_supa) return;
+      const self = this;
+      ['mwcc_planner_status','mwcc_planner_approval'].forEach(tbl => {
+        _supa.channel(`mwcc-${tbl}-sync`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: tbl }, () => {
+            self._hydrate().then(() => { if (self._rerender) self._rerender(); });
+          })
+          .subscribe();
+      });
+    },
+
+    async init() {
+      if (this._initialized) return;
+      if (!_supa) { setTimeout(() => this.init(), 500); return; }
+      this._initialized = true;
+      if (!this._rerender) {
+        this._rerender = () => {
+          try {
+            if (typeof renderMwccContentPlanner === 'function') renderMwccContentPlanner();
+            if (typeof renderMwccContentReview  === 'function') renderMwccContentReview();
+          } catch (e) { console.warn('[cbState.mwccPlanner] rerender failed:', e); }
+        };
+      }
+      await this._hydrate();
+      this._subscribe();
+      this._rerender();
+      console.log('[cbState.mwccPlanner] sync layer active');
+    },
+
+    async setStatus(itemId, status) {
+      if (!_supa) return;
+      const me = window.cbState.whoAmI();
+      const cache = JSON.parse(localStorage.getItem(this.PLANNER_STATUS_KEY) || '{}');
+      cache[itemId] = status;
+      localStorage.setItem(this.PLANNER_STATUS_KEY, JSON.stringify(cache));
+      await _supa.from('mwcc_planner_status').upsert({
+        item_id: itemId, status, updated_by: me, updated_at: new Date().toISOString(),
+      });
+    },
+
+    async setApproval(itemId, decision, notes) {
+      if (!_supa) return;
+      const me = window.cbState.whoAmI();
+      const cache = JSON.parse(localStorage.getItem(this.PLANNER_APPROVAL_KEY) || '{}');
+      cache[itemId] = { status: decision, notes: notes || '' };
+      localStorage.setItem(this.PLANNER_APPROVAL_KEY, JSON.stringify(cache));
+      await _supa.from('mwcc_planner_approval').upsert({
+        item_id: itemId, decision, notes: notes || '', updated_by: me, updated_at: new Date().toISOString(),
+      });
+    },
+  },
+
+  mwccWorkQueue: {
+    CACHE_KEY: 'mwcc-work-queue-actions',
+    _initialized: false,
+    _rerender: null,
+    _items: [],
+
+    setRerenderFn(fn) { this._rerender = fn; },
+
+    getAll() { return this._items; },
+
+    async _hydrate() {
+      if (!_supa) return;
+      const { data, error } = await _supa.from('mwcc_work_queue_actions').select('*').order('priority').order('source_run_at', { ascending: false });
+      if (error) { console.warn('[cbState.mwccWorkQueue] hydrate failed:', error); return; }
+      this._items = data || [];
+      try { localStorage.setItem(this.CACHE_KEY, JSON.stringify(this._items)); } catch(_) {}
+      console.log('[cbState.mwccWorkQueue] hydrated', this._items.length, 'actions');
+    },
+
+    _hydrateFromCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem(this.CACHE_KEY) || '[]');
+        if (Array.isArray(cached) && cached.length) {
+          this._items = cached;
+        }
+      } catch(_) {}
+    },
+
+    _subscribe() {
+      if (!_supa) return;
+      const self = this;
+      _supa.channel('mwcc-work-queue-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mwcc_work_queue_actions' }, () => {
+          self._hydrate().then(() => { if (self._rerender) self._rerender(); });
+        })
+        .subscribe();
+    },
+
+    async init() {
+      if (this._initialized) return;
+      if (!_supa) { setTimeout(() => this.init(), 500); return; }
+      this._initialized = true;
+      this._hydrateFromCache();
+      if (!this._rerender) {
+        this._rerender = () => {
+          try {
+            if (typeof renderMwccContentPlanner === 'function') renderMwccContentPlanner();
+            if (typeof renderMwccContentReview  === 'function') renderMwccContentReview();
+          } catch (e) { console.warn('[cbState.mwccWorkQueue] rerender failed:', e); }
+        };
+      }
+      await this._hydrate();
+      this._subscribe();
+      this._rerender();
+      console.log('[cbState.mwccWorkQueue] sync layer active');
+    },
+
+    async setNotes(actionId, notes_human) {
+      if (!_supa) return;
+      const r = await _supa.from('mwcc_work_queue_actions')
+        .update({ notes_human, updated_at: new Date().toISOString() })
+        .eq('id', actionId);
+      if (r.error) console.warn('[cbState.mwccWorkQueue] setNotes failed:', r.error);
+      const idx = this._items.findIndex(x => x.id === actionId);
+      if (idx >= 0) this._items[idx] = { ...this._items[idx], notes_human };
+    },
+
+    async setVerdict(actionId, verdict) {
+      if (!_supa) return;
+      const ALLOWED = ['winner', 'partial_win', 'no_change', 'underperforming'];
+      if (!ALLOWED.includes(verdict)) return;
+      const measured_at = new Date().toISOString();
+      const r = await _supa.from('mwcc_work_queue_actions')
+        .update({ overall_verdict: verdict, measured_at, updated_at: measured_at })
+        .eq('id', actionId);
+      if (r.error) { console.warn('[cbState.mwccWorkQueue] setVerdict failed:', r.error); return; }
       const idx = this._items.findIndex(x => x.id === actionId);
       if (idx >= 0) {
         this._items[idx] = { ...this._items[idx], overall_verdict: verdict, measured_at };
@@ -13208,8 +13376,258 @@ const MWCC_CFG = {
 };
 function renderMwccSeo()             { _perfSeoScaffold('mwcc-seo-content', MWCC_CFG); }
 function renderMwccGbp()             { _perfGbpScaffold('mwcc-gbp-content', MWCC_CFG); }
-function renderMwccContentPlanner()  { _comingSoonPage('mwcc-content-planner-content','Content Planner','Scheduled posts, campaign calendar, and content queue for My World Childcare.'); }
-function renderMwccContentReview()   { _comingSoonPage('mwcc-content-review-content','Content Review','Drafts pending team review and approval for My World Childcare.'); }
+// ── MWCC Work Queue (Content Planner) — mirrors CB247 renderPlanner pattern ──
+function renderMwccContentPlanner() {
+  const container = $('mwcc-content-planner-content');
+  if (!container) return;
+
+  const saved = JSON.parse(localStorage.getItem('mwcc-planner-status') || '{}');
+  const wqRows = (window.cbState?.mwccWorkQueue?.getAll() || []);
+
+  // All MWCC items (no content items yet — operational actions only for MVP)
+  const ALL = wqRows.map(r => {
+    const primary = (r.projected_kpis && r.projected_kpis[0]) || {};
+    return {
+      id:           r.id,
+      kind:         'action',
+      day:          0,
+      platform:     r.category || 'mwcc',
+      title:        r.title || 'Untitled action',
+      assignee:     r.owner || 'Team',
+      assigneeRole: r.owner_role || '',
+      caption:      primary.metric ? `${primary.metric}: ${primary.baseline ?? '?'} → ${primary.target ?? '?'}` : '',
+      instructions: r.description || '',
+      priority:     r.priority || '',
+      sourcePage:   r.source_page || '',
+      _source:      r,
+    };
+  });
+  const ACTIVE = ALL.filter(i => (saved[i.id]||'Idea') !== 'Published');
+
+  const MWCC_STAGES = ['Idea','In Progress','Kelley QC','Denver Approval','Scheduled','Published'];
+  const counts = {};
+  MWCC_STAGES.forEach(s => counts[s] = 0);
+  ALL.forEach(item => { counts[saved[item.id]||'Idea'] = (counts[saved[item.id]||'Idea']||0) + 1; });
+
+  let html = '';
+
+  // ── KPI bar ──
+  html += `<div class="kpi-grid cols-5 mb">
+    ${kpiCard('','Total Items', ACTIVE.length, null, 'In this cycle')}
+    ${kpiCard('','Pending Kelley QC', counts['Kelley QC']||0, null, 'Waiting brand QC', (counts['Kelley QC']||0)>0?'amber':'')}
+    ${kpiCard('','Pending Denver', counts['Denver Approval']||0, null, 'Waiting COO sign-off', (counts['Denver Approval']||0)>0?'amber':'')}
+    ${kpiCard('','Scheduled', counts['Scheduled']||0, null, 'Approved + queued', (counts['Scheduled']||0)>0?'green':'')}
+    ${kpiCard('','Published', counts['Published']||0, null, 'Live this cycle', (counts['Published']||0)>0?'green':'')}
+  </div>`;
+
+  // ── Approval flow ──
+  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:11px;color:var(--text-2)">
+    <span style="font-weight:700;color:var(--teal)">Approval flow:</span>
+    <span>AI / team drafts</span><span style="color:var(--muted)">→</span>
+    <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
+    In Progress<span style="color:var(--muted)">→</span>
+    <b>Kelley QC</b> (brand)<span style="color:var(--muted)">→</span>
+    <b>Denver</b> sign-off<span style="color:var(--muted)">→</span>
+    <b>Joanne</b> schedules Meta · <b>Mark</b> publishes Webflow · <b>Kelley</b> + reception execute frontline
+  </div>`;
+
+  // ── Stage legend ──
+  html += `<div class="wq-legend">
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-idea"></span>Idea (needs Tia review)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-inprog"></span>In Progress</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-angela"></span>Kelley QC (brand)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-denver"></span>Denver Approval</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-sched"></span>Scheduled (ready)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-pub"></span>Published</div>
+  </div>`;
+
+  // ── Filter strip ──
+  const _filter = window._mwccFilter || 'all';
+  const _stageCount = (key) => ALL.filter(i => (saved[i.id]||'Idea') === key).length;
+  const _btn = (key, label, count) => {
+    const isActive = _filter === key;
+    return `<button class="wq-filter-btn ${isActive?'active':''}" onclick="setMwccFilter('${key}')">${label}<span class="count">${count}</span></button>`;
+  };
+  html += `<div class="wq-filter">
+    <span class="wq-filter-label">Show:</span>
+    ${_btn('all',     'All',          ALL.length)}
+    ${_btn('Idea',    'Idea',         _stageCount('Idea'))}
+    ${_btn('In Progress','In Progress',_stageCount('In Progress'))}
+    ${_btn('Kelley QC','Kelley QC',    _stageCount('Kelley QC'))}
+    ${_btn('Denver Approval','Denver', _stageCount('Denver Approval'))}
+    ${_btn('Scheduled','Scheduled',    _stageCount('Scheduled'))}
+    ${_btn('Published','Published',    _stageCount('Published'))}
+  </div>`;
+
+  // Helper: map stage → CSS class (reuse the s-* CSS already in dashboard)
+  const _stageClass = (st) => ({
+    'Idea':'s-idea', 'In Progress':'s-inprog', 'Kelley QC':'s-angela',
+    'Denver Approval':'s-denver', 'Scheduled':'s-sched', 'Published':'s-pub'
+  })[st] || 's-idea';
+
+  const PC = window.PLAT_CFG || {};
+  const _renderCard = (item) => {
+    const st = saved[item.id] || 'Idea';
+    if (_filter !== 'all' && _filter !== st) return '';
+    const pc = PC[item.platform] || {bg:'#f3f4f6',color:'#444'};
+    const stLabel = st === 'Published' ? '✓ PUBLISHED' : st.toUpperCase();
+    return `<div class="wq-card ${_stageClass(st)}" onclick="openMwccPlannerModal('${item.id}')">
+      <span class="src-badge" style="background:${pc.bg};color:${pc.color}">${(pc.label || item.platform).toUpperCase()}</span>
+      <div class="title">${item.title}</div>
+      <div class="stage-line">${stLabel}${item.priority ? ' · ' + item.priority : ''}${item.assignee ? ' · ' + item.assignee : ''}</div>
+    </div>`;
+  };
+
+  // ── Operational Backlog (no content items for MVP — all are actions) ──
+  html += sectionTitle(`Operational Backlog — ${ACTIVE.length} actions from Monday's emitters`);
+  html += `<p class="wq-backlog-help">
+    Operational fixes for MWCC this fortnight. Grouped by source. Cards follow stage colours: faded = needs Tia review, bright teal = scheduled, etc. Boxes are fixed height — when a group has many items, the inner list scrolls.
+  </p>`;
+
+  const MWCC_GROUPS = [
+    {key:'seo-organic',  name:'SEO',         owners:'John + Mark'},
+    {key:'meta-ads',     name:'Meta Ads',    owners:'Joanne + Jordan'},
+    {key:'google-ads',   name:'Google Ads',  owners:'Tia + John'},
+    {key:'enrolment',    name:'Enrolment',   owners:'Kelley + Denver'},
+  ];
+  html += `<div class="wq-backlog-groups">`;
+  MWCC_GROUPS.forEach(g => {
+    const items = ACTIVE.filter(a => a.sourcePage === g.key);
+    html += `<div class="wq-backlog-group">
+      <div class="wq-backlog-group-title">
+        <span class="src-name">${g.name} (${g.owners})</span>
+        <span class="count">${items.length}</span>
+      </div>
+      <div class="wq-backlog-group-items">
+        ${items.length === 0
+          ? `<div class="wq-backlog-empty">No ${g.name} actions this cycle</div>`
+          : items.map(_renderCard).filter(Boolean).join('') || `<div class="wq-backlog-empty">All filtered out</div>`
+        }
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  container.innerHTML = html;
+}
+
+// MWCC filter handler
+window._mwccFilter = window._mwccFilter || 'all';
+window.setMwccFilter = (stage) => {
+  window._mwccFilter = stage;
+  if (typeof renderMwccContentPlanner === 'function') renderMwccContentPlanner();
+};
+
+// MWCC modal stub — opens the CB247 modal with the MWCC item
+window.openMwccPlannerModal = (id) => {
+  const rows = (window.cbState?.mwccWorkQueue?.getAll() || []);
+  const row = rows.find(r => r.id === id);
+  if (!row) return;
+  alert(`MWCC Action: ${row.title}\n\nOwner: ${row.owner || '—'}\nPriority: ${row.priority || '—'}\n\n${row.description || ''}\n\nFull modal coming next session — for now use Supabase directly to advance status.`);
+};
+
+// ── MWCC Performance Review — mirrors CB247 renderContentReview ──
+function renderMwccContentReview() {
+  const container = $('mwcc-content-review-content');
+  if (!container) return;
+
+  const saved = JSON.parse(localStorage.getItem('mwcc-planner-status') || '{}');
+  const wqRows = (window.cbState?.mwccWorkQueue?.getAll() || []);
+  const measured = wqRows.filter(r => r.actual_kpis && Array.isArray(r.actual_kpis) && r.actual_kpis.length > 0);
+  const awaitingMeasure = wqRows.filter(r => (!r.actual_kpis || r.actual_kpis.length === 0) && saved[r.id] === 'Published');
+  const verdictCounts = measured.reduce((acc, r) => {
+    const v = r.overall_verdict || 'pending';
+    acc[v] = (acc[v] || 0) + 1;
+    return acc;
+  }, {});
+
+  let html = '';
+
+  html += sectionTitle(`Measured Outcomes — ${measured.length} action${measured.length !== 1 ? 's' : ''} verdict-ready`);
+
+  const winners       = verdictCounts.winner         || 0;
+  const partials      = verdictCounts.partial_win    || 0;
+  const noChanges     = verdictCounts.no_change      || 0;
+  const underperforms = verdictCounts.underperforming || 0;
+  const pendingVerdict = verdictCounts.pending        || 0;
+  const decided       = winners + partials + noChanges + underperforms;
+  const hitRate       = decided > 0 ? Math.round((winners / decided) * 100) : 0;
+
+  const aggClass = pendingVerdict > 0 ? 'verdict-aggregate verdict-aggregate-5' : 'verdict-aggregate';
+  const pendingStat = pendingVerdict > 0
+    ? `<div class="verdict-stat stat-pending"><div class="label">Awaiting verdict</div><div class="value">${pendingVerdict}</div></div>`
+    : '';
+  html += `<div class="${aggClass}">
+    <div class="verdict-stat stat-winner"><div class="label">Winners</div><div class="value">${winners}</div></div>
+    <div class="verdict-stat stat-partial_win"><div class="label">Partial wins</div><div class="value">${partials}</div></div>
+    <div class="verdict-stat stat-no_change"><div class="label">No change</div><div class="value">${noChanges}</div></div>
+    <div class="verdict-stat stat-underperforming"><div class="label">Underperforming</div><div class="value">${underperforms}</div></div>
+    ${pendingStat}
+  </div>`;
+
+  if (decided > 0) {
+    html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+      <b>Hit rate this cycle:</b> ${winners} of ${decided} decided actions hit their primary target = <b>${hitRate}%</b>.
+      ${pendingVerdict > 0 ? ` ${pendingVerdict} qualitative awaiting your verdict.` : ''}
+      ${awaitingMeasure.length > 0 ? ` ${awaitingMeasure.length} more awaiting measurement.` : ''}
+    </div>`;
+  } else if (pendingVerdict > 0 || awaitingMeasure.length > 0) {
+    html += `<div style="font-size:11.5px;color:var(--text-2);margin-bottom:20px;background:#fafafa;border:1px solid var(--border);border-radius:6px;padding:10px 14px">
+      <b>No decided verdicts yet this cycle.</b>
+      ${pendingVerdict > 0 ? ` ${pendingVerdict} qualitative awaiting your verdict.` : ''}
+      ${awaitingMeasure.length > 0 ? ` ${awaitingMeasure.length} action${awaitingMeasure.length !== 1 ? 's' : ''} still in measurement window.` : ''}
+    </div>`;
+  }
+
+  if (measured.length > 0 && typeof _renderVerdictCard === 'function') {
+    measured.sort((a, b) => (new Date(b.measured_at || 0)) - (new Date(a.measured_at || 0)));
+    html += measured.map(_renderVerdictCard).join('');
+  }
+
+  if (awaitingMeasure.length > 0 && typeof _renderPendingMeasurementCard === 'function') {
+    html += sectionTitle(`Awaiting Measurement — ${awaitingMeasure.length} Published action${awaitingMeasure.length !== 1 ? 's' : ''}`);
+    html += awaitingMeasure.map(_renderPendingMeasurementCard).join('');
+  }
+
+  if (measured.length === 0 && awaitingMeasure.length === 0) {
+    html += `<div class="card mb" style="padding:32px 24px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">No MWCC verdicts yet this cycle</div>
+      Your MWCC verdict cards will appear here automatically.
+      <div style="margin:14px 0 0;display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11.5px">
+        MWCC Work Queue action <span style="color:var(--muted-2)">→</span>
+        team executes <span style="color:var(--muted-2)">→</span>
+        marked <b style="color:var(--teal)">Published</b> <span style="color:var(--muted-2)">→</span>
+        7–28 days <span style="color:var(--muted-2)">→</span>
+        system measures actual vs projected KPI <span style="color:var(--muted-2)">→</span>
+        verdict appears here
+      </div>
+    </div>`;
+  }
+
+  // ── Source data link panel (MWCC pages) ──
+  html += sectionTitle('Looking for MWCC source data?');
+  html += `<div class="card mb" style="padding:18px 22px">
+    <p style="font-size:12px;color:var(--text-2);line-height:1.6;margin:0 0 14px">
+      This page only shows verdicts on MWCC actions. For raw performance numbers — top queries, ad spend, occupancy, enrolments — open the dedicated MWCC page.
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-seo]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+        <span style="font-size:10px;background:#f3e8ff;color:#6b21a8;padding:2px 7px;border-radius:3px;font-weight:700">SEO</span>SEO & Organic</a>
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-google-ads]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+        <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:3px;font-weight:700">ADS</span>Google Ads</a>
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-meta]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+        <span style="font-size:10px;background:#ede9fe;color:#5b21b6;padding:2px 7px;border-radius:3px;font-weight:700">META</span>Meta Ads</a>
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-enrolments]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+        <span style="font-size:10px;background:#f0fdf4;color:#15803d;padding:2px 7px;border-radius:3px;font-weight:700">MEM</span>Enrolments</a>
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-occupancy]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+        <span style="font-size:10px;background:#fce7f3;color:#9d174d;padding:2px 7px;border-radius:3px;font-weight:700">OCC</span>Occupancy</a>
+      <a onclick="nav(document.querySelector('.sidebar-item[data-page=mwcc-organic-social]'))" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(63,166,154,.06);border:1px solid rgba(63,166,154,.2);border-radius:6px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none">
+        <span style="font-size:10px;background:rgba(63,166,154,.15);color:#3FA69A;padding:2px 7px;border-radius:3px;font-weight:700">SOC</span>Organic Social</a>
+    </div>
+  </div>`;
+
+  container.innerHTML = html;
+}
 function renderMwccActionTracker()   { _comingSoonPage('mwcc-action-tracker-content','Action Tracker','Open actions, priorities, owners, and due dates for My World Childcare.'); }
 
 // ── Performance Page Scaffolds (CB247-style, biz-agnostic) ──────────────────
