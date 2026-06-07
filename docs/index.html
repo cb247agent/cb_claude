@@ -12937,6 +12937,7 @@ function renderMwccWebsite() {
 }
 
 function renderMwccOccupancy() {
+  // ─── Cloned from CB247 page pattern (07 Jun 2026) — purple-branded ───
   const md = window.MWCC_DATA || {};
   const ops = md.ops || {};
   const net = ops.network_summary || {};
@@ -12945,39 +12946,153 @@ function renderMwccOccupancy() {
   if (!el) return;
 
   if (!Object.keys(centres).length) {
-    el.innerHTML = '<div class="insight neutral"><div class="insight-label">No Data</div>Drop MYWORLD_REPORT.xlsx and utilisation.xlsx into mwcc-inbox/ before running the pipeline. See mwcc-inbox/README.md</div>';
+    el.innerHTML = `<div class="insight neutral">
+      <div class="insight-label">Awaiting OWNA Data</div>
+      Drop <code>MYWORLD_REPORT.xlsx</code> and <code>utilisation.xlsx</code> into <code>mwcc-inbox/</code> before running the pipeline. See <code>mwcc-inbox/README.md</code>.
+    </div>`;
     return;
   }
 
+  // ── Aggregates ──
   const breachList = net.centres_in_wage_breach  || [];
   const riskList   = net.rooms_with_compliance_risk || [];
   const centreArr  = Object.values(centres);
   const avgOcc     = Math.round(centreArr.reduce((s,c)=>s+(c.occupancy?.Overall||0),0)/centreArr.length);
+  const periodLabel = ops.period?.label || '—';
+  const genDate     = (ops.generated_at || '').slice(0,10);
 
-  let html = `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Avg Network Occ', avgOcc+'%', null, '5-centre average')}
-    ${kpiCard('','Wage Breaches', breachList.length+' centre'+(breachList.length===1?'':'s'), null, breachList.length ? breachList.join(', ') : 'All centres clear', breachList.length?'':'secondary')}
-    ${kpiCard('','Compliance Risks', riskList.length+' room'+(riskList.length===1?'':'s'), null, riskList.length ? 'Over licensed capacity' : 'All rooms clear', riskList.length?'':'secondary')}
-    ${kpiCard('','Period', ops.period?.label||'—', null, '')}
+  // Count active rooms (capacity > 0) vs total rooms across all centres
+  let activeRooms = 0, totalRooms = 0;
+  for (const c of centreArr) {
+    const rd = c.rooms_detail || {};
+    for (const rname in rd) {
+      totalRooms++;
+      if ((rd[rname].capacity || 0) > 0) activeRooms++;
+    }
+  }
+
+  // Find worst-occupancy active room + best/over-capacity room across the network
+  let worstRoom = null, bestRoom = null;
+  for (const c of centreArr) {
+    const rd = c.rooms_detail || {};
+    for (const rname in rd) {
+      const r = rd[rname];
+      const cap = r.capacity || 0;
+      if (cap <= 0) continue;
+      const tagged = { ...r, centre: c.name, room: rname };
+      if (!worstRoom || r.occupancy_pct < worstRoom.occupancy_pct) worstRoom = tagged;
+      if (!bestRoom  || r.occupancy_pct > bestRoom.occupancy_pct)  bestRoom  = tagged;
+    }
+  }
+
+  // ── Data freshness banner (purple, matches Dashboard/SEO/Meta) ──
+  let html = `<div style="background:var(--mwcc-purple-pale);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
+    <span><b>OWNA Report</b> ${genDate} (${periodLabel})</span>
+    <span><b>Centres</b> ${centreArr.length}</span>
+    <span><b>Active rooms</b> ${activeRooms} / ${totalRooms}</span>
+    <span style="color:var(--muted)">Wage-breach threshold: 42% (exc. leave) · Compliance risk: occupancy &gt; licensed capacity</span>
   </div>`;
 
-  if (riskList.length)  html += `<div class="insight red mb"><div class="insight-label">Compliance Risk</div>${riskList.join(' &middot; ')} — occupancy exceeds licensed room capacity.</div>`;
-  if (breachList.length) html += `<div class="insight amber mb"><div class="insight-label">Wage Breach</div>${breachList.join(' &middot; ')} — wage % exc. leave above 42% threshold. Review rostering.</div>`;
+  // ── Executive Verdict (purple-tinted teal insight, same as other MWCC pages) ──
+  const _whereWeAre = `${avgOcc}% average network occupancy across ${centreArr.length} centres / ${activeRooms} active rooms. ${breachList.length} wage breach${breachList.length===1?'':'es'}, ${riskList.length} compliance risk${riskList.length===1?'':'s'}.`;
+  const _risk = riskList.length
+    ? `<b>${riskList.join(', ')}</b> — over licensed capacity. Cap intake or activate waitlist before regulator review.`
+    : breachList.length
+      ? `<b>${breachList.join(', ')}</b> wage cost over 42% threshold. Roster review required this week.`
+      : worstRoom && worstRoom.occupancy_pct < 40
+        ? `<b>${worstRoom.centre} ${worstRoom.room}</b> sitting at ${worstRoom.occupancy_pct.toFixed(1)}% — ${(worstRoom.capacity - worstRoom.avg_daily).toFixed(0)} seats empty. Push meta ads to the suburb.`
+        : `No critical risks. Monitor wage % and at-risk rooms weekly.`;
+  const _priority = riskList.length
+    ? `Kelley to cap ${riskList[0]} intake by Friday and brief families on transition.`
+    : breachList.length
+      ? `Kelley + Denver: roster review for ${breachList[0]} this week. Target wage % below 42%.`
+      : worstRoom && worstRoom.occupancy_pct < 60
+        ? `Brief Joanne to push paid spend to ${worstRoom.centre} (${worstRoom.room}, ${worstRoom.occupancy_pct.toFixed(0)}% occ) — lift weekly enrolments by 2–3.`
+        : `Maintain. Watch for week-on-week dips next Monday.`;
 
-  html += '<div class="section-title">Centre Occupancy Detail</div>';
+  html += `<div class="insight teal mb" style="border-left-width:6px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
+      <div class="insight-label" style="margin:0">This Week — Occupancy Verdict</div>
+      <div style="font-size:10px;color:var(--muted);white-space:nowrap">${periodLabel}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.7">
+      <div><b>Where we are:</b> ${_whereWeAre}</div>
+      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_risk}</div>
+      <div style="margin-top:6px"><b style="color:var(--mwcc-purple-deep)">Top priority this week:</b> ${_priority}</div>
+    </div>
+  </div>`;
+
+  // ── KPI cards (purple via body[data-business="mwcc"] CSS swap) ──
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Avg Network Occupancy', avgOcc+'%', null, `${centreArr.length}-centre average`, avgOcc>=70?'green':'')}
+    ${kpiCard('','Wage Breaches', breachList.length+' centre'+(breachList.length===1?'':'s'), null, breachList.length ? breachList.join(', ') : 'All centres within 42% threshold', breachList.length?'red':'green')}
+    ${kpiCard('','Compliance Risks', riskList.length+' room'+(riskList.length===1?'':'s'), null, riskList.length ? 'Over licensed capacity' : 'All rooms within capacity', riskList.length?'red':'green')}
+    ${kpiCard('','Active Rooms', activeRooms+' / '+totalRooms, null, 'Rooms operating this week')}
+  </div>`;
+
+  // ── Colour legend (single line, replaces guesswork) ──
+  html += `<div style="background:var(--mwcc-purple-mist);border-radius:4px;padding:6px 14px;margin-bottom:18px;font-size:10.5px;color:var(--text-2);display:flex;flex-wrap:wrap;gap:18px;align-items:center">
+    <span style="color:var(--muted);font-weight:600">Colour key:</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:var(--text-2);border-radius:2px;margin-right:5px;vertical-align:middle"></span>Below target &lt; 70%</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:var(--mwcc-purple);border-radius:2px;margin-right:5px;vertical-align:middle"></span>Healthy 70–89%</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px;margin-right:5px;vertical-align:middle"></span>Near capacity 90–99%</span>
+    <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:5px;vertical-align:middle"></span>Over capacity 100%+</span>
+  </div>`;
+
+  // ── Compliance / wage alerts (with anchor links to centre cards) ──
+  if (riskList.length) {
+    const links = riskList.map(r => {
+      const centre = (r.split('—')[0] || r.split(/\s+/)[0] || '').trim();
+      return `<a href="#mwcc-occ-${centre.replace(/\s+/g,'-').toLowerCase()}" style="color:#b91c1c;font-weight:600;text-decoration:underline">${r}</a>`;
+    }).join(' · ');
+    html += `<div class="insight red mb"><div class="insight-label">Compliance Risk</div>${links} — occupancy exceeds licensed room capacity. Cap intake immediately.</div>`;
+  }
+  if (breachList.length) {
+    const links = breachList.map(c => `<a href="#mwcc-occ-${c.replace(/\s+/g,'-').toLowerCase()}" style="color:#b45309;font-weight:600;text-decoration:underline">${c}</a>`).join(' · ');
+    html += `<div class="insight amber mb"><div class="insight-label">Wage Breach</div>${links} — wage % exc. leave above 42% threshold. Review rostering this week.</div>`;
+  }
+
+  // ── Key Observations strip (2 cards side-by-side, matches CB247 pattern) ──
+  if (worstRoom || bestRoom) {
+    html += sectionTitle('Key Observations');
+    html += '<div class="grid-2 mb">';
+    if (worstRoom) {
+      const emptySeats = Math.max(0, worstRoom.capacity - worstRoom.avg_daily);
+      html += `<div class="insight ${worstRoom.occupancy_pct < 50 ? 'amber' : 'neutral'}">
+        <div class="insight-label">Lowest-occupancy active room</div>
+        <b>${worstRoom.centre} — ${worstRoom.room}</b> at <b>${worstRoom.occupancy_pct.toFixed(1)}%</b>
+        (${worstRoom.avg_daily.toFixed(1)} / ${worstRoom.capacity} daily avg).
+        <br><br>${emptySeats >= 5 ? `<b>${emptySeats.toFixed(0)} empty seats</b> — brief Joanne to push paid spend to the suburb's 5km radius.` : 'Monitor for next 2 weeks before action.'}
+      </div>`;
+    }
+    if (bestRoom) {
+      const isOver = bestRoom.compliance_risk || bestRoom.occupancy_pct >= 100;
+      html += `<div class="insight ${isOver ? 'red' : 'teal'}">
+        <div class="insight-label">${isOver ? 'Highest-occupancy — at-risk room' : 'Best-performing room'}</div>
+        <b>${bestRoom.centre} — ${bestRoom.room}</b> at <b>${bestRoom.occupancy_pct.toFixed(1)}%</b>
+        (${bestRoom.avg_daily.toFixed(1)} / ${bestRoom.capacity} daily avg).
+        <br><br>${isOver ? `<b>Cap intake</b> and activate waitlist for the next age-group transition. Notify families.` : `Lift one age-group above this benchmark next week.`}
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  // ── Centre cards grid ──
+  html += sectionTitle('Centre Occupancy Detail');
   html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">';
 
   for (const name of MWCC_CENTRES) {
     const c = centres[name]; if (!c) continue;
     const overallOcc = c.occupancy?.Overall || 0;
     const breach     = c.wage_breach;
-    const occClr     = overallOcc >= 100 ? '#ef4444' : overallOcc >= 90 ? '#f59e0b' : overallOcc >= 70 ? 'var(--teal)' : 'var(--text-2)';
+    const occClr     = overallOcc >= 100 ? '#ef4444' : overallOcc >= 90 ? '#f59e0b' : overallOcc >= 70 ? 'var(--mwcc-purple)' : 'var(--text-2)';
     const barPct     = Math.min(overallOcc, 100);
+    const anchorId   = 'mwcc-occ-' + name.replace(/\s+/g,'-').toLowerCase();
 
-    html += `<div class="card" style="padding:18px 20px">
+    html += `<div class="card" id="${anchorId}" style="padding:18px 20px;border-top:3px solid var(--mwcc-purple)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
-          <div style="font-size:14px;font-weight:700;color:var(--text)">${name}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--mwcc-purple-deep)">${name}</div>
           ${breach ? '<div style="font-size:9px;font-weight:700;text-transform:uppercase;background:#fff8e1;color:#b45309;padding:2px 7px;border-radius:3px;display:inline-block;margin-top:4px">Wage Breach</div>' : ''}
         </div>
         <div style="text-align:right">
@@ -12989,61 +13104,102 @@ function renderMwccOccupancy() {
         <div style="background:${occClr};height:100%;border-radius:99px;width:${barPct}%;transition:width .4s"></div>
       </div>`;
 
-    // Rooms detail table
+    // Rooms detail — HIDE rooms with capacity 0 (rooms not running this week)
     const rooms = c.rooms_detail || {};
-    const roomKeys = Object.keys(rooms);
-    if (roomKeys.length) {
+    const activeRoomEntries = Object.entries(rooms).filter(([_, rd]) => (rd.capacity || 0) > 0);
+    if (activeRoomEntries.length) {
       html += `<table style="width:100%;font-size:11px;margin-bottom:8px">
         <thead><tr>
-          <th style="text-align:left;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Room</th>
-          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Occ%</th>
-          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Avg</th>
-          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Cap</th>
+          <th style="text-align:left;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Room</th>
+          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Occ%</th>
+          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Avg</th>
+          <th style="text-align:right;padding:3px 0;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Cap</th>
         </tr></thead>
         <tbody>`;
 
-      for (const [rname, rd] of Object.entries(rooms)) {
+      for (const [rname, rd] of activeRoomEntries) {
         const rOcc  = rd.occupancy_pct || 0;
         const rRisk = rd.compliance_risk;
-        const rClr  = rRisk ? '#ef4444' : rOcc >= 90 ? '#f59e0b' : 'var(--text)';
+        const rClr  = rRisk ? '#ef4444' : rOcc >= 90 ? '#f59e0b' : rOcc >= 70 ? 'var(--mwcc-purple)' : 'var(--text-2)';
 
         html += `<tr>
-          <td style="padding:4px 0;color:var(--text)">${rname}${rRisk ? ' <span style="font-size:8px;font-weight:700;background:#fff0f0;color:#ef4444;padding:1px 4px;border-radius:2px">RISK</span>' : ''}</td>
-          <td style="text-align:right;padding:4px 0;color:${rClr};font-weight:${rRisk?700:500}">${rOcc.toFixed(1)}%</td>
+          <td style="padding:4px 0;color:var(--text)">${rname}${rRisk ? ' <span style="font-size:8px;font-weight:700;background:#fef2f2;color:#ef4444;padding:1px 5px;border-radius:2px;letter-spacing:.05em">RISK</span>' : ''}</td>
+          <td style="text-align:right;padding:4px 0;color:${rClr};font-weight:${rRisk?700:600}">${rOcc.toFixed(1)}%</td>
           <td style="text-align:right;padding:4px 0;color:var(--text-2)">${(rd.avg_daily||0).toFixed(1)}</td>
           <td style="text-align:right;padding:4px 0;color:var(--muted)">${rd.capacity||'—'}</td>
         </tr>`;
 
-        // Mon-Fri mini trend bars
+        // Mon-Fri mini trend bars (slightly taller now, easier to read)
         const daily = rd.daily_mon_fri || [];
         if (daily.length) {
-          const maxV = Math.max(...daily, 1);
-          const cap  = rd.capacity || 1;
-          html += `<tr><td colspan="4" style="padding:2px 0 8px">
-            <div style="display:flex;gap:2px;align-items:flex-end;height:20px">
+          const cap = rd.capacity || 1;
+          html += `<tr><td colspan="4" style="padding:2px 0 10px">
+            <div style="display:flex;gap:3px;align-items:flex-end;height:26px">
               ${daily.map((v,i) => {
-                const h    = Math.max(Math.round((v/maxV)*100), 4);
+                const pctOfCap = Math.min((v / cap) * 100, 100);
+                const h    = Math.max(Math.round(pctOfCap), 6);
                 const over = cap > 0 && v > cap;
-                const bc   = over ? '#ef4444' : rOcc >= 90 ? '#f59e0b' : 'var(--teal)';
-                return `<div title="${['Mon','Tue','Wed','Thu','Fri'][i]}: ${v}" style="flex:1;height:${h}%;background:${bc};border-radius:1px;opacity:.7"></div>`;
+                const barC = over ? '#ef4444' : pctOfCap >= 90 ? '#f59e0b' : pctOfCap >= 70 ? 'var(--mwcc-purple)' : 'var(--mwcc-purple-soft)';
+                return `<div title="${['Mon','Tue','Wed','Thu','Fri'][i]}: ${v} / ${cap}" style="flex:1;height:${h}%;background:${barC};border-radius:2px"></div>`;
               }).join('')}
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--muted-2);margin-top:2px"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--muted-2);margin-top:3px"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
           </td></tr>`;
         }
       }
       html += '</tbody></table>';
+    } else {
+      html += '<div style="font-size:11px;color:var(--muted);font-style:italic;padding:8px 0">No active rooms this week.</div>';
     }
 
-    // Wage footer
+    // Show "rooms not running" if there are any zero-capacity rooms (informational)
+    const inactiveRooms = Object.entries(rooms).filter(([_, rd]) => (rd.capacity || 0) === 0).map(([n]) => n);
+    if (inactiveRooms.length) {
+      html += `<div style="font-size:10px;color:var(--muted);padding:6px 0 4px;border-top:1px dashed var(--border);margin-top:4px"><b>Not running this week:</b> ${inactiveRooms.join(', ')}</div>`;
+    }
+
+    // Wage footer (no emoji glyphs)
+    const wagePct = (c.wage_exc_leave_pct||0).toFixed(1);
     html += `<div style="padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px">
       <span style="color:var(--muted)">Wage exc. leave</span>
-      <span style="font-weight:600;color:${breach?'#b45309':'var(--teal)'}">${(c.wage_exc_leave_pct||0).toFixed(1)}% ${breach ? '&#9888;' : '&#10003;'}</span>
+      <span style="font-weight:600;color:${breach?'#b45309':'var(--mwcc-purple-deep)'}">${wagePct}% <span style="font-size:9.5px;color:var(--muted);font-weight:500">${breach ? 'over 42% threshold' : 'within threshold'}</span></span>
     </div>`;
 
     html += '</div>'; // end card
   }
   html += '</div>'; // end grid
+
+  // ── Recommended Actions for Kelley (auto-pulled from cbState.mwccWorkQueue) ──
+  try {
+    const wqItems = window.cbState?.mwccWorkQueue?.getAll?.() || [];
+    const enrolmentActions = wqItems.filter(a => a.source_page === 'enrolment')
+                                    .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
+    if (enrolmentActions.length) {
+      html += sectionTitle('Recommended Actions — Pulled from Work Queue');
+      html += '<div class="card mb" style="padding:0">';
+      html += '<table style="width:100%;font-size:12px"><thead><tr style="background:var(--mwcc-purple-mist)">' +
+        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Priority</th>' +
+        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Action</th>' +
+        '<th style="text-align:left;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Owner</th>' +
+        '<th style="text-align:right;padding:10px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep)">Effort</th>' +
+      '</tr></thead><tbody>';
+      for (const a of enrolmentActions.slice(0, 8)) {
+        const prio = a.priority || 'P3';
+        const prioClr = prio === 'P1' ? '#ef4444' : prio === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
+        html += `<tr style="border-top:1px solid var(--border)">
+          <td style="padding:10px 14px"><span style="display:inline-block;background:${prioClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${prio}</span></td>
+          <td style="padding:10px 14px;color:var(--text)"><b>${a.title || '—'}</b>${a.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5">${a.description.substring(0,180)}${a.description.length>180?'…':''}</div>` : ''}</td>
+          <td style="padding:10px 14px;color:var(--text-2);font-size:11px">${a.owner || '—'}${a.owner_role ? `<div style="font-size:10px;color:var(--muted)">${a.owner_role}</div>` : ''}</td>
+          <td style="text-align:right;padding:10px 14px;color:var(--muted);font-size:11px">${a.effort_hours ? a.effort_hours+'h' : '—'}</td>
+        </tr>`;
+      }
+      html += '</tbody></table></div>';
+      html += '<div style="font-size:10px;color:var(--muted);margin-bottom:18px"><b>Source:</b> auto-generated by <code>mwcc_enrolment_emitter.py</code> every Monday. To mark complete or change verdict, open <a href="#" onclick="nav(document.querySelector(\'[data-page=mwcc-work-queue]\'));return false" style="color:var(--mwcc-purple)">Work Queue</a>.</div>';
+    }
+  } catch (e) {
+    console.warn('[renderMwccOccupancy] could not pull work-queue actions:', e);
+  }
+
   el.innerHTML = html;
 }
 
