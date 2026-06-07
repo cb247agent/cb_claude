@@ -12395,7 +12395,6 @@ function renderMwccMeta() {
   </div>`;
 
   // By centre
-  const bc = meta.by_centre || {};
   if (MWCC_CENTRES.some(n=>bc[n])) {
     html += '<div class="section-title">Spend by Centre</div><div class="card mb"><table><thead><tr><th>Centre</th><th class="num">Spend</th><th class="num">Impr</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">CPC</th><th class="num">LPV</th></tr></thead><tbody>';
     for (const name of MWCC_CENTRES) {
@@ -12410,7 +12409,6 @@ function renderMwccMeta() {
   }
 
   // Campaigns
-  const cams = meta.campaigns || [];
   if (cams.length) {
     html += '<div class="section-title">Campaigns</div><div class="card mb"><table><thead><tr><th>Campaign</th><th class="num">Spend</th><th class="num">Impr</th><th class="num">Clicks</th><th class="num">CTR %</th><th class="num">CPM</th></tr></thead><tbody>';
     for (const c of cams) html += `<tr><td style="font-size:11.5px">${c.name}</td><td class="num">$${(c.spend||0).toFixed(2)}</td><td class="num">${_mwccFmt(c.impr)}</td><td class="num">${_mwccFmt(c.clicks)}</td><td class="num">${(c.ctr||0).toFixed(2)}%</td><td class="num">$${(c.cpm||0).toFixed(2)}</td></tr>`;
