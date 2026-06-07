@@ -87,6 +87,27 @@ Contact: reception@chasingbetter247.com.au | Instagram: @chasingbetter247 | Tagl
 - ⚠️ Never write "only gym with" in content — Ryderwear has sauna + reformer pilates. Verify before using "only" claims (ACL risk).
 - FIFO-friendly membership freeze — no other Perth chain offers this
 
+## Critical Behavior: Brand-Aware Skills (07 Jun 2026)
+
+**Before invoking any Layer 2 skill, ensure `context/_active_business.txt` reflects the brand you're working on.**
+
+Skills now follow the Brand Contract (`skills/SKILLS_BRAND_CONTRACT.md`). When a skill runs, it reads `context/_active_business.txt` to know whether to load CB247 brand context (default) or MWCC brand context. The resolution table maps generic context names (`brand-voice`, `seo-targets`, etc.) to the right file per brand.
+
+**Switching brands:**
+```bash
+python scripts/set_active_business.py mwcc    # work on MWCC
+python scripts/set_active_business.py cb247   # switch back
+python scripts/set_active_business.py         # show current
+```
+
+**Why this matters:** Running a skill (e.g., `seo-landing-page-writer`) for MWCC without switching first will produce CB247 gym-positioned content with teal accents. Always set the active brand before invoking.
+
+Skills that have been refactored to follow the contract (as of 07 Jun 2026):
+- `seo-landing-page-writer` (full pattern with both palettes inline)
+- `seo-blog-generator` (lean pattern pointing to contract)
+
+The remaining 36 skills still default to CB247 — refactoring is incremental as MWCC content tasks come up. Pattern documented in `skills/SKILLS_BRAND_CONTRACT.md`.
+
 ## Architecture
 
 This is a marketing ops system, not a software project. There is no build/test/lint system — content and data are generated, not compiled.

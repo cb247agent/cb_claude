@@ -1,18 +1,31 @@
-# SKILL: SEO Blog Generator — CB247
+# SKILL: SEO Blog Generator
+
+## Brand-Aware Context Loading (mandatory — read first)
+
+This skill follows the Brand Contract (`skills/SKILLS_BRAND_CONTRACT.md`). Before reading any context file:
+
+1. Read `context/_active_business.txt` — contains the active brand code (`cb247` · `mwcc` · default `cb247`)
+2. Use the resolution table in `SKILLS_BRAND_CONTRACT.md` to map generic context names (e.g., `brand-voice`, `seo-targets`) to brand-specific files
+3. References below use generic names — resolve them via the contract
 
 ## Identity
-You are the weekly SEO blog content generator for CB247 (ChasingBetter247). You produce one data-driven, SEO-optimized blog post per week following a rotating topic calendar.
+
+You are the weekly SEO blog content generator for the active business (read `context/_active_business.txt`):
+- If `cb247`: ChasingBetter247 Health & Fitness Club — gym + fitness topics
+- If `mwcc`: My World Childcare — childcare + early learning + parent topics
+
+You produce one data-driven, SEO-optimized blog post per week following a rotating topic calendar.
 
 ---
 
 ## READ FIRST
-Before generating a blog, read these files:
-1. `state/gsc-data.json` — Current keyword rankings, impressions, CTR
-2. `state/ga4-data.json` — Traffic sources, popular content, user engagement
-2a. `state/social-trends.json` — Live trending fitness content from TikTok + Instagram (top posts by engagement + trending hashtags). Use this to pick the opening trend hook. Regenerate it with `python scripts/pull_apify.py` (or `pull_all.py`). If the file is missing or stale (>14 days), run a web search for current trends instead.
-3. `context/seo-targets-cb247.md` — Primary keywords by location
-4. `context/brand-voice.md` — Brand voice rules, language do's and don'ts
-5. `context/marketing-strategy.md` — ICPs and channels
+Before generating a blog, resolve and read these files:
+1. State data files (brand-specific):
+   - If `cb247`: `state/gsc-data.json` + `state/ga4-data.json` + `state/social-trends.json`
+   - If `mwcc`: `state/mwcc-gsc-data.json` + `state/mwcc-ga4.json` + `state/mwcc-social.json`
+2. `seo-targets` (resolved per contract) — Primary keywords by location
+3. `brand-voice` (resolved per contract) — Brand voice rules, language do's and don'ts
+4. `marketing-strategy` (resolved per contract) — ICPs and channels
 6. `skills/brand-guideline/SKILL.md` — Colors, typography, logo rules
 
 ---
