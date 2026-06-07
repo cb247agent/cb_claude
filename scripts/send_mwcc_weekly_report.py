@@ -4,10 +4,11 @@ send_mwcc_weekly_report.py — Send Monday MWCC executive digest email.
 Mirrors CB247's send_weekly_report.py but for MWCC. Sends a concise HTML
 summary with the key Monday-meeting numbers + a link to the live dashboard.
 
-Recipients:
-  Primary:   MWCC_REPORT_RECIPIENT (from .env)
-  Fallback:  WEEKLY_REPORT_RECIPIENT (CB247's recipient — usually Tia)
-  Optional:  MWCC_REPORT_CC (comma-separated additional recipients)
+Recipient:
+  Single recipient from .env WEEKLY_REPORT_RECIPIENT (Tia).
+  Policy (07 Jun 2026, Tia direction): all business digest emails are sent
+  ONLY to Tia. No CC. No per-business recipient overrides. Matches CB247's
+  send_weekly_report.py pattern for consistency across the group.
 
 What's in the email:
   - Period (Mon-Fri OWNA + Sat-Fri marketing — both date ranges shown)
@@ -338,11 +339,14 @@ def main() -> int:
         print(html)
         return 0
 
-    # Recipients
-    primary = os.getenv("MWCC_REPORT_RECIPIENT") or os.getenv("WEEKLY_REPORT_RECIPIENT", "")
-    cc      = os.getenv("MWCC_REPORT_CC", "")
-    recipients = [r.strip() for r in (primary + "," + cc).split(",") if r.strip()]
-    ok = send(html, subject, recipients)
+    # Single recipient policy (Tia direction 07 Jun 2026):
+    # All business digest emails go ONLY to WEEKLY_REPORT_RECIPIENT (Tia).
+    # No CC. No per-business overrides. Matches CB247's send_weekly_report.py.
+    recipient = os.getenv("WEEKLY_REPORT_RECIPIENT", "").strip()
+    if not recipient:
+        print("[mwcc-email] WEEKLY_REPORT_RECIPIENT not set in .env — skipping")
+        return 1
+    ok = send(html, subject, [recipient])
     return 0 if ok else 1
 
 
