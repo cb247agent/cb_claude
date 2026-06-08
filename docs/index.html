@@ -20127,47 +20127,48 @@ function renderMwccContentPlanner() {
 
   const _DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
-  // Helper to render one 7-day row
+  // Helper: render one 7-day row — mirrors CB247's _renderWeekRow exactly,
+  // swapping teal (#3FA69A) for MWCC purple (var(--mwcc-purple)).
   const _renderCalWeekRow = (weekStart, weekNumber, dayOffset) => {
     const rowLabel = weekStart.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
-    let row = `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mwcc-purple-deep);margin:${weekNumber===2?'14px':'0'} 0 6px">Week ${weekNumber} · starts ${rowLabel}</div>`;
-    row += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:700px">`;
-    row += _DOW.map((dayName, i) => {
+    let rowHtml = `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:${weekNumber===2?'14px':'0'} 0 6px">Week ${weekNumber} · starts ${rowLabel}</div>`;
+    rowHtml += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:700px">`;
+    rowHtml += _DOW.map((dayName, i) => {
       const colDate = new Date(weekStart);
       colDate.setDate(weekStart.getDate() + i);
       colDate.setHours(0,0,0,0);
       const isToday = colDate.getTime() === _calToday.getTime();
-      const isWeekend = i >= 5; // Sat, Sun
       const dayItems = calBuckets[dayOffset + i] || [];
       const colDateStr = colDate.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
       return `<div style="background:#fff;border:1px solid ${isToday?'var(--mwcc-purple)':'var(--border)'};${isToday?'border-left:3px solid var(--mwcc-purple);':''}border-radius:6px;overflow:hidden">
-        <div style="padding:7px 8px;border-bottom:2px solid ${isToday?'var(--mwcc-purple)':'var(--border)'}">
-          <div style="font-size:10px;font-weight:700;color:${isToday?'var(--mwcc-purple-deep)':isWeekend?'var(--muted)':'var(--text-2)'};text-transform:uppercase;letter-spacing:.05em">${dayName}${isToday?' · Today':''}</div>
+        <div style="padding:7px 8px;background:${isToday?'rgba(139,111,217,.08)':'var(--bg)'};border-bottom:2px solid ${isToday?'var(--mwcc-purple)':'var(--border)'}">
+          <div style="font-size:10px;font-weight:700;color:${isToday?'var(--mwcc-purple-deep)':'var(--text-2)'};text-transform:uppercase;letter-spacing:.05em">${dayName}${isToday?' ·&nbsp;Today':''}</div>
           <div style="font-size:10px;color:var(--muted);margin-top:1px">${colDateStr}</div>
         </div>
-        <div style="padding:5px;min-height:50px">
-          ${dayItems.map(_renderCard).filter(Boolean).join('') ||
-            `<div style="height:36px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:4px;font-size:10px;color:var(--muted-2)">${isWeekend?'review':'—'}</div>`}
+        <div style="padding:5px">
+          ${dayItems.map(_renderCard).filter(Boolean).join('') || `<div style="height:36px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:4px;font-size:10px;color:var(--muted-2)">—</div>`}
         </div>
       </div>`;
     }).join('');
-    row += `</div>`;
-    return row;
+    rowHtml += `</div>`;
+    return rowHtml;
   };
   const _wk2Start = new Date(_calStart);
   _wk2Start.setDate(_calStart.getDate() + 7);
 
   html += sectionTitle('Content Calendar');
-  html += `<p class="wq-backlog-help">Tasks distributed evenly Mon–Fri across the 2-week plan — <b>P1</b> spread Mon–Fri week 1 · <b>P2</b> spread Mon–Fri week 2 (includes SEO tasks) · <b>P3</b> spread across both weeks. Weekends stay empty. Cards fade when they still need review, brighten when scheduled or live. Click any card to open its brief.</p>`;
+  html += `<p class="wq-backlog-help">Actions only — the ${_calItemCount} tasks scheduled across this 2-week plan. Cards fade when they still need review, brighten when scheduled or live. Click any card to open its brief.</p>`;
   html += `<div style="margin-bottom:28px">
+    <!-- Week nav bar (steps 2 weeks at a time) -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
       <button onclick="if(window._mwccCalOffset>0){window._mwccCalOffset--;renderMwccContentPlanner()}" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:${_calOffset===0?'var(--muted)':'var(--text)'};font-size:12px;font-weight:600;cursor:${_calOffset===0?'default':'pointer'};opacity:${_calOffset===0?'.4':'1'};font-family:inherit" ${_calOffset===0?'disabled':''}>&#8592; Prev 2 weeks</button>
       <div style="text-align:center">
-        <div style="font-size:14px;font-weight:700;color:var(--mwcc-purple-deep)">${_calLabel}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${_calItemCount} action${_calItemCount!==1?'s':''} ${_calOffset===0?'in this 2-week cycle':'(P-based scheduling only applies to current cycle)'}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">${_calLabel}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${_calItemCount} action${_calItemCount!==1?'s':''} scheduled in this 2-week plan</div>
       </div>
-      <button onclick="window._mwccCalOffset=(window._mwccCalOffset||0)+1;renderMwccContentPlanner()" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--mwcc-purple);border-radius:4px;background:#fff;color:var(--mwcc-purple-deep);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Next 2 weeks &#8594;</button>
+      <button onclick="window._mwccCalOffset=(window._mwccCalOffset||0)+1;renderMwccContentPlanner()" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--mwcc-purple);border-radius:4px;background:rgba(139,111,217,.08);color:var(--mwcc-purple-deep);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Next 2 weeks &#8594;</button>
     </div>
+
     ${_renderCalWeekRow(_calStart, 1, 0)}
     ${_renderCalWeekRow(_wk2Start, 2, 7)}
   </div>`;
