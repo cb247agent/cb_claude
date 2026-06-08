@@ -306,7 +306,7 @@ def _section_funnel(ops, ga4, funnel):
         ("Net move",    f"{net_move:+d}",        PALETTE["ok"] if net_move >= 0 else PALETTE["risk"]),
     ]
     cards = "".join(
-        f'<div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {colour};border-radius:8px;padding:14px 10px;text-align:center;min-width:0">'
+        f'<div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {colour};border-radius:8px;padding:16px 12px;text-align:center;min-width:0">'
         f'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600;white-space:nowrap">{label}</div>'
         f'<div style="font-size:22px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px">{val}</div>'
         f'</div>'
@@ -315,9 +315,9 @@ def _section_funnel(ops, ga4, funnel):
     return f"""
     <section style="margin-bottom:24px">
       <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">The Conversion Story</h3>
-      <div style="background:{PALETTE['mist']};padding:18px;border-radius:10px">
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">{cards}</div>
-        <div style="font-size:11px;color:{PALETTE['muted']};text-align:center;margin-top:12px">
+      <div style="background:{PALETTE['mist']};padding:20px;border-radius:10px">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">{cards}</div>
+        <div style="font-size:11px;color:{PALETTE['muted']};text-align:center;margin-top:14px">
           Network revenue this week: <b style="color:{PALETTE['text_strong']}">{_fmt_money(revenue)}</b>
         </div>
       </div>
