@@ -18896,30 +18896,11 @@ function renderGroupOverview() {
   // Net Movement + Acquisition Efficiency block relocated to section 3a
   // (above Total Group Ad Spend) per Tia direction 08 Jun 2026.
 
-  // ── 6. Group Spend Trend chart (08 Jun 2026 — data accuracy fix) ─────────
-  // BUG FIXED: was reading CB247 Meta as h.summary.spend / h.totals.spend
-  // but the actual baked shape is h.combined.spend (4-week history). Also
-  // CB247 Google Ads has no weekly history — only current week — so older
-  // weeks correctly show CB247 Meta only. Chart footer states this honestly.
-  const cb247MetaHist = (D.meta?.history || []).slice(0, 8).reverse();   // 4 weeks
-  const mwccAdsHist   = (md.ads_history  || []).slice(0, 8).reverse();   // 2 weeks
-  const mwccMetaHist  = (md.meta_history || []).slice(0, 8).reverse();   // 1 week
-  const cb247HasHist  = cb247MetaHist.length >= 2;
-  const mwccHasHist   = mwccAdsHist.length >= 1 || mwccMetaHist.length >= 1;
-  const _haveTrend    = cb247HasHist || mwccHasHist;
-  // CB247 Google Ads has NO weekly history — surface only current-week value
-  // for the most recent bar to avoid misleading zero bars on older weeks.
-  const cb247AdsCurrentWeek = D.google_ads?.spend || 0;
-  if (_haveTrend) {
-    html += sectionTitle('Group Spend Trend (last available weeks)');
-    html += `<div class="card mb" style="padding:16px"><div style="height:280px"><canvas id="groupSpendChart"></canvas></div>
-      <p style="font-size:10px;color:var(--muted);padding:8px 4px 0;margin:0">
-        Stacked bars: CB247 (teal) + MWCC (purple) of weekly group spend.
-        <b>CB247:</b> ${cb247MetaHist.length} weeks of Meta history${cb247AdsCurrentWeek>0?' + current-week Google Ads on rightmost bar':' (Google Ads has no weekly history — current week only)'}.
-        <b>MWCC:</b> ${mwccAdsHist.length} weeks Google Ads + ${mwccMetaHist.length} weeks Meta.
-      </p>
-    </div>`;
-  }
+  // Group Spend Trend chart removed 08 Jun 2026 (Tia direction). The
+  // CB247-vs-MWCC history coverage was too uneven to be useful (4 weeks
+  // CB247 Meta · 0 weeks CB247 Google Ads · 2 weeks MWCC Ads · 1 week
+  // MWCC Meta), so the chart was more confusing than informative.
+  const _haveTrend = false;
 
   // ── 7a. Monthly Goal Tracking (Tier 3 #14) ────────────────────────────────
   // Targets are project-level config. Tia can tune in the const below.
@@ -19086,66 +19067,10 @@ function renderGroupOverview() {
 
   el.innerHTML = html;
 
-  // ── Chart.js: Group spend stacked bar (rendered after DOM is in place) ───
-  if (_haveTrend) {
-    setTimeout(() => {
-      const canvas = document.getElementById('groupSpendChart');
-      if (!canvas || !window.Chart) return;
-      // Build week labels + per-biz totals (Meta + Google combined).
-      // 08 Jun 2026 fix: CB247 baked Meta history uses {combined:{spend}}
-      // not {summary:{spend}} or {totals:{spend}}. CB247 has NO Google
-      // Ads weekly history — only current week — so we splice that into
-      // the LATEST (rightmost) bar only, leaving older CB247 bars as
-      // Meta-only (accurate to what we actually have).
-      const weekCount = Math.max(cb247MetaHist.length, mwccAdsHist.length, mwccMetaHist.length, 4);
-      const labels = [];
-      const cb247Data = [];
-      const mwccData = [];
-      for (let i = 0; i < weekCount; i++) {
-        const cbMW  = cb247MetaHist[i] || {};
-        const mwW   = mwccAdsHist[i]   || {};
-        const label = (cbMW.week_label || mwW.week_label || `W-${weekCount - i - 1}`).replace(/ \d{4}/, '');
-        labels.push(label);
-        // CB247: Meta from history (combined.spend), Google Ads only on most recent week
-        const cbMeta   = cb247MetaHist[i]?.combined?.spend || 0;
-        const cbGoogle = (i === weekCount - 1) ? cb247AdsCurrentWeek : 0;
-        // MWCC: Meta + Google Ads, both from their histories
-        const mwMeta   = mwccMetaHist[i]?.summary?.spend || 0;
-        const mwGoogle = mwccAdsHist[i]?.totals?.spend   || 0;
-        cb247Data.push(cbMeta + cbGoogle);
-        mwccData.push(mwMeta + mwGoogle);
-      }
-      new Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { label: 'CB247', data: cb247Data, backgroundColor: '#3FA69A', borderRadius: 4, stack: 'spend' },
-            { label: 'MWCC',  data: mwccData,  backgroundColor: '#8B6FD9', borderRadius: 4, stack: 'spend' },
-          ],
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(0)}`,
-                footer: (items) => {
-                  const total = items.reduce((s, i) => s + i.parsed.y, 0);
-                  return `Group total: $${total.toFixed(0)}`;
-                },
-              },
-            },
-          },
-          scales: {
-            x: { stacked: true, ticks: { font: { size: 10 } }, grid: { display: false } },
-            y: { stacked: true, ticks: { callback: (v) => '$' + v, font: { size: 10 } }, grid: { color: 'rgba(0,0,0,.05)' } },
-          },
-        },
-      });
-    }, 50);
-  }
+  // Chart.js render block removed 08 Jun 2026 (Tia direction) — the Group
+  // Spend Trend section was deleted, so this Chart.js init had nothing to
+  // render against. Histories may return when CB247 Google Ads weekly is
+  // added; until then we keep the page focused on current-cycle KPIs.
 }
 
 // ── Stubs: CB247 Membership, MWCC new pages ────────────────────────────────────
