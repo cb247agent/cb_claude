@@ -270,17 +270,28 @@ def _section_network_kpis(ops, ga4):
         ("Active Enquiry Pipeline", _fmt_int(enquiries_pipeline), None, PALETTE["purple"]),
         ("Net Enrolments (this wk)", f"{net_move:+d}", None, PALETTE["ok"] if net_move >= 0 else PALETTE["risk"]),
     ]
-    grid = "".join(
-        f'<div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-left:3px solid {color};border-radius:8px;padding:14px 16px">'
-        f'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600">{label}</div>'
-        f'<div style="font-size:22px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px;line-height:1.1">{val}{chip or ""}</div>'
-        f'</div>'
-        for label, val, chip, color in cards
-    )
+    # Two-row centred table layout — matches THE CONVERSION STORY format.
+    # 3 cards per row × 2 rows = 6 KPIs.
+    def _card_cell(label, val, chip, color):
+        return (
+            f'<td style="width:28%;padding:6px 8px;vertical-align:top">'
+            f'  <div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {color};border-radius:8px;padding:16px 12px;text-align:center">'
+            f'    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600">{label}</div>'
+            f'    <div style="font-size:22px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px;line-height:1.1">{val}{chip or ""}</div>'
+            f'  </div>'
+            f'</td>'
+        )
+    row1 = "".join(_card_cell(*c) for c in cards[:3])
+    row2 = "".join(_card_cell(*c) for c in cards[3:])
     return f"""
     <section style="margin-bottom:24px">
       <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Network KPIs (Week-on-Week)</h3>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">{grid}</div>
+      <div style="background:{PALETTE['mist']};padding:20px;border-radius:10px">
+        <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed">
+          <tr><td style="width:8%"></td>{row1}<td style="width:8%"></td></tr>
+          <tr><td style="width:8%"></td>{row2}<td style="width:8%"></td></tr>
+        </table>
+      </div>
     </section>
     """
 
