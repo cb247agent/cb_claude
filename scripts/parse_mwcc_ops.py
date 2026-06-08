@@ -365,6 +365,243 @@ def _parse_utilisation(path: Path) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────
+# leads-enquiries.xlsx parser — SOURCE OF TRUTH for enquiries (08 Jun 2026)
+# ─────────────────────────────────────────────────────────────────
+#
+# OWNA splits the enquiry pipeline into a dedicated export. Each row is
+# one enquiry from a parent with full contact + UTM attribution. We
+# extract per-centre counts (both rolling pipeline + this-week new) and
+# UTM source breakdown for marketing attribution.
+
+CENTRE_NAME_MAP = {
+    "My World Armadale":      "Armadale",
+    "My World Midvale":       "Midvale",
+    "My World Rockingham":    "Rockingham",
+    "My World Seville Grove": "Seville Grove",
+    "My World Waikiki":       "Waikiki",
+}
+
+def _short_centre(owna_centre_name):
+    """Map 'My World Waikiki' → 'Waikiki'. Returns None if unrecognised."""
+    if not owna_centre_name:
+        return None
+    s = str(owna_centre_name).strip()
+    return CENTRE_NAME_MAP.get(s)
+
+def _parse_iso_date(s):
+    """Parse 'YYYY-MM-DD' or 'May 04, 2026' to datetime.date. Returns None on failure."""
+    if not s:
+        return None
+    s = str(s).strip()
+    # Try ISO first (leads-enquiries format)
+    try:
+        from datetime import datetime
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except ValueError:
+        pass
+    # Try "Mon DD, YYYY" (starters/exits format)
+    try:
+        from datetime import datetime
+        return datetime.strptime(s, "%b %d, %Y").date()
+    except ValueError:
+        return None
+
+def _parse_leads_enquiries(path, period_start=None, period_end=None):
+    """Parse leads-enquiries.xlsx → per-centre enquiry counts.
+
+    Returns dict keyed by short centre name (e.g. 'Waikiki'):
+      {
+        "Waikiki": {
+          "enquiries_this_week": 4,        # filtered to [period_start, period_end]
+          "enquiries_pipeline":  11,       # all rows for this centre
+          "utm_sources":         {"google": 3, "meta": 1, ...},   # this-week only
+          "leads":               [{name, email, phone, submitted, status}, ...],  # this-week only
+        },
+        ...
+      }
+    """
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        print("[MWCC Ops] ⚠️  openpyxl not installed — cannot parse leads-enquiries.xlsx")
+        return {}
+
+    print(f"[MWCC Ops] Parsing leads-enquiries (SOURCE OF TRUTH for enquiries): {path.name}")
+    try:
+        wb = load_workbook(path, data_only=True)
+    except Exception as e:
+        print(f"[MWCC Ops] ⚠️  Failed to open leads-enquiries.xlsx: {e}")
+        return {}
+
+    if "Data" not in wb.sheetnames:
+        print(f"[MWCC Ops] ⚠️  leads-enquiries.xlsx missing 'Data' tab")
+        return {}
+    ws = wb["Data"]
+
+    from collections import Counter, defaultdict
+    result = defaultdict(lambda: {
+        "enquiries_this_week": 0,
+        "enquiries_pipeline":  0,
+        "utm_sources":         Counter(),
+        "leads":               [],
+    })
+
+    for r in range(2, ws.max_row + 1):
+        centre_raw = ws.cell(row=r, column=2).value
+        short = _short_centre(centre_raw)
+        if not short:
+            continue
+        result[short]["enquiries_pipeline"] += 1
+
+        submitted_d = _parse_iso_date(ws.cell(row=r, column=15).value)
+        in_window = (
+            period_start and period_end and submitted_d
+            and period_start <= submitted_d <= period_end
+        )
+        if in_window:
+            result[short]["enquiries_this_week"] += 1
+            utm_source = (ws.cell(row=r, column=19).value or "").strip() or "(direct)"
+            result[short]["utm_sources"][utm_source] += 1
+            result[short]["leads"].append({
+                "name":      ws.cell(row=r, column=3).value or "",
+                "email":     ws.cell(row=r, column=4).value or "",
+                "phone":     ws.cell(row=r, column=5).value or "",
+                "first_child": ws.cell(row=r, column=6).value or "",
+                "submitted": str(submitted_d) if submitted_d else "",
+                "status":    ws.cell(row=r, column=18).value or "",
+                "utm_source":   utm_source,
+                "utm_campaign": (ws.cell(row=r, column=21).value or "").strip(),
+            })
+
+    # Flatten Counter → dict for JSON
+    for short in result:
+        result[short]["utm_sources"] = dict(result[short]["utm_sources"].most_common())
+
+    pipeline_total = sum(v["enquiries_pipeline"] for v in result.values())
+    week_total = sum(v["enquiries_this_week"] for v in result.values())
+    print(f"[MWCC Ops]   Pipeline total: {pipeline_total} enquiries · This week: {week_total}")
+    for short, v in result.items():
+        print(f"[MWCC Ops]     {short}: pipeline {v['enquiries_pipeline']} · this week {v['enquiries_this_week']}")
+    return dict(result)
+
+
+# ─────────────────────────────────────────────────────────────────
+# StartersAndExitsReport.xlsx parser — SOURCE OF TRUTH for enrolments/exits
+# ─────────────────────────────────────────────────────────────────
+#
+# OWNA splits enrolment movements into a dedicated export with two
+# sections: "New Starters" + "Exits & Upcoming Exits". Each row has a
+# Date showing when the start/exit happened. We extract per-centre
+# counts (both rolling + this-week) and named lists.
+
+def _parse_starters_exits(path, period_start=None, period_end=None):
+    """Parse StartersAndExitsReport.xlsx → per-centre starter + exit counts.
+
+    Returns dict keyed by short centre name:
+      {
+        "Waikiki": {
+          "starters_this_week":  0,
+          "starters_rolling":    1,
+          "exits_this_week":     1,
+          "exits_rolling":       3,
+          "starters_list":       [...],  # this-week only
+          "exits_list":          [...],  # this-week only
+        },
+        ...
+      }
+    """
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        return {}
+
+    print(f"[MWCC Ops] Parsing StartersAndExits (SOURCE OF TRUTH for enrolments/exits): {path.name}")
+    try:
+        wb = load_workbook(path, data_only=True)
+    except Exception as e:
+        print(f"[MWCC Ops] ⚠️  Failed to open StartersAndExitsReport.xlsx: {e}")
+        return {}
+
+    ws = wb.active
+    from collections import defaultdict
+    result = defaultdict(lambda: {
+        "starters_this_week": 0,
+        "starters_rolling":   0,
+        "exits_this_week":    0,
+        "exits_rolling":      0,
+        "starters_list":      [],
+        "exits_list":         [],
+    })
+
+    # Walk rows, identify section by header
+    # Section 1: "New Starters" header (col 0), centre+child+date rows follow
+    # Section 2: "Exits & Upcoming Exits" header, similar structure
+    current_section = None  # 'starters' or 'exits'
+    for r in range(1, ws.max_row + 1):
+        row = [ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
+        if not row or all(v is None or v == "" for v in row):
+            continue
+        first = str(row[0] or "").strip()
+
+        # Section markers
+        if first == "New Starters":
+            current_section = "starters"
+            continue
+        if first.startswith("Exits"):
+            current_section = "exits"
+            continue
+        if first.startswith("Total Results") or first in ("Centre", ""):
+            continue
+        if first.startswith("Session Difference") or first in ("Monday", "Tuesday"):
+            continue
+        if "(" in first and "%" in first:  # the "% change" header row
+            continue
+
+        # Data row — should be a centre name in col 0
+        short = _short_centre(first)
+        if not short:
+            continue
+
+        # Date is in the last meaningful column. Find it by scanning.
+        date_val = None
+        for v in row[::-1]:
+            if v and isinstance(v, str):
+                d = _parse_iso_date(v)
+                if d:
+                    date_val = d
+                    break
+
+        in_window = (
+            period_start and period_end and date_val
+            and period_start <= date_val <= period_end
+        )
+        record = {
+            "centre": short,
+            "child":  row[1] if len(row) > 1 else "",
+            "date":   str(date_val) if date_val else "",
+        }
+
+        if current_section == "starters":
+            result[short]["starters_rolling"] += 1
+            if in_window:
+                result[short]["starters_this_week"] += 1
+                result[short]["starters_list"].append(record)
+        elif current_section == "exits":
+            result[short]["exits_rolling"] += 1
+            if in_window:
+                result[short]["exits_this_week"] += 1
+                result[short]["exits_list"].append(record)
+
+    starters_wk = sum(v["starters_this_week"] for v in result.values())
+    exits_wk    = sum(v["exits_this_week"]    for v in result.values())
+    starters_rl = sum(v["starters_rolling"]   for v in result.values())
+    exits_rl    = sum(v["exits_rolling"]      for v in result.values())
+    print(f"[MWCC Ops]   This week: {starters_wk} starters · {exits_wk} exits (net {starters_wk - exits_wk:+d})")
+    print(f"[MWCC Ops]   Rolling:   {starters_rl} starters · {exits_rl} exits")
+    return dict(result)
+
+
+# ─────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────
 
@@ -416,6 +653,50 @@ def parse_mwcc_ops(inbox_path=None):
                 }
     else:
         print("[MWCC Ops] ⚠️  utilisation*.xlsx not found — per-room daily data missing")
+
+    # --- SOURCE OF TRUTH OVERRIDES (08 Jun 2026) ---
+    # leads-enquiries.xlsx is the source of truth for enquiries (with UTM
+    # attribution). StartersAndExitsReport.xlsx is the source of truth for
+    # enrolments + exits (with named lists). These OVERRIDE the counts that
+    # came from MYWORLD_REPORT, which were too aggregated to be reliable.
+    leads_file   = _find_file(inbox, "leads-enquiries")
+    starters_file = _find_file(inbox, "StartersAndExitsReport")
+
+    # Use the OWNA Mon-Fri window for date filtering
+    canonical_start_str, canonical_end_str = compute_owna_week()
+    canonical_start_d = _parse_iso_date(canonical_start_str)
+    canonical_end_d   = _parse_iso_date(canonical_end_str)
+
+    if leads_file:
+        leads_data = _parse_leads_enquiries(leads_file, canonical_start_d, canonical_end_d)
+        for short_centre, leads in leads_data.items():
+            if short_centre not in ops_data:
+                ops_data[short_centre] = {"name": short_centre}
+            # OVERRIDE: enquiries from leads-enquiries.xlsx (source of truth)
+            ops_data[short_centre]["enquiries"]          = leads["enquiries_this_week"]
+            ops_data[short_centre]["enquiries_pipeline"] = leads["enquiries_pipeline"]
+            ops_data[short_centre]["enquiry_utm_sources"] = leads["utm_sources"]
+            ops_data[short_centre]["enquiry_leads"]      = leads["leads"]
+            ops_data[short_centre]["enquiries_source"]   = "leads-enquiries.xlsx"
+    else:
+        print("[MWCC Ops] ⚠️  leads-enquiries.xlsx not found — enquiry counts fall back to MYWORLD_REPORT (may be inaccurate)")
+
+    if starters_file:
+        starters_data = _parse_starters_exits(starters_file, canonical_start_d, canonical_end_d)
+        for short_centre, se in starters_data.items():
+            if short_centre not in ops_data:
+                ops_data[short_centre] = {"name": short_centre}
+            # OVERRIDE: enrolments + exits from StartersAndExitsReport.xlsx (source of truth)
+            ops_data[short_centre]["enrolments"]           = se["starters_this_week"]
+            ops_data[short_centre]["enrolments_rolling"]   = se["starters_rolling"]
+            ops_data[short_centre]["exits"]                = se["exits_this_week"]
+            ops_data[short_centre]["exits_rolling"]        = se["exits_rolling"]
+            ops_data[short_centre]["net_movement"]         = se["starters_this_week"] - se["exits_this_week"]
+            ops_data[short_centre]["starters_list"]        = se["starters_list"]
+            ops_data[short_centre]["exits_list"]           = se["exits_list"]
+            ops_data[short_centre]["enrolments_source"]    = "StartersAndExitsReport.xlsx"
+    else:
+        print("[MWCC Ops] ⚠️  StartersAndExitsReport.xlsx not found — enrolment/exit counts fall back to MYWORLD_REPORT (may be inaccurate)")
 
     # --- Network summary ---
     total_enquiries  = sum(c.get("enquiries",  0) for c in ops_data.values())
