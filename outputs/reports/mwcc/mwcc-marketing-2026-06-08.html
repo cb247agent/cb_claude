@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My World Childcare Marketing Weekly Report – 2026-06-08</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#01696f;--success:#437a22;--warn:#d19900;--danger:#b91c1c;
+--bg:#f7f6f2;--card:#ffffff;--border:#e2e0da;--text:#1a1a18;--muted:#6b6b65;
+--font:'Inter',sans-serif}
+[data-theme="dark"]{--bg:#0f1110;--card:#1a1e1d;--border:#2a302e;--text:#e8e6e0;--muted:#8a8a82}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+a{color:var(--primary)}
+.topbar{background:var(--primary);color:#fff;display:flex;align-items:center;
+justify-content:space-between;padding:20px 28px;position:sticky;top:0;z-index:100}
+.topbar-title{font-size:1rem;font-weight:700;letter-spacing:.01em}
+.dark-toggle{background:rgba(255,255,255,.15);border:none;color:#fff;padding:4px 14px;
+border-radius:20px;cursor:pointer;font-family:var(--font);font-size:12px}
+.tab-nav{display:flex;gap:2px;background:var(--card);border-bottom:2px solid var(--border);
+padding:0 28px;overflow-x:auto}
+.tab-btn{padding:10px 18px;border:none;background:none;color:var(--muted);cursor:pointer;
+font-family:var(--font);font-size:13px;font-weight:500;white-space:nowrap;
+border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab-btn:hover{color:var(--primary)}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700}
+.tab-panel{display:none;padding:28px}.tab-panel.active{display:block}
+.hero{background:linear-gradient(135deg,var(--primary) 0%,#014d51 100%);color:#fff;
+border-radius:14px;padding:24px 28px;margin-bottom:24px;display:flex;
+justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
+.hero h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.hero p{font-size:12px;opacity:.85}
+.hero-right{text-align:right;font-size:12px;opacity:.85}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.kpi-grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:900px){.kpi-grid,.kpi-grid-3,.kpi-grid-5{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.kpi-grid,.kpi-grid-3,.kpi-grid-5{grid-template-columns:1fr}}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+color:var(--muted);margin-bottom:4px}
+.kpi-value{font-size:2rem;font-weight:700;color:var(--primary);line-height:1.1;margin-bottom:4px}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.kpi-up{color:var(--success);font-weight:600}
+.kpi-dn{color:var(--danger);font-weight:600}
+.kpi-fl{color:var(--muted)}
+.badge{display:inline-block;border-radius:5px;padding:2px 9px;font-size:11px;
+font-weight:700;white-space:nowrap}
+.b-green{background:#d5ecc2;color:#437a22}.b-amber{background:#fef3cc;color:#d19900}
+.b-red{background:#fee2e2;color:#b91c1c}.b-blue{background:#dbeafe;color:#1d4ed8}
+.b-teal{background:#ccf0ef;color:#01696f}.b-grey{background:#f0efeb;color:#6b6b65}
+.section-title{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:14px;margin-top:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+padding:18px;margin-bottom:20px}
+.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+color:var(--muted);margin-bottom:12px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:800px){.two-col{grid-template-columns:1fr}}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:var(--bg);color:var(--muted);font-weight:700;text-transform:uppercase;
+font-size:10px;letter-spacing:.06em;padding:8px 10px;border-bottom:2px solid var(--border);
+text-align:left;white-space:nowrap}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg)}
+.tbl-total td{font-weight:700;border-top:2px solid var(--border)}
+.bm-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.bm-cell{flex:1;min-width:100px;background:var(--card);border:1px solid var(--border);
+border-radius:8px;padding:10px 12px;text-align:center}
+.bm-metric{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;
+letter-spacing:.06em;margin-bottom:4px}
+.bm-actual{font-size:1.3rem;font-weight:700;margin-bottom:2px}
+.bm-verdict{font-size:11px;font-weight:600}
+.v-exc{color:var(--success)}.v-good{color:#3b82f6}.v-avg{color:var(--warn)}.v-poor{color:var(--danger)}
+.funnel{display:flex;gap:0;margin-bottom:20px;border-radius:10px;overflow:hidden;
+border:1px solid var(--border)}
+.funnel-step{flex:1;padding:14px 12px;text-align:center;border-right:1px solid var(--border);
+background:var(--card)}
+.funnel-step:last-child{border-right:none}
+.funnel-val{font-size:1.4rem;font-weight:700;color:var(--primary)}
+.funnel-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;
+letter-spacing:.05em;margin-top:2px}
+.funnel-sub{font-size:11px;color:var(--muted);margin-top:2px}
+@media(max-width:700px){.funnel{flex-direction:column}
+.funnel-step{border-right:none;border-bottom:1px solid var(--border)}}
+.insight-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:700px){.insight-grid{grid-template-columns:1fr}}
+.insight-card{border-radius:10px;padding:16px;border-left:4px solid}
+.ic-green{background:#f0faf0;border-color:var(--success)}
+.ic-red{background:#fff5f5;border-color:var(--danger)}
+.ic-amber{background:#fffbeb;border-color:var(--warn)}
+.ic-blue{background:#f0f7ff;border-color:#3b82f6}
+[data-theme="dark"] .ic-green{background:#1a2a1a}
+[data-theme="dark"] .ic-red{background:#2a1a1a}
+[data-theme="dark"] .ic-amber{background:#2a2510}
+[data-theme="dark"] .ic-blue{background:#0d1f30}
+.ic-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.ic-green .ic-title{color:var(--success)}.ic-red .ic-title{color:var(--danger)}
+.ic-amber .ic-title{color:var(--warn)}.ic-blue .ic-title{color:#3b82f6}
+.bullets{list-style:none;padding:0}
+.bullets li{padding:3px 0 3px 14px;font-size:12px;position:relative}
+.bullets li::before{content:"▸";position:absolute;left:0;opacity:.55}
+.ch-table{width:100%;border-collapse:collapse;font-size:12px}
+.ch-table th{background:var(--bg);color:var(--muted);font-weight:700;text-transform:uppercase;
+font-size:10px;letter-spacing:.06em;padding:10px 12px;border-bottom:2px solid var(--border);
+text-align:left;white-space:nowrap}
+.ch-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.ch-table tr:last-child td{border-bottom:none}
+.ch-table tr:hover td{background:var(--bg)}
+.na-box{background:var(--bg);border:2px dashed var(--border);border-radius:10px;
+padding:32px;text-align:center;color:var(--muted);margin-bottom:20px}
+.na-box strong{display:block;margin-bottom:6px;font-size:14px;color:var(--text)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">My World Childcare Marketing Weekly Report</div>
+  <button class="dark-toggle" onclick="document.documentElement.setAttribute('data-theme',
+    document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">Dark</button>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('overview',this)">Executive Summary</button>
+  <button class="tab-btn" onclick="showTab('centres',this)">Centre Occupancy</button>
+  <button class="tab-btn" onclick="showTab('meta',this)">Meta Ads</button>
+  <button class="tab-btn" onclick="showTab('google',this)">Google Ads</button>
+  <button class="tab-btn" onclick="showTab('organic',this)">Organic Social</button>
+  <button class="tab-btn" onclick="showTab('website',this)">Website</button>
+</div>
+
+
+<div id="overview" class="tab-panel active">
+  <div class="hero">
+    <div>
+      <h1>Marketing Weekly Report</h1>
+      <p>Period: <strong>30 May–5 Jun 2026</strong> &nbsp;|&nbsp; Generated: 8 Jun 2026 &nbsp;|&nbsp; My World Childcare</p>
+    </div>
+    <div class="hero-right">
+      <div>Chasing Better Group</div>
+      <div style="margin-top:4px;font-size:11px;opacity:.7">Confidential · Internal Use Only</div>
+    </div>
+  </div>
+
+  <div class="section-title">Week at a Glance</div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Ad Spend</div>
+      <div class="kpi-value">$3,174.06</div>
+      <div class="kpi-sub">Meta $1,393.48 · Google $1,780.58 &nbsp;|&nbsp; <span class="kpi-up">↑ 0.0%</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Google Conversions</div>
+      <div class="kpi-value">72.33</div>
+      <div class="kpi-sub"><span class="kpi-up">↑ 0.0%</span> · CPC $1.25</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Website Active Users</div>
+      <div class="kpi-value">3,272</div>
+      <div class="kpi-sub"><span class="kpi-up">↑ 8.6%</span> week-on-week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Net Enrolment Movement</div>
+      <div class="kpi-value">+0</div>
+      <div class="kpi-sub">2 enrolments · 2 exits · 5 enquiries</div>
+    </div>
+  </div>
+
+  <div class="section-title">Channel Snapshot</div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="ch-table">
+      <thead><tr><th>Channel</th><th>Key Metric 1</th><th>Key Metric 2</th><th>Key Metric 3</th><th>Key Metric 4</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Meta Ads</strong></td>
+          <td>Spend <strong>$1,393.48</strong></td>
+          <td>Impressions <strong>244,122</strong></td>
+          <td>Clicks <strong>2,720</strong></td>
+          <td>CTR <strong>1.11%</strong> · CPC <strong>$0.51</strong></td>
+          <td><span class="badge b-amber">Monitor</span></td>
+        </tr>
+        <tr>
+          <td><strong>Google Ads</strong></td>
+          <td>Spend <strong>$1,780.58</strong></td>
+          <td>Impressions <strong>62,626</strong></td>
+          <td>Clicks <strong>1,425</strong></td>
+          <td>Conv <strong>72.33</strong> · CPC <strong>$1.25</strong></td>
+          <td><span class="badge b-blue">Monitor</span></td>
+        </tr>
+        <tr>
+          <td><strong>Website</strong></td>
+          <td>Active Users <strong>3,272</strong></td>
+          <td>Sessions <strong>3,584</strong></td>
+          <td>Key Events <strong>110</strong></td>
+          <td>Avg Duration <strong>0:55</strong></td>
+          <td><span class="badge b-green">Growing</span></td>
+        </tr>
+        <tr>
+          <td><strong>Centre Ops</strong></td>
+          <td>Enquiries <strong>5</strong></td>
+          <td>Enrolments <strong>2</strong></td>
+          <td>Exits <strong>2</strong></td>
+          <td>Net <strong>+0</strong></td>
+          <td><span class="badge b-teal">Active</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">Week-on-Week Highlights</div>
+  <div class="insight-grid">
+    <div class="insight-card ic-green">
+      <div class="ic-title">What Improved</div>
+      <ul class="bullets"><li>Website active users improved to <strong>3,272</strong> <span class="kpi-up">↑ 8.6%</span></li>
+<li>Meta CPC at <strong>$0.51</strong> — excellent efficiency (benchmark &lt;$1.00)</li>
+<li>Google Ads delivered <strong>72 conversions</strong> at $24.62/conv</li></ul>
+    </div>
+    <div class="insight-card ic-red">
+      <div class="ic-title">What Declined</div>
+      <ul class="bullets"><li>No significant declines vs prior week.</li></ul>
+    </div>
+    <div class="insight-card ic-amber">
+      <div class="ic-title">Ongoing Concerns</div>
+      <ul class="bullets"><li>Compliance risk: <strong>Waikiki — Toddlers</strong> — room over licensed capacity</li></ul>
+    </div>
+    <div class="insight-card ic-blue">
+      <div class="ic-title">Priority Actions This Week</div>
+      <ul class="bullets"><li>Review /book-a-tour engagement rate — high-traffic, lower-conversion page</li>
+<li>Resolve capacity compliance at Waikiki — Toddlers</li>
+<li>Scale best-performing Meta creatives — review Top Ads tab for CTR leaders</li></ul>
+    </div>
+  </div>
+</div>
+
+<div id="centres" class="tab-panel">
+  <div class="hero">
+    <div><h1>Centre Occupancy</h1><p>2026-06-01 to 2026-06-05 · My World Childcare</p></div>
+    <div class="hero-right">
+      <div>Enquiries: <strong>5</strong></div>
+      <div>Net Movement: <strong>+0</strong></div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Enquiries</div><div class="kpi-value">5</div></div>
+    <div class="kpi-card"><div class="kpi-label">Enrolments</div><div class="kpi-value">2</div></div>
+    <div class="kpi-card"><div class="kpi-label">Exits</div><div class="kpi-value">2</div></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Net Movement</div>
+      <div class="kpi-value">+0</div>
+      <div class="kpi-sub">Total revenue: $94,207.36</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Enquiries · Enrolments · Exits by Centre</div>
+      <table class="tbl">
+        <thead><tr><th>Centre</th><th>Enquiries</th><th>Enrolments</th><th>Exits</th><th>Net</th></tr></thead>
+        <tbody><tr><td>Armadale</td><td>0</td><td>0</td><td>1</td><td><span class="kpi-dn">-1</span></td></tr>
+<tr><td>Midvale</td><td>1</td><td>0</td><td>0</td><td><span class="kpi-fl">0</span></td></tr>
+<tr><td>Rockingham</td><td>1</td><td>2</td><td>0</td><td><span class="kpi-up">+2</span></td></tr>
+<tr><td>Seville Grove</td><td>1</td><td>0</td><td>0</td><td><span class="kpi-fl">0</span></td></tr>
+<tr><td>Waikiki</td><td>2</td><td>0</td><td>1</td><td><span class="kpi-dn">-1</span></td></tr>
+<tr class="tbl-total"><td>Total</td><td>5</td><td>2</td><td>2</td><td>+0</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Revenue · Wage Health · Occupancy</div>
+      <table class="tbl">
+        <thead><tr><th>Centre</th><th>Revenue</th><th>Wage Exc Leave</th><th>Overall Occ</th></tr></thead>
+        <tbody><tr><td>Armadale</td><td>$9,862.06</td><td>22.80% ✓</td><td>54%</td></tr>
+<tr><td>Midvale</td><td>$19,878.00</td><td>36.59% ✓</td><td>36%</td></tr>
+<tr><td>Rockingham</td><td>$9,673.00</td><td>23.86% ✓</td><td>38%</td></tr>
+<tr><td>Seville Grove</td><td>$17,629.80</td><td>35.47% ✓</td><td>43%</td></tr>
+<tr><td>Waikiki</td><td>$37,164.50</td><td>32.43% ✓</td><td>84%</td></tr>
+</tbody>
+      </table>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted)">Wage breach threshold: 42.0% exc. leave. Occupancy from OWNA weekly report.</div>
+    </div>
+  </div>
+
+  <div class="section-title">Room-Level Occupancy</div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Centre / Room</th><th>Weekly Avg Occupancy</th><th>Status</th></tr></thead>
+      <tbody><tr><td>Armadale — After School</td><td>58%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Armadale — Before School</td><td>44%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Midvale — After School</td><td>58%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Midvale — Before School</td><td>40%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Midvale — Kindy</td><td>35%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Midvale — Toddlers</td><td>15%</td><td><span class="badge b-red">Critical</span></td></tr>
+<tr><td>Midvale — Babies</td><td>40%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Rockingham — After School</td><td>55%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Rockingham — Before School</td><td>28%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Seville Grove — Babies</td><td>27%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Seville Grove — Toddlers</td><td>34%</td><td><span class="badge b-amber">Underused</span></td></tr>
+<tr><td>Seville Grove — Kindy</td><td>43%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Seville Grove — Before School</td><td>42%</td><td><span class="badge b-blue">Growing</span></td></tr>
+<tr><td>Seville Grove — After School</td><td>80%</td><td><span class="badge b-green">Strong</span></td></tr>
+<tr><td>Waikiki — Kindy</td><td>62%</td><td><span class="badge b-green">Healthy</span></td></tr>
+<tr><td>Waikiki — Toddlers <span class="badge b-red" style="font-size:9px">⚠ Compliance</span></td><td>112%</td><td><span class="badge b-red">Compliance Risk</span></td></tr>
+<tr><td>Waikiki — Babies</td><td>85%</td><td><span class="badge b-green">Strong</span></td></tr>
+</tbody>
+    </table>
+    <div style="margin-top:8px;font-size:11px;color:var(--muted)">Occupancy = avg Mon–Fri enrolments ÷ licensed capacity. &gt;100% = compliance risk.</div>
+  </div>
+</div>
+
+<div id="meta" class="tab-panel">
+  <div class="hero">
+    <div><h1>Meta Ads Performance</h1><p>2026-05-30&nbsp;–&nbsp;2026-06-05 · Facebook &amp; Instagram Paid</p></div>
+    <div class="hero-right"><div>Spend: <strong>$1,393.48</strong></div><div>Impressions: <strong>244,122</strong></div></div>
+  </div>
+
+  <div class="section-title">Performance vs Benchmarks (Childcare Perth/AU)</div>
+  <div class="bm-row">
+<div class="bm-cell">
+  <div class="bm-metric">CTR</div>
+  <div class="bm-actual" style="color:var(--danger)">1.11%</div>
+  <div class="bm-verdict v-poor">Below benchmark</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">CPC</div>
+  <div class="bm-actual" style="color:var(--success)">$0.51</div>
+  <div class="bm-verdict v-exc">Excellent</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">CPM</div>
+  <div class="bm-actual" style="color:var(--success)">$5.71</div>
+  <div class="bm-verdict v-exc">Excellent</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">Cost/LPV</div>
+  <div class="bm-actual" style="color:var(--success)">$0.60</div>
+  <div class="bm-verdict v-exc">Excellent</div>
+</div>
+</div>
+  <div class="funnel" style="margin-bottom:24px">
+  <div class="funnel-step"><div class="funnel-val">244,122</div><div class="funnel-lbl">Impressions</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">2,720</div><div class="funnel-lbl">Link Clicks</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">2,316</div><div class="funnel-lbl">Landing Page Views</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">1.11%</div><div class="funnel-lbl">CTR</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">$0.51</div><div class="funnel-lbl">CPC</div><div class="funnel-sub"><span class="kpi-dn">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">$1,393.48</div><div class="funnel-lbl">Total Spend</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+</div>
+
+  <div class="card">
+    <div class="card-title">Spend by Centre</div>
+    <table class="tbl">
+      <thead><tr><th>Centre</th><th>Spend</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>LPVs</th></tr></thead>
+      <tbody><tr>
+  <td><strong>Armadale</strong></td>
+  <td>$236.84</td>
+  <td>57,923</td>
+  <td>429</td>
+  <td>0.74%</td>
+  <td>$0.55</td>
+  <td>350</td>
+</tr>
+<tr>
+  <td><strong>Midvale</strong></td>
+  <td>$241.56</td>
+  <td>52,486</td>
+  <td>565</td>
+  <td>1.08%</td>
+  <td>$0.43</td>
+  <td>487</td>
+</tr>
+<tr>
+  <td><strong>Rockingham</strong></td>
+  <td>$109.42</td>
+  <td>18,245</td>
+  <td>219</td>
+  <td>1.20%</td>
+  <td>$0.50</td>
+  <td>191</td>
+</tr>
+<tr>
+  <td><strong>Seville Grove</strong></td>
+  <td>$221.16</td>
+  <td>38,244</td>
+  <td>438</td>
+  <td>1.15%</td>
+  <td>$0.50</td>
+  <td>350</td>
+</tr>
+<tr>
+  <td><strong>Waikiki</strong></td>
+  <td>$82.17</td>
+  <td>11,363</td>
+  <td>169</td>
+  <td>1.49%</td>
+  <td>$0.49</td>
+  <td>144</td>
+</tr>
+<tr>
+  <td><strong>Other</strong></td>
+  <td>$502.33</td>
+  <td>65,861</td>
+  <td>900</td>
+  <td>1.37%</td>
+  <td>$0.56</td>
+  <td>794</td>
+</tr>
+</tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Campaign Performance</div>
+    <table class="tbl">
+      <thead><tr><th>Campaign</th><th>Spend</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>LPVs</th><th>Cost/LPV</th></tr></thead>
+      <tbody><tr>
+  <td>MW Traffic Feb 2026</td>
+  <td>$712.46</td>
+  <td>151,389</td>
+  <td>1,465</td>
+  <td>0.97%</td>
+  <td>$0.49</td>
+  <td>1,212</td>
+  <td>$0.59</td>
+</tr>
+<tr>
+  <td>MWCC Feb 2026 - Engagement</td>
+  <td>$178.69</td>
+  <td>26,872</td>
+  <td>355</td>
+  <td>1.32%</td>
+  <td>$0.50</td>
+  <td>310</td>
+  <td>$0.58</td>
+</tr>
+<tr>
+  <td>Instagram post: Child care should be much more...</td>
+  <td>$105.49</td>
+  <td>12,034</td>
+  <td>211</td>
+  <td>1.75%</td>
+  <td>$0.50</td>
+  <td>179</td>
+  <td>$0.59</td>
+</tr>
+<tr>
+  <td>Instagram post: Being ready for school is about...</td>
+  <td>$104.47</td>
+  <td>11,738</td>
+  <td>196</td>
+  <td>1.67%</td>
+  <td>$0.53</td>
+  <td>174</td>
+  <td>$0.60</td>
+</tr>
+<tr>
+  <td>fb: Child care should be much more...</td>
+  <td>$74.85</td>
+  <td>16,876</td>
+  <td>143</td>
+  <td>0.85%</td>
+  <td>$0.52</td>
+  <td>131</td>
+  <td>$0.57</td>
+</tr>
+<tr>
+  <td>fb: Being ready for school is about...</td>
+  <td>$74.08</td>
+  <td>10,921</td>
+  <td>222</td>
+  <td>2.03%</td>
+  <td>$0.33</td>
+  <td>215</td>
+  <td>$0.34</td>
+</tr>
+<tr>
+  <td>Instagram post: This isn't just a room. It's...</td>
+  <td>$45.47</td>
+  <td>2,659</td>
+  <td>22</td>
+  <td>0.83%</td>
+  <td>$2.07</td>
+  <td>18</td>
+  <td>$2.53</td>
+</tr>
+<tr>
+  <td>Instagram post: Every child deserves more than...</td>
+  <td>$42.83</td>
+  <td>3,271</td>
+  <td>42</td>
+  <td>1.28%</td>
+  <td>$1.02</td>
+  <td>34</td>
+  <td>$1.26</td>
+</tr>
+<tr>
+  <td>fb: This isn't just a room. It's...</td>
+  <td>$27.89</td>
+  <td>4,062</td>
+  <td>34</td>
+  <td>0.84%</td>
+  <td>$0.82</td>
+  <td>23</td>
+  <td>$1.21</td>
+</tr>
+<tr>
+  <td>fb: Every child deserves more than...</td>
+  <td>$27.25</td>
+  <td>4,300</td>
+  <td>30</td>
+  <td>0.70%</td>
+  <td>$0.91</td>
+  <td>20</td>
+  <td>$1.36</td>
+</tr>
+</tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Ad Set Breakdown by Centre (Frequency Monitor)</div>
+    <table class="tbl">
+      <thead><tr><th>Campaign</th><th>Ad Set</th><th>Centre</th><th>Spend</th><th>Impr</th><th>Reach</th><th>Clicks</th><th>CTR</th><th>LPVs</th><th>Frequency</th></tr></thead>
+      <tbody><tr>
+  <td>MW Traffic Feb 2026</td>
+  <td>Midvale</td>
+  <td>Midvale</td>
+  <td>$189.68</td>
+  <td>45,051</td>
+  <td>16,292</td>
+  <td>443</td>
+  <td>0.98%</td>
+  <td>367</td>
+  <td>2.77× <span class="badge b-red">High freq</span></td>
+</tr>
+<tr>
+  <td>MW Traffic Feb 2026</td>
+  <td>Armadale</td>
+  <td>Armadale</td>
+  <td>$189.32</td>
+  <td>51,722</td>
+  <td>14,194</td>
+  <td>357</td>
+  <td>0.69%</td>
+  <td>295</td>
+  <td>3.64× <span class="badge b-red">Saturated</span></td>
+</tr>
+<tr>
+  <td>MW Traffic Feb 2026</td>
+  <td>Seville Grove</td>
+  <td>Seville Grove</td>
+  <td>$179.15</td>
+  <td>32,665</td>
+  <td>18,095</td>
+  <td>363</td>
+  <td>1.11%</td>
+  <td>289</td>
+  <td>1.81× <span class="badge b-blue">Normal</span></td>
+</tr>
+<tr>
+  <td>Instagram post: Child care should be much more...</td>
+  <td>Instagram post: Child care should be much more...</td>
+  <td>Other</td>
+  <td>$105.49</td>
+  <td>12,034</td>
+  <td>7,803</td>
+  <td>211</td>
+  <td>1.75%</td>
+  <td>179</td>
+  <td>1.54× <span class="badge b-blue">Normal</span></td>
+</tr>
+<tr>
+  <td>Instagram post: Being ready for school is about...</td>
+  <td>Instagram post: Being ready for school is about...</td>
+  <td>Other</td>
+  <td>$104.47</td>
+  <td>11,738</td>
+  <td>7,663</td>
+  <td>196</td>
+  <td>1.67%</td>
+  <td>174</td>
+  <td>1.53× <span class="badge b-blue">Normal</span></td>
+</tr>
+<tr>
+  <td>MW Traffic Feb 2026</td>
+  <td>Rockingham</td>
+  <td>Rockingham</td>
+  <td>$89.13</td>
+  <td>13,690</td>
+  <td>9,361</td>
+  <td>169</td>
+  <td>1.23%</td>
+  <td>152</td>
+  <td>1.46× <span class="badge b-green">Fresh audience</span></td>
+</tr>
+<tr>
+  <td>fb: Child care should be much more...</td>
+  <td>[5/28/2026] Promoting https://www.myworldcc.com.au/book-a-tour</td>
+  <td>Other</td>
+  <td>$74.85</td>
+  <td>16,876</td>
+  <td>9,453</td>
+  <td>143</td>
+  <td>0.85%</td>
+  <td>131</td>
+  <td>1.79× <span class="badge b-blue">Normal</span></td>
+</tr>
+<tr>
+  <td>fb: Being ready for school is about...</td>
+  <td>[5/28/2026] Promoting https://www.myworldcc.com.au/book-a-tour</td>
+  <td>Other</td>
+  <td>$74.08</td>
+  <td>10,921</td>
+  <td>7,589</td>
+  <td>222</td>
+  <td>2.03%</td>
+  <td>215</td>
+  <td>1.44× <span class="badge b-green">Fresh audience</span></td>
+</tr>
+<tr>
+  <td>MW Traffic Feb 2026</td>
+  <td>Waikiki</td>
+  <td>Waikiki</td>
+  <td>$65.18</td>
+  <td>8,261</td>
+  <td>5,793</td>
+  <td>133</td>
+  <td>1.61%</td>
+  <td>109</td>
+  <td>1.43× <span class="badge b-green">Fresh audience</span></td>
+</tr>
+<tr>
+  <td>MWCC Feb 2026 - Engagement</td>
+  <td>Midvale</td>
+  <td>Midvale</td>
+  <td>$51.88</td>
+  <td>7,435</td>
+  <td>4,439</td>
+  <td>122</td>
+  <td>1.64%</td>
+  <td>120</td>
+  <td>1.67× <span class="badge b-blue">Normal</span></td>
+</tr>
+<tr>
+  <td>MWCC Feb 2026 - Engagement</td>
+  <td>Armadale</td>
+  <td>Armadale</td>
+  <td>$47.52</td>
+  <td>6,201</td>
+  <td>2,993</td>
+  <td>72</td>
+  <td>1.16%</td>
+  <td>55</td>
+  <td>2.07× <span class="badge b-amber">Rising</span></td>
+</tr>
+<tr>
+  <td>Instagram post: This isn't just a room. It's...</td>
+  <td>Instagram Post</td>
+  <td>Other</td>
+  <td>$45.47</td>
+  <td>2,659</td>
+  <td>1,337</td>
+  <td>22</td>
+  <td>0.83%</td>
+  <td>18</td>
+  <td>1.99× <span class="badge b-blue">Normal</span></td>
+</tr>
+</tbody>
+    </table>
+    <div style="margin-top:8px;font-size:11px;color:var(--muted)">Frequency = Impressions ÷ Reach. &gt;3× = audience saturation risk.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Top 10 Ads by CTR (min $1 spend)</div>
+    <table class="tbl">
+      <thead><tr><th>#</th><th>Ad</th><th>Centre</th><th>Status</th><th>Spend</th><th>Impr</th><th>Clicks</th><th>CTR</th><th>CPC</th></tr></thead>
+      <tbody><tr>
+  <td>1</td>
+  <td>'Learning doesn't start at school'  Rockingham Carousel 1</td>
+  <td>Rockingham</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$7.14</td>
+  <td>493</td>
+  <td>14</td>
+  <td><strong>2.84%</strong></td>
+  <td>$0.51</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>'This is not babysitting' Midvale Carousel 2</td>
+  <td>Midvale</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$16.33</td>
+  <td>1,845</td>
+  <td>47</td>
+  <td><strong>2.55%</strong></td>
+  <td>$0.35</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>'Your Child's first 2 weeks are Free' Midvale Carousel 3 Engagement</td>
+  <td>Midvale</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$1.24</td>
+  <td>200</td>
+  <td>5</td>
+  <td><strong>2.50%</strong></td>
+  <td>$0.25</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>First 2 weeks free</td>
+  <td>Rockingham</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$3.61</td>
+  <td>487</td>
+  <td>11</td>
+  <td><strong>2.26%</strong></td>
+  <td>$0.33</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>Pick Up Rockingham - creative2</td>
+  <td>Rockingham</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$4.99</td>
+  <td>631</td>
+  <td>14</td>
+  <td><strong>2.22%</strong></td>
+  <td>$0.36</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>Promoting website: https://www.myworldcc.com.au/book-a-tour</td>
+  <td>Other</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$74.08</td>
+  <td>10,921</td>
+  <td>222</td>
+  <td><strong>2.03%</strong></td>
+  <td>$0.33</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td>'Learning doesn't start at school' Waikiki Carousel 1</td>
+  <td>Waikiki</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$4.18</td>
+  <td>596</td>
+  <td>11</td>
+  <td><strong>1.85%</strong></td>
+  <td>$0.38</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td>Instagram post: Child care should be much more...</td>
+  <td>Other</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$105.49</td>
+  <td>12,034</td>
+  <td>211</td>
+  <td><strong>1.75%</strong></td>
+  <td>$0.50</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td>First 2 weeks free</td>
+  <td>Midvale</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$38.30</td>
+  <td>5,256</td>
+  <td>92</td>
+  <td><strong>1.75%</strong></td>
+  <td>$0.42</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td>'This is not babysitting' Waikiki Carousel 2 Engagement</td>
+  <td>Waikiki</td>
+  <td><span class="badge b-green">Active</span></td>
+  <td>$2.08</td>
+  <td>406</td>
+  <td>7</td>
+  <td><strong>1.72%</strong></td>
+  <td>$0.30</td>
+</tr>
+</tbody>
+    </table>
+  </div>
+</div>
+
+<div id="google" class="tab-panel">
+  <div class="hero">
+    <div><h1>Google Ads Performance</h1><p>2026-05-30&nbsp;–&nbsp;2026-06-05 · Search + Performance Max</p></div>
+    <div class="hero-right"><div>Spend: <strong>$1,780.58</strong></div><div>Conversions: <strong>72.33</strong></div></div>
+  </div>
+
+  <div class="section-title">Performance vs Benchmarks (Childcare Perth/AU)</div>
+  <div class="bm-row">
+<div class="bm-cell">
+  <div class="bm-metric">CTR</div>
+  <div class="bm-actual" style="color:var(--danger)">2.28%</div>
+  <div class="bm-verdict v-poor">Below</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">CPC</div>
+  <div class="bm-actual" style="color:var(--success)">$1.25</div>
+  <div class="bm-verdict v-exc">Excellent</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">CPM</div>
+  <div class="bm-actual" style="color:var(--success)">$28.43</div>
+  <div class="bm-verdict v-exc">Excellent</div>
+</div>
+<div class="bm-cell">
+  <div class="bm-metric">Cost/Conv</div>
+  <div class="bm-actual" style="color:var(--success)">$24.62</div>
+  <div class="bm-verdict v-exc">Excellent</div>
+</div>
+</div>
+  <div class="funnel" style="margin-bottom:24px">
+  <div class="funnel-step"><div class="funnel-val">62,626</div><div class="funnel-lbl">Impressions</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">1,425</div><div class="funnel-lbl">Clicks</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">72.33</div><div class="funnel-lbl">Conversions</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">2.28%</div><div class="funnel-lbl">CTR</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">$24.62</div><div class="funnel-lbl">Cost/Conv</div><div class="funnel-sub"><span class="kpi-dn">↑ 0.0%</span></div></div>
+  <div class="funnel-step"><div class="funnel-val">$1,780.58</div><div class="funnel-lbl">Total Spend</div><div class="funnel-sub"><span class="kpi-up">↑ 0.0%</span></div></div>
+</div>
+
+  <div class="card">
+    <div class="card-title">Campaign Performance (WoW)</div>
+    <table class="tbl">
+      <thead><tr><th>Campaign</th><th>Type</th><th>Spend</th><th>Clicks</th><th>Conversions</th><th>CPC</th><th>Cost/Conv</th></tr></thead>
+      <tbody><tr>
+  <td>MWCC | Brand</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$940.22 <span class="kpi-up">↑ 0.0%</span></td>
+  <td>526 <span class="kpi-up">↑ 0.0%</span></td>
+  <td><strong>33.66</strong> <span class="kpi-dn">↓ 0.0%</span></td>
+  <td>$1.79 <span class="kpi-dn">↑ 0.0%</span></td>
+  <td>$27.93</td>
+</tr>
+<tr>
+  <td>Leads-Performance Max-2</td><td><span class="badge b-grey">PERFORMANCE_MAX</span></td>
+  <td>$486.66 <span class="kpi-up">↑ 0.0%</span></td>
+  <td>792 <span class="kpi-up">↑ 0.0%</span></td>
+  <td><strong>27.00</strong> <span class="kpi-up">↑ 0.0%</span></td>
+  <td>$0.61 <span class="kpi-dn">↑ 0.0%</span></td>
+  <td>$18.02</td>
+</tr>
+<tr>
+  <td>MWCC | Q2 2026</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$353.70 <span class="kpi-up">↑ 0.0%</span></td>
+  <td>107 <span class="kpi-up">↑ 0.0%</span></td>
+  <td><strong>11.67</strong> <span class="kpi-dn">↓ 0.0%</span></td>
+  <td>$3.31 <span class="kpi-dn">↑ 0.0%</span></td>
+  <td>$30.30</td>
+</tr>
+<tr>
+  <td>My World CC I Midland/Midvale I Homepage</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Midland/Midvale I Test AI MAX</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Brand Campaign</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Waikiki</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Seville Grove/Armadale</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Waikiki/Rockingham I DSA Campaign</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World  CC I Midvale/Midland I DSA</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I RLSA</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Waikiki/Rockingham TEST</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Midland/Midvale I Internal Location Page I TEST</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Rockingham OSHC</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>Display Remarketing</td><td><span class="badge b-grey">DISPLAY</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>Careers 22-23</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>PMax: Local Campaign</td><td><span class="badge b-grey">PERFORMANCE_MAX</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>My World CC I Seville Grove/Armadale Seville Grove Internal</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+<tr>
+  <td>Exercise Leads-Search-Midvale</td><td><span class="badge b-grey">SEARCH</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>0 <span class="kpi-fl">—</span></td>
+  <td><strong>0.00</strong> <span class="kpi-fl">—</span></td>
+  <td>$0.00 <span class="kpi-fl">—</span></td>
+  <td>$0.00</td>
+</tr>
+</tbody>
+    </table>
+  </div>
+</div>
+
+<div id="organic" class="tab-panel">
+  <div class="hero">
+    <div><h1>Organic Social</h1><p>Facebook &amp; Instagram Organic</p></div>
+    <div class="hero-right"><div>Data source: Metricool</div></div>
+  </div>
+  <div class="na-box">
+    <strong>Organic social data is sourced from Metricool — not yet automated</strong>
+    <span>To add organic social data to this report, export from Metricool and paste key metrics below.<br>
+    A pull_mwcc_organic.py script (Metricool or Meta Graph API) can be added in a future phase.</span>
+  </div>
+  <div class="card">
+    <div class="card-title">How to view organic social data</div>
+    <ol style="font-size:13px;padding-left:20px;line-height:2">
+      <li>Log in to <a href="https://app.metricool.com" target="_blank">Metricool</a></li>
+      <li>Select the My World Childcare brand</li>
+      <li>Go to Analytics → set the date range to match this report week</li>
+      <li>Download the PDF or review Facebook + Instagram tabs for followers, reach, and engagement</li>
+    </ol>
+  </div>
+</div>
+
+<div id="website" class="tab-panel">
+  <div class="hero">
+    <div><h1>Website Performance</h1><p>2026-05-30&nbsp;–&nbsp;2026-06-05 · myworldcc.com.au</p></div>
+    <div class="hero-right"><div>GA4 Property: 315149021</div></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Active Users</div>
+      <div class="kpi-value">3,272</div>
+      <div class="kpi-sub"><span class="kpi-up">↑ 8.6%</span> week-on-week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Sessions</div>
+      <div class="kpi-value">3,584</div>
+      <div class="kpi-sub"><span class="kpi-up">↑ 9.2%</span> WoW</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Key Events</div>
+      <div class="kpi-value">110</div>
+      <div class="kpi-sub"><span class="kpi-up">↑ 34.1%</span> from 82 prior week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Session Duration</div>
+      <div class="kpi-value">0:55</div>
+      <div class="kpi-sub"><span class="kpi-up">↑ 58.7%</span></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Top Pages by Sessions</div>
+      <table class="tbl">
+        <thead><tr><th>Page</th><th>Sessions</th><th>Page Views</th><th>Eng Rate</th></tr></thead>
+        <tbody><tr><td>/book-a-tour</td><td>1,642</td><td>1,756</td><td><span class='kpi-fl'>8.00%</span></td></tr>
+<tr><td>/</td><td>1,152</td><td>1,373</td><td><span class='kpi-up'>24.00%</span></td></tr>
+<tr><td>/seville-grove</td><td>360</td><td>417</td><td><span class='kpi-fl'>18.00%</span></td></tr>
+<tr><td>/rockingham</td><td>163</td><td>188</td><td><span class='kpi-up'>29.00%</span></td></tr>
+<tr><td>/waikiki</td><td>94</td><td>132</td><td><span class='kpi-up'>40.00%</span></td></tr>
+<tr><td>/midvale</td><td>114</td><td>125</td><td><span class='kpi-up'>32.00%</span></td></tr>
+<tr><td>/armadale</td><td>102</td><td>112</td><td><span class='kpi-up'>34.00%</span></td></tr>
+<tr><td>/contact-us</td><td>59</td><td>77</td><td><span class='kpi-up'>90.00%</span></td></tr>
+<tr><td>/work-with-us</td><td>32</td><td>40</td><td><span class='kpi-up'>78.00%</span></td></tr>
+<tr><td>/thank-you</td><td>17</td><td>18</td><td><span class='kpi-up'>100.00%</span></td></tr>
+</tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Sessions by Channel</div>
+      <table class="tbl">
+        <thead><tr><th>Channel</th><th>Sessions</th><th>Key Events</th></tr></thead>
+        <tbody><tr><td>Organic Social</td><td>1,487</td><td>8</td></tr>
+<tr><td>Paid Social</td><td>815</td><td>0</td></tr>
+<tr><td>Cross-network</td><td>623</td><td>30</td></tr>
+<tr><td>Display</td><td>241</td><td>17</td></tr>
+<tr><td>Direct</td><td>148</td><td>8</td></tr>
+<tr><td>Paid Search</td><td>131</td><td>29</td></tr>
+<tr><td>Paid Video</td><td>69</td><td>4</td></tr>
+<tr><td>Organic Search</td><td>48</td><td>14</td></tr>
+<tr><td>Paid Other</td><td>23</td><td>0</td></tr>
+<tr><td>Referral</td><td>3</td><td>0</td></tr>
+</tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
