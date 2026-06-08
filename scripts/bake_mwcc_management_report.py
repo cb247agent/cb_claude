@@ -781,7 +781,7 @@ table {{ font-size:12px; }}
   {"".join(sections)}
   <div class="footer">
     Generated {_dt.datetime.now().strftime("%a %d %b %Y %H:%M %Z")} ·
-    Recipients: Robert (CEO) · Denver (COO) · Kelley · Jordan · Dana ·
+    Recipients: Robert · Denver · Kelley · Jordan · Dana ·
     For internal use only — do not forward
   </div>
 </div>
