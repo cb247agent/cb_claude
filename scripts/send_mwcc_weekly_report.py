@@ -102,13 +102,31 @@ def build_digest() -> dict:
     if meta.get("date_range"):
         mkt_period = f"{meta['date_range'].get('start','—')} – {meta['date_range'].get('end','—')}"
 
+    # ── Capacity-weighted network occupancy (08 Jun 2026, Tia direction) ──
+    # Matches the methodology used by bake_mwcc_management_report.py so both
+    # reports show the same headline number. Previously this was a SIMPLE
+    # average of per-centre Overall %, which gave equal weight to every
+    # centre regardless of room capacity. Now it's weighted by total
+    # licensed capacity across all rooms — answers 'what % of our physical
+    # capacity is actually filled?'.
+    def _capacity_weighted_occupancy(centres_dict):
+        total_cap = 0
+        total_filled = 0
+        for c in (centres_dict or {}).values():
+            for _, d in (c.get("rooms_detail") or {}).items():
+                cap = d.get("capacity") or 0
+                occ_pct = d.get("occupancy_pct")
+                if cap and occ_pct is not None:
+                    total_cap += cap
+                    total_filled += cap * (occ_pct / 100.0)
+        if not total_cap:
+            return None
+        return round(100.0 * total_filled / total_cap, 1)
+
     # KPIs
     centres = ops.get("centres", {}) or {}
     centre_arr = list(centres.values())
-    avg_occ = (
-        round(sum(c.get("occupancy", {}).get("Overall", 0) for c in centre_arr) / len(centre_arr))
-        if centre_arr else None
-    )
+    avg_occ = _capacity_weighted_occupancy(centres)
     net_enrol = ops.get("network_summary", {}).get("net_movement")
     total_enrol = ops.get("network_summary", {}).get("total_enrolments", 0)
     total_exits = ops.get("network_summary", {}).get("total_exits", 0)
@@ -123,12 +141,9 @@ def build_digest() -> dict:
     prior_ads_spend  = (ads_history[1].get("totals", {}).get("spend", 0))   if len(ads_history)  > 1 else None
     prior_total_spend = ((prior_meta_spend or 0) + (prior_ads_spend or 0)) if (prior_meta_spend is not None or prior_ads_spend is not None) else None
 
-    # Prior week ops (for occupancy WoW)
+    # Prior week ops (for occupancy WoW) — also capacity-weighted for consistency
     prior_centres = (ops_history[-2].get("centres", {}) if len(ops_history) >= 2 else {}) or {}
-    prior_avg_occ = (
-        round(sum(c.get("occupancy", {}).get("Overall", 0) for c in prior_centres.values()) / max(1, len(prior_centres)))
-        if prior_centres else None
-    )
+    prior_avg_occ = _capacity_weighted_occupancy(prior_centres) if prior_centres else None
 
     # Compliance risks
     risk_rooms = ops.get("network_summary", {}).get("rooms_with_compliance_risk", []) or []
