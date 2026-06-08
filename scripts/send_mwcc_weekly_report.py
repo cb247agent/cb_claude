@@ -50,6 +50,9 @@ STATE_DIR = BASE_DIR / "state"
 load_dotenv(BASE_DIR / ".env")
 
 DASHBOARD_URL = "https://cb247agent.github.io/cb_claude/"
+# Netlify-deployed weekly Operations report (revenue · wage · projections per centre).
+# Override per cycle via .env: MWCC_OPS_REPORT_URL=https://myworldcc.netlify.app/2026-06-01-to-2026-06-05
+OPS_REPORT_URL = os.getenv("MWCC_OPS_REPORT_URL", "https://myworldcc.netlify.app")
 
 
 def _load(name: str, default=None):
@@ -200,6 +203,64 @@ def build_digest() -> dict:
     else:
         top_priority = "Review Work Queue for assigned actions across SEO / Meta / Google Ads / Enrolment."
 
+    # ── Operations Summary block (08 Jun 2026, Tia direction) ──
+    # Mirrors the Netlify Operations Report (https://myworldcc.netlify.app)
+    # so recipients see the same headline numbers without leaving Gmail.
+    # Source: state/mwcc-ops.json (already parsed from MYWORLD_REPORT.xlsx
+    # by parse_mwcc_ops.py). All money in AUD.
+    total_revenue   = ops.get("network_summary", {}).get("total_revenue", 0) or 0
+    total_roster    = sum((c.get("roster_cost") or 0) for c in centre_arr)
+    total_leave     = sum((c.get("leave_cost") or 0) for c in centre_arr)
+    # Prior week roster (for WoW)
+    prior_centres_dict = (ops_history[-2].get("centres", {}) if len(ops_history) >= 2 else {}) or {}
+    prior_revenue = (ops_history[-2].get("network_summary", {}).get("total_revenue", 0)
+                     if len(ops_history) >= 2 else None) or None
+    prior_roster  = sum((c.get("roster_cost") or 0) for c in prior_centres_dict.values()) if prior_centres_dict else None
+    # Wage % network-wide — weighted by roster cost (NOT simple average) so
+    # bigger centres count more. = total roster / total revenue.
+    wage_pct_network = round(100 * total_roster / total_revenue, 1) if total_revenue else None
+    # Wage breaches (Inc. Leave > 42% threshold per FairWork ECEC benchmark)
+    over_threshold = [c["name"] for c in centre_arr if (c.get("wage_inc_leave_pct") or 0) > 42]
+    under_threshold = [c["name"] for c in centre_arr if (c.get("wage_exc_leave_pct") or 0) <= 42]
+
+    # Next-week projection: sum revenue across all centres.
+    # NOTE on field naming (parse_mwcc_ops.py legacy): the field labelled
+    # `this_week_projection` in state actually represents the NEXT week
+    # (Mon-Fri after the reporting week) — OWNA's "this week" relative to
+    # report generation is "next week" relative to the email recipient
+    # who reads it the following Monday. `next_week_projection` is the
+    # week-after-that. Netlify Operations Report uses the same convention.
+    next_revenue = sum((c.get("this_week_projection", {}) or {}).get("revenue") or 0 for c in centre_arr)
+    next_revenue_delta = (next_revenue - total_revenue) if (next_revenue and total_revenue) else None
+    # Top opportunity: lowest-occupancy room with most absolute headroom (capacity × gap)
+    top_opp = None
+    biggest_room_gap = 0
+    for c in centre_arr:
+        for rname, r in (c.get("rooms_detail") or {}).items():
+            cap = r.get("capacity") or 0
+            occ = r.get("occupancy_pct") or 0
+            if cap > 0 and occ < 80:
+                headroom = cap * (80 - occ) / 100
+                if headroom > biggest_room_gap:
+                    biggest_room_gap = headroom
+                    top_opp = f"{c['name']} {rname} ({int(occ)}% occ, {cap}-place)"
+
+    ops_summary = {
+        "total_revenue":      total_revenue,
+        "prior_revenue":      prior_revenue,
+        "total_roster":       total_roster,
+        "prior_roster":       prior_roster,
+        "total_leave":        total_leave,
+        "wage_pct_network":   wage_pct_network,
+        "over_threshold":     over_threshold,
+        "under_threshold":    under_threshold,
+        "next_revenue":       next_revenue,
+        "next_revenue_delta": next_revenue_delta,
+        "top_opp":            top_opp,
+        "unique_starters_rolling": ops.get("network_summary", {}).get("unique_starters_rolling"),
+        "unique_exits_rolling":    ops.get("network_summary", {}).get("unique_exits_rolling"),
+    }
+
     return {
         "ops_period":      ops_period,
         "mkt_period":      mkt_period,
@@ -216,13 +277,15 @@ def build_digest() -> dict:
         "centre_status":   centre_status,
         "p1_p2":           p1_p2,
         "action_count":    len(actions),
+        "ops_summary":     ops_summary,
     }
 
 
-def render_html(d: dict, dashboard_url: str) -> str:
+def render_html(d: dict, dashboard_url: str, ops_report_url: str = OPS_REPORT_URL) -> str:
     """Compose the email HTML."""
     avg_occ, prior_occ = d["kpis"]["avg_occ"]
     total_spend, prior_spend = d["kpis"]["total_spend"]
+    ops_s = d.get("ops_summary", {}) or {}
 
     rows_centre = ""
     for name, occ, status in d["centre_status"]:
@@ -266,9 +329,47 @@ def render_html(d: dict, dashboard_url: str) -> str:
     </div>
   </div>
 
+  <!-- Operations Snapshot (mirrors Netlify Operations Report) -->
+  <div style="padding:20px 28px;background:#faf9ff;border-bottom:1px solid #e5e7eb;border-left:4px solid #8B6FD9">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;color:#4A2F8A;text-transform:uppercase;letter-spacing:.07em">Operations Snapshot · {d['ops_period']}</div>
+      <a href="{ops_report_url}" style="font-size:10px;color:#8B6FD9;font-weight:700;text-decoration:none">Open full Operations Report →</a>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr>
+        <td style="padding:8px 10px;width:50%;vertical-align:top">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:2px">Total Revenue</div>
+          <div style="font-size:22px;font-weight:800;color:#4A2F8A">${ops_s.get('total_revenue', 0):,.0f}</div>
+          <div style="font-size:11px;color:#6b7280">{_fmt_wow(ops_s.get('total_revenue'), ops_s.get('prior_revenue')) or 'WoW —'}</div>
+        </td>
+        <td style="padding:8px 10px;width:50%;vertical-align:top">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:2px">Roster Cost</div>
+          <div style="font-size:22px;font-weight:800;color:#4A2F8A">${ops_s.get('total_roster', 0):,.0f}</div>
+          <div style="font-size:11px;color:#6b7280">{ops_s.get('wage_pct_network','—')}% of revenue · Leave ${ops_s.get('total_leave',0):,.0f}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 10px;vertical-align:top">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:2px">Next Week Projection</div>
+          <div style="font-size:22px;font-weight:800;color:#4A2F8A">${ops_s.get('next_revenue', 0):,.0f}</div>
+          <div style="font-size:11px;color:{'#b91c1c' if (ops_s.get('next_revenue_delta') or 0) < 0 else '#15803d'}">{('+$' if (ops_s.get('next_revenue_delta') or 0) >= 0 else '-$') + f"{abs(ops_s.get('next_revenue_delta') or 0):,.0f}"} vs this week</div>
+        </td>
+        <td style="padding:8px 10px;vertical-align:top">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:2px">Cycle-To-Date · Since 1 May</div>
+          <div style="font-size:22px;font-weight:800;color:#4A2F8A">{ops_s.get('unique_starters_rolling','—')} starters · {ops_s.get('unique_exits_rolling','—')} exits</div>
+          <div style="font-size:11px;color:#6b7280">Deduped by child name (centre transfers excluded)</div>
+        </td>
+      </tr>
+    </table>
+    <div style="margin-top:10px;font-size:11.5px;color:#374151;line-height:1.6">
+      {'<b style="color:#15803d">✓ All 5 centres under 42% Wage Exc. Leave threshold.</b> ' if not ops_s.get('over_threshold') else '<b style="color:#b91c1c">⚠ Wage breach Inc. Leave:</b> ' + ', '.join(ops_s.get('over_threshold', [])) + '. '}
+      {'<b style="color:#4A2F8A">Top occupancy opportunity:</b> ' + ops_s['top_opp'] + '.' if ops_s.get('top_opp') else ''}
+    </div>
+  </div>
+
   <!-- KPIs -->
   <div style="padding:20px 28px;background:#fff;border-bottom:1px solid #e5e7eb">
-    <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Headline KPIs</div>
+    <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Marketing KPIs</div>
     <table style="width:100%;border-collapse:collapse;font-size:12.5px">
       <tr><td style="padding:6px 10px;width:60%">Network occupancy</td>
           <td style="padding:6px 10px;font-weight:700">{avg_occ if avg_occ is not None else '—'}%{_fmt_wow(avg_occ, prior_occ, 'pt')}</td></tr>
@@ -301,7 +402,8 @@ def render_html(d: dict, dashboard_url: str) -> str:
 
   <!-- CTA -->
   <div style="padding:24px 28px;background:#fff;text-align:center">
-    <a href="{dashboard_url}" style="display:inline-block;background:#8B6FD9;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:700;font-size:13px">Open live dashboard</a>
+    <a href="{dashboard_url}" style="display:inline-block;background:#8B6FD9;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:700;font-size:13px;margin:0 4px 4px">Open Marketing Dashboard</a>
+    <a href="{ops_report_url}" style="display:inline-block;background:#01696f;color:#fff;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:700;font-size:13px;margin:0 4px 4px">Open Operations Report</a>
     <div style="font-size:11px;color:#9ca3af;margin-top:12px">My World Childcare Marketing OS · auto-generated by weekly-report-mwcc.sh</div>
   </div>
 
@@ -346,7 +448,7 @@ def main() -> int:
     args = ap.parse_args()
 
     d = build_digest()
-    html = render_html(d, DASHBOARD_URL)
+    html = render_html(d, DASHBOARD_URL, OPS_REPORT_URL)
     subject = f"[MWCC] Weekly Digest · {d['ops_period']}"
 
     if args.dry_run:
