@@ -779,6 +779,10 @@ table {{ font-size:12px; }}
     <p>{period_label} · My World Childcare · 5 centres</p>
   </div>
   {"".join(sections)}
+  <div style="text-align:center;padding:20px 0;margin-top:20px;border-top:1px solid {PALETTE['gray_2']}">
+    <a href="https://cb247agent.github.io/cb_claude/" style="display:inline-block;background:{PALETTE['purple']};color:#fff;padding:10px 22px;border-radius:4px;text-decoration:none;font-weight:700;font-size:13px;margin:0 4px 4px">Open Marketing Dashboard</a>
+    <a href="https://myworldcc.netlify.app" style="display:inline-block;background:#01696f;color:#fff;padding:10px 22px;border-radius:4px;text-decoration:none;font-weight:700;font-size:13px;margin:0 4px 4px">Open Operations Report</a>
+  </div>
   <div class="footer">
     Generated {_dt.datetime.now().strftime("%a %d %b %Y %H:%M %Z")} ·
     Recipients: Robert · Denver · Kelley · Jordan · Dana ·
