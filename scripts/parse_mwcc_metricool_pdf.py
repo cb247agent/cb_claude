@@ -328,14 +328,205 @@ def parse_metricool(pdf_path: Path) -> dict:
                         })
         return results[:10]  # keep top 10
 
-    # Top posts/reels parsing — multi-line table layout is fragile. Disabled
-    # for v1; the page renders fine with KPI summaries. Will revisit when
-    # we need per-post insights (use pdfplumber.extract_tables() with explicit
-    # column positions per ranking page).
-    out["facebook"]["top_posts"] = []
-    out["facebook"]["top_reels"] = []
-    out["instagram"]["top_posts"] = []
-    out["instagram"]["top_reels"] = []
+    # ── Top posts / reels / hashtags / demographics (08 Jun 2026) ────────────
+    # Pages discovered in Metricool PDF (55-page report):
+    #   FB Ranking of posts     : page 24
+    #   FB Demographics: countries+cities : page 19
+    #   IG Ranking of posts     : page 37
+    #   IG Demographics: countries+cities : page 32
+    #   IG Demographics: gender+ages : page 31
+    #   IG Ranking of hashtags  : pages 38-39
+    #   IG Ranking of reels     : page 43
+    def _parse_ranking_v2(text: str, kind: str) -> list[dict]:
+        """Parse Metricool's multi-line ranking tables.
+
+        Each row spans 3 lines on the rendered PDF:
+            Line A: "Jun 4, 2026  <caption start>"
+            Line B: "Go  N1 N2 N3 ... NK"   ← numbers anchored by "Go " button
+            Line C: "5:03 PM <caption continuation>"
+
+        Strategy: scan for lines starting with "Go " followed by ≥3 numbers,
+        then look back/forward 1 line for the date + caption.
+        """
+        if not text:
+            return []
+        results = []
+        lines = text.split("\n")
+        date_re = re.compile(r"^([A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})\s*(.*)$")
+        time_re = re.compile(r"^(\d{1,2}:\d{2}\s*[AP]M)\s*(.*)$")
+        # Match "Go <nums>" anywhere on the line — for reels the caption text
+        # sometimes wraps onto the "Go ..." line ("Acting level: Room for Go 461 316 9...")
+        go_re   = re.compile(r"(?:^|\s)Go\s+((?:-?\d+(?:\.\d+)?\s+){2,}-?\d+(?:\.\d+)?)\s*$")
+        for i, line in enumerate(lines):
+            m_go = go_re.search(line.strip())
+            if not m_go:
+                continue
+            nums = [_to_num(n) for n in m_go.group(1).split()]
+            # Pre-Go caption text on the same line (for reels: "Acting level: Room for Go 461 316 ...")
+            pre_go = line.strip()[:m_go.start()].strip()
+            # Look back for date line (within 3 lines — reels have pre-date caption)
+            date_str = None
+            caption_parts = []
+            date_j = None
+            for j in range(max(0, i-3), i):
+                m_d = date_re.match(lines[j].strip())
+                if m_d:
+                    date_str = m_d.group(1)
+                    date_j = j
+                    if m_d.group(2):
+                        caption_parts.append(m_d.group(2).strip())
+                    break
+            if not date_str:
+                continue
+            # Pre-date caption line (reels — "Directing level: Expert." sits above date)
+            if date_j is not None and date_j > 0:
+                pre_date = lines[date_j - 1].strip()
+                # Skip header row + previous Go line residue + dates + time continuations
+                header_words = ("Published", "Views", "Reach", "Likes", "Reactions", "Comments", "Shares", "Engagement", "Showing", "Ranking")
+                looks_like_header = any(pre_date.startswith(w) for w in header_words)
+                looks_like_time   = bool(time_re.match(pre_date))
+                if pre_date and not go_re.search(pre_date) and not date_re.match(pre_date) and not looks_like_header and not looks_like_time:
+                    caption_parts.insert(0, pre_date)
+            # Pre-Go caption on the same line ("Acting level: Room for")
+            if pre_go and not date_re.match(pre_go):
+                caption_parts.append(pre_go)
+            # Look forward for time + caption continuation (within 2 lines)
+            time_str = ""
+            for j in range(i+1, min(len(lines), i+3)):
+                m_t = time_re.match(lines[j].strip())
+                if m_t:
+                    time_str = m_t.group(1)
+                    if m_t.group(2):
+                        caption_parts.append(m_t.group(2).strip())
+                    break
+            caption = " ".join(caption_parts)[:120].replace("...", "…").strip()
+            row = {
+                "published": f"{date_str}{(' ' + time_str) if time_str else ''}",
+                "text": caption,
+            }
+            if kind == "fb_post":
+                # Columns: Reactions, Comments, Shares, Clicks, Link clicks, Views, Reach, Video views, Engagement
+                # PDF row example: "Go 2 0 0 11 0 185 105 0 12.38"
+                if len(nums) >= 9:
+                    row.update({
+                        "reactions": nums[0], "comments": nums[1], "shares": nums[2],
+                        "clicks": nums[3] + nums[4], "views": nums[5], "reach": nums[6],
+                        "engagement": nums[-1],
+                    })
+                elif len(nums) >= 6:
+                    row.update({
+                        "reactions": nums[0], "comments": nums[1], "shares": nums[2],
+                        "views": nums[-3], "reach": nums[-2], "engagement": nums[-1],
+                    })
+                else:
+                    continue
+            elif kind == "ig_post":
+                # Columns: Views, Reach, Likes, Comments, Saved, Engagement
+                # PDF row example: "Go 89 44 5 0 0 13.64"
+                if len(nums) >= 6:
+                    row.update({
+                        "views": nums[0], "reach": nums[1], "likes": nums[2],
+                        "comments": nums[3], "saved": nums[4], "engagement": nums[-1],
+                    })
+                else:
+                    continue
+            elif kind == "ig_reel":
+                # Columns: Views, Reach, Likes, Saved, Comments, Shares, Engagement
+                # PDF row example: "Go 461 316 9 0 1 1 3.48"
+                if len(nums) >= 7:
+                    row.update({
+                        "views": nums[0], "reach": nums[1], "likes": nums[2],
+                        "saved": nums[3], "comments": nums[4], "shares": nums[5],
+                        "engagement": nums[-1],
+                    })
+                else:
+                    continue
+            results.append(row)
+        return results[:10]
+
+    # FB top posts (page 24)
+    if len(pages) >= 24:
+        out["facebook"]["top_posts"] = _parse_ranking_v2(pages[23], "fb_post")
+    out["facebook"]["top_reels"] = []  # FB reels page doesn't have a clean ranking
+    # IG top posts (page 37) + IG top reels (page 43)
+    if len(pages) >= 37:
+        out["instagram"]["top_posts"] = _parse_ranking_v2(pages[36], "ig_post")
+    if len(pages) >= 43:
+        out["instagram"]["top_reels"] = _parse_ranking_v2(pages[42], "ig_reel")
+
+    # ── IG Hashtag Ranking (pages 38-39) ─────────────────────────────────────
+    def _parse_hashtags(*texts) -> list[dict]:
+        hashtags = []
+        seen = set()
+        for text in texts:
+            if not text:
+                continue
+            # Pattern: "#hashtag <posts> <views> <likes> <comments>"
+            for m in re.finditer(r"(#\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)", text):
+                tag = m.group(1).strip()
+                if tag in seen:
+                    continue
+                seen.add(tag)
+                hashtags.append({
+                    "hashtag": tag,
+                    "posts":    int(m.group(2)),
+                    "views":    int(m.group(3)),
+                    "likes":    int(m.group(4)),
+                    "comments": int(m.group(5)),
+                })
+        # Sort by views desc
+        hashtags.sort(key=lambda h: h["views"], reverse=True)
+        return hashtags
+
+    ig_hashtag_texts = []
+    if len(pages) >= 38: ig_hashtag_texts.append(pages[37])
+    if len(pages) >= 39: ig_hashtag_texts.append(pages[38])
+    out["instagram"]["hashtags"] = _parse_hashtags(*ig_hashtag_texts)
+
+    # ── Demographics — geo (FB page 19, IG page 32) + IG age/gender (page 31) ─
+    def _parse_geo(text: str) -> dict:
+        """Parse 'Top 10 countries' + 'Top 10 cities/regions' from a page."""
+        if not text:
+            return {}
+        countries = []
+        cities = []
+        # Lines like "Australia 98.65%" or "Australia 1308 93.50%"
+        line_re = re.compile(r"^([A-Za-z][A-Za-z\s,\.\-']+?)\s+(?:\d+\s+)?(\d+(?:\.\d+)?)%\s*$")
+        in_left_col = True  # countries (left) vs cities/regions (right)
+        for raw in text.split("\n"):
+            line = raw.strip()
+            if not line:
+                continue
+            if "Top 10 countries" in line or "Demographics" in line or "30 May" in line or line == "My World Child Care" or line.startswith("www.") or line in ("myworldchildcare", "Top 10 cities", "Top 10 regions"):
+                continue
+            # Lines often have two columns concatenated:
+            # "Australia 98.65% Perth, WA, Australia 48.54%"
+            twocol = re.match(r"^([A-Za-z][A-Za-z\s,\.\-']+?)\s+(?:\d+\s+)?(\d+(?:\.\d+)?)%\s+([A-Za-z][A-Za-z\s,\.\-']+?)\s+(?:\d+\s+)?(\d+(?:\.\d+)?)%\s*$", line)
+            if twocol:
+                countries.append({"name": twocol.group(1).strip(), "pct": float(twocol.group(2))})
+                cities.append({"name": twocol.group(3).strip(), "pct": float(twocol.group(4))})
+                continue
+            m = line_re.match(line)
+            if m:
+                entry = {"name": m.group(1).strip(), "pct": float(m.group(2))}
+                # Heuristic — country names are short, city names often have commas
+                if "," in entry["name"] or len(entry["name"]) > 18:
+                    cities.append(entry)
+                else:
+                    countries.append(entry)
+        return {
+            "countries": countries[:10],
+            "cities":    cities[:10],
+        }
+
+    if len(pages) >= 19:
+        out["facebook"]["demographics"] = _parse_geo(pages[18])
+    if len(pages) >= 32:
+        out["instagram"]["demographics"] = _parse_geo(pages[31])
+    # IG page 31 has gender+ages but chart-rendered (no extractable text in our sample) —
+    # leave a placeholder so the dashboard can show "—" gracefully.
+    if "demographics" in out["instagram"]:
+        out["instagram"]["demographics"]["age_gender_available"] = False
 
     # ── GBP per centre (page 46) ────────────────────────────────────────────
     # Page header pattern: "My World Child Care & Before & After School Care <Centre Name>"
