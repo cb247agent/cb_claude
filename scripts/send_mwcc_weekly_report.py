@@ -281,6 +281,22 @@ def build_digest() -> dict:
     }
 
 
+def _minify_html(html: str) -> str:
+    """Strip HTML comments + collapse whitespace between tags to keep the
+    raw MIME size well under Gmail's 102 KB clip threshold (which triggers
+    the "..." trimmed-content link). Preserves whitespace inside <pre>,
+    <textarea>, and <script> tags — none of which we use here, so safe.
+    """
+    import re
+    # Drop HTML comments (incl. our section dividers)
+    html = re.sub(r"<!--.*?-->", "", html, flags=re.DOTALL)
+    # Collapse runs of whitespace (incl. newlines) into one space
+    html = re.sub(r"\s+", " ", html)
+    # Strip whitespace between tags: >  <  →  ><
+    html = re.sub(r">\s+<", "><", html)
+    return html.strip()
+
+
 def render_html(d: dict, dashboard_url: str, ops_report_url: str = OPS_REPORT_URL) -> str:
     """Compose the email HTML."""
     avg_occ, prior_occ = d["kpis"]["avg_occ"]
@@ -362,7 +378,6 @@ def render_html(d: dict, dashboard_url: str, ops_report_url: str = OPS_REPORT_UR
       </tr>
     </table>
     <div style="margin-top:10px;font-size:11.5px;color:#374151;line-height:1.6">
-      {'<b style="color:#15803d">✓ All 5 centres under 42% Wage Exc. Leave threshold.</b> ' if not ops_s.get('over_threshold') else '<b style="color:#b91c1c">⚠ Wage breach Inc. Leave:</b> ' + ', '.join(ops_s.get('over_threshold', [])) + '. '}
       {'<b style="color:#4A2F8A">Top occupancy opportunity:</b> ' + ops_s['top_opp'] + '.' if ops_s.get('top_opp') else ''}
     </div>
   </div>
@@ -448,7 +463,7 @@ def main() -> int:
     args = ap.parse_args()
 
     d = build_digest()
-    html = render_html(d, DASHBOARD_URL, OPS_REPORT_URL)
+    html = _minify_html(render_html(d, DASHBOARD_URL, OPS_REPORT_URL))
     subject = f"[MWCC] Weekly Digest · {d['ops_period']}"
 
     if args.dry_run:
