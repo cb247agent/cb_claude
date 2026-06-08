@@ -19781,12 +19781,14 @@ function renderMwccSeo() {
     <span style="color:var(--muted)">${totalKw} keywords tracked</span>
   </div>`;
 
-  // ── Ahrefs Headline KPI Strip (PDF-sourced canonical numbers) ──
+  // ── Ahrefs Site Authority Strip (PDF-sourced — Ahrefs-exclusive metrics only) ──
   // Renders only when the Ahrefs Overview PDF has been parsed (backlinks_total present).
-  // Layout: 6 mini-KPIs in one row matching the freshness-banner width.
+  // Trimmed 08 Jun 2026 (Tia direction): removed "Organic Keywords" + "Organic Traffic"
+  // cards because they duplicated GSC's "Page 1 Keywords" + "Organic Clicks" cards
+  // below. This row now shows ONLY Ahrefs-exclusive metrics (DR, AR, backlinks,
+  // ref domains, organic value) that GSC/GA4 cannot provide.
   if (ah.backlinks_total !== undefined || ah.referring_domains_total !== undefined) {
     const _deltaPill = (val, invertGood) => {
-      // invertGood=true for metrics where "down" is good (rank, position)
       if (val === undefined || val === null) return '';
       const num = Number(val);
       const isPos = num > 0;
@@ -19797,21 +19799,22 @@ function renderMwccSeo() {
       return `<span style="display:inline-block;font-size:9px;background:${bg};color:${color};padding:1px 5px;border-radius:3px;font-weight:700;margin-left:4px">${sign}${num.toLocaleString()}</span>`;
     };
     const _miniKpi = (label, value, sub, deltaHtml) => `
-      <div style="flex:1;min-width:120px;padding:8px 12px;background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px">
+      <div style="flex:1;min-width:140px;padding:8px 12px;background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px">
         <div style="font-size:9.5px;color:var(--mwcc-purple-deep);text-transform:uppercase;letter-spacing:.05em;font-weight:700">${label}</div>
         <div style="font-size:16px;font-weight:800;color:var(--text-1);margin-top:2px;line-height:1.1">${value}${deltaHtml || ''}</div>
         ${sub ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">${sub}</div>` : ''}
       </div>`;
-    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+    html += `<div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding-left:2px">
+      Site Authority (Ahrefs · monthly)
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
       ${_miniKpi('Domain Rating', ah.domain_rating ?? '–', ah.ahrefs_rank ? `AR ${ah.ahrefs_rank.toLocaleString()}` : '', '')}
       ${_miniKpi('Backlinks', _mwccFmt(ah.backlinks_total), ah.backlinks_all_time ? `${_mwccFmt(ah.backlinks_all_time)} all-time` : '', _deltaPill(ah.backlinks_change_mom))}
       ${_miniKpi('Ref. Domains', _mwccFmt(ah.referring_domains_total), ah.ref_domains_all_time ? `${_mwccFmt(ah.ref_domains_all_time)} all-time · ${ah.quality_referring_domains_count||0} DR40+` : `${ah.quality_referring_domains_count||0} DR40+`, _deltaPill(ah.ref_domains_change_mom))}
-      ${_miniKpi('Organic Keywords', _mwccFmt(ah.organic_keywords_total ?? '–'), ah.top_3_keywords !== undefined ? `Top 3: ${ah.top_3_keywords}${ah.top_3_keywords_change_mom !== undefined && ah.top_3_keywords_change_mom !== 0 ? (ah.top_3_keywords_change_mom > 0 ? ' +' : ' ') + ah.top_3_keywords_change_mom : ''}` : '', _deltaPill(ah.organic_keywords_change_mom))}
-      ${_miniKpi('Organic Traffic', _mwccFmt(ah.organic_traffic) + '/mo', 'Ahrefs estimate', _deltaPill(ah.organic_traffic_change_mom))}
-      ${_miniKpi('Organic Value', '$' + _mwccFmt(ah.organic_traffic_value) + '/mo', 'est. equiv. ad spend', _deltaPill(ah.organic_traffic_value_change_mom))}
+      ${_miniKpi('Organic Value', '$' + _mwccFmt(ah.organic_traffic_value) + '/mo', 'est. equiv. ad spend · Ahrefs', _deltaPill(ah.organic_traffic_value_change_mom))}
     </div>
     <div style="font-size:10px;color:var(--muted);margin-bottom:14px;padding:0 4px">
-      Source: Ahrefs Site Explorer Overview · ${ah.generated_at ? ah.generated_at.slice(0,10) : 'manual export'} · MoM = vs ${ah.generated_at ? 'last month' : '–'}
+      Source: Ahrefs Site Explorer Overview · ${ah.generated_at ? ah.generated_at.slice(0,10) : 'manual export'} · MoM = vs last month
     </div>`;
   }
 
@@ -19840,12 +19843,15 @@ function renderMwccSeo() {
     </div>
   </div>`;
 
-  // ── 4 KPI cards (now mirrors CB247 — adds Organic Sessions, keeps Pos/Top-3/Page 1) ──
+  // ── 4 KPI cards — Actual User Behaviour (GSC + GA4, weekly) ─────────────
+  html += `<div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding-left:2px">
+    Actual User Behaviour (GSC + GA4 · weekly)
+  </div>`;
   html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Organic Sessions (7d)', _mwccFmt(ga4OrgSessions), null, `${_mwccFmt(ga4OrgUsers)} users · GA4`, ga4OrgSessions>0?'green':'')}
     ${kpiCard('','Organic Clicks (7d)', _mwccFmt(totals.clicks), null, `${_mwccFmt(totals.impressions)} impr · ${(totals.ctr||0).toFixed(2)}% CTR · GSC`, totals.clicks>0?'green':'')}
-    ${kpiCard('','Avg Position', '#'+(totals.position||0).toFixed(1), null, `${totalKw} tracked keywords`, totals.position<10?'green':totals.position<30?'amber':'red')}
-    ${kpiCard('','Page 1 Keywords', _top3.length+_qw.length, null, `${_top3.length} top-3 · ${_qw.length} pos 4–20 · ${_build.length} build`, (_top3.length+_qw.length)>5?'green':'')}
+    ${kpiCard('','Avg Position', '#'+(totals.position||0).toFixed(1), null, `${totalKw} tracked keywords · GSC`, totals.position<10?'green':totals.position<30?'amber':'red')}
+    ${kpiCard('','Page 1 Keywords', _top3.length+_qw.length, null, `${_top3.length} top-3 · ${_qw.length} pos 4–20 · ${_build.length} build · GSC`, (_top3.length+_qw.length)>5?'green':'')}
   </div>`;
 
   // ── Key Observations (2-col) ──
