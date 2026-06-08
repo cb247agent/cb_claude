@@ -18788,21 +18788,37 @@ function renderGroupOverview() {
     </div>
   </div>`;
 
-  // ── 3a. Group Revenue (08 Jun 2026 — Tia direction) ──────────────────────
-  // Surface MWCC weekly revenue ($94K) which Tia explicitly cares about
-  // (it's the headline of the management report she sends Robert/Denver).
-  // CB247 revenue comes from membership systems — once available add here.
-  const mwccRevenue = md.ops?.network_summary?.total_revenue || 0;
-  const groupRevenue = mwccRevenue; // CB247 revenue placeholder — wire when membership $ available
-  const mwccStarters = md.ops?.network_summary?.unique_starters_rolling;
-  const mwccExits    = md.ops?.network_summary?.unique_exits_rolling;
-  const cycleNet     = (mwccStarters !== undefined && mwccExits !== undefined) ? mwccStarters - mwccExits : null;
-  html += sectionTitle('Group Revenue + Acquisition Movement');
+  // 08 Jun 2026 (Tia direction): Group Revenue strip removed — revenue is
+  // confidential for management report only, not public dashboard.
+  // Net Movement + Acquisition Efficiency section relocated up to this
+  // slot (originally lived between Businesses table + 8-Week Trend).
+
+  // ── 3a. Net Movement + Acquisition Efficiency (relocated 08 Jun 2026) ────
+  const cb247Conv = (D.google_ads?.conversions || 0) + (D.meta?.conversions || 0);
+  const mwccConv  = (md.ads?.totals?.conversions || 0) + (md.meta?.summary?.conversions || 0);
+  const cb247CAC = cb247Conv > 0 ? cb247Spend / cb247Conv : null;
+  const mwccCAC  = mwccConv > 0 ? mwccSpend / mwccConv : null;
+  const mwccCACEnrol = mwccEnrolments > 0 ? mwccSpend / mwccEnrolments : null;
+  const cb247CACMember = cb247NewMembers > 0 ? cb247Spend / cb247NewMembers : null;
+
+  html += sectionTitle('Net Movement + Acquisition Efficiency');
   html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','Group Revenue (week)', groupRevenue>0?'$'+groupRevenue.toLocaleString(undefined,{maximumFractionDigits:0}):'—', null, groupRevenue>0?`MWCC $${mwccRevenue.toLocaleString(undefined,{maximumFractionDigits:0})} · CB247 awaiting feed`:'Awaiting OWNA', groupRevenue>0?'green':'')}
-    ${kpiCard('','MWCC Network Occupancy', mwccAvgOcc!==null ? mwccAvgOcc+'%' : '—', null, '5 centres · 80% target', mwccAvgOcc!==null && mwccAvgOcc>=70?'green':'')}
-    ${kpiCard('','Cycle Net Enrolment · Since 1 May', cycleNet!==null ? (cycleNet>=0?'+':'')+cycleNet : '—', null, mwccStarters!==undefined ? `${mwccStarters} starters · ${mwccExits} exits (deduped)` : 'OWNA rolling totals', cycleNet>0?'green':cycleNet<0?'red':'')}
-    ${kpiCard('','Group Backlog', groupTotalQ.toString(), null, `${groupP1} P1 · ${groupP2} P2 · cross-business actions`, groupP1>5?'red':groupP1>0?'amber':'green')}
+    ${kpiCard('','CB247 Net Members',
+      (cb247NetMembers>=0?'+':'')+cb247NetMembers, null,
+      `${cb247NewMembers} new · ${cb247Cancellations} cancellations`,
+      cb247NetMembers > 0 ? 'green' : cb247NetMembers < 0 ? 'red' : '')}
+    ${kpiCard('','MWCC Net Enrolments',
+      mwccNet !== undefined ? (mwccNet>=0?'+':'')+mwccNet : '—', null,
+      mwccEnrolments > 0 ? `${mwccEnrolments} enrolled this week` : 'Awaiting OWNA',
+      mwccNet > 0 ? 'green' : mwccNet < 0 ? 'red' : '')}
+    ${kpiCard('','CB247 Cost / Member',
+      cb247CACMember !== null ? '$' + cb247CACMember.toFixed(0) : '—', null,
+      cb247CACMember !== null ? `$${cb247Spend.toFixed(0)} spend ÷ ${cb247NewMembers} new` : 'Need spend + members',
+      cb247CACMember !== null && cb247CACMember < 50 ? 'green' : cb247CACMember > 150 ? 'red' : '')}
+    ${kpiCard('','MWCC Cost / Enrolment',
+      mwccCACEnrol !== null ? '$' + mwccCACEnrol.toFixed(0) : '—', null,
+      mwccCACEnrol !== null ? `$${mwccSpend.toFixed(0)} spend ÷ ${mwccEnrolments} enrolments` : 'Need spend + enrolments',
+      mwccCACEnrol !== null && mwccCACEnrol < 250 ? 'green' : mwccCACEnrol > 500 ? 'red' : '')}
   </div>`;
 
   // ── 3b. Group Ad Spend with WoW deltas ───────────────────────────────────
@@ -18877,49 +18893,31 @@ function renderGroupOverview() {
     </tbody>
   </table></div>`;
 
-  // ── 5. Net Movement + CAC strip (Tier 2 #8 + #10) ────────────────────────
-  // Net Movement = outcome metric for each biz (the real "did we grow?")
-  // CAC = Cost per Acquisition (Group Total Spend / converted members or enrolments)
-  const cb247Conv = (D.google_ads?.conversions || 0) + (D.meta?.conversions || 0);
-  const mwccConv  = (md.ads?.totals?.conversions || 0) + (md.meta?.summary?.conversions || 0);
-  const cb247CAC = cb247Conv > 0 ? cb247Spend / cb247Conv : null;
-  const mwccCAC  = mwccConv > 0 ? mwccSpend / mwccConv : null;
-  // Use enrolments as MWCC's "real CAC" proxy (acquisition outcome, not just conversion click)
-  const mwccCACEnrol = mwccEnrolments > 0 ? mwccSpend / mwccEnrolments : null;
-  const cb247CACMember = cb247NewMembers > 0 ? cb247Spend / cb247NewMembers : null;
+  // Net Movement + Acquisition Efficiency block relocated to section 3a
+  // (above Total Group Ad Spend) per Tia direction 08 Jun 2026.
 
-  html += sectionTitle('Net Movement + Acquisition Efficiency');
-  html += `<div class="kpi-grid cols-4 mb">
-    ${kpiCard('','CB247 Net Members',
-      (cb247NetMembers>=0?'+':'')+cb247NetMembers, null,
-      `${cb247NewMembers} new · ${cb247Cancellations} cancellations`,
-      cb247NetMembers > 0 ? 'green' : cb247NetMembers < 0 ? 'red' : '')}
-    ${kpiCard('','MWCC Net Enrolments',
-      mwccNet !== undefined ? (mwccNet>=0?'+':'')+mwccNet : '—', null,
-      mwccEnrolments > 0 ? `${mwccEnrolments} enrolled this week` : 'Awaiting OWNA',
-      mwccNet > 0 ? 'green' : mwccNet < 0 ? 'red' : '')}
-    ${kpiCard('','CB247 Cost / Member',
-      cb247CACMember !== null ? '$' + cb247CACMember.toFixed(0) : '—', null,
-      cb247CACMember !== null ? `$${cb247Spend.toFixed(0)} spend ÷ ${cb247NewMembers} new` : 'Need spend + members',
-      cb247CACMember !== null && cb247CACMember < 50 ? 'green' : cb247CACMember > 150 ? 'red' : '')}
-    ${kpiCard('','MWCC Cost / Enrolment',
-      mwccCACEnrol !== null ? '$' + mwccCACEnrol.toFixed(0) : '—', null,
-      mwccCACEnrol !== null ? `$${mwccSpend.toFixed(0)} spend ÷ ${mwccEnrolments} enrolments` : 'Need spend + enrolments',
-      mwccCACEnrol !== null && mwccCACEnrol < 250 ? 'green' : mwccCACEnrol > 500 ? 'red' : '')}
-  </div>`;
-
-  // ── 6. 8-Week Group Spend Trend chart (Tier 2 #9) ────────────────────────
-  // Build 8-week timeline from histories. Each week shows CB247 + MWCC portions.
-  // Histories are usually newest-first; we reverse for left-to-right time order.
-  const cb247AdsHist  = (D.google_ads?.history || D.ads_history || []).slice(0, 8).reverse();
-  const cb247MetaHist = (D.meta?.history || D.meta_history || []).slice(0, 8).reverse();
-  const mwccAdsHist   = (md.ads_history  || []).slice(0, 8).reverse();
-  const mwccMetaHist  = (md.meta_history || []).slice(0, 8).reverse();
-  const _haveTrend = cb247AdsHist.length >= 2 || mwccAdsHist.length >= 2;
+  // ── 6. Group Spend Trend chart (08 Jun 2026 — data accuracy fix) ─────────
+  // BUG FIXED: was reading CB247 Meta as h.summary.spend / h.totals.spend
+  // but the actual baked shape is h.combined.spend (4-week history). Also
+  // CB247 Google Ads has no weekly history — only current week — so older
+  // weeks correctly show CB247 Meta only. Chart footer states this honestly.
+  const cb247MetaHist = (D.meta?.history || []).slice(0, 8).reverse();   // 4 weeks
+  const mwccAdsHist   = (md.ads_history  || []).slice(0, 8).reverse();   // 2 weeks
+  const mwccMetaHist  = (md.meta_history || []).slice(0, 8).reverse();   // 1 week
+  const cb247HasHist  = cb247MetaHist.length >= 2;
+  const mwccHasHist   = mwccAdsHist.length >= 1 || mwccMetaHist.length >= 1;
+  const _haveTrend    = cb247HasHist || mwccHasHist;
+  // CB247 Google Ads has NO weekly history — surface only current-week value
+  // for the most recent bar to avoid misleading zero bars on older weeks.
+  const cb247AdsCurrentWeek = D.google_ads?.spend || 0;
   if (_haveTrend) {
-    html += sectionTitle('8-Week Group Spend Trend');
+    html += sectionTitle('Group Spend Trend (last available weeks)');
     html += `<div class="card mb" style="padding:16px"><div style="height:280px"><canvas id="groupSpendChart"></canvas></div>
-      <p style="font-size:10px;color:var(--muted);padding:8px 4px 0;margin:0">Stacked bars: CB247 portion (teal) + MWCC portion (purple) of weekly group spend. Histories: ${cb247AdsHist.length+cb247MetaHist.length} CB247 weeks · ${mwccAdsHist.length+mwccMetaHist.length} MWCC weeks.</p>
+      <p style="font-size:10px;color:var(--muted);padding:8px 4px 0;margin:0">
+        Stacked bars: CB247 (teal) + MWCC (purple) of weekly group spend.
+        <b>CB247:</b> ${cb247MetaHist.length} weeks of Meta history${cb247AdsCurrentWeek>0?' + current-week Google Ads on rightmost bar':' (Google Ads has no weekly history — current week only)'}.
+        <b>MWCC:</b> ${mwccAdsHist.length} weeks Google Ads + ${mwccMetaHist.length} weeks Meta.
+      </p>
     </div>`;
   }
 
@@ -19093,23 +19091,29 @@ function renderGroupOverview() {
     setTimeout(() => {
       const canvas = document.getElementById('groupSpendChart');
       if (!canvas || !window.Chart) return;
-      // Build week labels and per-biz totals (Meta + Google combined)
-      const weekCount = Math.max(cb247AdsHist.length, mwccAdsHist.length, 4);
+      // Build week labels + per-biz totals (Meta + Google combined).
+      // 08 Jun 2026 fix: CB247 baked Meta history uses {combined:{spend}}
+      // not {summary:{spend}} or {totals:{spend}}. CB247 has NO Google
+      // Ads weekly history — only current week — so we splice that into
+      // the LATEST (rightmost) bar only, leaving older CB247 bars as
+      // Meta-only (accurate to what we actually have).
+      const weekCount = Math.max(cb247MetaHist.length, mwccAdsHist.length, mwccMetaHist.length, 4);
       const labels = [];
       const cb247Data = [];
       const mwccData = [];
       for (let i = 0; i < weekCount; i++) {
-        // Use whichever history has a date
-        const cbW = cb247AdsHist[i] || {};
-        const mwW = mwccAdsHist[i]  || {};
-        const label = (cbW.week_label || mwW.week_label || `W-${weekCount - i - 1}`).replace(/ \d{4}/, '');
+        const cbMW  = cb247MetaHist[i] || {};
+        const mwW   = mwccAdsHist[i]   || {};
+        const label = (cbMW.week_label || mwW.week_label || `W-${weekCount - i - 1}`).replace(/ \d{4}/, '');
         labels.push(label);
-        const cbGoogle = cb247AdsHist[i]?.totals?.spend || cb247AdsHist[i]?.spend || 0;
-        const cbMeta   = cb247MetaHist[i]?.summary?.spend || cb247MetaHist[i]?.totals?.spend || 0;
-        const mwGoogle = mwccAdsHist[i]?.totals?.spend  || 0;
+        // CB247: Meta from history (combined.spend), Google Ads only on most recent week
+        const cbMeta   = cb247MetaHist[i]?.combined?.spend || 0;
+        const cbGoogle = (i === weekCount - 1) ? cb247AdsCurrentWeek : 0;
+        // MWCC: Meta + Google Ads, both from their histories
         const mwMeta   = mwccMetaHist[i]?.summary?.spend || 0;
-        cb247Data.push(cbGoogle + cbMeta);
-        mwccData.push(mwGoogle + mwMeta);
+        const mwGoogle = mwccAdsHist[i]?.totals?.spend   || 0;
+        cb247Data.push(cbMeta + cbGoogle);
+        mwccData.push(mwMeta + mwGoogle);
       }
       new Chart(canvas, {
         type: 'bar',
