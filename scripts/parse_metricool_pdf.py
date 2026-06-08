@@ -126,10 +126,13 @@ def parse():
         return None
 
     # ── Date range from header ──
-    # Format observed: "25 May 2026 - 31 May 2026" or "25/05/2026 - 31/05/2026"
+    # Format observed (older Metricool):  "25 May 2026 - 31 May 2026" or "25/05/2026 - 31/05/2026"
+    # Format observed (newer Metricool 08 Jun 2026): "30 May 26 - 05 Jun 26" (2-digit year)
+    # and on cover page sometimes "30 May 26 05 Jun 26" (newline between dates).
     date_range = {"start": None, "end": None, "raw": None}
+    # Pattern 1: dd Mon yyyy/yy with optional dash/em-dash/to between
     dr_match = re.search(
-        r"(\d{1,2}[\s/-][A-Za-z]{3,}[\s/-]\d{4})\s*[-–—to]+\s*(\d{1,2}[\s/-][A-Za-z]{3,}[\s/-]\d{4})",
+        r"(\d{1,2}[\s/-][A-Za-z]{3,}[\s/-]\d{2,4})\s*[-–—to]+\s*(\d{1,2}[\s/-][A-Za-z]{3,}[\s/-]\d{2,4})",
         full_text,
     )
     if dr_match:
@@ -137,12 +140,22 @@ def parse():
         date_range["end"]   = dr_match.group(2)
         date_range["raw"]   = dr_match.group(0)
     else:
-        # Fallback: numeric date format
-        dr_match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})\s*[-–—to]+\s*(\d{1,2}/\d{1,2}/\d{4})", full_text)
+        # Pattern 2: Same but without an explicit separator (newline between dates — cover page layout)
+        dr_match = re.search(
+            r"(\d{1,2}[\s/-][A-Za-z]{3,}[\s/-]\d{2,4})\s+(\d{1,2}[\s/-][A-Za-z]{3,}[\s/-]\d{2,4})",
+            full_text,
+        )
         if dr_match:
             date_range["start"] = dr_match.group(1)
             date_range["end"]   = dr_match.group(2)
             date_range["raw"]   = dr_match.group(0)
+        else:
+            # Pattern 3: numeric date format (legacy fallback)
+            dr_match = re.search(r"(\d{1,2}/\d{1,2}/\d{2,4})\s*[-–—to]+\s*(\d{1,2}/\d{1,2}/\d{2,4})", full_text)
+            if dr_match:
+                date_range["start"] = dr_match.group(1)
+                date_range["end"]   = dr_match.group(2)
+                date_range["raw"]   = dr_match.group(0)
 
     # ── Combined totals (account level) ──
     combined = {
