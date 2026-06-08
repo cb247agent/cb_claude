@@ -40,6 +40,7 @@ import sys
 from datetime import datetime, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import make_msgid, formatdate
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -442,6 +443,12 @@ def send(html: str, subject: str, recipients: list[str]) -> bool:
     msg["Subject"] = subject
     msg["From"] = user
     msg["To"] = ", ".join(recipients)
+    # 08 Jun 2026: Gmail collapses repeated content into "..." trim indicators
+    # when emails share the same thread. Force a NEW thread on every send by
+    # giving each message a fresh Message-ID (no In-Reply-To / References) +
+    # current Date. Gmail's threading algorithm starts a new conversation.
+    msg["Message-ID"] = make_msgid(domain="mwcc-os.local")
+    msg["Date"] = formatdate(localtime=True)
     msg.attach(MIMEText(html, "html", "utf-8"))
 
     try:
@@ -464,7 +471,10 @@ def main() -> int:
 
     d = build_digest()
     html = _minify_html(render_html(d, DASHBOARD_URL, OPS_REPORT_URL))
-    subject = f"[MWCC] Weekly Digest · {d['ops_period']}"
+    # Unique timestamp suffix forces Gmail to treat each send as a new
+    # conversation rather than threading + collapsing repeated content.
+    _ts = datetime.now().strftime("%H%M")
+    subject = f"[MWCC] Weekly Digest · {d['ops_period']} · {_ts}"
 
     if args.dry_run:
         print(f"Subject: {subject}\n")
