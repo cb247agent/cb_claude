@@ -374,6 +374,11 @@ def parse_cleverwaiver():
     returns = Counter()
     helped  = Counter()
     total = 0
+    # Per-club response counts — 1 row in CleverWaiver = 1 genuine
+    # member-submitted cancellation (verified intent — they completed the
+    # exit survey). This becomes the new source of truth for "submitted
+    # cancellations" per Option C ruling 08 Jun 2026.
+    responses_by_club = {"Malaga": 0, "Ellenbrook": 0, "Unattributed": 0}
 
     for r in range(2, ws.max_row + 1):
         row = [ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
@@ -387,6 +392,11 @@ def parse_cleverwaiver():
             if full == club_raw:
                 club_short = short
                 break
+        # Bump per-club response counter — used by capture-rate calc
+        if club_short:
+            responses_by_club[club_short] += 1
+        else:
+            responses_by_club["Unattributed"] += 1
 
         # Reason (may be comma-separated for multi-select)
         if reason_col is not None:
@@ -412,13 +422,27 @@ def parse_cleverwaiver():
                 if h1 and h1.lower() not in ("nothing specific", "not applicable", "n/a"):
                     helped[h1] += 1
 
+    # Per Option C (08 Jun 2026): CleverWaiver becomes the source of
+    # truth for "submitted cancellations". Each row = one member who
+    # actively chose to cancel + completed the exit survey. PGM ended-
+    # contracts remains the comprehensive view (catches phone/walk-in
+    # cancels that bypass the survey) — capture rate = CleverWaiver / PGM.
+    submitted_by_club = {
+        "Malaga":     responses_by_club["Malaga"],
+        "Ellenbrook": responses_by_club["Ellenbrook"],
+        "Total":      responses_by_club["Malaga"] + responses_by_club["Ellenbrook"],
+    }
+
     return {
-        "available":         True,
-        "total_responses":   total,
-        "reasons":           dict(reasons.most_common(15)),
-        "reasons_by_club":   {k: dict(v.most_common(10)) for k, v in reasons_by_club.items()},
-        "would_return":      dict(returns.most_common()),
-        "would_have_helped": dict(helped.most_common(10)),
+        "available":             True,
+        "total_responses":       total,
+        # NEW — source-of-truth submitted cancellations per club + total
+        "submitted_by_club":     submitted_by_club,
+        "unattributed_responses": responses_by_club["Unattributed"],
+        "reasons":               dict(reasons.most_common(15)),
+        "reasons_by_club":       {k: dict(v.most_common(10)) for k, v in reasons_by_club.items()},
+        "would_return":          dict(returns.most_common()),
+        "would_have_helped":     dict(helped.most_common(10)),
     }
 
 
@@ -551,6 +575,44 @@ def main():
             "_source": "bootstrap-from-existing-dashboard",
         }
 
+    # ── Submitted cancellation reconciliation (Option C — 08 Jun 2026) ──
+    # Source of truth: CleverWaiver (genuine member intent — they completed
+    #                  the exit survey)
+    # Comparison:      PGM Ended contracts filtered by submitted reasons
+    #                  (catches phone/walk-in cancels that bypass survey)
+    # Capture rate:    CleverWaiver / PGM × 100 — % of cancellations that
+    #                  went through the survey path.
+    # Target: ≥70%. Below 70% = process issue (reception not directing
+    # cancellers to fill survey) → emitter raises Work Queue action.
+    submitted_truth = {"available": False}
+    if cleverwaiver.get("available") and summary.get("available"):
+        cw_by_club  = cleverwaiver.get("submitted_by_club", {})
+        pgm_by_club = (summary.get("unique_base") or {}).get("submitted_cancellation", {})
+        capture_rate = {}
+        for club in ("Malaga", "Ellenbrook", "Total"):
+            cw  = cw_by_club.get(club, 0)
+            pgm = pgm_by_club.get(club, 0)
+            capture_rate[club] = round(100.0 * cw / pgm, 1) if pgm else None
+        submitted_truth = {
+            "available": True,
+            "source": "cleverwaiver",
+            "by_club": cw_by_club,
+            "pgm_comparison": pgm_by_club,
+            "capture_rate_pct": capture_rate,
+            "capture_target_pct": 70,
+            "below_target": (capture_rate.get("Total") is not None
+                             and capture_rate["Total"] < 70),
+        }
+        # Console feedback so the operator sees the new numbers immediately
+        cap_t = capture_rate.get("Total")
+        cap_str = f"{cap_t}%" if cap_t is not None else "n/a"
+        print(f"\n[membership] Submitted cancellations (CleverWaiver — source of truth):")
+        print(f"  Malaga    : {cw_by_club.get('Malaga')}  · PGM comparison {pgm_by_club.get('Malaga')}")
+        print(f"  Ellenbrook: {cw_by_club.get('Ellenbrook')}  · PGM comparison {pgm_by_club.get('Ellenbrook')}")
+        print(f"  Total     : {cw_by_club.get('Total')}  · PGM comparison {pgm_by_club.get('Total')}  · Capture {cap_str} (target ≥70%)")
+        if submitted_truth["below_target"]:
+            print(f"  ⚠️  Capture rate below 70% — emitter will flag Work Queue action for reception team")
+
     # Build output payload
     output = {
         "parsed_at":   datetime.now(timezone.utc).isoformat(),
@@ -559,6 +621,10 @@ def main():
         "cleverwaiver": cleverwaiver,
         "contracts":   contracts,
         "prior_week":  prior_week,
+        # NEW (Option C 08 Jun 2026) — single source of truth for the
+        # dashboard "submitted cancellations" card. Reads from CleverWaiver
+        # with PGM as comparison + capture-rate health check.
+        "submitted_cancellation_truth": submitted_truth,
     }
 
     # Append current week to history (cap last 12 weeks)

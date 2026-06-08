@@ -16900,12 +16900,26 @@ function renderCb247Membership() {
   const newPpl    = (ub.new && ub.new.Total)    || 0;
   const endedPpl  = (ub.ended && ub.ended.Total) || 0;
   const futurePpl = (ub.future && ub.future.Total) || 0;
-  // Submitted = member-initiated cancellation only (excludes promo expiry,
-  // trial endings, debt collections, management endings)
-  const submPpl   = (ub.submitted_cancellation && ub.submitted_cancellation.Total) || 0;
+  // ── Submitted cancellations (Option C — 08 Jun 2026) ──
+  // Source of truth: CleverWaiver — each row = one member who actively
+  // chose to cancel + completed the exit survey (genuine intent).
+  // PGM Ended Contracts (filtered by member-submitted reasons) kept as
+  // a comparison number — gap = cancellations that bypassed the survey.
+  // Capture rate = CleverWaiver / PGM. Target ≥70%.
+  const submTruth = M.submitted_cancellation_truth || {};
+  const submPplPgm = (ub.submitted_cancellation && ub.submitted_cancellation.Total) || 0;
+  const submPpl    = (submTruth.available && submTruth.by_club && submTruth.by_club.Total != null)
+                       ? submTruth.by_club.Total
+                       : submPplPgm;  // graceful fallback when CleverWaiver missing
   const naturalPpl = (ub.natural_ending && ub.natural_ending.Total) || 0;
   const debtPpl    = (ub.debt_ending && ub.debt_ending.Total) || 0;
-  const submByClub  = ub.submitted_cancellation || {};
+  const submByClub  = (submTruth.available && submTruth.by_club)
+                        ? submTruth.by_club
+                        : (ub.submitted_cancellation || {});
+  const submByClubPgm = ub.submitted_cancellation || {};
+  const captureRate = (submTruth.capture_rate_pct) || {};
+  const captureTotal = captureRate.Total;
+  const captureBelow = !!submTruth.below_target;
   const newByClub   = ub.new || {};
   const futureByClub = ub.future || {};
 
@@ -16924,13 +16938,24 @@ function renderCb247Membership() {
   const netContractsPrior = (pt.NewContracts||0) - (pt.EndedContracts||0);
 
   // ── Data freshness banner ──────────────────────────────────────────────
+  const captureChip = (captureTotal != null)
+    ? `<span><b style="color:var(--text-2)">Survey capture</b> <span style="color:${captureBelow?'#dc2626':'#16a34a'};font-weight:600">${captureTotal}%</span> (target ≥70% · CleverWaiver/PGM)</span>`
+    : '';
   let html = `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px">
     <span><b style="color:var(--text-2)">PGM</b> ${period||'no data'}</span>
     <span><b style="color:var(--text-2)">Parsed</b> ${(M.parsed_at||'').slice(0,10)}</span>
-    <span><b style="color:var(--text-2)">CleverWaiver</b> ${cw.available ? cw.total_responses + ' responses' : 'no responses'}</span>
+    <span><b style="color:var(--text-2)">Submitted cancellations</b> source = CleverWaiver · ${cw.available ? cw.total_responses + ' responses' : 'no responses'}</span>
+    ${captureChip}
     <span><b style="color:var(--text-2)">Active base</b> ${ctx.total_active_base_combined||'—'}</span>
     <span><b style="color:var(--text-2)">Methodology</b> unique people (deduped by user, excludes add-ons + Kids Hub + staff)</span>
   </div>`;
+
+  // ── Capture-rate alert (only when below target) ─────────────────────
+  if (captureBelow) {
+    html += `<div class="insight" style="background:#fff7ed;border-left:4px solid #f97316;padding:10px 14px;margin-bottom:14px;font-size:11.5px">
+      <b style="color:#9a3412">Exit-survey capture below 70%</b> · ${submPpl}/${submPplPgm} cancellations went through CleverWaiver (${captureTotal}%). The gap = ${submPplPgm - submPpl} members who cancelled via phone, walk-in, or email and never filled the survey. Per-club: Malaga ${captureRate.Malaga ?? '—'}% · Ellenbrook ${captureRate.Ellenbrook ?? '—'}%. <b>Action:</b> reception team should direct every cancellation request to the online survey before processing.
+    </div>`;
+  }
 
   // ── 0. EXECUTIVE VERDICT (people-based, not contracts) ─────────────────
   const netNeg = netPpl < 0;
