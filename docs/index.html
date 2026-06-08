@@ -14931,6 +14931,15 @@ const PLAT_CFG = {
   social:     {bg:'#fce7f3', color:'#9d174d', border:'#ec4899', label:'Social'},
   content:    {bg:'#f0fdf4', color:'#15803d', border:'#22c55e', label:'Content'},
   action:     {bg:'#f3f4f6', color:'#374151', border:'#9ca3af', label:'Action'},
+  // MWCC source-page badges (08 Jun 2026) — distinct per-source colours so
+  // calendar cards mirror CB247's coloured-badge look (GBP green, IG blue, etc).
+  'seo-organic':     {bg:'#f3e8ff', color:'#6b21a8', border:'#a855f7', label:'SEO'},
+  'meta-ads':        {bg:'#ede9fe', color:'#5b21b6', border:'#8b5cf6', label:'Meta'},
+  'google-ads':      {bg:'#fef9c3', color:'#854d0e', border:'#f59e0b', label:'Google Ads'},
+  'enrolment':       {bg:'#ecfdf5', color:'#166534', border:'#10b981', label:'Enrolment'},
+  'organic-social':  {bg:'#fce7f3', color:'#9d174d', border:'#ec4899', label:'Organic'},
+  // Content-calendar phase actions (P1/P2/P3/P4 of the school-holidays plan)
+  'mwcc':            {bg:'#ffedd5', color:'#9a3412', border:'#fb923c', label:'Campaign'},
 };
 const ASSIGNEE_CFG = {
   // Decision makers
@@ -19977,7 +19986,7 @@ function renderMwccContentPlanner() {
       id:           r.id,
       kind:         'action',
       day:          0,
-      platform:     r.category || 'mwcc',
+      platform:     r.source_page || r.category || 'mwcc',
       title:        r.title || 'Untitled action',
       assignee:     r.owner || 'Team',
       assigneeRole: r.owner_role || '',
