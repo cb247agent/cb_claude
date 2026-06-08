@@ -31,9 +31,29 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import re as _re
 import sys
 from pathlib import Path
 from typing import Any, Dict
+
+
+def _minify_html(html: str) -> str:
+    """Strip excess whitespace so Gmail/Outlook don't clip the email.
+
+    Keeps inline styles intact (needed for email compat). Removes:
+      - whitespace between adjacent tags (>< instead of > <)
+      - multiple consecutive spaces inside tag bodies
+      - leading/trailing whitespace on each line
+      - line breaks outside <pre>/<textarea> (none of which we use)
+    Typically shrinks output by 30-40%.
+    """
+    # Remove whitespace between tags
+    html = _re.sub(r'>\s+<', '><', html)
+    # Collapse runs of whitespace (multiple spaces, tabs, newlines) to single space
+    html = _re.sub(r'\s{2,}', ' ', html)
+    # Final pass: strip newlines that crept in around attributes
+    html = html.replace('\n', '')
+    return html.strip()
 
 BASE_DIR    = Path(__file__).resolve().parent.parent
 STATE_DIR   = BASE_DIR / "state"
@@ -772,11 +792,14 @@ table {{ font-size:12px; }}
 def main() -> int:
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     today = _dt.date.today().strftime("%Y-%m-%d")
-    html = build_html(today)
+    raw_html = build_html(today)
+    # Minify so Gmail doesn't clip the email body (102 KB threshold).
+    html = _minify_html(raw_html)
     out_path = OUTPUTS_DIR / f"management-report-{today}.html"
     out_path.write_text(html, encoding="utf-8")
+    raw_kb  = len(raw_html.encode("utf-8")) // 1024
     size_kb = out_path.stat().st_size // 1024
-    print(f"[mwcc-mgmt-report] ✅ Wrote {out_path.relative_to(BASE_DIR)} ({size_kb} KB)")
+    print(f"[mwcc-mgmt-report] ✅ Wrote {out_path.relative_to(BASE_DIR)} ({size_kb} KB · minified from {raw_kb} KB)")
     return 0
 
 
