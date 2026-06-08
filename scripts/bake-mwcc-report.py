@@ -1067,10 +1067,12 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
     ahrefs    = _load("mwcc-ahrefs.json",    default={})
     social    = _load("mwcc-social.json",    default={})
     gbp_perf  = _load("mwcc-gbp-performance.json", default={})
+    funnel    = _load("mwcc-funnel.json",    default={})
     if not isinstance(gsc,      dict): gsc      = {}
     if not isinstance(ahrefs,   dict): ahrefs   = {}
     if not isinstance(social,   dict): social   = {}
     if not isinstance(gbp_perf, dict): gbp_perf = {}
+    if not isinstance(funnel,   dict): funnel   = {}
 
     data = {
         "generated":       datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC"),
@@ -1086,6 +1088,7 @@ def _bake_mwcc_data_js(ga4, ads, meta, ops):
         "ahrefs":          ahrefs,
         "social":          social,
         "gbp_performance": gbp_perf,
+        "funnel":          funnel,
     }
     json_payload = json.dumps(data, indent=2, default=str)
 
