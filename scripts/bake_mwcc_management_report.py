@@ -346,55 +346,228 @@ def _section_funnel(ops, ga4, funnel):
     """
 
 
+def _occ_chip(pct):
+    """Return an occupancy chip with colour by tier."""
+    if pct is None:
+        return f'<span style="color:{PALETTE["muted"]}">—</span>'
+    if pct >= 80:
+        bg, fg = PALETTE["ok"] + "26", PALETTE["ok"]
+    elif pct >= 60:
+        bg, fg = PALETTE["warn"] + "26", PALETTE["warn"]
+    elif pct >= 40:
+        bg, fg = "#fef9c326", "#a16207"  # yellow
+    else:
+        bg, fg = PALETTE["risk"] + "26", PALETTE["risk"]
+    return f'<span style="background:{bg};color:{fg};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">{pct}%</span>'
+
+
+def _wage_bar(label, pct, *, color, helper_text=""):
+    """Render a wage-percentage bar with colour-coded fill + chip + helper."""
+    if pct is None:
+        return ""
+    width_pct = min(100, max(0, pct))
+    return f"""
+    <div style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:{PALETTE['text']}">
+        <b>{label}</b>
+        <span style="background:{color}26;color:{color};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700">{pct}%</span>
+      </div>
+      <div style="background:{PALETTE['gray_1']};border-radius:4px;height:6px;margin-top:6px;overflow:hidden">
+        <div style="width:{width_pct}%;height:100%;background:{color}"></div>
+      </div>
+      {f'<div style="font-size:10px;color:{PALETTE["muted"]};margin-top:4px">{helper_text}</div>' if helper_text else ''}
+    </div>
+    """
+
+
+def _service_util_table(rooms_detail, revenue_total):
+    """Render the service-utilisation table for a centre's THIS-WEEK column."""
+    if not rooms_detail:
+        return ""
+    rows = []
+    for room, d in rooms_detail.items():
+        occ = d.get("occupancy_pct")
+        avg = d.get("avg_daily") or 0
+        cap = d.get("capacity") or 0
+        att = round(100.0 * avg / cap, 0) if cap else 0
+        children = int(avg) if avg else 0
+        # Per-service revenue isn't broken out — leave blank
+        rows.append(f"""
+        <tr>
+          <td style="padding:4px 0;color:{PALETTE['text']}">{room}</td>
+          <td style="padding:4px 0;text-align:center">{_occ_chip(occ)}</td>
+          <td style="padding:4px 0;text-align:center;color:{PALETTE['text']}">{int(att)}%</td>
+          <td style="padding:4px 0;text-align:center;color:{PALETTE['text']}">{children}</td>
+        </tr>
+        """)
+    # Totals
+    occ_avg = (
+        sum(d.get("occupancy_pct", 0) for d in rooms_detail.values()) / len(rooms_detail)
+        if rooms_detail else 0
+    )
+    return f"""
+    <div style="margin-top:12px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE['deep']};font-weight:700;margin-bottom:4px">Service Utilisation — This Week</div>
+      <table style="width:100%;font-size:11px;border-collapse:collapse">
+        <thead><tr style="border-bottom:1px solid {PALETTE['gray_2']}">
+          <th style="text-align:left;padding:4px 0;color:{PALETTE['muted']};font-weight:600">SERVICE</th>
+          <th style="text-align:center;padding:4px 0;color:{PALETTE['muted']};font-weight:600">OCC %</th>
+          <th style="text-align:center;padding:4px 0;color:{PALETTE['muted']};font-weight:600">ATT %</th>
+          <th style="text-align:center;padding:4px 0;color:{PALETTE['muted']};font-weight:600">CHILDREN</th>
+        </tr></thead>
+        <tbody>{"".join(rows)}
+          <tr style="border-top:1px solid {PALETTE['gray_2']}">
+            <td style="padding:6px 0;font-weight:700">Total</td>
+            <td style="padding:6px 0;text-align:center">{_occ_chip(round(occ_avg, 0))}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    """
+
+
+def _centre_period_card(title, period, data, *, is_actuals, rooms_detail=None,
+                       enquiries=None, exits=None, enrolments=None,
+                       leave_color=None):
+    """Render ONE column (one week) of a centre's row.
+
+    title:       'THIS WEEK — 25-31 May 2026 (Actuals)' etc
+    is_actuals:  True for the leftmost column (shows extra rows)
+    """
+    rev = data.get("revenue")
+    roster = data.get("roster_cost")
+    leave = data.get("leave_cost")
+    wage_inc = data.get("wage_inc_leave_pct")
+    wage_exc = data.get("wage_exc_leave_pct")
+    occ = data.get("overall_occupancy") if data.get("overall_occupancy") is not None else data.get("Overall")
+
+    leave_text = _fmt_money(leave) if leave is not None and leave > 0 else "$0"
+    leave_style = f"color:{PALETTE['warn']};font-weight:600" if leave and leave > 0 else "color:{PALETTE['text']};font-weight:600"
+
+    body = f"""
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE['muted']};font-weight:700;margin-bottom:10px">{title}</div>
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <tr><td style="padding:5px 0;color:{PALETTE['text']}">Revenue</td><td style="text-align:right;color:{PALETTE['deep']};font-weight:700">{_fmt_money(rev)}</td></tr>
+      <tr><td style="padding:5px 0;color:{PALETTE['text']}">Roster Cost</td><td style="text-align:right;font-weight:600">{_fmt_money(roster)}</td></tr>
+      <tr><td style="padding:5px 0;color:{PALETTE['text']}">Leave Cost</td><td style="text-align:right;{leave_style}">{leave_text}</td></tr>
+      <tr><td style="padding:5px 0;color:{PALETTE['text']}">Overall Occupancy</td><td style="text-align:right">{_occ_chip(occ)}</td></tr>
+    </table>
+    """
+
+    # Wage bars — actuals shows both inc + exc, projections show inc only
+    if is_actuals and wage_exc is not None:
+        threshold = 42.0
+        ratio_to_thresh = round(100.0 * wage_exc / threshold, 1) if threshold else 0
+        under_by = round(threshold - wage_exc, 2)
+        healthy = wage_exc < threshold
+        helper = (
+            f"{wage_exc} / {threshold} × 100 = {ratio_to_thresh}% of threshold. "
+            f"{'Under by' if healthy else 'Over by'} {abs(under_by)}pp. "
+            f"{'✓ Healthy.' if healthy else '⚠ Breach.'}"
+        )
+        body += _wage_bar("Wage Exc. Leave", wage_exc,
+                          color=PALETTE["ok"] if healthy else PALETTE["risk"],
+                          helper_text=helper)
+        body += _wage_bar("Wage Inc. Leave", wage_inc,
+                          color=PALETTE["purple"],
+                          helper_text="No leave this week. Inc. Leave = Exc. Leave." if (leave or 0) == 0 else "")
+    else:
+        body += _wage_bar("Wage Inc. Leave", wage_inc,
+                          color=PALETTE["purple"],
+                          helper_text="Inc. Leave shown for reference only.")
+
+    # Service utilisation (only on actuals column)
+    if is_actuals and rooms_detail:
+        body += _service_util_table(rooms_detail, rev)
+
+    # Status pills at bottom (only on actuals column)
+    if is_actuals and any(v is not None for v in (enquiries, exits, enrolments)):
+        body += f"""
+        <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap">
+          <span style="background:{PALETTE['pale']};color:{PALETTE['deep']};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600">{enquiries or 0} Enquiries</span>
+          <span style="background:{PALETTE['risk']}1a;color:{PALETTE['risk']};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600">{exits or 0} Exits</span>
+          <span style="background:{PALETTE['ok']}1a;color:{PALETTE['ok']};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600">{enrolments or 0} Enrolments</span>
+        </div>
+        """
+
+    return f"""
+    <td style="width:33%;padding:8px;vertical-align:top">
+      <div style="background:{PALETTE['white']};border:1px solid {PALETTE['gray_2']};border-radius:8px;padding:16px">
+        {body}
+      </div>
+    </td>
+    """
+
+
 def _section_per_centre(ops):
     centres = ops.get("centres", {}) or {}
-    cards = []
+    out = []
+    period_label = (ops.get("period") or {}).get("label", "—")
+
     for name, c in centres.items():
-        occ = c.get("occupancy_pct")
-        revenue = c.get("revenue")
-        wage = c.get("wage_inc_leave_pct")
         wage_breach = c.get("wage_breach", False)
-        enquiries = c.get("enquiries", 0)
-        pipeline = c.get("enquiries_pipeline", 0)
-        enrol = c.get("enrolments", 0)
-        exits = c.get("exits", 0)
-        risk_rooms = [
-            r for r, d in (c.get("rooms_detail") or {}).items()
-            if d.get("compliance_risk", False)
-        ]
-        # Border tint by risk
-        border_color = PALETTE["risk"] if risk_rooms else (PALETTE["warn"] if wage_breach else PALETTE["purple"])
+        risk_rooms = [r for r, d in (c.get("rooms_detail") or {}).items()
+                      if d.get("compliance_risk", False)]
         wage_chip = (
-            f'<span style="background:{PALETTE["warn"]}26;color:{PALETTE["warn"]};font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600">WAGE</span>'
+            f'<span style="background:{PALETTE["warn"]}26;color:{PALETTE["warn"]};font-size:10px;padding:3px 8px;border-radius:4px;font-weight:700;margin-left:8px">WAGE BREACH</span>'
             if wage_breach else ""
         )
         risk_chip = (
-            f'<span style="background:{PALETTE["risk"]}26;color:{PALETTE["risk"]};font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:4px">RISK</span>'
+            f'<span style="background:{PALETTE["risk"]}26;color:{PALETTE["risk"]};font-size:10px;padding:3px 8px;border-radius:4px;font-weight:700;margin-left:8px">COMPLIANCE RISK</span>'
             if risk_rooms else ""
         )
-        cards.append(f"""
-        <div style="background:{PALETTE['white']};border:1px solid {PALETTE['gray_2']};border-left:4px solid {border_color};border-radius:8px;padding:14px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-              <div style="font-size:13px;font-weight:700;color:{PALETTE['text_strong']}">{name}</div>
-              <div style="font-size:10px;color:{PALETTE['muted']};margin-top:2px">{c.get('week_label','—')}</div>
-            </div>
-            <div>{wage_chip}{risk_chip}</div>
+
+        # Actuals: this week from main parser block
+        actuals = {
+            "revenue":            c.get("revenue"),
+            "roster_cost":        c.get("roster_cost"),
+            "leave_cost":         c.get("leave_cost"),
+            "wage_inc_leave_pct": c.get("wage_inc_leave_pct"),
+            "wage_exc_leave_pct": c.get("wage_exc_leave_pct"),
+            "Overall":            (c.get("occupancy") or {}).get("Overall"),
+        }
+        proj_this = c.get("this_week_projection") or {}
+        proj_next = c.get("next_week_projection") or {}
+
+        actual_title = f"THIS WEEK — {period_label} (Actuals)"
+        proj_this_title = (
+            f"NEXT WEEK — projection · {proj_this.get('date')}"
+            if proj_this.get("date") else "NEXT WEEK — projection"
+        )
+        proj_next_title = (
+            f"WEEK AFTER — projection · {proj_next.get('date')}"
+            if proj_next.get("date") else "WEEK AFTER — projection"
+        )
+
+        cells = (
+            _centre_period_card(actual_title, period_label, actuals,
+                              is_actuals=True,
+                              rooms_detail=c.get("rooms_detail"),
+                              enquiries=c.get("enquiries"),
+                              exits=c.get("exits"),
+                              enrolments=c.get("enrolments"))
+            + _centre_period_card(proj_this_title, proj_this.get("date"), proj_this,
+                                is_actuals=False)
+            + _centre_period_card(proj_next_title, proj_next.get("date"), proj_next,
+                                is_actuals=False)
+        )
+
+        out.append(f"""
+        <div style="margin-bottom:24px">
+          <div style="font-size:14px;font-weight:700;color:{PALETTE['text_strong']};margin-bottom:10px">
+            {name} OSHC/LDC — Centre Performance{wage_chip}{risk_chip}
           </div>
-          <table style="width:100%;margin-top:10px;font-size:11px;color:{PALETTE['text']}">
-            <tr><td style="padding:3px 0;color:{PALETTE['muted']}">Occupancy</td><td style="text-align:right;font-weight:600">{_fmt_pct(occ)}</td></tr>
-            <tr><td style="padding:3px 0;color:{PALETTE['muted']}">Revenue</td><td style="text-align:right;font-weight:600">{_fmt_money(revenue)}</td></tr>
-            <tr><td style="padding:3px 0;color:{PALETTE['muted']}">Wage %</td><td style="text-align:right;font-weight:600">{_fmt_pct(wage)}</td></tr>
-            <tr><td style="padding:3px 0;color:{PALETTE['muted']}">Enquiries this wk</td><td style="text-align:right;font-weight:600">{enquiries} <span style="color:{PALETTE['muted']};font-weight:400">· {pipeline} pipeline</span></td></tr>
-            <tr><td style="padding:3px 0;color:{PALETTE['muted']}">Starters · Exits</td><td style="text-align:right;font-weight:600">{enrol} · {exits}</td></tr>
+          <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed">
+            <tr>{cells}</tr>
           </table>
         </div>
         """)
-    grid = "".join(cards)
+
     return f"""
     <section style="margin-bottom:24px">
-      <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Per-Centre Snapshot</h3>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">{grid}</div>
+      <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Per-Centre Performance — Actuals + 2-Week Projection</h3>
+      {"".join(out)}
     </section>
     """
 

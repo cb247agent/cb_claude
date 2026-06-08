@@ -237,6 +237,28 @@ def _parse_myworld_report(path: Path) -> Tuple[Optional[dict], Optional[str], Op
             "exits":        exits,
             "enrolments":   enrolments,
             "net_movement": enrolments - exits,
+            # ── Projection data (cols 15-26) for management report ──
+            # OWNA's "This Week" + "Next Week" columns are forward-looking
+            # projections relative to the report's reference date.
+            # Mapped here as next_week_projection + week_after_projection
+            # so the management report can show 3-column "actuals → next →
+            # week-after" comparison per centre.
+            "this_week_projection": {
+                "date":      str(row[15])[:10] if row[15] else None,
+                "wage_inc_leave_pct":   _f(row[16]),
+                "revenue":              _f(row[17]),
+                "leave_cost":           _f(row[18]),
+                "roster_cost":          _f(row[19]),
+                "overall_occupancy":    _i(row[20]),
+            },
+            "next_week_projection": {
+                "date":      str(row[21])[:10] if row[21] else None,
+                "wage_inc_leave_pct":   _f(row[22]),
+                "revenue":              _f(row[23]),
+                "leave_cost":           _f(row[24]),
+                "roster_cost":          _f(row[25]),
+                "overall_occupancy":    _i(row[26]),
+            },
         }
 
     print(f"[MWCC Ops]   Centres loaded: {list(result.keys())}")
