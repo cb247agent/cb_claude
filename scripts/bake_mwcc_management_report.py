@@ -207,6 +207,22 @@ def _strategist_narrative_html(date_str: str) -> str:
 
 # ── Section builders ─────────────────────────────────────────────
 
+def _network_occupancy(ops):
+    """Compute network occupancy % weighted by room capacity across all centres + rooms."""
+    total_cap = 0
+    total_filled = 0
+    for c in (ops.get("centres") or {}).values():
+        for room, d in (c.get("rooms_detail") or {}).items():
+            cap = d.get("capacity") or 0
+            occ_pct = d.get("occupancy_pct")
+            if cap and occ_pct is not None:
+                total_cap += cap
+                total_filled += cap * (occ_pct / 100.0)
+    if not total_cap:
+        return None
+    return round(100.0 * total_filled / total_cap, 1)
+
+
 def _section_verdict(ops, ga4, meta, ads, date_str):
     verdict = _verdict_paragraph(ops, ga4, meta, ads)
     period = (ops.get("period") or {}).get("label", "—")
@@ -218,6 +234,54 @@ def _section_verdict(ops, ga4, meta, ads, date_str):
       <p style="font-size:14px;line-height:1.6;opacity:.95">{verdict}</p>
     </section>
     {strategist_html}
+    """
+
+
+def _section_network_kpis(ops, ga4):
+    """Top-line network KPIs with WoW deltas. Sits below the verdict."""
+    network_occ = _network_occupancy(ops)
+    net = ops.get("network_summary", {}) or {}
+    revenue = net.get("total_revenue")
+    enrolments = net.get("total_enrolments", 0)
+    exits = net.get("total_exits", 0)
+    net_move = net.get("net_movement", 0)
+    enquiries_pipeline = sum(
+        (c.get("enquiries_pipeline") or 0) for c in (ops.get("centres") or {}).values()
+    )
+
+    ga4_cur = (ga4 or {}).get("current") or {}
+    ga4_prev = (ga4 or {}).get("previous") or {}
+    sessions_cur = ga4_cur.get("sessions")
+    sessions_prev = ga4_prev.get("sessions")
+    conv_cur = ga4_cur.get("key_events")
+    conv_prev = ga4_prev.get("key_events")
+
+    # Build a 4-column KPI row
+    occ_color = (
+        PALETTE["risk"] if (network_occ is not None and network_occ > 100) else
+        PALETTE["warn"] if (network_occ is not None and network_occ < 50) else
+        PALETTE["deep"]
+    )
+    cards = [
+        ("Network Occupancy", _fmt_pct(network_occ), None, occ_color),
+        ("Network Revenue",   _fmt_money(revenue), None, PALETTE["deep"]),
+        ("Web Sessions",      _fmt_int(sessions_cur), _delta_chip(sessions_cur, sessions_prev), PALETTE["purple"]),
+        ("Web Conversions",   _fmt_int(conv_cur), _delta_chip(conv_cur, conv_prev), PALETTE["purple"]),
+        ("Active Enquiry Pipeline", _fmt_int(enquiries_pipeline), None, PALETTE["purple"]),
+        ("Net Enrolments (this wk)", f"{net_move:+d}", None, PALETTE["ok"] if net_move >= 0 else PALETTE["risk"]),
+    ]
+    grid = "".join(
+        f'<div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-left:3px solid {color};border-radius:8px;padding:14px 16px">'
+        f'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600">{label}</div>'
+        f'<div style="font-size:22px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px;line-height:1.1">{val}{chip or ""}</div>'
+        f'</div>'
+        for label, val, chip, color in cards
+    )
+    return f"""
+    <section style="margin-bottom:24px">
+      <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Network KPIs (Week-on-Week)</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">{grid}</div>
+    </section>
     """
 
 
@@ -242,8 +306,8 @@ def _section_funnel(ops, ga4, funnel):
         ("Net move",    f"{net_move:+d}",        PALETTE["ok"] if net_move >= 0 else PALETTE["risk"]),
     ]
     cards = "".join(
-        f'<div style="flex:1;background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {colour};border-radius:8px;padding:14px;text-align:center">'
-        f'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600">{label}</div>'
+        f'<div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {colour};border-radius:8px;padding:14px 10px;text-align:center;min-width:0">'
+        f'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600;white-space:nowrap">{label}</div>'
         f'<div style="font-size:22px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px">{val}</div>'
         f'</div>'
         for label, val, colour in stages
@@ -252,8 +316,8 @@ def _section_funnel(ops, ga4, funnel):
     <section style="margin-bottom:24px">
       <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">The Conversion Story</h3>
       <div style="background:{PALETTE['mist']};padding:18px;border-radius:10px">
-        <div style="display:flex;gap:10px;align-items:stretch">{cards}</div>
-        <div style="font-size:11px;color:{PALETTE['muted']};text-align:center;margin-top:10px">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">{cards}</div>
+        <div style="font-size:11px;color:{PALETTE['muted']};text-align:center;margin-top:12px">
           Network revenue this week: <b style="color:{PALETTE['text_strong']}">{_fmt_money(revenue)}</b>
         </div>
       </div>
@@ -443,6 +507,7 @@ def build_html(date_str: str) -> str:
 
     sections = [
         _section_verdict(ops, ga4, meta, ads, date_str),
+        _section_network_kpis(ops, ga4),
         _section_funnel(ops, ga4, funnel),
         _section_per_centre(ops),
         _section_compliance(ops),
@@ -459,10 +524,10 @@ def build_html(date_str: str) -> str:
 <style>
 body {{ margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;background:{PALETTE['gray_0']};color:{PALETTE['text']};line-height:1.5; }}
 .wrap {{ max-width:920px;margin:0 auto;padding:24px 20px 40px; }}
-.head {{ background:{PALETTE['white']};border-radius:10px;padding:18px 22px;margin-bottom:20px;border:1px solid {PALETTE['gray_2']};display:flex;justify-content:space-between;align-items:center }}
-.head h1 {{ font-size:18px;font-weight:700;color:{PALETTE['deep']};letter-spacing:-0.01em;margin:0 }}
-.head p  {{ font-size:11px;color:{PALETTE['muted']};margin:2px 0 0 }}
-.head-badge {{ background:{PALETTE['pale']};color:{PALETTE['deep']};padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase }}
+.head {{ background:{PALETTE['white']};border-radius:10px;padding:18px 22px;margin-bottom:20px;border:1px solid {PALETTE['gray_2']};position:relative }}
+.head h1 {{ font-size:20px;font-weight:700;color:{PALETTE['deep']};letter-spacing:-0.01em;margin:0 }}
+.head p  {{ font-size:11px;color:{PALETTE['muted']};margin:4px 0 0 }}
+.head-badge {{ position:absolute;top:14px;right:18px;background:{PALETTE['deep']};color:{PALETTE['white']};padding:4px 10px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 1px 3px rgba(0,0,0,.08) }}
 .footer {{ font-size:10px;color:{PALETTE['muted']};text-align:center;margin-top:30px;padding-top:14px;border-top:1px solid {PALETTE['gray_2']} }}
 table {{ font-size:12px; }}
 @media print {{ body {{ background:white }} .head-badge {{ display:none }} }}
@@ -471,11 +536,9 @@ table {{ font-size:12px; }}
 <body>
 <div class="wrap">
   <div class="head">
-    <div>
-      <h1>MWCC Management Report</h1>
-      <p>{period_label} · My World Childcare · 5 centres</p>
-    </div>
     <div class="head-badge">CONFIDENTIAL · MANAGEMENT</div>
+    <h1>MWCC Management Report</h1>
+    <p>{period_label} · My World Childcare · 5 centres</p>
   </div>
   {"".join(sections)}
   <div class="footer">
