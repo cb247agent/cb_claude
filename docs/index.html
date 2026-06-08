@@ -19781,44 +19781,7 @@ function renderMwccSeo() {
     <span style="color:var(--muted)">${totalKw} keywords tracked</span>
   </div>`;
 
-  // ── Ahrefs Site Authority Strip (PDF-sourced — Ahrefs-exclusive metrics only) ──
-  // Renders only when the Ahrefs Overview PDF has been parsed (backlinks_total present).
-  // Trimmed 08 Jun 2026 (Tia direction): removed "Organic Keywords" + "Organic Traffic"
-  // cards because they duplicated GSC's "Page 1 Keywords" + "Organic Clicks" cards
-  // below. This row now shows ONLY Ahrefs-exclusive metrics (DR, AR, backlinks,
-  // ref domains, organic value) that GSC/GA4 cannot provide.
-  if (ah.backlinks_total !== undefined || ah.referring_domains_total !== undefined) {
-    const _deltaPill = (val, invertGood) => {
-      if (val === undefined || val === null) return '';
-      const num = Number(val);
-      const isPos = num > 0;
-      const good = invertGood ? !isPos : isPos;
-      const color = num === 0 ? '#6b7280' : good ? '#15803d' : '#b91c1c';
-      const bg = num === 0 ? '#f0f2f5' : good ? '#dcfce7' : '#fee2e2';
-      const sign = num > 0 ? '+' : '';
-      return `<span style="display:inline-block;font-size:9px;background:${bg};color:${color};padding:1px 5px;border-radius:3px;font-weight:700;margin-left:4px">${sign}${num.toLocaleString()}</span>`;
-    };
-    const _miniKpi = (label, value, sub, deltaHtml) => `
-      <div style="flex:1;min-width:140px;padding:8px 12px;background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px">
-        <div style="font-size:9.5px;color:var(--mwcc-purple-deep);text-transform:uppercase;letter-spacing:.05em;font-weight:700">${label}</div>
-        <div style="font-size:16px;font-weight:800;color:var(--text-1);margin-top:2px;line-height:1.1">${value}${deltaHtml || ''}</div>
-        ${sub ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">${sub}</div>` : ''}
-      </div>`;
-    html += `<div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding-left:2px">
-      Site Authority (Ahrefs · monthly)
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-      ${_miniKpi('Domain Rating', ah.domain_rating ?? '–', ah.ahrefs_rank ? `AR ${ah.ahrefs_rank.toLocaleString()}` : '', '')}
-      ${_miniKpi('Backlinks', _mwccFmt(ah.backlinks_total), ah.backlinks_all_time ? `${_mwccFmt(ah.backlinks_all_time)} all-time` : '', _deltaPill(ah.backlinks_change_mom))}
-      ${_miniKpi('Ref. Domains', _mwccFmt(ah.referring_domains_total), ah.ref_domains_all_time ? `${_mwccFmt(ah.ref_domains_all_time)} all-time · ${ah.quality_referring_domains_count||0} DR40+` : `${ah.quality_referring_domains_count||0} DR40+`, _deltaPill(ah.ref_domains_change_mom))}
-      ${_miniKpi('Organic Value', '$' + _mwccFmt(ah.organic_traffic_value) + '/mo', 'est. equiv. ad spend · Ahrefs', _deltaPill(ah.organic_traffic_value_change_mom))}
-    </div>
-    <div style="font-size:10px;color:var(--muted);margin-bottom:14px;padding:0 4px">
-      Source: Ahrefs Site Explorer Overview · ${ah.generated_at ? ah.generated_at.slice(0,10) : 'manual export'} · MoM = vs last month
-    </div>`;
-  }
-
-  // ── Executive Verdict ──
+  // ── Executive Verdict (moved above KPI rows per Tia direction 08 Jun 2026) ──
   const _whereWeAre = `${_mwccFmt(totals.clicks)} organic clicks across ${_mwccFmt(totals.impressions)} impressions at avg position #${(totals.position||0).toFixed(1)} (${(totals.ctr||0).toFixed(2)}% CTR). GA4 organic sessions: ${_mwccFmt(ga4OrgSessions)}. ${totalKw} keywords tracking.`;
   const _risk = _qw.length > 5
     ? `<b>${_qw.length} keywords stuck at pos 4–20</b> with real impression volume — every one is a missed top-3 ranking. Build dedicated landing pages or tighten on-page H1 + meta.`
@@ -19842,6 +19805,32 @@ function renderMwccSeo() {
       <div style="margin-top:6px"><b style="color:var(--mwcc-purple-deep)">Top priority this week:</b> ${_priority}</div>
     </div>
   </div>`;
+
+  // ── Ahrefs Site Authority Strip — uses kpiCard() helper so cards match the
+  // GSC/GA4 row below in size + style. MoM delta is embedded in the value
+  // field (kpiCard's "change" arg expects WoW % — we show MoM as a pill instead).
+  if (ah.backlinks_total !== undefined || ah.referring_domains_total !== undefined) {
+    const _deltaPill = (val) => {
+      if (val === undefined || val === null) return '';
+      const num = Number(val);
+      const color = num === 0 ? '#6b7280' : num > 0 ? '#15803d' : '#b91c1c';
+      const bg = num === 0 ? '#f0f2f5' : num > 0 ? '#dcfce7' : '#fee2e2';
+      const sign = num > 0 ? '+' : '';
+      return `<span style="display:inline-block;font-size:10px;background:${bg};color:${color};padding:2px 6px;border-radius:3px;font-weight:700;margin-left:6px;vertical-align:middle">${sign}${num.toLocaleString()}</span>`;
+    };
+    html += `<div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding-left:2px">
+      Site Authority (Ahrefs · monthly)
+    </div>`;
+    html += `<div class="kpi-grid cols-4 mb">
+      ${kpiCard('', 'Domain Rating', (ah.domain_rating ?? '–') + '', null, ah.ahrefs_rank ? `AR ${ah.ahrefs_rank.toLocaleString()} · Ahrefs` : 'Ahrefs', '')}
+      ${kpiCard('', 'Backlinks', _mwccFmt(ah.backlinks_total) + _deltaPill(ah.backlinks_change_mom), null, (ah.backlinks_all_time ? `${_mwccFmt(ah.backlinks_all_time)} all-time` : '') + ' · MoM Δ', (ah.backlinks_change_mom||0)>0?'green':'')}
+      ${kpiCard('', 'Ref. Domains', _mwccFmt(ah.referring_domains_total) + _deltaPill(ah.ref_domains_change_mom), null, (ah.ref_domains_all_time ? `${_mwccFmt(ah.ref_domains_all_time)} all-time · ` : '') + `${ah.quality_referring_domains_count||0} DR40+`, (ah.ref_domains_change_mom||0)>0?'green':'')}
+      ${kpiCard('', 'Organic Value', '$' + _mwccFmt(ah.organic_traffic_value) + '/mo' + _deltaPill(ah.organic_traffic_value_change_mom), null, 'est. equiv. ad spend · Ahrefs', (ah.organic_traffic_value_change_mom||0)>0?'green':'')}
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin:-6px 0 14px;padding:0 4px">
+      Source: Ahrefs Site Explorer Overview · ${ah.generated_at ? ah.generated_at.slice(0,10) : 'manual export'} · MoM = vs last month
+    </div>`;
+  }
 
   // ── 4 KPI cards — Actual User Behaviour (GSC + GA4, weekly) ─────────────
   html += `<div style="font-size:10px;color:var(--mwcc-purple-deep);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;padding-left:2px">
