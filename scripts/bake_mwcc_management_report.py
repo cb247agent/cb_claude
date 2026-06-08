@@ -305,18 +305,28 @@ def _section_funnel(ops, ga4, funnel):
         ("Enrolments",  _fmt_int(enrolments),    PALETTE["deep"]),
         ("Net move",    f"{net_move:+d}",        PALETTE["ok"] if net_move >= 0 else PALETTE["risk"]),
     ]
-    cards = "".join(
-        f'<div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {colour};border-radius:8px;padding:16px 12px;text-align:center;min-width:0">'
-        f'<div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600;white-space:nowrap">{label}</div>'
-        f'<div style="font-size:22px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px">{val}</div>'
-        f'</div>'
+    # Use table layout for bulletproof centering across email clients.
+    # 5 cells at 20% width each + outer cells (5%) to centre the group.
+    card_cells = "".join(
+        f'<td style="width:18%;padding:0 8px;vertical-align:top">'
+        f'  <div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {colour};border-radius:8px;padding:16px 12px;text-align:center">'
+        f'    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600;white-space:nowrap">{label}</div>'
+        f'    <div style="font-size:22px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px">{val}</div>'
+        f'  </div>'
+        f'</td>'
         for label, val, colour in stages
     )
     return f"""
     <section style="margin-bottom:24px">
       <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">The Conversion Story</h3>
       <div style="background:{PALETTE['mist']};padding:20px;border-radius:10px">
-        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">{cards}</div>
+        <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed">
+          <tr>
+            <td style="width:5%"></td>
+            {card_cells}
+            <td style="width:5%"></td>
+          </tr>
+        </table>
         <div style="font-size:11px;color:{PALETTE['muted']};text-align:center;margin-top:14px">
           Network revenue this week: <b style="color:{PALETTE['text_strong']}">{_fmt_money(revenue)}</b>
         </div>
