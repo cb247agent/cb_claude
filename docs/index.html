@@ -19363,6 +19363,40 @@ function renderMwccSeo() {
     <span style="color:var(--muted)">${totalKw} keywords tracked</span>
   </div>`;
 
+  // ── Ahrefs Headline KPI Strip (PDF-sourced canonical numbers) ──
+  // Renders only when the Ahrefs Overview PDF has been parsed (backlinks_total present).
+  // Layout: 6 mini-KPIs in one row matching the freshness-banner width.
+  if (ah.backlinks_total !== undefined || ah.referring_domains_total !== undefined) {
+    const _deltaPill = (val, invertGood) => {
+      // invertGood=true for metrics where "down" is good (rank, position)
+      if (val === undefined || val === null) return '';
+      const num = Number(val);
+      const isPos = num > 0;
+      const good = invertGood ? !isPos : isPos;
+      const color = num === 0 ? '#6b7280' : good ? '#15803d' : '#b91c1c';
+      const bg = num === 0 ? '#f0f2f5' : good ? '#dcfce7' : '#fee2e2';
+      const sign = num > 0 ? '+' : '';
+      return `<span style="display:inline-block;font-size:9px;background:${bg};color:${color};padding:1px 5px;border-radius:3px;font-weight:700;margin-left:4px">${sign}${num.toLocaleString()}</span>`;
+    };
+    const _miniKpi = (label, value, sub, deltaHtml) => `
+      <div style="flex:1;min-width:120px;padding:8px 12px;background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px">
+        <div style="font-size:9.5px;color:var(--mwcc-purple-deep);text-transform:uppercase;letter-spacing:.05em;font-weight:700">${label}</div>
+        <div style="font-size:16px;font-weight:800;color:var(--text-1);margin-top:2px;line-height:1.1">${value}${deltaHtml || ''}</div>
+        ${sub ? `<div style="font-size:10px;color:var(--muted);margin-top:1px">${sub}</div>` : ''}
+      </div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      ${_miniKpi('Domain Rating', ah.domain_rating ?? '–', ah.ahrefs_rank ? `AR ${ah.ahrefs_rank.toLocaleString()}` : '', '')}
+      ${_miniKpi('Backlinks', _mwccFmt(ah.backlinks_total), ah.backlinks_all_time ? `${_mwccFmt(ah.backlinks_all_time)} all-time` : '', _deltaPill(ah.backlinks_change_mom))}
+      ${_miniKpi('Ref. Domains', _mwccFmt(ah.referring_domains_total), ah.ref_domains_all_time ? `${_mwccFmt(ah.ref_domains_all_time)} all-time · ${ah.quality_referring_domains_count||0} DR40+` : `${ah.quality_referring_domains_count||0} DR40+`, _deltaPill(ah.ref_domains_change_mom))}
+      ${_miniKpi('Organic Keywords', _mwccFmt(ah.organic_keywords_total ?? '–'), ah.top_3_keywords !== undefined ? `Top 3: ${ah.top_3_keywords}${ah.top_3_keywords_change_mom !== undefined && ah.top_3_keywords_change_mom !== 0 ? (ah.top_3_keywords_change_mom > 0 ? ' +' : ' ') + ah.top_3_keywords_change_mom : ''}` : '', _deltaPill(ah.organic_keywords_change_mom))}
+      ${_miniKpi('Organic Traffic', _mwccFmt(ah.organic_traffic) + '/mo', 'Ahrefs estimate', _deltaPill(ah.organic_traffic_change_mom))}
+      ${_miniKpi('Organic Value', '$' + _mwccFmt(ah.organic_traffic_value) + '/mo', 'est. equiv. ad spend', _deltaPill(ah.organic_traffic_value_change_mom))}
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:14px;padding:0 4px">
+      Source: Ahrefs Site Explorer Overview · ${ah.generated_at ? ah.generated_at.slice(0,10) : 'manual export'} · MoM = vs ${ah.generated_at ? 'last month' : '–'}
+    </div>`;
+  }
+
   // ── Executive Verdict ──
   const _whereWeAre = `${_mwccFmt(totals.clicks)} organic clicks across ${_mwccFmt(totals.impressions)} impressions at avg position #${(totals.position||0).toFixed(1)} (${(totals.ctr||0).toFixed(2)}% CTR). GA4 organic sessions: ${_mwccFmt(ga4OrgSessions)}. ${totalKw} keywords tracking.`;
   const _risk = _qw.length > 5
@@ -19601,6 +19635,138 @@ function renderMwccSeo() {
         <li>Recent backlinks (last 30 days) with date + source DR</li>
         <li>Outreach targets for local directories (kindicare.com, careforkids.com.au)</li>
       </ul>
+    </div>`;
+  }
+
+  // ── Competitor Authority (Ahrefs competitor overview + shared keyword matrix) ──
+  const ahComps = ah.competitor_overview || [];
+  const ahShared = ah.shared_keywords || {};
+  if (ahComps.length > 0) {
+    const myDomain = 'myworldcc.com.au';
+    const myShared = ahShared[myDomain] || {};
+    // Find self row
+    const selfRow = ahComps.find(c => (c.domain||'').includes('myworldcc')) || {};
+    const selfTraffic = selfRow.organic_traffic || ah.organic_traffic || 0;
+    // Sort: self first, then by organic traffic asc (smallest competitors first — easier to overtake)
+    const sortedComps = [...ahComps].sort((a, b) => {
+      const aSelf = (a.domain||'').includes('myworldcc') ? 1 : 0;
+      const bSelf = (b.domain||'').includes('myworldcc') ? 1 : 0;
+      if (aSelf !== bSelf) return bSelf - aSelf;
+      return (a.organic_traffic || 0) - (b.organic_traffic || 0);
+    });
+
+    html += sectionTitle('Competitor Authority — Where MWCC Sits');
+    html += `<div class="card mb">
+      <div style="padding:8px 14px 0;font-size:11px;color:var(--muted)">
+        How MWCC stacks up against 5 childcare competitors on organic traffic, ranking positions, and keyword overlap. Smallest competitors listed first — easier targets to overtake.
+      </div>
+      <table><thead><tr>
+        <th>Domain</th>
+        <th class="num">Organic Traffic</th>
+        <th class="num">Positions</th>
+        <th class="num">Brand Traffic</th>
+        <th class="num">Shared KW (vs us)</th>
+        <th style="font-size:10px">Read</th>
+      </tr></thead><tbody>
+      ${sortedComps.map(c => {
+        const dom = c.domain || '–';
+        const isSelf = dom.includes('myworldcc');
+        const traf = c.organic_traffic || 0;
+        const pos = c.organic_positions || 0;
+        const brand = c.brand_traffic || 0;
+        const shared = myShared[dom] ?? (isSelf ? '–' : 0);
+        const ratio = isSelf ? 1 : (selfTraffic > 0 ? traf / selfTraffic : 0);
+        let readMsg = '';
+        if (isSelf) readMsg = 'You are here';
+        else if (ratio < 2) readMsg = 'Within reach · prioritise';
+        else if (ratio < 50) readMsg = 'Mid-term target';
+        else readMsg = 'National giant · long game';
+        const rowBg = isSelf ? 'background:var(--mwcc-purple-mist);font-weight:700' : '';
+        return `<tr style="${rowBg}">
+          <td style="font-size:12px;font-weight:${isSelf?'700':'500'};color:${isSelf?'var(--mwcc-purple-deep)':'var(--text-1)'}">${dom}${isSelf?' <span style="font-size:9px;background:var(--mwcc-purple);color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px">MWCC</span>':''}</td>
+          <td class="num">${_mwccFmt(traf)}</td>
+          <td class="num" style="color:var(--muted)">${_mwccFmt(pos)}</td>
+          <td class="num" style="color:var(--muted)">${_mwccFmt(brand)}</td>
+          <td class="num">${typeof shared === 'number' ? _mwccFmt(shared) : shared}</td>
+          <td style="font-size:10px;color:var(--text-2)">${readMsg}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>
+      <p style="font-size:10px;color:var(--muted);padding:8px 14px 12px;margin:0">
+        Source: Ahrefs Site Explorer · Competitor Overview${ah.competitor_date ? ' · ' + ah.competitor_date : ''}.
+        Shared KW = keywords both domains rank for in Australia.
+        Brand traffic = traffic from queries containing the competitor's brand name.
+      </p>
+    </div>`;
+  }
+
+  // ── AI Citation Tracker (Ahrefs AI search visibility) ──
+  // Tracks visibility across 6 LLM platforms — AI Mode, Gemini, Perplexity, Copilot, Grok, AIO.
+  // Currently 0 across all (MWCC isn't AI-indexed yet) — this section frames the opportunity.
+  const ahAI = ah.ai_citations || {};
+  const aiPlatforms = [
+    { key: 'ai_mode',          label: 'AI Mode (Google)', color: '#4285f4' },
+    { key: 'gemini',           label: 'Gemini',           color: '#9333ea' },
+    { key: 'perplexity',       label: 'Perplexity',       color: '#06b6d4' },
+    { key: 'copilot',          label: 'Copilot',          color: '#1e40af' },
+    { key: 'grok',             label: 'Grok',             color: '#0f172a' },
+    { key: 'aio_search_queries', label: 'AIO (search queries)', color: '#0d9488' },
+  ];
+  const aiTotal = aiPlatforms.reduce((sum, p) => sum + ((ahAI[p.key]?.citations) || 0), 0);
+  const aiOverviewsTotal = ahAI.ai_overviews_total ?? 0;
+  const chatgptTotal = ahAI.chatgpt_total ?? 0;
+  if (Object.keys(ahAI).length > 0) {
+    html += sectionTitle('AI Search Visibility — LLM Citations');
+    html += `<div class="card mb">
+      <div style="padding:10px 14px 0;font-size:11px;color:var(--muted)">
+        Track how often MWCC content is cited by AI answer engines. Source: Ahrefs new AI citations index.
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px">
+        <div style="flex:1;min-width:140px;padding:10px 12px;background:linear-gradient(135deg,#a78bfa20,#a78bfa10);border:1px solid var(--mwcc-purple-soft);border-radius:6px">
+          <div style="font-size:9.5px;color:var(--mwcc-purple-deep);text-transform:uppercase;letter-spacing:.05em;font-weight:700">AI Overviews</div>
+          <div style="font-size:22px;font-weight:800;color:var(--mwcc-purple-deep);line-height:1.1">${aiOverviewsTotal}</div>
+          <div style="font-size:10px;color:var(--muted)">Google AI snapshots</div>
+        </div>
+        <div style="flex:1;min-width:140px;padding:10px 12px;background:linear-gradient(135deg,#a78bfa20,#a78bfa10);border:1px solid var(--mwcc-purple-soft);border-radius:6px">
+          <div style="font-size:9.5px;color:var(--mwcc-purple-deep);text-transform:uppercase;letter-spacing:.05em;font-weight:700">ChatGPT</div>
+          <div style="font-size:22px;font-weight:800;color:var(--mwcc-purple-deep);line-height:1.1">${chatgptTotal}</div>
+          <div style="font-size:10px;color:var(--muted)">Cited in ChatGPT responses</div>
+        </div>
+        <div style="flex:1;min-width:140px;padding:10px 12px;background:linear-gradient(135deg,#a78bfa20,#a78bfa10);border:1px solid var(--mwcc-purple-soft);border-radius:6px">
+          <div style="font-size:9.5px;color:var(--mwcc-purple-deep);text-transform:uppercase;letter-spacing:.05em;font-weight:700">Platform Total</div>
+          <div style="font-size:22px;font-weight:800;color:var(--mwcc-purple-deep);line-height:1.1">${aiTotal}</div>
+          <div style="font-size:10px;color:var(--muted)">Across 6 LLM platforms</div>
+        </div>
+      </div>
+      <table><thead><tr>
+        <th>Platform</th>
+        <th class="num">Citations</th>
+        <th class="num">Cited Pages</th>
+        <th>Status</th>
+      </tr></thead><tbody>
+      ${aiPlatforms.map(p => {
+        const data = ahAI[p.key] || { citations: 0, pages: 0 };
+        const c = data.citations || 0;
+        const pp = data.pages || 0;
+        const status = c > 0 ? '<span style="font-size:9px;background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:3px;font-weight:700">Visible</span>'
+                             : '<span style="font-size:9px;background:#f0f2f5;color:var(--muted);padding:1px 6px;border-radius:3px">Not yet cited</span>';
+        return `<tr>
+          <td style="font-size:12px;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.color};margin-right:6px;vertical-align:middle"></span>${p.label}</td>
+          <td class="num">${c}</td>
+          <td class="num" style="color:var(--muted)">${pp}</td>
+          <td>${status}</td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>
+      ${aiTotal === 0 ? `<div style="padding:10px 14px 12px;font-size:11px;color:var(--text-2);line-height:1.6;border-top:1px solid var(--mwcc-purple-soft);background:var(--mwcc-purple-mist);margin-top:4px">
+        <b style="color:var(--mwcc-purple-deep)">Opportunity:</b> MWCC is not yet cited by any AI answer engine. Childcare is a high-intent local-search vertical and AI Overviews already serve childcare queries. To get included:
+        <ul style="margin:6px 0 0;padding-left:18px;font-size:11px">
+          <li>Publish an <code>llms.txt</code> at <code>myworldcc.com.au/llms.txt</code> describing each centre, services, CCS eligibility</li>
+          <li>Structure FAQ pages with question-answer schema (Schema.org FAQPage)</li>
+          <li>Add OperationalHours, Place, ChildCare schemas to every centre page</li>
+          <li>Cover the top "what is..." / "how do I..." queries from GSC top-queries list</li>
+        </ul>
+      </div>` : ''}
     </div>`;
   }
 
