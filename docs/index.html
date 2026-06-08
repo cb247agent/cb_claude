@@ -20097,23 +20097,23 @@ function renderMwccContentPlanner() {
   const calBuckets = {};
   for (let i = 0; i < 14; i++) calBuckets[i] = [];
 
-  // Assignment logic — only fires for ACTIVE items, and only when offset=0
-  // (because priority-based scheduling only makes sense for the current cycle)
+  // Assignment logic — spread items evenly across all 7 days of each week
+  // so the calendar doesn't bunch on Mon-Wed. (Tia direction 08 Jun 2026.)
+  //   P1 → week 1, all 7 days (Mon-Sun, days 0-6)
+  //   P2 → week 2, all 7 days (Mon-Sun, days 7-13)
+  //   P3 → both weeks, all 14 days (Mon-Sun × 2)
+  //   P4 → week 2, all 7 days (treat same as P2 — backlog)
+  // Deterministic by index so the same item lands on the same day every render.
   if (_calOffset === 0) {
     const byPrio = { P1: [], P2: [], P3: [], P4: [] };
     ACTIVE.forEach(item => {
       const p = (item.priority || 'P3').toUpperCase();
       (byPrio[p] || byPrio.P3).push(item);
     });
-
-    // P1 → Mon, Tue, Wed of week 1 (days 0, 1, 2)
-    byPrio.P1.forEach((item, i) => { calBuckets[i % 3].push(item); });
-    // P2 → Mon-Fri of week 2 (days 7-11)
-    byPrio.P2.forEach((item, i) => { calBuckets[7 + (i % 5)].push(item); });
-    // P3 → Wed-Fri of week 2 (days 9-11)
-    byPrio.P3.forEach((item, i) => { calBuckets[9 + (i % 3)].push(item); });
-    // P4 → Fri of week 2 (day 11)
-    byPrio.P4.forEach(item => { calBuckets[11].push(item); });
+    byPrio.P1.forEach((item, i) => { calBuckets[i % 7].push(item); });
+    byPrio.P2.forEach((item, i) => { calBuckets[7 + (i % 7)].push(item); });
+    byPrio.P3.forEach((item, i) => { calBuckets[i % 14].push(item); });
+    byPrio.P4.forEach((item, i) => { calBuckets[7 + (i % 7)].push(item); });
   }
 
   // Count items shown in this 2-week window
@@ -20152,7 +20152,7 @@ function renderMwccContentPlanner() {
   _wk2Start.setDate(_calStart.getDate() + 7);
 
   html += sectionTitle('Content Calendar');
-  html += `<p class="wq-backlog-help">Actions distributed across the 2-week plan by priority — <b>P1</b> in week 1 (Mon–Wed) · <b>P2</b> in week 2 (Mon–Fri) · <b>P3</b> late week 2 (backlog). Cards fade when they still need review, brighten when scheduled or live. Click any card to open its brief.</p>`;
+  html += `<p class="wq-backlog-help">Actions distributed evenly across the 2-week plan — <b>P1</b> spread across week 1 (all 7 days) · <b>P2</b> spread across week 2 (all 7 days) · <b>P3</b> spread across both weeks. Cards fade when they still need review, brighten when scheduled or live. Click any card to open its brief.</p>`;
   html += `<div style="margin-bottom:28px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
       <button onclick="if(window._mwccCalOffset>0){window._mwccCalOffset--;renderMwccContentPlanner()}" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:${_calOffset===0?'var(--muted)':'var(--text)'};font-size:12px;font-weight:600;cursor:${_calOffset===0?'default':'pointer'};opacity:${_calOffset===0?'.4':'1'};font-family:inherit" ${_calOffset===0?'disabled':''}>&#8592; Prev 2 weeks</button>
