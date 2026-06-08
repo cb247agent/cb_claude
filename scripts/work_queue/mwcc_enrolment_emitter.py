@@ -130,11 +130,15 @@ def _emit_enrolment_gap(centres: dict, week: str, start_serial: int) -> Tuple[Li
             owner_role="Manager / Frontline Ops",
             priority="P1",
             effort_hours=2.0,
-            category="membership",
+            category="enrolment",
             data_quality="high",
             projected_kpis=[
                 ProjectedKPI(
-                    metric="membership_signups_weekly",
+                    # MWCC measures CHILD enrolments, not gym membership signups.
+                    # Per Tia direction 08 Jun 2026 — use mwcc_enrolments_weekly
+                    # (already registered in schema.VALID_METRICS) instead of
+                    # the CB247-specific membership_signups_weekly.
+                    metric="mwcc_enrolments_weekly",
                     keyword=name,    # centre name as scope
                     baseline=enrolments,
                     target=float(target_enrolments),
