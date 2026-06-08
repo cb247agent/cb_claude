@@ -158,10 +158,26 @@ log "─── STEP 4.5a: MWCC GSC Pull ───"
     && log "  ✅ MWCC GSC pull complete → state/mwcc-gsc-data.json" \
     || { FAILED_STEPS+=("mwcc-gsc"); log "  ⚠️  MWCC GSC pull failed — check $LOG"; }
 
-log "─── STEP 4.5b: MWCC Ahrefs Pull (supplementary) ───"
-"$PYTHON" "$BASE_DIR/scripts/pull_mwcc_ahrefs.py" >> "$LOG" 2>&1 \
-    && log "  ✅ MWCC Ahrefs pull complete → state/mwcc-ahrefs-data.json" \
-    || { FAILED_STEPS+=("mwcc-ahrefs"); log "  ⚠️  MWCC Ahrefs pull failed (units exhausted?) — check $LOG"; }
+log "─── STEP 4.5b: MWCC Ahrefs (CSV fallback first, then API) ───"
+# Prefer manual CSV exports in mwcc-inbox/ahrefs/ — used while AHREFS_API_KEY
+# is rotating / locked out (Jun 2026). Tia drops 7 CSVs each Monday from
+# Ahrefs UI; the parser writes state/mwcc-ahrefs.json in the dashboard shape.
+# Falls back to the API script if no CSVs are present.
+AHREFS_CSV_COUNT=$(ls "$BASE_DIR/mwcc-inbox/ahrefs"/*.csv 2>/dev/null | wc -l | tr -d ' ')
+if [ "$AHREFS_CSV_COUNT" -gt 0 ]; then
+    log "  Found $AHREFS_CSV_COUNT CSV(s) in mwcc-inbox/ahrefs/ — using manual parser"
+    if "$PYTHON" "$BASE_DIR/scripts/parse_mwcc_ahrefs_csvs.py" >> "$LOG" 2>&1; then
+        log "  ✅ MWCC Ahrefs parsed (manual) → state/mwcc-ahrefs.json"
+    else
+        FAILED_STEPS+=("mwcc-ahrefs-csv")
+        log "  ⚠️  Ahrefs CSV parse failed — check $LOG"
+    fi
+else
+    log "  No CSVs in mwcc-inbox/ahrefs/ — falling back to API pull"
+    "$PYTHON" "$BASE_DIR/scripts/pull_mwcc_ahrefs.py" >> "$LOG" 2>&1 \
+        && log "  ✅ MWCC Ahrefs pull complete → state/mwcc-ahrefs-data.json" \
+        || { FAILED_STEPS+=("mwcc-ahrefs"); log "  ⚠️  MWCC Ahrefs pull failed (units exhausted?) — check $LOG"; }
+fi
 
 # ─────────────────────────────────────────────────────────────────
 # STEP 4.6 — MWCC Metricool PDF parse (organic social)
