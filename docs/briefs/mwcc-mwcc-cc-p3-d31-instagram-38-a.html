@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thu 09 Jul · Instagram Story — &quot;Today's highlight reel&quot; — 5 frames from the day · MWCC Brief</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;padding:24px}
+  .brief-card{max-width:740px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,.08);overflow:hidden}
+  .brief-header{background:#5b3ec7;padding:24px 28px;color:#fff}
+  .brief-header .logo{font-size:13px;color:#d4c5f2;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  .brief-header h1{font-size:20px;font-weight:700;line-height:1.3}
+  .meta-row{display:flex;gap:10px;flex-wrap:wrap;padding:16px 28px;background:#f8f9fa;border-bottom:1px solid #e5e7eb}
+  .meta-chip{border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700}
+  .section{padding:18px 28px;border-bottom:1px solid #f0f2f5}
+  .section:last-child{border-bottom:none}
+  .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:8px}
+  .instructions{font-size:13px;line-height:1.8;color:#374151;white-space:pre-wrap}
+  .caption-box{background:#f8f4ff;border-left:3px solid #8b6fd9;border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;line-height:1.7;color:#1a1a2e}
+  .src{display:inline-block;background:#f8f4ff;color:#5b3ec7;border-radius:99px;padding:4px 14px;font-size:12px;font-weight:700}
+  .approval-section{background:#fffbeb;padding:18px 28px}
+  .approval-section .label{color:#92400e}
+  .approval-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .appr-btn{border:2px solid #e5e7eb;border-radius:8px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s;font-size:12px;font-weight:700;background:#fff}
+  .appr-btn:hover{border-color:#8b6fd9;background:#f8f4ff}
+  .appr-btn.selected-approved{border-color:#16a34a;background:#dcfce7;color:#166534}
+  .appr-btn.selected-adjustment{border-color:#d97706;background:#fef9c3;color:#92400e}
+  .appr-btn.selected-rejected{border-color:#dc2626;background:#fee2e2;color:#991b1b}
+  .notes-area{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:80px}
+  .notes-area:focus{outline:none;border-color:#8b6fd9}
+  .save-btn{background:#5b3ec7;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px}
+  .save-btn:hover{background:#4a30a3}
+  .saved-notice{display:none;color:#16a34a;font-size:12px;font-weight:600;margin-top:8px}
+  .footer{text-align:center;padding:16px;font-size:11px;color:#9ca3af}
+  @media print{body{background:#fff}.brief-card{box-shadow:none}.approval-section{display:none}}
+</style>
+</head>
+<body>
+<div class="brief-card">
+  <div class="brief-header">
+    <div class="logo">MyWorld Childcare — Action Brief</div>
+    <h1>Thu 09 Jul · Instagram Story — &quot;Today's highlight reel&quot; — 5 frames from the day</h1>
+  </div>
+  <div class="meta-row">
+    <span class="meta-chip" style="background:#fce7f3;color:#9d174d">ORGANIC SOCIAL</span>
+    <span class="meta-chip" style="background:#f8f4ff;color:#5b3ec7">Jordan · Content creative</span>
+    <span class="meta-chip" style="background:#8b6fd9;color:#fff">P3</span>
+    <span class="meta-chip" style="background:#f3f4f6;color:#374151">Effort: 1</span>
+  </div>
+  <div class="section">
+    <div class="label">Instructions for Jordan</div>
+    <div class="instructions">PHASE: P3 · During holidays
+STRATEGIC JOB: Document the holiday experience + push LDC tours hard.
+
+Materials, art, science experiment outputs, centre-space wide shots, educator-facing — NO children</div>
+  </div>
+  <div class="section">
+    <div class="label">Projected KPI Target</div>
+    <div class="caption-box">Qualitative action — no projected KPI.</div>
+  </div>
+  <div class="section">
+    <div class="label">Source Page</div>
+    <span class="src">organic-social</span>
+  </div>
+
+  <div class="approval-section">
+    <div class="label">Review — P3</div>
+    <div class="approval-grid">
+      <div class="appr-btn" id="btn-approved" onclick="setApproval('approved')">Approved<br><span style="font-size:10px;font-weight:400">Ready to go</span></div>
+      <div class="appr-btn" id="btn-adjustment" onclick="setApproval('adjustment')">Needs Adjustment<br><span style="font-size:10px;font-weight:400">Review notes below</span></div>
+      <div class="appr-btn" id="btn-rejected" onclick="setApproval('rejected')">Rejected<br><span style="font-size:10px;font-weight:400">Do not proceed</span></div>
+    </div>
+    <div class="label" style="margin-bottom:6px">Notes / Adjustments</div>
+    <textarea class="notes-area" id="approval-notes" placeholder="Add adjustment notes or feedback here..."></textarea>
+    <br>
+    <button class="save-btn" onclick="saveApproval()">Save Review</button>
+    <div class="saved-notice" id="saved-notice">Saved locally</div>
+  </div>
+  <div class="footer">MWCC Marketing OS · Action Brief · Generated 08 Jun 2026</div>
+</div>
+<script>
+const KEY = 'mwcc-brief-mwcc-cc-p3-d31-instagram-38-a';
+function load() {
+  const s = JSON.parse(localStorage.getItem(KEY)||'{}');
+  if(s.status) setApproval(s.status, false);
+  if(s.notes) document.getElementById('approval-notes').value = s.notes;
+}
+function setApproval(val, save=true) {
+  ['approved','adjustment','rejected'].forEach(v => {
+    const btn = document.getElementById('btn-'+v);
+    btn.className = 'appr-btn' + (v===val ? ' selected-'+v : '');
+  });
+  if(save) { const s = JSON.parse(localStorage.getItem(KEY)||'{}'); s.status=val; localStorage.setItem(KEY,JSON.stringify(s)); }
+}
+function saveApproval() {
+  const s = JSON.parse(localStorage.getItem(KEY)||'{}');
+  s.notes = document.getElementById('approval-notes').value;
+  localStorage.setItem(KEY, JSON.stringify(s));
+  const n = document.getElementById('saved-notice');
+  n.style.display='block'; setTimeout(()=>n.style.display='none',2500);
+}
+load();
+</script>
+</body>
+</html>
