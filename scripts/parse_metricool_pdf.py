@@ -61,6 +61,160 @@ def _pct(s):
     return float(m.group(1))
 
 
+# ── NEW (08 Jun 2026): Metricool layout v2 helpers ──
+# Metricool restructured their PDF in mid-2026. Numbers now appear
+# ABOVE labels (e.g. "14.28K\nFollowers\n+0.21%") instead of after.
+# Per-channel breakdowns follow as:
+#   <val1> <val2> [<val3>]
+#   <pct1> <pct2> [<pct3>]
+#   <channel1_label> <channel2_label> [<channel3_label>]
+# where channel order is GBP / Facebook / Instagram for impression-type
+# metrics, and Facebook / Instagram for follower-type metrics.
+
+def _num_with_suffix(s):
+    """Parse '14.28K' / '143.07K' / '4.5M' / '688' / '92' → int.
+    K = thousand, M = million, B = billion.
+    """
+    if s is None:
+        return None
+    s = str(s).strip().replace(",", "")
+    if not s or s in ("-", "–", "—"):
+        return None
+    m = re.match(r"^([\d.]+)\s*([KMB]?)$", s, re.IGNORECASE)
+    if not m:
+        try:
+            return float(s) if "." in s else int(s)
+        except ValueError:
+            return None
+    val = float(m.group(1))
+    mult = {"k": 1_000, "m": 1_000_000, "b": 1_000_000_000}.get(m.group(2).lower(), 1)
+    out = val * mult
+    return int(out) if out.is_integer() else out
+
+
+def _parse_metric_page_v2(page_text):
+    """Parse a v2 Metricool 'metric headline' page.
+
+    Layout:
+        14.28K            ← total value
+        Followers         ← metric label
+        +0.21%            ← total % change
+        ChasingBetter247  ← brand name (skipped)
+        5284 8997         ← per-channel values (space-separated)
+        +0.09% +0.28%     ← per-channel % changes
+        Facebook Instagram ← channel labels (in same order as values)
+        30 May 26 - 05 Jun 26  ← date footer (skipped)
+
+    Returns dict:
+        {
+          "metric_label": str,
+          "total_value":  int|float,
+          "total_pct":    float,
+          "by_channel":   {channel_name: {"value": ..., "pct": ...}},
+        }
+    Returns None if the page doesn't match the v2 layout.
+    """
+    lines = [ln.strip() for ln in (page_text or "").splitlines() if ln.strip()]
+    if len(lines) < 6:
+        return None
+
+    # Line 0: total value (e.g. "14.28K")
+    total_value = _num_with_suffix(lines[0])
+    if total_value is None:
+        return None
+
+    # Line 1: metric label (e.g. "Followers")
+    metric_label = lines[1]
+    if not re.match(r"^[A-Z][A-Za-z ]+$", metric_label):
+        return None  # Not a metric page
+
+    # Line 2: total %
+    total_pct = _pct(lines[2])
+
+    # Find the per-channel value line: a row of 2-3 numbers (no %, no label)
+    val_line_idx = None
+    for i in range(3, len(lines)):
+        # Skip the "ChasingBetter247" brand line
+        if "ChasingBetter247" in lines[i]:
+            continue
+        # Look for a line of 2-3 numbers
+        tokens = lines[i].split()
+        if 2 <= len(tokens) <= 3 and all(re.match(r"^[\d.]+[KMB]?$", t) for t in tokens):
+            val_line_idx = i
+            break
+
+    if val_line_idx is None:
+        return None
+
+    values = [_num_with_suffix(t) for t in lines[val_line_idx].split()]
+
+    # Next line: per-channel percents (may have one missing slot if channel value is 0)
+    pcts = []
+    if val_line_idx + 1 < len(lines):
+        pct_tokens = re.findall(r"[+\-]?\d+(?:\.\d+)?\s*%", lines[val_line_idx + 1])
+        pcts = [_pct(t) for t in pct_tokens]
+
+    # Find the channel-label line (after the percents). It may span 1-2 lines
+    # because "Google Business Profile" can wrap.
+    channel_text = ""
+    for i in range(val_line_idx + 2, min(val_line_idx + 5, len(lines))):
+        ln = lines[i]
+        # Skip date footer lines
+        if re.search(r"\d{1,2}\s+[A-Za-z]+\s+\d{2,4}", ln) and "-" in ln:
+            break
+        channel_text += " " + ln
+
+    # Identify channels in order
+    channels = []
+    if re.search(r"Google\s+Business", channel_text, re.IGNORECASE):
+        channels.append("gbp")
+    if re.search(r"Facebook", channel_text, re.IGNORECASE):
+        channels.append("fb")
+    if re.search(r"Instagram", channel_text, re.IGNORECASE):
+        channels.append("ig")
+
+    # Map values to channels (best-effort positional match)
+    by_channel = {}
+    for idx, ch in enumerate(channels):
+        if idx < len(values):
+            by_channel[ch] = {
+                "value": values[idx],
+                "pct":   pcts[idx] if idx < len(pcts) else None,
+            }
+
+    return {
+        "metric_label": metric_label,
+        "total_value":  total_value,
+        "total_pct":    total_pct,
+        "by_channel":   by_channel,
+    }
+
+
+def _parse_v2_pages(pdf_path):
+    """Iterate through Metricool v2 PDF pages and extract all metric pages.
+
+    Returns:
+        {
+          "Followers":    {parse_metric_page_v2 output},
+          "Impressions":  {...},
+          "Interactions": {...},
+          "Posts":        {...},
+        }
+    """
+    try:
+        import pdfplumber
+    except ImportError:
+        return {}
+    out = {}
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text() or ""
+            parsed = _parse_metric_page_v2(text)
+            if parsed and parsed["metric_label"] not in out:
+                out[parsed["metric_label"]] = parsed
+    return out
+
+
 def _find(text, *patterns, group=1, transform=_num):
     """Return first matching group from text across multiple patterns.
     Patterns are tried in order. Returns None if no match.
@@ -157,29 +311,55 @@ def parse():
                 date_range["end"]   = dr_match.group(2)
                 date_range["raw"]   = dr_match.group(0)
 
+    # ── v2 layout parse (Metricool reformatted 08 Jun 2026) ──
+    # The new PDF has 4 "headline metric" pages near the top — Followers,
+    # Impressions, Interactions, Posts — each with total + per-channel
+    # breakdown for FB/IG/GBP. Parse those directly.
+    v2 = _parse_v2_pages(PDF_PATH)
+
+    def _v2_chan(metric_name, channel):
+        d = v2.get(metric_name) or {}
+        return (d.get("by_channel") or {}).get(channel) or {}
+
     # ── Combined totals (account level) ──
     combined = {
-        "total_followers":    _find_value_then_pct(full_text, [r"Total\s+Followers", r"Community\s+Total"])["value"],
-        "total_impressions":  _find_value_then_pct(full_text, [r"Total\s+Impressions", r"Impressions"])["value"],
-        "total_interactions": _find_value_then_pct(full_text, [r"Total\s+Interactions", r"Interactions"])["value"],
-        "total_posts":        _find_value_then_pct(full_text, [r"Total\s+Posts", r"Posts\s+published"])["value"],
+        "total_followers":    (v2.get("Followers")    or {}).get("total_value"),
+        "total_impressions":  (v2.get("Impressions")  or {}).get("total_value"),
+        "total_interactions": (v2.get("Interactions") or {}).get("total_value"),
+        "total_posts":        (v2.get("Posts")        or {}).get("total_value"),
     }
     combined["wow"] = {
-        "total_impressions":  _find_value_then_pct(full_text, [r"Total\s+Impressions", r"Impressions"])["wow_pct"],
-        "total_interactions": _find_value_then_pct(full_text, [r"Total\s+Interactions", r"Interactions"])["wow_pct"],
+        "total_followers":    (v2.get("Followers")    or {}).get("total_pct"),
+        "total_impressions":  (v2.get("Impressions")  or {}).get("total_pct"),
+        "total_interactions": (v2.get("Interactions") or {}).get("total_pct"),
+        "total_posts":        (v2.get("Posts")        or {}).get("total_pct"),
     }
+    # Dashboard reads `combined.reach` — alias to total_impressions
+    combined["reach"] = combined["total_impressions"]
+
+    # Legacy full-text fallback (only used if v2 parse failed completely)
+    if combined["total_followers"] is None:
+        combined["total_followers"] = _find_value_then_pct(full_text, [r"Total\s+Followers", r"Community\s+Total"])["value"]
+    if combined["total_impressions"] is None:
+        combined["total_impressions"] = _find_value_then_pct(full_text, [r"Total\s+Impressions", r"Impressions"])["value"]
+    if combined["total_interactions"] is None:
+        combined["total_interactions"] = _find_value_then_pct(full_text, [r"Total\s+Interactions", r"Interactions"])["value"]
+    if combined["total_posts"] is None:
+        combined["total_posts"] = _find_value_then_pct(full_text, [r"Total\s+Posts", r"Posts\s+published"])["value"]
 
     # ── Facebook section ──
+    # v2: prefer the per-channel breakdowns from the headline metric pages.
+    # Legacy: fall back to in-section regex if v2 didn't find the metric.
     fb_section = _section(full_text, "Facebook", ["Instagram", "Google Business", "GBP"])
     fb = {
-        "followers":          _find_value_then_pct(fb_section, [r"Followers", r"Page\s+Likes"])["value"],
-        "followers_chg":      _find_value_then_pct(fb_section, [r"Followers", r"Page\s+Likes"])["wow_pct"],
-        "impressions":        _find_value_then_pct(fb_section, [r"Impressions"])["value"],
-        "impressions_chg":    _find_value_then_pct(fb_section, [r"Impressions"])["wow_pct"],
-        "interactions":       _find_value_then_pct(fb_section, [r"Interactions"])["value"],
-        "interactions_chg":   _find_value_then_pct(fb_section, [r"Interactions"])["wow_pct"],
-        "posts_published":    _find_value_then_pct(fb_section, [r"Posts\s+Published", r"Posts"])["value"],
-        "posts_chg":          _find_value_then_pct(fb_section, [r"Posts\s+Published", r"Posts"])["wow_pct"],
+        "followers":          _v2_chan("Followers",    "fb").get("value")  or _find_value_then_pct(fb_section, [r"Followers", r"Page\s+Likes"])["value"],
+        "followers_chg":      _v2_chan("Followers",    "fb").get("pct")    or _find_value_then_pct(fb_section, [r"Followers", r"Page\s+Likes"])["wow_pct"],
+        "impressions":        _v2_chan("Impressions",  "fb").get("value")  or _find_value_then_pct(fb_section, [r"Impressions"])["value"],
+        "impressions_chg":    _v2_chan("Impressions",  "fb").get("pct")    or _find_value_then_pct(fb_section, [r"Impressions"])["wow_pct"],
+        "interactions":       _v2_chan("Interactions", "fb").get("value")  or _find_value_then_pct(fb_section, [r"Interactions"])["value"],
+        "interactions_chg":   _v2_chan("Interactions", "fb").get("pct")    or _find_value_then_pct(fb_section, [r"Interactions"])["wow_pct"],
+        "posts_published":    _v2_chan("Posts",        "fb").get("value")  or _find_value_then_pct(fb_section, [r"Posts\s+Published", r"Posts"])["value"],
+        "posts_chg":          _v2_chan("Posts",        "fb").get("pct")    or _find_value_then_pct(fb_section, [r"Posts\s+Published", r"Posts"])["wow_pct"],
         "reach_avg":          _find_value_then_pct(fb_section, [r"Avg\s+Reach", r"Average\s+Reach"])["value"],
         "engagement_rate":    _find_value_then_pct(fb_section, [r"Engagement\s+Rate"])["value"],
         "community_acquired": _find_value_then_pct(fb_section, [r"Acquired", r"Gained"])["value"],
@@ -191,11 +371,16 @@ def parse():
     # ── Instagram section ──
     ig_section = _section(full_text, "Instagram", ["Facebook", "Google Business", "GBP"])
     ig = {
-        "followers":              _find_value_then_pct(ig_section, [r"Followers"])["value"],
-        "followers_chg":          _find_value_then_pct(ig_section, [r"Followers"])["wow_pct"],
+        "followers":              _v2_chan("Followers",    "ig").get("value") or _find_value_then_pct(ig_section, [r"Followers"])["value"],
+        "followers_chg":          _v2_chan("Followers",    "ig").get("pct")   or _find_value_then_pct(ig_section, [r"Followers"])["wow_pct"],
         "followers_balance":      _find_value_then_pct(ig_section, [r"Balance", r"Net\s+gain"])["value"],
         "views":                  _find_value_then_pct(ig_section, [r"Views"])["value"],
         "views_chg":              _find_value_then_pct(ig_section, [r"Views"])["wow_pct"],
+        "impressions":            _v2_chan("Impressions",  "ig").get("value"),
+        "impressions_chg":        _v2_chan("Impressions",  "ig").get("pct"),
+        "interactions":           _v2_chan("Interactions", "ig").get("value"),
+        "interactions_chg":       _v2_chan("Interactions", "ig").get("pct"),
+        "posts_published_new":    _v2_chan("Posts",        "ig").get("value"),
         "avg_reach_per_day":      _find_value_then_pct(ig_section, [r"Avg\s+Reach\s+per\s+Day", r"Daily\s+Reach"])["value"],
         "avg_reach_per_day_chg":  _find_value_then_pct(ig_section, [r"Avg\s+Reach\s+per\s+Day", r"Daily\s+Reach"])["wow_pct"],
         "posts_published":        _find_value_then_pct(ig_section, [r"Posts\s+Published", r"Feed\s+Posts"])["value"],
