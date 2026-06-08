@@ -20480,8 +20480,16 @@ window.openMwccPlannerModal = (id) => {
   if (draftLinkEl) {
     const draftUrl = row.draft_link || row.draftLink || null;
     if (draftUrl) {
+      // Robust URL: strip any #fragment / ?query from current location
+      // before joining, so a hash like #mwcc-content-planner can't corrupt
+      // the resolved path. Use URL API + pathname for safety.
+      const _baseDir = (() => {
+        const u = new URL(window.location.href);
+        const dir = u.pathname.replace(/\/[^\/]*$/, '/');
+        return `${u.origin}${dir}`;
+      })();
       const draftFullUrl = draftUrl.startsWith('http') ? draftUrl :
-        `${window.location.href.replace(/\/[^\/]*$/, '')}/${draftUrl.replace(/^\.?\//,'').replace(/^docs\//,'')}`;
+        `${_baseDir}${draftUrl.replace(/^\.?\//,'').replace(/^docs\//,'')}`;
       draftLinkEl.style.display = 'block';
       // Recolour the block + button purple so it matches MWCC palette
       draftLinkEl.style.background = 'var(--mwcc-purple-mist)';
