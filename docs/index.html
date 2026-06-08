@@ -19996,72 +19996,23 @@ function renderMwccContentPlanner() {
   MWCC_STAGES.forEach(s => counts[s] = 0);
   ALL.forEach(item => { counts[saved[item.id]||'Idea'] = (counts[saved[item.id]||'Idea']||0) + 1; });
 
-  // ── Aggregates for verdict + freshness banner ──
-  const _runDates = ALL.map(a => a.runAt).filter(Boolean).sort();
-  const lastEmit = _runDates.length ? _runDates[_runDates.length-1].slice(0,10) : '–';
-  const _priorityCounts = { P1: 0, P2: 0, P3: 0, P4: 0 };
-  ACTIVE.forEach(a => { const p = (a.priority||'P3').toUpperCase(); if (_priorityCounts[p] !== undefined) _priorityCounts[p]++; });
+  // ── KPI counts (08 Jun 2026 — Tia direction: clone CB247 format 1:1.
+  //    Removed MWCC-specific Data Freshness banner, Executive Verdict block,
+  //    Blocked-items amber insight — none of those exist on CB247's Work Queue,
+  //    so they don't exist here either.)
   const blockedKelley = counts['Kelley QC'] || 0;
   const blockedDenver = counts['Denver Approval'] || 0;
-  const totalBlocked  = blockedKelley + blockedDenver;
-  const sourceBreakdown = {};
-  ACTIVE.forEach(a => { sourceBreakdown[a.sourcePage] = (sourceBreakdown[a.sourcePage]||0) + 1; });
 
   let html = '';
 
-  // ── Data freshness banner (purple, matches other MWCC pages) ──
-  html += `<div style="background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--mwcc-purple-deep);display:flex;flex-wrap:wrap;gap:14px">
-    <span><b>Work Queue</b> last emit ${lastEmit}</span>
-    <span><b>Active items</b> ${ACTIVE.length}${ALL.length > ACTIVE.length ? ` · <span style="color:var(--muted)">${ALL.length - ACTIVE.length} published</span>` : ''}</span>
-    <span><b>P1 / P2 / P3</b> ${_priorityCounts.P1} / ${_priorityCounts.P2} / ${_priorityCounts.P3}</span>
-    <span><b>Sources</b> ${Object.keys(sourceBreakdown).length}</span>
-  </div>`;
-
-  // ── Executive Verdict ──
-  const _whereWeAre = `${ACTIVE.length} active actions across ${Object.keys(sourceBreakdown).length} source pages. ${_priorityCounts.P1} P1 (act this week), ${_priorityCounts.P2} P2 (next 2 weeks), ${_priorityCounts.P3} P3 (backlog). ${counts['Published']||0} completed this cycle.`;
-  const _risk = totalBlocked >= 3
-    ? `<b>${totalBlocked} items blocked in approval</b> — ${blockedKelley} waiting Kelley QC, ${blockedDenver} waiting Denver sign-off. Weekly review meeting recommended Friday.`
-    : _priorityCounts.P1 > 5
-      ? `<b>${_priorityCounts.P1} P1 actions</b> stacking up — team capacity may be insufficient this cycle. Consider reassigning some P1s to next week or upgrading P2 → P1 only if essential.`
-      : ACTIVE.length === 0
-        ? `<b>No active actions</b> — either emitters haven't run this Monday yet, or last cycle is fully published. Next cron fires Monday 2pm AWST.`
-        : `Queue is healthy. Standard 14-day measurement window applies to all completed actions.`;
-  const _priority = _priorityCounts.P1 > 0
-    ? `Focus on the ${_priorityCounts.P1} P1 actions first. Cards below are sorted by priority within each source group — start at the top of each.`
-    : totalBlocked > 0
-      ? `${totalBlocked} items waiting on Kelley + Denver. Tia to chase + unblock by EOW Friday.`
-      : `Maintain pace. Watch Performance Review next Monday for verdicts on this cycle's actions.`;
-
-  html += `<div class="insight teal mb" style="border-left-width:6px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:8px">
-      <div class="insight-label" style="margin:0">This Week — Work Queue Verdict</div>
-      <div style="font-size:10px;color:var(--muted);white-space:nowrap">Cycle starting ${lastEmit}</div>
-    </div>
-    <div style="font-size:13px;line-height:1.7">
-      <div><b>Where we are:</b> ${_whereWeAre}</div>
-      <div style="margin-top:6px"><b style="color:#b91c1c">Biggest risk:</b> ${_risk}</div>
-      <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_priority}</div>
-    </div>
-  </div>`;
-
   // ── KPI bar ──
   html += `<div class="kpi-grid cols-5 mb">
-    ${kpiCard('','Total Items', ACTIVE.length, null, 'In this cycle')}
-    ${kpiCard('','Pending Kelley QC', blockedKelley, null, 'Waiting brand QC', blockedKelley>0?'amber':'')}
-    ${kpiCard('','Pending Denver', blockedDenver, null, 'Waiting COO sign-off', blockedDenver>0?'amber':'')}
-    ${kpiCard('','Scheduled', counts['Scheduled']||0, null, 'Approved + queued', (counts['Scheduled']||0)>0?'green':'')}
+    ${kpiCard('','Total Items', ACTIVE.length, null, 'In this 2-week plan')}
+    ${kpiCard('','Pending Kelley QC', blockedKelley, null, 'Waiting for brand QC', blockedKelley>0?'amber':'')}
+    ${kpiCard('','Pending Denver', blockedDenver, null, 'Waiting for COO sign-off', blockedDenver>0?'amber':'')}
+    ${kpiCard('','Scheduled', counts['Scheduled']||0, null, 'Approved + in scheduler', (counts['Scheduled']||0)>0?'green':'')}
     ${kpiCard('','Published', counts['Published']||0, null, 'Live this cycle', (counts['Published']||0)>0?'green':'')}
   </div>`;
-
-  // ── Blocked-items insight (only renders if items are stuck > 0) ──
-  if (totalBlocked > 0) {
-    html += `<div class="insight amber mb">
-      <div class="insight-label">${totalBlocked} Item${totalBlocked===1?'':'s'} Blocked in Approval</div>
-      ${blockedKelley > 0 ? `<b>${blockedKelley} waiting Kelley QC</b> — brand check needed before Denver sees them.<br>` : ''}
-      ${blockedDenver > 0 ? `<b>${blockedDenver} waiting Denver sign-off</b> — strategic approval needed before scheduling.<br>` : ''}
-      <br><b>Unblock action:</b> Tia to ping Kelley + Denver in Friday standup. Each blocked item is roughly 7 days of leverage being lost.
-    </div>`;
-  }
 
   // ── Approval flow (purple, no teal) ──
   html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;font-size:11px;color:var(--text-2)">
@@ -20200,12 +20151,8 @@ function renderMwccContentPlanner() {
   const _wk2Start = new Date(_calStart);
   _wk2Start.setDate(_calStart.getDate() + 7);
 
-  html += sectionTitle('Cycle Calendar — actions distributed by priority');
-  html += `<p class="wq-backlog-help" style="margin-bottom:14px">
-    MWCC actions don't have publish dates, so this calendar uses priority as a target schedule:
-    <b>P1</b> → act Mon–Wed this week · <b>P2</b> → next week Mon–Fri · <b>P3</b> → week 2 Wed–Fri (backlog).
-    Cards follow stage colours: faded = needs Tia review, bright purple = scheduled. Click any card to open its brief.
-  </p>`;
+  html += sectionTitle('Content Calendar');
+  html += `<p class="wq-backlog-help">Actions distributed across the 2-week plan by priority — <b>P1</b> in week 1 (Mon–Wed) · <b>P2</b> in week 2 (Mon–Fri) · <b>P3</b> late week 2 (backlog). Cards fade when they still need review, brighten when scheduled or live. Click any card to open its brief.</p>`;
   html += `<div style="margin-bottom:28px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap">
       <button onclick="if(window._mwccCalOffset>0){window._mwccCalOffset--;renderMwccContentPlanner()}" style="display:flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:${_calOffset===0?'var(--muted)':'var(--text)'};font-size:12px;font-weight:600;cursor:${_calOffset===0?'default':'pointer'};opacity:${_calOffset===0?'.4':'1'};font-family:inherit" ${_calOffset===0?'disabled':''}>&#8592; Prev 2 weeks</button>
