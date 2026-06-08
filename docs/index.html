@@ -15967,11 +15967,28 @@ function renderReadme() {
     <div style="background:#fff;border-left:4px solid var(--mwcc-purple);padding:18px 22px;border-radius:6px;margin-bottom:20px">
       <h2 style="margin-top:0;color:var(--mwcc-purple-deep)">My World Childcare — Marketing OS</h2>
       <p style="font-size:13px;line-height:1.7;color:var(--text-2);margin-bottom:10px">
-        <b>07 Jun 2026 — architecture parity achieved.</b> MWCC now runs the same 4-layer architecture as CB247: Data Pulls · Skills · AI Agents · Emitters. The Layer 3 agents follow the <b>Agent Action Contract</b> — every agent's markdown output ends with a structured JSON action block. The contract makes agent recommendations measurable (closes the "judgement call" loop).
+        <b>08 Jun 2026 update.</b> MWCC runs the same 4-layer architecture as CB247: Data Pulls · Skills · AI Agents · Emitters. Cron moved to <b>Monday 1pm AWST</b> (was 2pm) so the report lands before the team meeting. Work Queue now opens the same brief modal as CB247 with full approval flow. SEO has a manual Ahrefs CSV+PDF fallback for the weeks Ahrefs API is down.
       </p>
       <p style="font-size:13px;line-height:1.7;color:var(--text-2);margin-bottom:0">
-        Monday 2pm AWST: pulls + parsers → 4 rule-based emitters (Layer 4) → LLM agents (Layer 3, when run) → both write to the same Work Queue → 6-stage approval flow → 14-day measurement window → <b>hit rate per agent + per emitter</b> on Performance Review.
+        Monday 1pm AWST: pulls + inbox parsers → 4 rule-based emitters → Work Queue → Tia review → Kelley QC → Denver Approval → 14-day measurement window → verdict on Performance Review. A <b>separate private Management Report</b> emails Robert · Denver · Kelley · Jordan · Dana with marketing performance integrated against operational outcomes (revenue · wage · network occupancy).
       </p>
+    </div>
+
+    <!-- 08 Jun 2026 changelog quick-scan -->
+    <div style="background:var(--mwcc-purple-mist);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:14px 18px;margin-top:10px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mwcc-purple-deep);margin-bottom:8px">What changed this week — 08 Jun 2026</div>
+      <ul style="margin:0;padding-left:18px;font-size:12px;color:var(--text-2);line-height:1.8">
+        <li><b>Cron moved 2pm → 1pm AWST</b> (UTC 5am Mon). OWNA file drop deadline now 12:55pm.</li>
+        <li><b>Source-of-truth files added:</b> <code>leads-enquiries.xlsx</code> (enquiries) + <code>StartersAndExitsReport.xlsx</code> (enrolments/exits). Replaces guess work from MYWORLD_REPORT alone.</li>
+        <li><b>Network occupancy method:</b> now capacity-weighted everywhere (was simple average on Weekly Digest, capacity-weighted on Mgmt Report — aligned to capacity-weighted across all pages).</li>
+        <li><b>Ahrefs CSV+PDF fallback:</b> drop 7 CSVs + Overview PDF into <code>mwcc-inbox/ahrefs/</code>; <code>parse_mwcc_ahrefs_csvs.py</code> takes over when API quota is depleted.</li>
+        <li><b>SEO page restructured:</b> Verdict moved above KPIs · Ahrefs Site Authority (monthly) + GSC/GA4 Actual Behaviour (weekly) split · Competitor Authority table · AI Search Visibility (6 LLM platforms) · MoM + WoW deltas.</li>
+        <li><b>Organic Social refocused IG + FB only:</b> demographics (top countries + cities) · Ranking of Posts (best engagement) · Hashtag Performance. GBP moved to its own tab (currently hidden — API quota pending).</li>
+        <li><b>Work Queue full modal parity:</b> opens the same brief modal as CB247 — instructions · KPI target · status cycle (Idea → In Progress → Kelley QC → Denver Approval → Scheduled → Published) · approval pills · View Brief link to <code>docs/briefs/mwcc-[id].html</code>.</li>
+        <li><b>Management Report (private):</b> separate HTML emailed to Robert · Denver · Kelley · Jordan · Dana with merged marketing + operational KPIs per centre.</li>
+        <li><b>Metricool PDF parser extended:</b> top posts/reels ranking, IG hashtags, FB+IG geographic demographics now extracted automatically.</li>
+        <li><b>MWCC enrolments metric renamed:</b> <code>membership_signups_weekly</code> → <code>mwcc_enrolments_weekly</code> (gym terminology removed from childcare context).</li>
+      </ul>
     </div>
   </div>
 
@@ -16073,7 +16090,7 @@ function renderReadme() {
       <div class="loop-diagram">
         <div class="loop-node">
           <div class="loop-icon" style="border-color:var(--mwcc-purple);background:var(--mwcc-purple-mist)"><div class="loop-icon-inner" style="background:var(--mwcc-purple)"></div></div>
-          <div class="loop-label">Monday 2pm AWST</div>
+          <div class="loop-label">Monday 1pm AWST</div>
           <div class="loop-sub">Cron fires<br>weekly-report-mwcc.sh</div>
         </div>
         <div class="loop-arrow" style="color:var(--mwcc-purple)">→</div>
@@ -16170,7 +16187,20 @@ function renderReadme() {
         <div class="agent-row">
           <div class="agent-box">
             <div class="agent-name">parse_mwcc_ops.py</div>
-            <div class="agent-desc">Reads <code>mwcc-inbox/MYWORLD_REPORT.xlsx</code> + <code>utilisation.xlsx</code> dropped by Kelley each Monday.<br>Extracts 5-centre occupancy + enrolments + exits + enquiries.<br><b>Window: Mon–Fri</b> (centres operate weekdays only)</div>
+            <div class="agent-desc">Reads <b>4 OWNA exports</b> dropped to <code>mwcc-inbox/</code> by <b>12:55pm Monday</b> (before 1pm cron):<br>
+              · <code>leads-enquiries.xlsx</code> — enquiries (source of truth)<br>
+              · <code>StartersAndExitsReport.xlsx</code> — enrolments + exits (source of truth, dedupes centre transfers by child name)<br>
+              · <code>MYWORLD_REPORT.xlsx</code> — wage + this-week / next-week projection<br>
+              · <code>utilisation.xlsx</code> — 5-centre occupancy by room<br>
+              <b>Window: Mon–Fri</b> (centres operate weekdays only)</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">parse_mwcc_metricool_pdf.py</div>
+            <div class="agent-desc">Reads <code>mwcc-inbox/metricool.pdf</code> (55-page export). Extracts FB + IG follower counts, impressions, post rankings, geographic demographics, IG hashtag performance, Seville Grove GBP signals.</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">parse_mwcc_ahrefs_csvs.py</div>
+            <div class="agent-desc"><b>NEW 08 Jun</b> — when Ahrefs API is down, drop 7 CSV exports + Overview PDF into <code>mwcc-inbox/ahrefs/</code>. Parser auto-detects and uses them; falls back to API when CSVs absent.</div>
           </div>
           <div class="agent-box">
             <div class="agent-name">parse_mwcc_metricool_pdf.py</div>
@@ -16237,15 +16267,44 @@ function renderReadme() {
 
       <!-- Phase 5 -->
       <div class="agent-phase">
-        <div class="agent-phase-label" style="color:var(--mwcc-purple-deep)">Phase 5 — Bake + Deploy</div>
+        <div class="agent-phase-label" style="color:var(--mwcc-purple-deep)">Phase 5 — Bake + Deploy (Public)</div>
         <div class="agent-row">
           <div class="agent-box primary-agent" style="border-color:var(--mwcc-purple)">
             <div class="agent-num" style="background:var(--mwcc-purple);color:#fff">05</div>
             <div class="agent-name">bake-mwcc-report.py</div>
             <div class="agent-desc">Loads all state/*.json → injects <code>window.MWCC_DATA</code> into docs/index.html. Git commit + push → GitHub Pages publishes to <code>cb247agent.github.io/cb_claude</code>. Team sees updated data on next refresh.</div>
             <div class="agent-reads">Reads: ALL state/mwcc-*.json</div>
-            <div class="agent-out">→ docs/index.html (live)</div>
+            <div class="agent-out">→ docs/index.html (live · public dashboard)</div>
           </div>
+          <div class="agent-box">
+            <div class="agent-name">send_mwcc_weekly_report.py</div>
+            <div class="agent-desc">Emails Tia the weekly digest summary (network occupancy capacity-weighted · enrolment funnel · per-centre breakdown · top 3 priorities).</div>
+            <div class="agent-out">→ tia@chasingbetter.com.au</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase-arrow" style="color:var(--mwcc-purple)">↓ public output complete</div>
+
+      <!-- Phase 6 — NEW 08 Jun 2026 -->
+      <div class="agent-phase">
+        <div class="agent-phase-label" style="color:var(--mwcc-purple-deep)">Phase 6 — Management Report (Private · added 08 Jun 2026)</div>
+        <div class="agent-row">
+          <div class="agent-box primary-agent" style="border-color:var(--mwcc-purple)">
+            <div class="agent-num" style="background:var(--mwcc-purple);color:#fff">06</div>
+            <div class="agent-name">bake_mwcc_management_report.py</div>
+            <div class="agent-desc">Generates the <b>private confidential report</b> integrating marketing performance with operational outcomes. Sections: Verdict · Network KPIs + Conversion Story · Per-Centre 3-column (This Week · Next Week · Week After projections) · Marketing Performance · Next Week priorities. Status pills on enquiries / enrolments / exits. ~40 KB minified HTML (Gmail-safe).</div>
+            <div class="agent-reads">Reads: state/mwcc-ops.json · state/mwcc-funnel.json · state/mwcc-meta.json · state/mwcc-ads.json · state/mwcc-social.json</div>
+            <div class="agent-out">→ outputs/mwcc/management-report-YYYY-MM-DD.html</div>
+          </div>
+          <div class="agent-box">
+            <div class="agent-name">send_mwcc_management_report.py</div>
+            <div class="agent-desc">Emails the management report HTML inline as the email body to <code>MWCC_MANAGEMENT_RECIPIENTS</code> (.env). Falls back to <code>WEEKLY_REPORT_RECIPIENT</code> when not set.</div>
+            <div class="agent-out">→ Robert · Denver · Kelley · Jordan · Dana</div>
+          </div>
+        </div>
+        <div style="background:var(--mwcc-purple-mist);border:1px solid var(--mwcc-purple-soft);border-radius:6px;padding:10px 14px;margin-top:10px;font-size:11.5px;color:var(--text-2);line-height:1.6">
+          <b style="color:var(--mwcc-purple-deep)">Why two reports?</b> The public dashboard is shareable (anyone with the GitHub Pages link sees it — no PII, no revenue/wage). The management report is confidential — has wage bars, revenue per centre, projection-vs-actual variance. Footer reads: "For internal use only — do not forward."
         </div>
       </div>
 
@@ -16305,24 +16364,31 @@ function renderReadme() {
           </tr>
           <tr style="border-top:1px solid var(--border)">
             <td style="padding:10px 14px;font-weight:600">Metricool PDF</td>
-            <td style="padding:10px 14px;color:var(--text-2)">FB + IG followers · reach · engagement · top posts · GBP Seville Grove only</td>
+            <td style="padding:10px 14px;color:var(--text-2)">FB + IG followers · reach · engagement · <b>top posts/reels ranking</b> · <b>IG hashtag performance</b> · <b>FB+IG geographic demographics</b> · GBP Seville Grove only</td>
             <td style="padding:10px 14px;color:var(--muted)">Manual PDF drop, weekly</td>
             <td style="padding:10px 14px;color:var(--muted)">Sat–Fri</td>
-            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE (extended 08 Jun)</span></td>
           </tr>
           <tr style="border-top:1px solid var(--border)">
             <td style="padding:10px 14px;font-weight:600">GBP Performance API</td>
-            <td style="padding:10px 14px;color:var(--text-2)">5 centres — website clicks · calls · directions · maps + search impressions</td>
+            <td style="padding:10px 14px;color:var(--text-2)">5 centres — website clicks · calls · directions · maps + search impressions. GBP page hidden until quota lands.</td>
             <td style="padding:10px 14px;color:var(--muted)">Live API (when quota approved)</td>
             <td style="padding:10px 14px;color:var(--muted)">Sat–Fri</td>
             <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid #f59e0b;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">QUOTA PENDING</span></td>
           </tr>
           <tr style="border-top:1px solid var(--border)">
-            <td style="padding:10px 14px;font-weight:600">Ahrefs</td>
-            <td style="padding:10px 14px;color:var(--text-2)">Keyword gap analysis · competitor rankings · backlink intel</td>
+            <td style="padding:10px 14px;font-weight:600">Ahrefs (API)</td>
+            <td style="padding:10px 14px;color:var(--text-2)">Site Authority · backlinks · ref domains · organic value · competitor overlap · AI citations (6 LLM platforms)</td>
             <td style="padding:10px 14px;color:var(--muted)">Live API, weekly pull</td>
             <td style="padding:10px 14px;color:var(--muted)">7-day window</td>
-            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid #f59e0b;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">UNITS PENDING</span></td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid #f59e0b;color:#b45309;padding:2px 7px;border-radius:3px;font-weight:700">TOKEN RECOVERY</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:10px 14px;font-weight:600">Ahrefs (manual CSV+PDF)</td>
+            <td style="padding:10px 14px;color:var(--text-2)"><b>NEW 08 Jun fallback</b> — drop 7 CSVs + Overview PDF into <code>mwcc-inbox/ahrefs/</code>. Parser auto-uses CSVs when present; API call when absent. Same dashboard output either way.</td>
+            <td style="padding:10px 14px;color:var(--muted)">Manual drop, weekly</td>
+            <td style="padding:10px 14px;color:var(--muted)">MoM + 7-day</td>
+            <td style="padding:10px 14px"><span style="font-size:10px;border:1px solid var(--mwcc-purple);color:var(--mwcc-purple-deep);padding:2px 7px;border-radius:3px;font-weight:700">LIVE</span></td>
           </tr>
         </tbody>
       </table>
