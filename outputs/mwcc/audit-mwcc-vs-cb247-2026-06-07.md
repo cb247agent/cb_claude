@@ -198,9 +198,13 @@ Per-centre, per-holiday-window: bookings opened, current bookings, capacity rema
 
 GA4 events: tour-form-view → tour-form-submit → tour-attended → enrolled. Show conversion rate at each step per centre. Identify which centre has the lead-leak.
 
-#### 3.3 CCS quote calculator integration
+#### 3.3 ~~CCS quote calculator integration~~ — OUT OF SCOPE (08 Jun 2026)
 
-Track how many parents start a quote vs complete vs convert to tour. Currently invisible.
+**Scope ruling:** Removed from the audit per Tia direction.
+
+**Why out of scope:** The CCS calculator itself is a **website feature** owned by Mark + Webflow, not a marketing OS feature. Building it sits with the website/product team. The marketing OS would only track its conversion rate if/when the calculator exists — and even that tracking would land in the existing enrolment funnel (item 3.2), not as a separate workstream.
+
+**What would re-open it:** If Mark builds the calculator and we need a dedicated funnel widget to track quote-start → quote-complete → tour-booking, raise it as a Layer-1 tracking task at that point. Until then, the marketing OS does not own this.
 
 #### 3.4 Per-centre deep-dive pages
 
