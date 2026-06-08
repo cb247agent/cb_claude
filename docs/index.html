@@ -20202,47 +20202,12 @@ function renderMwccContentPlanner() {
   });
   html += `</div>`;
 
-  // ── SEO Pages to Build — mirrors CB247's SEO Content Briefs section ─────
-  // Promotes SEO work-queue items into prominent brief cards so Mark + John
-  // see what pages need writing this fortnight. Click any card → opens the
-  // same brief modal as the calendar/backlog cards (View Brief link inside).
-  const _mwccSeoBriefs = ACTIVE
-    .filter(a => a.sourcePage === 'seo-organic' || a.sourcePage === 'seo')
-    .sort((a,b) => (a.priority||'P4').localeCompare(b.priority||'P4'));
-  if (_mwccSeoBriefs.length > 0) {
-    html += `<div style="margin-top:18px">
-      ${sectionTitle('SEO Pages to Build — From MWCC SEO Agent')}
-      <p class="wq-backlog-help" style="margin-bottom:12px">
-        SEO actions promoted into brief cards — same flow as CB247. Click any card to open the full brief modal (instructions, KPI target, status cycle, approval pills, View Brief link to <code>docs/briefs/mwcc-[id].html</code>).
-      </p>
-      <div style="display:grid;gap:10px">
-        ${_mwccSeoBriefs.map((a, i) => {
-          const r = a._source || {};
-          const primary = (r.projected_kpis && r.projected_kpis[0]) || {};
-          const kpiLine = primary.metric
-            ? `${primary.metric}: ${primary.baseline ?? '?'} → ${primary.target ?? '?'}`
-            : '';
-          const prioColor = a.priority === 'P1' ? '#ef4444' : a.priority === 'P2' ? '#f59e0b' : 'var(--mwcc-purple)';
-          return `<div class="card" style="border-left:4px solid var(--mwcc-purple);padding:16px;cursor:pointer" onclick="openMwccPlannerModal('${a.id}')">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-              <div style="flex:1">
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mwcc-purple-deep);margin-bottom:4px">SEO Brief ${i+1} · ${a.priority || 'P3'}</div>
-                <div style="font-weight:700;font-size:14px;margin-bottom:6px">${a.title}</div>
-                ${a.instructions ? `<div style="font-size:12px;color:var(--text-2);line-height:1.6;margin-bottom:8px">${a.instructions.length > 220 ? a.instructions.slice(0,220) + '…' : a.instructions}</div>` : ''}
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-                  ${kpiLine ? `<span style="background:var(--mwcc-purple-mist);color:var(--mwcc-purple-deep);padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">${kpiLine}</span>` : ''}
-                  ${a.assignee ? `<span style="background:#f3f4f6;color:var(--muted);padding:2px 8px;border-radius:3px;font-size:10px">${a.assignee}</span>` : ''}
-                  ${r.effort_hours ? `<span style="background:#f3f4f6;color:var(--muted);padding:2px 8px;border-radius:3px;font-size:10px">${r.effort_hours}</span>` : ''}
-                  <span style="background:#f3f4f6;color:#444;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700">AI drafts → Kelley QC → Denver → Mark publishes</span>
-                </div>
-              </div>
-              <span style="background:${prioColor};color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;white-space:nowrap">${a.priority || 'P3'}</span>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
+  // ── SEO Pages to Build section removed 08 Jun 2026 (Tia direction).
+  // The same SEO actions already appear on the Content Calendar (Mon-Fri
+  // week 2 + P3 slots both weeks) and in the Operational Backlog "SEO" group.
+  // Keeping a third copy was pure duplication — CB247's parallel section
+  // ("SEO Content Briefs") reads from a different data source (agent output,
+  // not work queue), so MWCC didn't gain anything from mirroring it 1:1.
 
   container.innerHTML = html;
 }
