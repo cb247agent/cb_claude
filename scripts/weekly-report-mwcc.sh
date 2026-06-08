@@ -300,13 +300,30 @@ fi
 # Set MWCC_REPORT_RECIPIENT in .env to route to a different inbox than CB247.
 # ─────────────────────────────────────────────────────────────────
 log ""
+log "─── STEP 5.5: Bake Management Report (private, integrated) ───"
+# Generates outputs/mwcc/management-report-{date}.html — confidential
+# weekly view for Robert (CEO), Denver, Kelley, Jordan, Dana that
+# integrates marketing performance with operational outcomes.
+"$PYTHON" "$BASE_DIR/scripts/bake_mwcc_management_report.py" >> "$LOG" 2>&1 \
+    && log "  ✅ Management report baked → outputs/mwcc/management-report-$DATE.html" \
+    || { FAILED_STEPS+=("mwcc-mgmt-bake"); log "  ⚠️  Management report bake failed"; }
+
+log ""
 log "─── STEP 6: Email Digest ───"
 if "$PYTHON" "$BASE_DIR/scripts/send_mwcc_weekly_report.py" >> "$LOG" 2>&1; then
-    log "  ✅ MWCC weekly digest emailed"
+    log "  ✅ MWCC weekly digest emailed (marketing, to Tia)"
 else
     FAILED_STEPS+=("mwcc-email")
     log "  ⚠️  Email send failed (non-fatal — check SMTP env + log)"
 fi
+
+log ""
+log "─── STEP 6.5: Email Management Report (private, integrated) ───"
+# Sends the management report HTML to MWCC_MANAGEMENT_RECIPIENTS (.env).
+# Falls back to WEEKLY_REPORT_RECIPIENT (Tia only) when not set.
+"$PYTHON" "$BASE_DIR/scripts/send_mwcc_management_report.py" >> "$LOG" 2>&1 \
+    && log "  ✅ Management report emailed" \
+    || { FAILED_STEPS+=("mwcc-mgmt-email"); log "  ⚠️  Management email failed (non-fatal)"; }
 
 
 # ─────────────────────────────────────────────────────────────────
