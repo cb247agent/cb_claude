@@ -259,6 +259,11 @@ log "─── STEP 4.7e: Sync Work Queue → Supabase ───"
     && log "  ✅ MWCC Work Queue synced to Supabase" \
     || { FAILED_STEPS+=("mwcc-sync"); log "  ⚠️  Supabase sync failed"; }
 
+log "─── STEP 4.7f: Generate per-action briefs (docs/briefs/mwcc-*.html) ───"
+"$PYTHON" "$BASE_DIR/scripts/generate_mwcc_briefs.py" >> "$LOG" 2>&1 \
+    && log "  ✅ MWCC per-action briefs generated" \
+    || { FAILED_STEPS+=("mwcc-briefs"); log "  ⚠️  Brief generation failed (non-fatal)"; }
+
 # ─────────────────────────────────────────────────────────────────
 # STEP 5 — BAKE REPORT
 # ─────────────────────────────────────────────────────────────────
