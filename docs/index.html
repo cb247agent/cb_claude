@@ -18739,15 +18739,7 @@ function renderGroupOverview() {
     <button class="no-print" onclick="window.print()" style="padding:8px 14px;border:1px solid var(--brand-accent);background:#fff;color:var(--brand-accent-deep);font-size:12px;font-weight:600;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap">Print Meeting Summary</button>
   </div>`;
 
-  // ── 1b. Quick Links bar (08 Jun 2026 — Tia direction) ────────────────────
-  // Cross-platform links to external reports. The Group Overview is the
-  // logical hub for jumping to per-business deep views and Netlify-hosted
-  // operational reports without needing to remember URLs.
-  html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px" class="no-print">
-    <a href="https://myworldcc.netlify.app" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#01696f;color:#fff;padding:8px 14px;border-radius:4px;text-decoration:none;font-size:12px;font-weight:700">Open MWCC Operations Report →</a>
-    <button onclick="(function(){const t=document.querySelector('.biz-tab[data-biz=\\'cb247\\']');if(t)switchBiz(t);})()" style="display:inline-flex;align-items:center;gap:6px;background:var(--teal);color:#fff;padding:8px 14px;border-radius:4px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Open CB247 Marketing →</button>
-    <button onclick="(function(){const t=document.querySelector('.biz-tab[data-biz=\\'mwcc\\']');if(t)switchBiz(t);})()" style="display:inline-flex;align-items:center;gap:6px;background:#8B6FD9;color:#fff;padding:8px 14px;border-radius:4px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Open MWCC Marketing →</button>
-  </div>`;
+  // Quick Links bar removed 08 Jun 2026 (Tia direction).
 
   // ── 2. Executive Verdict ──────────────────────────────────────────────────
   // Where we are: high-level group state
