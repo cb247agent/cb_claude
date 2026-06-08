@@ -614,13 +614,77 @@ def _parse_starters_exits(path, period_start=None, period_end=None):
                 result[short]["exits_this_week"] += 1
                 result[short]["exits_list"].append(record)
 
+    # ── Deduplicate by child name (08 Jun 2026, Tia direction) ──
+    # OWNA records a centre transfer as a "starter" at the destination centre
+    # AND optionally a "starter" at the origin centre if mid-week. The same
+    # child can appear in multiple centres' starter lists across a 5-week
+    # window. For accurate unique-child counts, deduplicate by name within
+    # the rolling window. Per-centre raw counts are preserved (each centre's
+    # OWNA record is real); only the network total is deduplicated.
+    seen_starters = set()
+    seen_exits    = set()
+    unique_starters_rolling = 0
+    unique_exits_rolling    = 0
+    unique_starters_week    = 0
+    unique_exits_week       = 0
+    for centre_data in result.values():
+        for s in centre_data.get("starters_list", []):
+            n = (s.get("child") or "").strip().lower()
+            if n and n not in seen_starters:
+                seen_starters.add(n)
+                unique_starters_week += 1
+        for e in centre_data.get("exits_list", []):
+            n = (e.get("child") or "").strip().lower()
+            if n and n not in seen_exits:
+                seen_exits.add(n)
+                unique_exits_week += 1
+
+    # For the rolling window we need to inspect every starter/exit row
+    # (not just this-week's). We don't have all rolling records on
+    # result[centre]["starters_list"] (only this-week's). Re-walk the file
+    # for accurate rolling unique counts.
+    seen_starters_r = set()
+    seen_exits_r    = set()
+    current_section = None
+    for r in range(1, ws.max_row + 1):
+        row = [ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
+        if not row or all(v is None or v == "" for v in row):
+            continue
+        first = str(row[0] or "").strip()
+        if first == "New Starters":   current_section = "starters"; continue
+        if first.startswith("Exits"): current_section = "exits"; continue
+        if first.startswith("Total Results") or first in ("Centre", "") or first.startswith("Session Difference") or first in ("Monday", "Tuesday") or ("(" in first and "%" in first):
+            continue
+        if not _short_centre(first):
+            continue
+        child = (row[1] if len(row) > 1 else "")
+        child_key = str(child or "").strip().lower()
+        if not child_key:
+            continue
+        if current_section == "starters":
+            seen_starters_r.add(child_key)
+        elif current_section == "exits":
+            seen_exits_r.add(child_key)
+    unique_starters_rolling = len(seen_starters_r)
+    unique_exits_rolling    = len(seen_exits_r)
+
     starters_wk = sum(v["starters_this_week"] for v in result.values())
     exits_wk    = sum(v["exits_this_week"]    for v in result.values())
     starters_rl = sum(v["starters_rolling"]   for v in result.values())
     exits_rl    = sum(v["exits_rolling"]      for v in result.values())
-    print(f"[MWCC Ops]   This week: {starters_wk} starters · {exits_wk} exits (net {starters_wk - exits_wk:+d})")
-    print(f"[MWCC Ops]   Rolling:   {starters_rl} starters · {exits_rl} exits")
-    return dict(result)
+    print(f"[MWCC Ops]   This week (raw): {starters_wk} starters · {exits_wk} exits (net {starters_wk - exits_wk:+d})")
+    print(f"[MWCC Ops]   This week (unique children): {unique_starters_week} starters · {unique_exits_week} exits")
+    print(f"[MWCC Ops]   Rolling (raw):   {starters_rl} starters · {exits_rl} exits")
+    print(f"[MWCC Ops]   Rolling (unique children): {unique_starters_rolling} starters · {unique_exits_rolling} exits")
+
+    # Stash unique counts as a tuple — caller pulls them off separately.
+    # Returning the dict + dedup info as a tuple keeps centre iteration clean.
+    return dict(result), {
+        "unique_starters_week":    unique_starters_week,
+        "unique_exits_week":       unique_exits_week,
+        "unique_starters_rolling": unique_starters_rolling,
+        "unique_exits_rolling":    unique_exits_rolling,
+    }
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -703,8 +767,10 @@ def parse_mwcc_ops(inbox_path=None):
     else:
         print("[MWCC Ops] ⚠️  leads-enquiries.xlsx not found — enquiry counts fall back to MYWORLD_REPORT (may be inaccurate)")
 
+    starters_dedup = None
     if starters_file:
-        starters_data = _parse_starters_exits(starters_file, canonical_start_d, canonical_end_d)
+        starters_data, starters_dedup = _parse_starters_exits(
+            starters_file, canonical_start_d, canonical_end_d)
         for short_centre, se in starters_data.items():
             if short_centre not in ops_data:
                 ops_data[short_centre] = {"name": short_centre}
@@ -764,6 +830,11 @@ def parse_mwcc_ops(inbox_path=None):
             "total_revenue":              round(total_revenue, 2),
             "centres_in_wage_breach":     breach_centres,
             "rooms_with_compliance_risk": compliance_risk_rooms,
+            # Unique-child counts (deduplicated across centres for transfers)
+            # Per Tia direction 08 Jun 2026 — when a child transfers between
+            # centres OWNA records them twice. Counting unique names gives
+            # the true number of children moving in/out of the network.
+            **(starters_dedup or {}),
         },
         "centres": ops_data,
         "source_files": {

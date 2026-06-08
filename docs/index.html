@@ -17270,14 +17270,18 @@ function renderMwccOccupancy() {
   </div>`;
 
   // ── Enquiry → Starter Conversion Observation (since 1 May 2026) ──
-  // Pulls total enquiries pipeline + rolling starters from state/mwcc-ops.json.
-  // Window is defined by the file contents (leads-enquiries.xlsx starts ~5 May,
-  // StartersAndExits file starts ~4 May), so this approximates 'since 1 May'.
+  // Network total uses UNIQUE child count (dedup by name) — Jordan Matoe-Crooks
+  // type centre transfers were inflating raw counts. Per-centre breakdown shows
+  // raw counts (each centre's record is real from that centre's perspective).
   {
+    const ns = ops.network_summary || {};
     const totalEnquiries = Object.values(ops.centres || {}).reduce(
       (s,c) => s + (c.enquiries_pipeline || 0), 0);
-    const totalStarters  = Object.values(ops.centres || {}).reduce(
+    // Unique starters rolling = deduped by child name. Falls back to raw sum.
+    const totalStartersRaw = Object.values(ops.centres || {}).reduce(
       (s,c) => s + (c.enrolments_rolling || 0), 0);
+    const totalStarters = ns.unique_starters_rolling ?? totalStartersRaw;
+    const transfers = totalStartersRaw - totalStarters;
     const convPct = totalEnquiries ? Math.round(1000 * totalStarters / totalEnquiries) / 10 : null;
 
     // Per-centre breakdown rows
@@ -17299,8 +17303,9 @@ function renderMwccOccupancy() {
         <div style="flex:1;min-width:240px">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--mwcc-purple-deep);font-weight:700;margin-bottom:4px">Enquiry → Starter Conversion · since 1 May 2026</div>
           <div style="font-size:13px;color:var(--text-1);line-height:1.5">
-            <b>${totalEnquiries} enquiries</b> received · <b>${totalStarters} new starters</b> joined
+            <b>${totalEnquiries} enquiries</b> received · <b>${totalStarters} unique new starters</b> joined
             ${convPct != null ? ` · <b style="color:var(--mwcc-purple-deep)">${convPct}% conversion</b>` : ''}.
+            ${transfers ? `<br><span style="color:var(--muted)">Unique count excludes ${transfers} centre-transfer duplicate${transfers > 1 ? 's' : ''} (same child recorded at two centres). Per-centre rows below show raw OWNA counts.</span>` : ''}
             ${totalEnquiries > totalStarters * 3
               ? '<br><span style="color:var(--muted)">Conversion is below 33% — the funnel from enquiry to tour to enrolment leaks somewhere. Worth a Kelley + Joanne audit.</span>'
               : '<br><span style="color:var(--muted)">Healthy conversion. Keep the lead-gen + tour-booking cadence consistent.</span>'}
