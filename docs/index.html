@@ -18739,6 +18739,16 @@ function renderGroupOverview() {
     <button class="no-print" onclick="window.print()" style="padding:8px 14px;border:1px solid var(--brand-accent);background:#fff;color:var(--brand-accent-deep);font-size:12px;font-weight:600;border-radius:4px;cursor:pointer;font-family:inherit;white-space:nowrap">Print Meeting Summary</button>
   </div>`;
 
+  // ── 1b. Quick Links bar (08 Jun 2026 — Tia direction) ────────────────────
+  // Cross-platform links to external reports. The Group Overview is the
+  // logical hub for jumping to per-business deep views and Netlify-hosted
+  // operational reports without needing to remember URLs.
+  html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px" class="no-print">
+    <a href="https://myworldcc.netlify.app" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#01696f;color:#fff;padding:8px 14px;border-radius:4px;text-decoration:none;font-size:12px;font-weight:700">Open MWCC Operations Report →</a>
+    <button onclick="(function(){const t=document.querySelector('.biz-tab[data-biz=\\'cb247\\']');if(t)switchBiz(t);})()" style="display:inline-flex;align-items:center;gap:6px;background:var(--teal);color:#fff;padding:8px 14px;border-radius:4px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Open CB247 Marketing →</button>
+    <button onclick="(function(){const t=document.querySelector('.biz-tab[data-biz=\\'mwcc\\']');if(t)switchBiz(t);})()" style="display:inline-flex;align-items:center;gap:6px;background:#8B6FD9;color:#fff;padding:8px 14px;border-radius:4px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Open MWCC Marketing →</button>
+  </div>`;
+
   // ── 2. Executive Verdict ──────────────────────────────────────────────────
   // Where we are: high-level group state
   const _vWhereWeAre = `Group spent <b>$${groupTotal.toFixed(0)}</b> across ${liveBizCount} live business${liveBizCount===1?'':'es'} this week${groupChg!==null?` (${groupChg>0?'+':''}${groupChg}% WoW)`:''}.
@@ -18786,7 +18796,24 @@ function renderGroupOverview() {
     </div>
   </div>`;
 
-  // ── 3. KPI cards with WoW deltas ──────────────────────────────────────────
+  // ── 3a. Group Revenue (08 Jun 2026 — Tia direction) ──────────────────────
+  // Surface MWCC weekly revenue ($94K) which Tia explicitly cares about
+  // (it's the headline of the management report she sends Robert/Denver).
+  // CB247 revenue comes from membership systems — once available add here.
+  const mwccRevenue = md.ops?.network_summary?.total_revenue || 0;
+  const groupRevenue = mwccRevenue; // CB247 revenue placeholder — wire when membership $ available
+  const mwccStarters = md.ops?.network_summary?.unique_starters_rolling;
+  const mwccExits    = md.ops?.network_summary?.unique_exits_rolling;
+  const cycleNet     = (mwccStarters !== undefined && mwccExits !== undefined) ? mwccStarters - mwccExits : null;
+  html += sectionTitle('Group Revenue + Acquisition Movement');
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Group Revenue (week)', groupRevenue>0?'$'+groupRevenue.toLocaleString(undefined,{maximumFractionDigits:0}):'—', null, groupRevenue>0?`MWCC $${mwccRevenue.toLocaleString(undefined,{maximumFractionDigits:0})} · CB247 awaiting feed`:'Awaiting OWNA', groupRevenue>0?'green':'')}
+    ${kpiCard('','MWCC Network Occupancy', mwccAvgOcc!==null ? mwccAvgOcc+'%' : '—', null, '5 centres · 80% target', mwccAvgOcc!==null && mwccAvgOcc>=70?'green':'')}
+    ${kpiCard('','Cycle Net Enrolment · Since 1 May', cycleNet!==null ? (cycleNet>=0?'+':'')+cycleNet : '—', null, mwccStarters!==undefined ? `${mwccStarters} starters · ${mwccExits} exits (deduped)` : 'OWNA rolling totals', cycleNet>0?'green':cycleNet<0?'red':'')}
+    ${kpiCard('','Group Backlog', groupTotalQ.toString(), null, `${groupP1} P1 · ${groupP2} P2 · cross-business actions`, groupP1>5?'red':groupP1>0?'amber':'green')}
+  </div>`;
+
+  // ── 3b. Group Ad Spend with WoW deltas ───────────────────────────────────
   html += sectionTitle('Total Group Ad Spend');
   html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Group Total','$'+groupTotal.toFixed(0), groupChg, 'Meta + Google · all live businesses', groupChg!==null && groupChg>=0?'green':'')}
@@ -19061,22 +19088,11 @@ function renderGroupOverview() {
     ${_renderBizHealth('sparrows',  'Sparrows',           SOURCE_DEFS.sparrows)}
   </div>`;
 
-  // ── 8. MWCC Centre Occupancy (NO WAGE BREACH per rule) ───────────────────
-  if (mwccCentreArr.length) {
-    html += sectionTitle('MWCC Centre Occupancy');
-    html += `<div class="kpi-grid cols-5 mb">
-      ${mwccCentreArr.map(c => {
-        const occ = c.occupancy?.Overall || 0;
-        // Status now driven by compliance only (no wage mentions)
-        const atRisk = (c.rooms_detail && Object.values(c.rooms_detail).some(r =>
-          (r.capacity||0) > 0 && (r.compliance_risk || (r.occupancy_pct||0) >= 100)
-        ));
-        const subLabel = atRisk ? 'Compliance risk' : occ >= 70 ? 'Within capacity' : 'Below target';
-        const colorClass = atRisk ? 'red' : occ >= 70 ? 'green' : '';
-        return kpiCard('', c.name||'Centre', occ+'%', null, subLabel, colorClass);
-      }).join('')}
-    </div>`;
-  }
+  // MWCC Centre Occupancy section removed 08 Jun 2026 (Tia direction):
+  // it was a duplicate of the centre breakdown already present on the
+  // MWCC Dashboard tab (renderMwccOverview → Centre Summary by service
+  // type). The Group page now keeps centre-level detail OFF and shows
+  // only network-level signals — drill into MWCC for the per-centre view.
 
   el.innerHTML = html;
 
