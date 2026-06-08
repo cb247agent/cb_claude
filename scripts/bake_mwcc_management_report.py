@@ -237,13 +237,18 @@ def _section_verdict(ops, ga4, meta, ads, date_str):
     """
 
 
-def _section_network_kpis(ops, ga4):
-    """Top-line network KPIs with WoW deltas. Sits below the verdict."""
+def _section_network_kpis_combined(ops, ga4, funnel):
+    """Merged Network KPIs + Conversion Story — single section.
+
+    Row 1 (funnel): Sessions → Conversions → Enquiries → Enrolments → Exits → Net Move
+    Row 2 (state):  Network Occupancy · Network Revenue · Active Pipeline
+    """
     network_occ = _network_occupancy(ops)
     net = ops.get("network_summary", {}) or {}
     revenue = net.get("total_revenue")
-    enrolments = net.get("total_enrolments", 0)
-    exits = net.get("total_exits", 0)
+    n_enrolments = net.get("total_enrolments", 0)
+    n_exits = net.get("total_exits", 0)
+    n_enquiries = net.get("total_enquiries", 0)
     net_move = net.get("net_movement", 0)
     enquiries_pipeline = sum(
         (c.get("enquiries_pipeline") or 0) for c in (ops.get("centres") or {}).values()
@@ -256,40 +261,53 @@ def _section_network_kpis(ops, ga4):
     conv_cur = ga4_cur.get("key_events")
     conv_prev = ga4_prev.get("key_events")
 
-    # Build a 4-column KPI row
     occ_color = (
         PALETTE["risk"] if (network_occ is not None and network_occ > 100) else
         PALETTE["warn"] if (network_occ is not None and network_occ < 50) else
         PALETTE["deep"]
     )
-    cards = [
-        ("Network Occupancy", _fmt_pct(network_occ), None, occ_color),
-        ("Network Revenue",   _fmt_money(revenue), None, PALETTE["deep"]),
-        ("Web Sessions",      _fmt_int(sessions_cur), _delta_chip(sessions_cur, sessions_prev), PALETTE["purple"]),
-        ("Web Conversions",   _fmt_int(conv_cur), _delta_chip(conv_cur, conv_prev), PALETTE["purple"]),
-        ("Active Enquiry Pipeline", _fmt_int(enquiries_pipeline), None, PALETTE["purple"]),
-        ("Net Enrolments (this wk)", f"{net_move:+d}", None, PALETTE["ok"] if net_move >= 0 else PALETTE["risk"]),
+
+    # Row 1 — the funnel left-to-right (6 cards)
+    funnel_cards = [
+        ("Web Sessions",      _fmt_int(sessions_cur), _delta_chip(sessions_cur, sessions_prev), PALETTE["soft"]),
+        ("Conversions",       _fmt_int(conv_cur),     _delta_chip(conv_cur, conv_prev),         PALETTE["soft"]),
+        ("Enquiries",         _fmt_int(n_enquiries),  None,                                     PALETTE["purple"]),
+        ("Enrolments",        _fmt_int(n_enrolments), None,                                     PALETTE["deep"]),
+        ("Exits",             _fmt_int(n_exits),      None,                                     PALETTE["risk"]),
+        ("Net Move",          f"{net_move:+d}",       None,                                     PALETTE["ok"] if net_move >= 0 else PALETTE["risk"]),
     ]
-    # Two-row centred table layout — matches THE CONVERSION STORY format.
-    # 3 cards per row × 2 rows = 6 KPIs.
-    def _card_cell(label, val, chip, color):
+
+    # Row 2 — network state (3 cards)
+    state_cards = [
+        ("Network Occupancy",       _fmt_pct(network_occ),       None, occ_color),
+        ("Network Revenue",         _fmt_money(revenue),         None, PALETTE["deep"]),
+        ("Active Enquiry Pipeline", _fmt_int(enquiries_pipeline),None, PALETTE["purple"]),
+    ]
+
+    def _card_cell(label, val, chip, color, *, width_pct):
         return (
-            f'<td style="width:28%;padding:6px 8px;vertical-align:top">'
-            f'  <div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {color};border-radius:8px;padding:16px 12px;text-align:center">'
-            f'    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600">{label}</div>'
-            f'    <div style="font-size:22px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px;line-height:1.1">{val}{chip or ""}</div>'
+            f'<td style="width:{width_pct}%;padding:6px 6px;vertical-align:top">'
+            f'  <div style="background:{PALETTE["white"]};border:1px solid {PALETTE["gray_2"]};border-top:3px solid {color};border-radius:8px;padding:14px 8px;text-align:center">'
+            f'    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:{PALETTE["muted"]};font-weight:600;white-space:nowrap">{label}</div>'
+            f'    <div style="font-size:20px;font-weight:700;color:{PALETTE["text_strong"]};margin-top:4px;line-height:1.1">{val}{chip or ""}</div>'
             f'  </div>'
             f'</td>'
         )
-    row1 = "".join(_card_cell(*c) for c in cards[:3])
-    row2 = "".join(_card_cell(*c) for c in cards[3:])
+
+    # Row 1: 6 cards at ~14% each, with 8% spacer either side
+    row1_cells = "".join(_card_cell(*c, width_pct=14) for c in funnel_cards)
+    # Row 2: 3 cards at ~28% each, with 8% spacer either side
+    row2_cells = "".join(_card_cell(*c, width_pct=28) for c in state_cards)
+
     return f"""
     <section style="margin-bottom:24px">
-      <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Network KPIs (Week-on-Week)</h3>
+      <h3 style="font-size:14px;font-weight:700;color:{PALETTE['deep']};text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Network KPIs &amp; Conversion Story (Week-on-Week)</h3>
       <div style="background:{PALETTE['mist']};padding:20px;border-radius:10px">
         <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed">
-          <tr><td style="width:8%"></td>{row1}<td style="width:8%"></td></tr>
-          <tr><td style="width:8%"></td>{row2}<td style="width:8%"></td></tr>
+          <tr><td style="width:8%"></td>{row1_cells}<td style="width:8%"></td></tr>
+        </table>
+        <table style="width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;margin-top:8px">
+          <tr><td style="width:8%"></td>{row2_cells}<td style="width:8%"></td></tr>
         </table>
       </div>
     </section>
@@ -477,9 +495,8 @@ def _centre_period_card(title, period, data, *, is_actuals, rooms_detail=None,
                           color=PALETTE["purple"],
                           helper_text="Inc. Leave shown for reference only.")
 
-    # Service utilisation (only on actuals column)
-    if is_actuals and rooms_detail:
-        body += _service_util_table(rooms_detail, rev)
+    # Service utilisation table REMOVED (Tia direction 08 Jun 2026) —
+    # only Enquiries / Exits / Enrolments pills retained below.
 
     # Status pills at bottom (only on actuals column)
     if is_actuals and any(v is not None for v in (enquiries, exits, enrolments)):
@@ -699,12 +716,19 @@ def build_html(date_str: str) -> str:
 
     period_label = (ops.get("period") or {}).get("label", date_str)
 
+    # Section order (per Tia direction 08 Jun 2026):
+    #   - Verdict
+    #   - Network KPIs + Conversion Story MERGED into one section
+    #   - Per-centre 3-column performance
+    #   - Marketing performance breakdown
+    #   - What's planned next week
+    # REMOVED: standalone funnel section (merged into Network KPIs)
+    # REMOVED: standalone Network KPIs section (merged into one with funnel)
+    # REMOVED: Compliance & Risk panel section (centre-level chips remain)
     sections = [
         _section_verdict(ops, ga4, meta, ads, date_str),
-        _section_network_kpis(ops, ga4),
-        _section_funnel(ops, ga4, funnel),
+        _section_network_kpis_combined(ops, ga4, funnel),
         _section_per_centre(ops),
-        _section_compliance(ops),
         _section_marketing_perf(ga4, meta, ads, gsc),
         _section_next_week(wq),
     ]
