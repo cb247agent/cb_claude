@@ -20068,14 +20068,18 @@ function renderMwccContentPlanner() {
     'Denver Approval':'s-denver', 'Scheduled':'s-sched', 'Published':'s-pub'
   })[st] || 's-idea';
 
-  const PC = window.PLAT_CFG || {};
+  // BUG FIX 08 Jun 2026: was `window.PLAT_CFG || {}` — PLAT_CFG is a top-level
+  // const declared in another <script>, NOT a window property, so window
+  // lookup returned undefined and every badge fell back to gray. CB247's
+  // _renderWqCard uses PLAT_CFG[item.platform] direct (closure access) and
+  // works correctly. Aligned to that pattern.
   const _renderCard = (item) => {
     const st = saved[item.id] || 'Idea';
     if (_filter !== 'all' && _filter !== st) return '';
-    const pc = PC[item.platform] || {bg:'#f3f4f6',color:'#444'};
+    const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
     const stLabel = st === 'Published' ? '✓ PUBLISHED' : st.toUpperCase();
     return `<div class="wq-card ${_stageClass(st)}" onclick="openMwccPlannerModal('${item.id}')">
-      <span class="src-badge" style="background:${pc.bg};color:${pc.color}">${(pc.label || item.platform).toUpperCase()}</span>
+      <span class="src-badge" style="background:${pc.bg};color:${pc.color}">${(PLAT_CFG[item.platform]?.label || item.platform).toUpperCase()}</span>
       <div class="title">${item.title}</div>
       <div class="stage-line">${stLabel}${item.priority ? ' · ' + item.priority : ''}${item.assignee ? ' · ' + item.assignee : ''}</div>
     </div>`;
