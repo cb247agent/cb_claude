@@ -64,6 +64,36 @@ ADDON_KEYWORDS = [
 # Live membership statuses (what counts as "active")
 LIVE_STATUSES = {"Live"}
 
+# ── Active promo definitions ──
+# Each entry: a marketing campaign that maps to one or more PGM plan names.
+# Promos are tracked separately so the dashboard can show subscriptions
+# per club + new signups this week. Add new promos by appending to this
+# list — the parser automatically picks them up.
+#
+# Matching: a contract counts toward a promo if its Payment Plan Name
+# starts with the `match_prefix` (case-insensitive). Update prefixes when
+# new campaigns launch.
+ACTIVE_PROMOS = [
+    {
+        "id":            "winter-2026-special",
+        "label":         "Winter 2026 Special — 3 months All Access @ $11.95/wk",
+        "match_prefix":  "WINTER 2026 SPECIAL",
+        "started":       "2026-06-01",
+        "ended":         None,  # null = still live
+    },
+]
+
+
+def _promo_for_plan(plan_name):
+    """Return the matching promo id if plan_name starts with a promo prefix, else None."""
+    if not plan_name:
+        return None
+    pl = str(plan_name).strip().upper()
+    for promo in ACTIVE_PROMOS:
+        if pl.startswith(promo["match_prefix"].upper()):
+            return promo["id"]
+    return None
+
 # Cancel reason categories — used to distinguish member-submitted cancellations
 # from contracts that ended naturally (promo expiry, trial ending, etc).
 #
@@ -305,6 +335,35 @@ def parse_pgm_summary():
     unique_base["natural_ending"]         = natural_endings
     unique_base["debt_ending"]            = debt_endings
 
+    # ── New promo signups this week ──
+    # Count NEW contracts on each active promo plan, per club. This is the
+    # weekly velocity number — "how many new members joined on the promo
+    # this week" — complementing the AllContracts-derived "total active
+    # on this promo" number.
+    promo_new_this_week = {p["id"]: {"Malaga": 0, "Ellenbrook": 0, "Total": 0,
+                                     "label": p["label"],
+                                     "plan_breakdown": Counter()}
+                           for p in ACTIVE_PROMOS}
+    for r in new_rows:
+        plan = (r.get("Payment Plan Name") or "")
+        club_raw = r.get("Club") or ""
+        club_short = None
+        for short, full in CLUBS.items():
+            if full == club_raw:
+                club_short = short
+                break
+        promo_id = _promo_for_plan(plan)
+        if promo_id and club_short:
+            promo_new_this_week[promo_id][club_short] += 1
+            promo_new_this_week[promo_id]["Total"] += 1
+            promo_new_this_week[promo_id]["plan_breakdown"][plan] += 1
+
+    # Flatten Counter → dict for JSON serialisation
+    for pid in promo_new_this_week:
+        promo_new_this_week[pid]["plan_breakdown"] = dict(
+            promo_new_this_week[pid]["plan_breakdown"].most_common()
+        )
+
     return {
         "available":    True,
         "period":       {"raw": period, "start": start_date, "end": end_date},
@@ -331,6 +390,8 @@ def parse_pgm_summary():
             "ended": len(ended_rows),
             "future": len(future_rows),
         },
+        # New signups on each active promo this week
+        "promo_new_this_week": promo_new_this_week,
     }
 
 
@@ -470,6 +531,12 @@ def parse_allcontracts():
     addon_by_club = {"Malaga": Counter(), "Ellenbrook": Counter()}
     total_active_base = {"Malaga": set(), "Ellenbrook": set()}
 
+    # Promo-active counters — one per defined promo, per club + total
+    promo_active = {p["id"]: {"Malaga": 0, "Ellenbrook": 0, "Total": 0,
+                              "label": p["label"], "started": p["started"],
+                              "plan_breakdown": Counter()}
+                    for p in ACTIVE_PROMOS}
+
     for r in rows:
         plan = (r.get("Payment Plan Name") or "")
         status = r.get("Membership Status") or ""
@@ -481,6 +548,15 @@ def parse_allcontracts():
             if full == club_raw:
                 club_short = short
                 break
+
+        # Promo membership counter — counts every active contract on a
+        # promo plan. A member with both base + promo = counted once
+        # (promo plan IS the base contract in this campaign structure).
+        promo_id = _promo_for_plan(plan)
+        if promo_id and club_short:
+            promo_active[promo_id][club_short] += 1
+            promo_active[promo_id]["Total"] += 1
+            promo_active[promo_id]["plan_breakdown"][plan] += 1
 
         if _is_addon(plan):
             # Bucket add-ons into common categories
@@ -505,12 +581,26 @@ def parse_allcontracts():
             if u and club_short:
                 total_active_base[club_short].add(u)
 
+    # Flatten promo counters for output (Counter → dict)
+    promo_active_out = {}
+    for pid, p in promo_active.items():
+        promo_active_out[pid] = {
+            "label":           p["label"],
+            "started":         p["started"],
+            "Malaga":          p["Malaga"],
+            "Ellenbrook":      p["Ellenbrook"],
+            "Total":           p["Total"],
+            "plan_breakdown":  dict(p["plan_breakdown"].most_common()),
+        }
+
     return {
         "available":         True,
         "total_active_base": {k: len(v) for k, v in total_active_base.items()},
         "total_active_base_combined": sum(len(v) for v in total_active_base.values()),
         "addon_active":      dict(addon_active.most_common()),
         "addon_by_club":     {k: dict(v.most_common()) for k, v in addon_by_club.items()},
+        # Promo subscriptions — currently active members on each campaign
+        "promo_active":      promo_active_out,
     }
 
 
@@ -613,6 +703,44 @@ def main():
         if submitted_truth["below_target"]:
             print(f"  ⚠️  Capture rate below 70% — emitter will flag Work Queue action for reception team")
 
+    # ── Promo tracking (added 08 Jun 2026) ──
+    # Combine two views per promo:
+    #   - active (from PGM_AllContracts) — total currently on the promo plan
+    #   - new_this_week (from PGM_ContractsSummary New contracts tab) — weekly velocity
+    promo_tracking = {}
+    summary_promos  = (summary.get("promo_new_this_week") or {}) if summary.get("available") else {}
+    contracts_promos = (contracts.get("promo_active") or {}) if contracts.get("available") else {}
+    promo_ids = set(summary_promos.keys()) | set(contracts_promos.keys())
+    for pid in promo_ids:
+        active = contracts_promos.get(pid, {})
+        new_tw = summary_promos.get(pid, {})
+        promo_tracking[pid] = {
+            "label":       active.get("label") or new_tw.get("label") or pid,
+            "started":     active.get("started"),
+            "active": {
+                "Malaga":     active.get("Malaga", 0),
+                "Ellenbrook": active.get("Ellenbrook", 0),
+                "Total":      active.get("Total", 0),
+                "plan_breakdown": active.get("plan_breakdown", {}),
+            },
+            "new_this_week": {
+                "Malaga":     new_tw.get("Malaga", 0),
+                "Ellenbrook": new_tw.get("Ellenbrook", 0),
+                "Total":      new_tw.get("Total", 0),
+                "plan_breakdown": new_tw.get("plan_breakdown", {}),
+            },
+        }
+
+    # Console feedback
+    if promo_tracking:
+        print(f"\n[membership] Active promo tracking:")
+        for pid, p in promo_tracking.items():
+            a = p["active"]
+            n = p["new_this_week"]
+            print(f"  {p['label']}")
+            print(f"    Active total:        Malaga {a['Malaga']}  · Ellenbrook {a['Ellenbrook']}  · Total {a['Total']}")
+            print(f"    NEW signups this wk: Malaga {n['Malaga']}  · Ellenbrook {n['Ellenbrook']}  · Total {n['Total']}")
+
     # Build output payload
     output = {
         "parsed_at":   datetime.now(timezone.utc).isoformat(),
@@ -625,6 +753,10 @@ def main():
         # dashboard "submitted cancellations" card. Reads from CleverWaiver
         # with PGM as comparison + capture-rate health check.
         "submitted_cancellation_truth": submitted_truth,
+        # NEW (08 Jun 2026) — active marketing promos: total active +
+        # new this week per club. Driven by ACTIVE_PROMOS list at top
+        # of this file.
+        "promo_tracking": promo_tracking,
     }
 
     # Append current week to history (cap last 12 weeks)
