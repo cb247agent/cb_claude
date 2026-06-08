@@ -14677,8 +14677,12 @@ window.openPlannerModal = (id) => {
   notesWrap.style.display = (apprData.status==='adjustment'||apprData.status==='rejected') ? 'block' : 'none';
 
   // Brief link — points to docs/briefs/[id].html
+  // (Restore display in case MWCC's openMwccPlannerModal hid it last open)
   const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
-  $('modal-brief-link').href = `${baseUrl}/briefs/${id}.html`;
+  const _bl = $('modal-brief-link');
+  _bl.href = `${baseUrl}/briefs/${id}.html`;
+  _bl.style.display = '';
+  _bl.textContent = 'View Brief';
 
   // Draft link — show prominent button if item has a draftLink
   const draftLinkEl = document.getElementById('modal-draft-link-wrap');
@@ -20369,9 +20373,24 @@ window.openMwccPlannerModal = (id) => {
   notes.value = (row.notes_human || apprData.notes || '');
   notesWrap.style.display = (apprData.status === 'adjustment' || apprData.status === 'rejected') ? 'block' : 'none';
 
-  // Brief link → docs/briefs/mwcc-{id}.html (separate from CB247's briefs)
-  const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
-  $('modal-brief-link').href = `${baseUrl}/briefs/mwcc-${id}.html`;
+  // Brief link — point to the master strategy brief when one exists for this
+  // action family, otherwise hide the link. Most MWCC actions come from rule-
+  // based emitters (Google Ads / Meta / SEO / Enrolment) and don't have per-
+  // action briefs — the action's description IS the brief. The exception is
+  // content-calendar actions, which all source from one parent strategy doc.
+  const briefLinkEl = $('modal-brief-link');
+  let briefUrl = null;
+  if (id.startsWith('content-calendar-school-holidays-2026')) {
+    const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
+    briefUrl = `${baseUrl}/briefs/mwcc-content-calendar-school-holidays-2026.html`;
+  }
+  if (briefUrl) {
+    briefLinkEl.href = briefUrl;
+    briefLinkEl.style.display = '';
+    briefLinkEl.textContent = 'View Full Strategy Brief';
+  } else {
+    briefLinkEl.style.display = 'none';
+  }
 
   // MWCC actions have no draftLink (they're not content drafts) — hide that block
   const draftLinkEl = document.getElementById('modal-draft-link-wrap');
