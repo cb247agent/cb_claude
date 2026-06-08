@@ -1,12 +1,12 @@
 #!/bin/bash
 # weekly-report-mwcc.sh — My World Childcare Marketing OS pipeline
 #
-# Runs every Monday 2:00 PM Perth Time (AWST = UTC+8) via cron.
-# Cron entry (Monday 6am UTC = 2pm AWST):
-#   0 6 * * 1 /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/scripts/weekly-report-mwcc.sh >> /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/logs/mwcc-weekly-report.log 2>&1
+# Runs every Monday 1:00 PM Perth Time (AWST = UTC+8) via cron.
+# Cron entry (Monday 5am UTC = 1pm AWST):
+#   0 5 * * 1 /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/scripts/weekly-report-mwcc.sh >> /Users/tiachasingbetter/Documents/ChasingBetter/CB_Marketing/logs/mwcc-weekly-report.log 2>&1
 #
 # INBOX REQUIREMENT (before this runs):
-#   Drop both files to mwcc-inbox/ by 1:55 PM Monday:
+#   Drop both files to mwcc-inbox/ by 12:55 PM Monday:
 #     - MYWORLD_REPORT.xlsx  (OWNA → Reports → Weekly Wage Monitor)
 #     - utilisation.xlsx     (OWNA → Reports → Utilisation)
 #
@@ -105,7 +105,7 @@ UTIL_FILE=$(ls "$INBOX/utilisation.xlsx" "$INBOX"/utilisation*.xlsx 2>/dev/null 
 if [ -z "$WAGE_FILE" ] && [ -z "$UTIL_FILE" ]; then
     OPS_SKIPPED=true
     log "  ⚠️  No OWNA files in mwcc-inbox/ — ops data skipped"
-    log "     Drop MYWORLD_REPORT.xlsx and utilisation.xlsx before 2pm Monday"
+    log "     Drop MYWORLD_REPORT.xlsx and utilisation.xlsx before 1pm Monday"
 elif [ -z "$WAGE_FILE" ]; then
     log "  ⚠️  Missing MYWORLD_REPORT.xlsx — parsing with utilisation only"
     if "$PYTHON" "$BASE_DIR/scripts/parse_mwcc_ops.py" >> "$LOG" 2>&1; then

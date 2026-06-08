@@ -44,7 +44,7 @@ After reading all four files, confirm: **"MWCC context loaded. [Active window: X
 - Compliance gate added 7 Jun 2026 — rejects banned language pre-sync
 
 **Pipeline:**
-- `scripts/weekly-report-mwcc.sh` — Monday 2pm AWST via cron (0 6 * * 1 UTC)
+- `scripts/weekly-report-mwcc.sh` — Monday 1pm AWST via cron (0 5 * * 1 UTC)
 - `scripts/bake-mwcc-report.py` — generates HTML weekly report
 - `scripts/send_mwcc_weekly_report.py` — emails report to Tia only
 
@@ -68,7 +68,7 @@ Overview · SEO & Organic · Google Ads · Meta Ads · GBP · Occupancy · Enrol
 
 > **To refresh all live data:** `bash scripts/weekly-report-mwcc.sh` (Monday pipeline) or invoke individual pull scripts.
 > ⚠️ **GBP API quota=0** — Tia to submit quota increase via GCP Console for project chasingbetter-247. 3 APIs enabled, location IDs verified.
-> ⚠️ **OWNA file drop deadline: Monday 12:00 PM Perth** — pipeline runs at 2:00 PM. If file is late, the parse step uses last week's data and flags staleness.
+> ⚠️ **OWNA file drop deadline: Monday 12:00 PM Perth** — pipeline runs at 1:00 PM. If file is late, the parse step uses last week's data and flags staleness.
 
 ---
 
@@ -123,7 +123,7 @@ Overview · SEO & Organic · Google Ads · Meta Ads · GBP · Occupancy · Enrol
 
 - **NO child photos in MWCC marketing.** Locked 7 Jun 2026 by Tia. Use educators (with consent), spaces, materials, text-quote cards, or branded graphics. If any content mentions/implies child imagery, REJECT and flag for human review.
 - **Email digests go to Tia only** (`tia@chasingbetter.com.au`). No Kelley / Denver / Joanne.
-- **OWNA file drop deadline: Monday 12:00 PM Perth.** Pipeline runs at 2 PM. If late → parse uses last week's data + staleness flag.
+- **OWNA file drop deadline: Monday 12:00 PM Perth.** Pipeline runs at 1 PM. If late → parse uses last week's data + staleness flag.
 - **Compliance gate is mandatory** — never bypass `compliance.py` in sync pipelines. Reject any PR that disables it.
 - **Active business switch is canonical** — every MWCC session must run `set_active_business.py mwcc` first.
 
@@ -138,7 +138,7 @@ python3 scripts/set_active_business.py cb247     # switch back
 python3 scripts/set_active_business.py           # check current
 ```
 
-### Pipeline (Monday 2pm via cron):
+### Pipeline (Monday 1pm via cron):
 ```bash
 bash scripts/weekly-report-mwcc.sh
 ```
