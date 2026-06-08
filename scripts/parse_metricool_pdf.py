@@ -431,8 +431,22 @@ def parse():
         "fb_fields_filled":  _count_filled({k:v for k,v in fb.items() if not k.endswith("_chg")}),
         "ig_fields_filled":  _count_filled({k:v for k,v in ig.items() if not k.endswith("_chg")}),
         "gbp_fields_filled": _count_filled({k:v for k,v in gbp.items() if not k.endswith("_chg")}),
+        "combined_fields_filled": _count_filled({k:v for k,v in combined.items() if k != "wow" and not isinstance(v, dict)}),
         "date_range_found":  bool(date_range.get("start")),
     }
+
+    # ── Success heuristic (v2 layout aware) ──
+    # The new Metricool v2 layout populates ONLY the headline metrics
+    # (4 combined + 4 fb + 4 ig + 3 gbp = 15 essentials). Deep-section
+    # fields stay None until we parse Stories/Reels/GBP detail pages.
+    # So "successful parse" now means: date_range parsed AND combined
+    # totals populated AND ≥3 essential IG fields (followers + impressions
+    # + interactions).
+    success = (
+        quality["date_range_found"]
+        and quality["combined_fields_filled"] >= 3
+        and quality["ig_fields_filled"] >= 3
+    )
 
     result = {
         "parsed_at":   datetime.now(timezone.utc).isoformat(),
@@ -443,7 +457,7 @@ def parse():
         "ig":          ig,
         "gbp":         gbp,
         "parse_quality": quality,
-        "available":   quality["ig_fields_filled"] >= 5,  # heuristic: need 5+ IG fields to count as successful parse
+        "available":   success,
     }
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -451,12 +465,15 @@ def parse():
 
     print(f"[metricool] Parsed → {OUT_PATH}")
     print(f"            Date range: {date_range.get('raw') or 'NOT FOUND'}")
+    print(f"            Combined fields:  {quality['combined_fields_filled']}/4")
     print(f"            FB fields filled:  {quality['fb_fields_filled']}")
     print(f"            IG fields filled:  {quality['ig_fields_filled']}")
     print(f"            GBP fields filled: {quality['gbp_fields_filled']}")
-    if quality["ig_fields_filled"] < 5:
-        print(f"            WARN: only {quality['ig_fields_filled']} IG fields parsed — Metricool PDF layout may have changed.")
-        print(f"            Last good metricool-data.json was preserved.")
+    if not success:
+        print(f"            WARN: parse below threshold — date_range={quality['date_range_found']}, combined={quality['combined_fields_filled']}, ig={quality['ig_fields_filled']}")
+        print(f"            Output written, but exit=1 so shell wrapper preserves fallback behaviour.")
+    else:
+        print(f"            ✅ Parse successful (v2 layout)")
     return result
 
 
