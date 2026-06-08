@@ -64,6 +64,21 @@ def _safe_filename(action_id):
     return re.sub(r"[^a-z0-9_-]", "-", action_id.lower())
 
 
+def _draft_block(action):
+    """Return a 'Draft — Ready for Review' section if the action has draft_link.
+    Mirrors CB247's #modal-draft-link-wrap pattern."""
+    draft = action.get("draft_link") or action.get("draftLink")
+    if not draft:
+        return ""
+    # If relative path, prefix with ../ so it resolves from docs/briefs/
+    draft_url = draft if draft.startswith("http") else f"../{draft}"
+    return f"""<div class="section" style="background:{MWCC_PURPLE_MIST};border-left:4px solid {MWCC_PURPLE};border-radius:4px;padding:14px 18px;margin:14px 0">
+    <div class="label" style="color:{MWCC_PURPLE_DEEP};margin-bottom:8px">Draft — Ready for Review</div>
+    <a href="{draft_url}" target="_blank" style="display:inline-block;background:{MWCC_PURPLE};color:#fff;padding:10px 22px;border-radius:5px;text-decoration:none;font-weight:700;font-size:13px">Open Draft Blog →</a>
+    <div style="font-size:11px;color:#6b7280;margin-top:8px">Share with Kelley for brand QC, then Denver for COO sign-off before Mark publishes to Webflow.</div>
+  </div>"""
+
+
 def render_brief(action):
     aid       = action.get("id", "")
     title     = _escape(action.get("title", "Untitled action"))
@@ -157,6 +172,8 @@ def render_brief(action):
     <div class="label">Source Page</div>
     <span class="src">{source or '–'}</span>
   </div>
+
+  {_draft_block(action)}
 
   <div class="approval-section">
     <div class="label">Review — {priority}</div>
