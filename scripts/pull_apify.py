@@ -46,9 +46,9 @@ APIFY_SERP_ACTOR_ID    = "nFJndFXA5zjCTuudP"              # Google Search Scrape
 APIFY_MAPS_ACTOR_ID    = "compass~crawler-google-places"   # Google Maps Scraper
 APIFY_TIKTOK_ACTOR_ID  = "clockworks~tiktok-scraper"        # TikTok hashtag/post scraper
 APIFY_IG_ACTOR_ID      = "apify~instagram-hashtag-scraper"  # Instagram hashtag scraper
-APIFY_REDDIT_ACTOR_ID  = "apify/reddit-scraper"             # Reddit posts + comments (official actor, free tier)
-APIFY_TRENDS_ACTOR_ID  = "emastra~google-trends-scraper"    # Google Trends
-APIFY_FBADS_ACTOR_ID   = "apify/facebook-ads-scraper"          # FB Ads Library (official actor)
+APIFY_REDDIT_ACTOR_ID  = "trudax~reddit-scraper-lite"       # Reddit LITE (FREE — fixed 09 Jun 2026; apify/reddit-scraper 404)
+APIFY_TRENDS_ACTOR_ID  = "emastra~google-trends-scraper"    # Google Trends (geo must be ISO-2 country code)
+APIFY_FBADS_ACTOR_ID   = "apify~facebook-ads-scraper"       # FB Ads Library (tilde format; uses startUrls[])
 APIFY_IG_PROFILE_ACTOR_ID = "apify~instagram-profile-scraper"  # Instagram profile + recent posts/reels (public)
 APIFY_FB_PAGE_ACTOR_ID    = "apify~facebook-pages-scraper"     # Facebook page + recent posts (public)
 APIFY_BASE_URL         = "https://api.apify.com/v2"
@@ -634,6 +634,9 @@ def pull_reddit_intel():
     all_posts = []
     for search in REDDIT_SEARCHES:
         print(f"  → Reddit r/{search['subreddit']}: '{search['query']}'")
+        # trudax~reddit-scraper-lite (FREE) — same startUrls input shape as
+        # the old apify/reddit-scraper, but does not accept maxComments or
+        # proxy fields. Verified working 09 Jun 2026 via MWCC smoke test.
         items = _run_apify_actor(
             APIFY_REDDIT_ACTOR_ID,
             {
@@ -643,10 +646,8 @@ def pull_reddit_intel():
                         "method": "GET",
                     }
                 ],
-                "maxItems":          10,   # was 20 — reduced for credit control
-                "maxComments":       3,    # Top 3 comments per post (was 5)
-                "skipComments":      False,
-                "proxy":             {"useApifyProxy": True},
+                "maxItems":     10,   # 10 posts per search
+                "skipComments": False,
             },
             timeout_checks=60,
         )
@@ -801,30 +802,46 @@ def pull_google_trends():
         print("  APIFY_API_KEY not set — skipping Google Trends.")
         return None
 
-    print(f"  → Google Trends: {len(TRENDS_KEYWORDS)} keywords, geo=AU-WA")
+    # Fixed 09 Jun 2026 (via MWCC schema discovery):
+    # - geo: ONLY ISO-2 country codes ("AU"), NOT subregions ("AU-WA" rejected 400)
+    # - 'category' int triggered validation error — removed
+    # - actor returns 'interestBySubregion' as a free bonus — WA-specific
+    #   interest can be filtered post-hoc from there
+    # - Actor takes ~45s per keyword (bumped timeout to 20 min ceiling)
+    print(f"  → Google Trends: {len(TRENDS_KEYWORDS)} keywords, geo=AU (WA bonus via interestBySubregion)")
     items = _run_apify_actor(
         APIFY_TRENDS_ACTOR_ID,
         {
             "searchTerms": TRENDS_KEYWORDS,
-            "geo":         "AU-WA",           # Western Australia
-            "timeRange":   "today 3-m",       # Last 3 months
-            "category":    0,                 # All categories (integer, not string)
+            "geo":         "AU",
+            "timeRange":   "today 3-m",
+            "isMultiple":  False,
         },
-        timeout_checks=60,
+        timeout_checks=240,
     )
 
     if not items:
         print("  Google Trends returned no data.")
         return None
 
+    # Actor field names (verified 09 Jun 2026 — actor returns flattened schema):
+    #   searchTerm / inputUrlOrTerm     (instead of 'keyword')
+    #   interestOverTime_timelineData   (instead of 'interestOverTime')
+    #   interestBySubregion             (bonus — for WA-specific signal)
+    #   relatedTopics_top               (instead of 'relatedTopics')
     trends = []
     for item in items:
-        keyword = item.get("keyword") or item.get("query") or ""
-        # Interest over time — list of {date, value} points
-        interest = item.get("interestOverTime") or item.get("values") or []
-        # Current interest (latest value)
-        current_value = interest[-1].get("value") if interest else None
-        prev_value    = interest[-4].get("value") if len(interest) >= 4 else None
+        keyword = item.get("searchTerm") or item.get("inputUrlOrTerm") or item.get("keyword") or ""
+        timeline = item.get("interestOverTime_timelineData") or item.get("interestOverTime") or []
+
+        def _val(point):
+            v = point.get("value")
+            if isinstance(v, list) and v:
+                return v[0]
+            return v
+
+        current_value = _val(timeline[-1]) if timeline else None
+        prev_value    = _val(timeline[-4]) if len(timeline) >= 4 else None
 
         trend_dir = "stable"
         if current_value and prev_value:
@@ -833,13 +850,21 @@ def pull_google_trends():
             elif current_value < prev_value * 0.85:
                 trend_dir = "declining"
 
+        # Pull WA-specific interest from the subregion data (bonus signal)
+        wa_interest = None
+        for sr in (item.get("interestBySubregion") or []):
+            if "western australia" in (sr.get("geoName", "") or "").lower():
+                wa_interest = _val(sr)
+                break
+
         trends.append({
             "keyword":       keyword,
-            "current_value": current_value,   # 0-100 relative interest
+            "current_value": current_value,   # 0-100 relative interest (national)
             "prev_value":    prev_value,
             "direction":     trend_dir,
-            "interest_data": interest[-12:],  # Last 12 data points
-            "related":       item.get("relatedTopics") or item.get("relatedQueries") or [],
+            "wa_interest":   wa_interest,     # bonus WA signal (CB247 Perth focus)
+            "interest_data": timeline[-12:],
+            "related":       item.get("relatedTopics_top") or item.get("relatedTopics") or [],
         })
 
     # Sort by current interest descending
@@ -875,10 +900,12 @@ def _trends_content_signal(rising_trends):
 # Pipeline 6: Facebook Ads Library — competitor creatives
 # ─────────────────────────────────────────────
 
+# apify~facebook-ads-scraper requires page_url (FB page direct URL), not
+# a search keyword. Discovered via inputSchema 09 Jun 2026.
 FB_ADS_COMPETITORS = [
-    {"name": "Revo Fitness",    "page_name": "revo.fitness",    "page_id": None},
-    {"name": "Anytime Fitness", "page_name": "anytimefitness",  "page_id": None},
-    {"name": "Snap Fitness",    "page_name": "snapfitnessau",   "page_id": None},
+    {"name": "Revo Fitness",    "page_url": "https://www.facebook.com/RevoFitnessAU"},
+    {"name": "Anytime Fitness", "page_url": "https://www.facebook.com/AnytimeFitnessAustralia"},
+    {"name": "Snap Fitness",    "page_url": "https://www.facebook.com/SnapFitnessAU"},
 ]
 
 
@@ -894,29 +921,38 @@ def pull_facebook_ads():
         print("  APIFY_API_KEY not set — skipping Facebook Ads Library.")
         return None
 
+    # Fixed 09 Jun 2026 (via MWCC schema discovery):
+    # - required startUrls[] pointing to each competitor's FB PAGE (not
+    #   ads library search URL)
+    # - drop activeStatus filter (returned no_items wrappers when set)
+    # - resultsLimit replaces maxItems
+    # - Single batched call across all competitors (cheaper than per-page)
+    print(f"  → FB Ads: {len(FB_ADS_COMPETITORS)} competitors")
+    items = _run_apify_actor(
+        APIFY_FBADS_ACTOR_ID,
+        {
+            "startUrls":    [{"url": c["page_url"]} for c in FB_ADS_COMPETITORS],
+            "resultsLimit": 20,
+        },
+        timeout_checks=120,
+    )
+
     all_ads = []
-    for competitor in FB_ADS_COMPETITORS:
-        print(f"  → FB Ads: {competitor['name']}")
-        items = _run_apify_actor(
-            APIFY_FBADS_ACTOR_ID,
-            {
-                "searchPageOrAdLibraryUrl": (
-                    f"https://www.facebook.com/ads/library/?active_status=active"
-                    f"&ad_type=all&country=AU"
-                    f"&q={competitor['page_name']}"
-                    f"&search_type=keyword_unordered"
-                ),
-                "maxItems": 20,
-                "proxy":    {"useApifyProxy": True, "apifyProxyCountry": "AU"},
-            },
-            timeout_checks=90,
-        )
-        if items:
-            for item in items:
-                ad = _normalise_fb_ad(item, competitor["name"])
-                if ad:
-                    all_ads.append(ad)
-        time.sleep(3)
+    if items:
+        # Tag each ad with the competitor by inputUrl match
+        url_to_name = {c["page_url"].lower(): c["name"] for c in FB_ADS_COMPETITORS}
+        for item in items:
+            # Skip wrapper items for pages with no public ads
+            if item.get("error") == "no_items":
+                continue
+            input_url = (item.get("inputUrl") or "").lower()
+            competitor_name = next(
+                (name for url, name in url_to_name.items() if url in input_url or input_url in url),
+                "Unknown",
+            )
+            ad = _normalise_fb_ad(item, competitor_name)
+            if ad:
+                all_ads.append(ad)
 
     if not all_ads:
         print("  FB Ads Library returned no results.")
@@ -935,7 +971,14 @@ def pull_facebook_ads():
 
 
 def _normalise_fb_ad(item, competitor_name):
-    """Normalise a Facebook Ads Library item."""
+    """Normalise a Facebook Ads Library item.
+
+    apify~facebook-ads-scraper return shape verified 09 Jun 2026:
+      pageInfo (dict), pageID, adArchiveID, startDateFormatted,
+      endDateFormatted, collationCount, ad_creative_body, etc.
+    """
+    page_info = item.get("pageInfo") or {}
+
     body = item.get("ad_creative_bodies", [])
     body_text = body[0] if body else (item.get("ad_creative_body") or "")
 
@@ -947,17 +990,19 @@ def _normalise_fb_ad(item, competitor_name):
 
     return {
         "competitor":      competitor_name,
-        "ad_id":           item.get("id") or item.get("ad_archive_id") or "",
+        "page_name":       page_info.get("name") or "",
+        "ad_id":           item.get("adArchiveID") or item.get("adArchiveId") or item.get("ad_archive_id") or "",
         "headline":        title_text[:200],
         "body":            body_text[:500],
         "cta":             cta_text,
         "format":          item.get("ad_creative_media_type") or item.get("media_type") or "unknown",
-        "started":         item.get("ad_delivery_start_time") or "",
+        "started":         item.get("startDateFormatted") or item.get("ad_delivery_start_time") or "",
+        "ended":           item.get("endDateFormatted") or "",
+        "collation_count": item.get("collationCount"),   # how many variants
         "impressions_min": (item.get("impressions") or {}).get("lower_bound"),
         "impressions_max": (item.get("impressions") or {}).get("upper_bound"),
-        "spend_min":       (item.get("spend") or {}).get("lower_bound"),
         "is_active":       item.get("is_active", True),
-        "url":             item.get("snapshot_url") or "",
+        "url":             item.get("snapshot_url") or item.get("url") or "",
     }
 
 
