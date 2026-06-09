@@ -255,6 +255,28 @@ fi
 
 
 # ─────────────────────────────────────────────────────────────────
+# STEP 4.6c — MWCC Apify pulls (SERP + Reddit + Google Trends + FB Ads)
+# Powers research-perth-childcare, audience-intel-mwcc, content-intel-mwcc,
+# seo-agent-mwcc, competitor-spy-mwcc with weekly market intelligence.
+#
+# Status (09 Jun 2026 — smoke run):
+#   ✅ SERP    — working, real childcare keyword rankings per suburb
+#   ⚠️  Reddit  — placeholder (trudax actor needs paid Apify tier)
+#   ⚠️  Trends  — placeholder (emastra actor payload schema mismatch)
+#   ⚠️  FB Ads  — placeholder (apify schema mismatch, needs payload review)
+# Each placeholder writes available=false so agents degrade gracefully.
+# ─────────────────────────────────────────────────────────────────
+log ""
+log "─── STEP 4.6c: MWCC Apify (SERP + Reddit + Trends + FB Ads) ───"
+if "$PYTHON" "$BASE_DIR/scripts/pull_mwcc_apify.py" >> "$LOG" 2>&1; then
+    log "  ✅ MWCC Apify pulls complete (SERP working; 3 others write placeholders)"
+else
+    FAILED_STEPS+=("mwcc-apify")
+    log "  ⚠️  MWCC Apify pulls failed (non-fatal — agents read placeholders)"
+fi
+
+
+# ─────────────────────────────────────────────────────────────────
 # STEP 4.6b — MWCC GBP Performance API pull (all 5 centres)
 # Pulls website clicks, calls, directions, impressions per location.
 # Metricool only tracks 1 GBP per workspace (Seville Grove currently),
@@ -331,6 +353,8 @@ Read these files for market intelligence:
 - context/mwcc-seasonal-calendar.md   (active campaigns + upcoming term/holiday windows)
 - state/mwcc-gsc-data.json            (organic search performance)
 - state/mwcc-ops.json                 (per-centre occupancy + room utilisation)
+- state/mwcc-reddit-intel.json        (parent voice from r/perth + r/AusFinance — check 'available' field first; fallback to GSC queries if false)
+- state/mwcc-google-trends.json       (WA childcare topic momentum — check 'available' first; fallback to seasonal calendar)
 
 Output a structured markdown report covering:
 1. SEASONAL ALERT — read context/mwcc-seasonal-calendar.md: what is ACTIVE right now (Term enrolment window? Vacation Care booking push? 2027 waitlist?). What is within 21 days. What needs prep within 60 days.
@@ -344,7 +368,7 @@ Be specific. No fluff. No \"best\" claims. CCS mention required wherever fees co
 
 CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/research/mwcc-weekly-research-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/mwcc-weekly-research-$DATE.md" \
-"Read(context/mwcc-competitors.md),Read(context/mwcc-business-config.json),Read(context/mwcc-seasonal-calendar.md),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ops.json)" \
+"Read(context/mwcc-competitors.md),Read(context/mwcc-business-config.json),Read(context/mwcc-seasonal-calendar.md),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ops.json),Read(state/mwcc-reddit-intel.json),Read(state/mwcc-google-trends.json)" \
 "$MODEL_SONNET"
 
 # ── Agent 2/9: Audience Intel (MWCC parent ICPs) ──
@@ -485,6 +509,8 @@ childcare perth, childcare midvale, childcare waikiki, childcare armadale, child
 childcare rockingham, oshc perth, oshc midvale, vacation care perth, long day care perth,
 ccs perth, before school care perth, after school care perth, kindy perth, my world childcare.
 
+Also read state/mwcc-apify-serp.json — this is THIS WEEK's actual MWCC organic + local pack position for 8 commercial childcare queries. Reference it for: (a) current rank per keyword (organic + local pack), (b) which 3 competitors hold the top spots MWCC is fighting for, (c) GAPS where MWCC has zero presence (high-priority BUILD actions). Cross-reference with Ahrefs for tracked-keyword consistency.
+
 Output a structured markdown SEO report covering:
 1. RANKING TABLE — all target keywords from context/mwcc-seo-targets.md: current pos | WoW change (↑↓) | URL | volume | status.
 2. QUICK WINS — keywords ranking #4–20 with specific fix per page (exact H1 change, meta description, internal link).
@@ -499,7 +525,7 @@ Be actionable. No \"best\" claims. CCS mention required in every blog brief.
 
 CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN SEO BRIEF AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md automatically. Generate the FULL brief directly — do NOT summarise, do NOT say 'I will write...' — just write the brief markdown directly." \
 "$OUTPUTS/seo/mwcc-weekly-seo-brief-$DATE.md" \
-"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/research/**)" \
+"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(state/mwcc-apify-serp.json),Read(outputs/mwcc/research/**)" \
 "$MODEL_SONNET"
 
 # ── Agent 6/9: Competitor Spy (MWCC competitor moves this week) ──
@@ -521,6 +547,8 @@ Read these files:
 - state/mwcc-gsc-data.json                               (organic position vs competitor keywords)
 - state/mwcc-ahrefs.json                                 (competitor keyword gap)
 - state/mwcc-gbp-performance.json                        (MWCC's own GBP performance — context for compare)
+- state/mwcc-fb-ads-intel.json                           (competitor FB ads scrape — check 'available' first; fallback to GBP + web research)
+- state/mwcc-apify-serp.json                             (THIS WEEK's organic + local pack — see which competitors hold the spots MWCC's fighting for)
 - outputs/mwcc/research/mwcc-weekly-research-$DATE.md   (Agent 1 already flagged competitor moves — go DEEPER, don't repeat)
 - outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md       (SEO Agent's keyword gap analysis)
 
@@ -543,7 +571,7 @@ Output a structured markdown report:
 
 CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN COMPETITOR BRIEF AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/research/mwcc-competitor-weekly-$DATE.md automatically. Generate the FULL brief directly — do NOT summarise, do NOT say 'I will write...' — just write the brief markdown directly." \
 "$OUTPUTS/research/mwcc-competitor-weekly-$DATE.md" \
-"Read(context/mwcc-*),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ahrefs.json),Read(state/mwcc-gbp-performance.json),Read(outputs/mwcc/**),WebFetch" \
+"Read(context/mwcc-*),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ahrefs.json),Read(state/mwcc-gbp-performance.json),Read(state/mwcc-fb-ads-intel.json),Read(state/mwcc-apify-serp.json),Read(outputs/mwcc/**),WebFetch" \
 "$MODEL_SONNET"
 
 # ── Agent 7/9: Paid Ads (paid→organic switch — closes the loop with SEO Agent) ──
