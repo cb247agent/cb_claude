@@ -49,6 +49,9 @@ VALID_METRICS = {
     "mwcc_wage_ratio_pct",
     "mwcc_enrolments_weekly",
     "mwcc_enquiries_weekly",
+    # ROI / paid→organic switch tracking (added 09 Jun 2026)
+    "ads_spend_saved_monthly",          # per-keyword: $ saved by pausing paid in favour of organic
+    "cumulative_ads_savings_monthly",   # aggregate: $ saved across all switches this month
     "qualitative_assessment",
 }
 
@@ -60,6 +63,7 @@ VALID_SOURCE_PAGES = {
     "gbp",
     "membership",
     "enrolment",     # MWCC-specific (childcare equivalent of membership)
+    "opportunity",   # paid→organic switch + ROI tracking (added 09 Jun 2026)
     "overview",
 }
 

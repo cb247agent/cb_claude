@@ -38,6 +38,8 @@ HIGHER_IS_BETTER = {
     "mwcc_occupancy_pct",
     "mwcc_enrolments_weekly",
     "mwcc_enquiries_weekly",
+    # ROI tracking — accumulating savings $ is good
+    "cumulative_ads_savings_monthly",
 }
 
 # Metrics where a LOWER number is better (improvement)
@@ -49,6 +51,7 @@ LOWER_IS_BETTER = {
     "google_ads_cpa",
     "google_ads_cpc",
     "google_ads_spend_weekly",
+    "ads_spend_saved_monthly",       # baseline=current spend, target=0 ($spend dropping = win)
     "membership_cancellations_weekly",
     "membership_future_cancellations",
     # MWCC: lower wage ratio is better
