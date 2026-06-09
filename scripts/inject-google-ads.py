@@ -93,6 +93,57 @@ def build_payload():
             "cpa":  (spend / conv) if (conv and conv > 0) else 0,
         })
 
+    # Prior-week WoW comparison data for Location Summary section
+    # Render reads top-level p_malaga / p_ellenbrook / p_week_label (NOT
+    # nested under history). Bug spotted 09 Jun 2026 — was returning None.
+    prior = weeks[1] if len(weeks) >= 2 else {}
+    prior_combined = prior.get("combined") or {}
+
+    # Spend WoW deltas
+    spend_chg = None
+    if combined.get("spend") and prior_combined.get("spend"):
+        spend_chg = round((combined["spend"] - prior_combined["spend"]) / prior_combined["spend"] * 100, 1)
+
+    # ── Keyword Recommendations — derive from search terms with conv > 0 ──
+    # Render reads bid.new_recs where bid = ads.bidding. We populate this
+    # from search terms that converted but aren't yet exact-match keywords
+    # (typically triggered via broad/phrase variants you can't bid up).
+    # Filter: cost < $5, conv >= 1, not a brand keyword.
+    import re as _re
+    BRAND_PATTERNS = [
+        r"chasing\s*better", r"\bcb247\b", r"chasingbetter247",
+    ]
+    def _is_brand(term):
+        t = (term or "").lower()
+        return any(_re.search(p, t) for p in BRAND_PATTERNS)
+
+    promote_candidates = sorted(
+        [s for s in search_terms
+         if (s.get("cost", 0) or 0) < 5
+         and (s.get("conv", 0) or 0) >= 1
+         and not _is_brand(s.get("search_term", ""))],
+        key=lambda s: -(s.get("conv", 0) or 0),
+    )[:8]
+
+    new_recs = []
+    for s in promote_candidates:
+        cost = s.get("cost", 0) or 0
+        conv = s.get("conv", 0) or 0
+        cpa_obs = round(cost / conv, 2) if conv > 0 else 0
+        # Suggested bid = current CPC × 1.5 (give it room to win the auction)
+        impressions = s.get("impressions", 0) or 0
+        clicks = s.get("clicks", 0) or 0
+        cpc_obs = round(cost / clicks, 2) if clicks > 0 else cpa_obs
+        suggested_bid = round(cpc_obs * 1.5, 2)
+        priority = "High" if conv >= 3 else "Medium" if conv >= 2 else "Low"
+        new_recs.append({
+            "keyword":  s.get("search_term"),
+            "vol":      f"~{impressions}",          # 7-day observed impressions
+            "bid":      f"${suggested_bid}",
+            "priority": priority,
+            "reason":   f"{conv:g} conv at ${cpa_obs} CPA from broad/phrase match — promote to exact match to bid up directly. {s.get('location', '')}",
+        })
+
     return {
         "generated_at":  datetime.now(timezone.utc).isoformat(),
         "week_label":    latest.get("week_label", ""),
@@ -111,11 +162,22 @@ def build_payload():
         "clicks":     combined.get("clicks", 0),
         "convs":      combined.get("conv", 0),
         "cpa":        combined.get("cpa", 0),
+        "spend_chg":  spend_chg,   # WoW % spend change for verdict text
+        # ── Prior-week for WoW deltas in Location Summary ─────────────
+        # Render reads ads.p_malaga.spend, ads.p_ellenbrook.cpa, etc.
+        "p_malaga":     prior.get("malaga") or {},
+        "p_ellenbrook": prior.get("ellenbrook") or {},
+        "p_week_label": prior.get("week_label", ""),
         # Rich tables for Search Terms / QS / Conv Tracking sections
         # Sourced from state/google-ads-data.json (same date scope as latest week)
         "search_terms":       search_terms,
         "quality_scores":     quality_scores,
         "conversion_actions": conversion_actions,
+        # Keyword recommendations — derived from converting search terms not yet
+        # exact-match keywords. Read by render under ads.bidding.new_recs.
+        "bidding": {
+            "new_recs": new_recs,
+        },
         # Weekly trend for line/bar charts
         "history": [
             {
