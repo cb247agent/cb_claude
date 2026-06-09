@@ -14173,15 +14173,17 @@ function renderGAds() {
 
   // ── Campaign Performance — per account (Malaga / Ellenbrook) ────────────
   // Each account runs: Gym Geo (shared), location-specific campaign, PMax: local campaign
-  html += sectionTitle('Active Campaigns · ' + weekLabel);
   const campsAll = ads.campaigns || [];
-  const campShared = campsAll.filter(c => c.location === 'Both');
-  const campMalaga = campsAll.filter(c => c.location === 'Malaga');
-  const campEll    = campsAll.filter(c => c.location === 'Ellenbrook');
-  const pMaxRow = `<tr style="opacity:.55">
-    <td style="font-size:12px;font-weight:600;font-style:italic">PMax: local campaign</td>
-    <td class="num" colspan="7" style="color:var(--muted);font-size:11px">Data not in current export — check Google Ads directly</td>
-  </tr>`;
+  // Filter to ACTIVE only — status=ENABLED OR spend > 0 this week.
+  // Paused campaigns surface via Account Hygiene section instead (cleaner UX).
+  // Per Tia 09 Jun 2026: "each account only has 3 active campaigns" — the
+  // table was showing 11+5=16 rows including paused, cluttering the view.
+  const _isActive = c => (c.status === 'ENABLED') || ((c.spend || 0) > 0);
+  const campShared = campsAll.filter(c => c.location === 'Both'       && _isActive(c));
+  const campMalaga = campsAll.filter(c => c.location === 'Malaga'     && _isActive(c));
+  const campEll    = campsAll.filter(c => c.location === 'Ellenbrook' && _isActive(c));
+  const _pausedCount = campsAll.length - campShared.length - campMalaga.length - campEll.length;
+  html += sectionTitle(`Active Campaigns · ${campMalaga.length + campShared.length} Malaga · ${campEll.length + campShared.length} Ellenbrook · ${weekLabel}`);
   const campRow = c => `<tr>
     <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${c.name}</td>
     <td class="num">${fmt(c.spend,'$2')}</td>
@@ -14210,17 +14212,20 @@ function renderGAds() {
         <div style="padding:10px 14px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border-strong)">Malaga — Google Ads Account</div>
         ${campTableHead}
         ${[...campShared,...campMalaga].map(campRow).join('')}
-        ${pMaxRow}
         </tbody></table>
       </div>
       <div class="card" style="overflow-x:auto;padding:0">
         <div style="padding:10px 14px 8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);border-bottom:2px solid rgba(63,166,154,.3)">Ellenbrook — Google Ads Account</div>
         ${campTableHead}
         ${[...campShared,...campEll].map(campRow).join('')}
-        ${pMaxRow}
         </tbody></table>
       </div>
     </div>`;
+    if (_pausedCount > 0) {
+      html += `<div style="font-size:11px;color:var(--muted);margin:-12px 0 18px;padding:8px 14px;background:#f9fafb;border-radius:6px;border-left:3px solid var(--border-strong)">
+        <b>${_pausedCount} paused campaign${_pausedCount===1?'':'s'} hidden</b> from this table (no spend this week). See Account Hygiene section for review/archive recommendations.
+      </div>`;
+    }
   }
 
   // ── Location Summary with WoW ─────────────────────────────────────────────
