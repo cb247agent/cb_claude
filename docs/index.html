@@ -21667,13 +21667,27 @@ function renderCb247Membership() {
       const penetrationMal = newMal > 0 ? Math.round(pNewMal / newMal * 100) : 0;
       const penetrationEll = newEll > 0 ? Math.round(pNewEll / newEll * 100) : 0;
       const penetrationTotal = newPpl > 0 ? Math.round(pNewT / newPpl * 100) : 0;
-      // Days running
+      // Days running within the data period — count INCLUSIVE of start and
+      // end days. Use the data period's end date as the reference, NOT today.
+      // Bug fix (Tia, 09 Jun): was using `new Date()` which inflated days
+      // beyond the data window (e.g., promo started 1 Jun, data ends 5 Jun =
+      // 5 days, not "8 days since" today).
       let daysRunning = '—';
+      let daysRunningRef = '';
       if (promo.started) {
         const start = new Date(promo.started);
-        const today = new Date();
-        const diffDays = Math.floor((today - start) / 86400000);
-        daysRunning = diffDays >= 0 ? diffDays + ' days' : 'starts ' + promo.started;
+        const periodEnd = (s.period && s.period.end) ? new Date(s.period.end) : new Date();
+        const diffDays = Math.floor((periodEnd - start) / 86400000) + 1;  // +1 for inclusive
+        if (diffDays >= 1) {
+          daysRunning = diffDays + (diffDays === 1 ? ' day' : ' days');
+          daysRunningRef = `${promo.started} → ${(s.period && s.period.end) || 'period end'}`;
+        } else if (diffDays === 0) {
+          daysRunning = 'starting';
+          daysRunningRef = `Starts ${promo.started}`;
+        } else {
+          daysRunning = 'upcoming';
+          daysRunningRef = `Starts ${promo.started}`;
+        }
       }
       // Plan breakdown (e.g., 3-month vs 1-month tiers)
       const planBreakdown = (pNew.plan_breakdown || pActive.plan_breakdown || {});
@@ -21700,7 +21714,7 @@ function renderCb247Membership() {
           <div style="flex:1;min-width:280px">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--brand-accent-deep);margin-bottom:4px">Active promo</div>
             <div style="font-size:15px;font-weight:700;color:var(--text);line-height:1.4">${promo.label || promoKey}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:3px">Started <b>${promo.started || '—'}</b> · running <b>${daysRunning}</b></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px">Started <b>${promo.started || '—'}</b> · running <b>${daysRunning}</b> ${daysRunningRef ? `<span style="color:var(--text-2)">(${daysRunningRef})</span>` : ''}</div>
           </div>
           <div style="text-align:right;font-size:11px;color:var(--muted);min-width:200px">
             ${verdict}
@@ -21723,7 +21737,7 @@ function renderCb247Membership() {
             penetrationTotal >= 30 ? 'green' : penetrationTotal >= 15 ? '' : 'amber')}
           ${kpiCard('','Days Running', daysRunning,
             null,
-            promo.started ? `Since ${promo.started}` : 'No start date',
+            daysRunningRef || (promo.started ? `Since ${promo.started}` : 'No start date'),
             '')}
         </div>
 
