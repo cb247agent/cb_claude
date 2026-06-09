@@ -55,8 +55,13 @@ def build_payload():
         "ellenbrook": latest.get("ellenbrook") or {},
         "combined":   combined,
         "campaigns":  latest.get("campaigns") or [],
-        # Top-level spend for Group Overview's `D.google_ads.spend` lookup
+        # Top-level shorthand for renderGAds() KPI cards. Render reads
+        # ads.spend / ads.clicks / ads.convs (plural-s) / ads.cpa at TOP
+        # level — not nested under combined. Bug spotted 09 Jun 2026.
         "spend":      combined.get("spend", 0),
+        "clicks":     combined.get("clicks", 0),
+        "convs":      combined.get("conv", 0),
+        "cpa":        combined.get("cpa", 0),
         # Weekly trend for line/bar charts
         "history": [
             {
