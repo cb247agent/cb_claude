@@ -122,25 +122,86 @@ def build_payload():
     ]
 
     # ── GBP performance + ratings merged ──
+    # Priority order:
+    #   1. Google Business Profile Performance API (state/gbp-performance.json)
+    #      — when GCP enables the API. Currently NOT enabled.
+    #   2. Metricool PDF GBP sections (state/metricool-data.json:gbp)
+    #      — covers Malaga (main PDF) + Ellenbrook (sidecar PDF) when Tia
+    #      drops them weekly.
+    #   3. Empty placeholder.
+    # Field name mapping metricool → dashboard:
+    #   directions   → direction_requests
+    #   reach_total  → total_impressions
     gbp_combined = gbp_perf.get("combined") or {}
     gbp_locs = gbp_perf.get("locations") or {}
-    gbp_payload = {
-        "available": bool(gbp_combined or gbp_locs),
-        "date_range": gbp_perf.get("date_range") or {},
-        "combined":   gbp_combined,
-        "malaga": {
-            "performance": gbp_locs.get("malaga") or {},
-            "rating":      (gbp_ratings.get("malaga") or {}).get("rating"),
-            "reviews":     (gbp_ratings.get("malaga") or {}).get("reviews"),
-            "photos":      (gbp_ratings.get("malaga") or {}).get("photos"),
-        },
-        "ellenbrook": {
-            "performance": gbp_locs.get("ellenbrook") or {},
-            "rating":      (gbp_ratings.get("ellenbrook") or {}).get("rating"),
-            "reviews":     (gbp_ratings.get("ellenbrook") or {}).get("reviews"),
-            "photos":      (gbp_ratings.get("ellenbrook") or {}).get("photos"),
-        },
-    }
+    mc_gbp = metricool.get("gbp") or {}
+    mc_mal = mc_gbp.get("malaga_perf") or {}
+    mc_ell = mc_gbp.get("ellenbrook_perf") or {}
+
+    def _mc_perf(loc):
+        return {
+            "total_actions":      loc.get("total_actions"),
+            "website_clicks":     loc.get("website_clicks"),
+            "phone_clicks":       loc.get("phone_clicks"),
+            "direction_requests": loc.get("directions"),
+            "total_impressions":  loc.get("reach_total"),
+            "maps_reach":         loc.get("maps_reach"),
+            "search_reach":       loc.get("search_reach"),
+            "website_chg":        loc.get("website_chg"),
+            "phone_chg":          loc.get("phone_chg"),
+            "directions_chg":     loc.get("directions_chg"),
+            "actions_chg":        loc.get("actions_chg"),
+            "reach_chg":          loc.get("reach_chg"),
+        }
+
+    use_metricool_gbp = (not gbp_combined and not gbp_locs) and bool(mc_mal or mc_ell)
+
+    if use_metricool_gbp:
+        mal_perf = _mc_perf(mc_mal)
+        ell_perf = _mc_perf(mc_ell)
+        gbp_payload = {
+            "available": True,
+            "source":    "metricool_pdf",
+            "date_range": metricool.get("date_range") or {},
+            "combined": {
+                "total_actions":      (mc_mal.get("total_actions") or 0) + (mc_ell.get("total_actions") or 0),
+                "website_clicks":     (mc_mal.get("website_clicks") or 0) + (mc_ell.get("website_clicks") or 0),
+                "phone_clicks":       (mc_mal.get("phone_clicks") or 0) + (mc_ell.get("phone_clicks") or 0),
+                "direction_requests": (mc_mal.get("directions") or 0) + (mc_ell.get("directions") or 0),
+                "total_impressions":  (mc_mal.get("reach_total") or 0) + (mc_ell.get("reach_total") or 0),
+            },
+            "malaga": {
+                "performance": mal_perf,
+                "rating":      (gbp_ratings.get("malaga") or {}).get("rating"),
+                "reviews":     (gbp_ratings.get("malaga") or {}).get("reviews"),
+                "photos":      (gbp_ratings.get("malaga") or {}).get("photos"),
+            },
+            "ellenbrook": {
+                "performance": ell_perf,
+                "rating":      (gbp_ratings.get("ellenbrook") or {}).get("rating") or mc_ell.get("star_rating"),
+                "reviews":     (gbp_ratings.get("ellenbrook") or {}).get("reviews") or mc_ell.get("reviews_total"),
+                "photos":      (gbp_ratings.get("ellenbrook") or {}).get("photos"),
+            },
+        }
+    else:
+        gbp_payload = {
+            "available": bool(gbp_combined or gbp_locs),
+            "source":    "gbp_performance_api" if gbp_combined else "none",
+            "date_range": gbp_perf.get("date_range") or {},
+            "combined":   gbp_combined,
+            "malaga": {
+                "performance": gbp_locs.get("malaga") or {},
+                "rating":      (gbp_ratings.get("malaga") or {}).get("rating"),
+                "reviews":     (gbp_ratings.get("malaga") or {}).get("reviews"),
+                "photos":      (gbp_ratings.get("malaga") or {}).get("photos"),
+            },
+            "ellenbrook": {
+                "performance": gbp_locs.get("ellenbrook") or {},
+                "rating":      (gbp_ratings.get("ellenbrook") or {}).get("rating"),
+                "reviews":     (gbp_ratings.get("ellenbrook") or {}).get("reviews"),
+                "photos":      (gbp_ratings.get("ellenbrook") or {}).get("photos"),
+            },
+        }
 
     # ── Metricool parsed PDF (preferred source — richest private data) ──
     metricool_available = bool(metricool.get("available"))

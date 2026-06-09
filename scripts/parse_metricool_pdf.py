@@ -423,6 +423,53 @@ def parse():
         "star_rating":      _find_value_then_pct(gbp_section, [r"Star\s+Rating", r"Average\s+Rating"])["value"],
     }
 
+    # ── v3 page-router — extract rich detail pages ────────────────────────────
+    # The headline regex pass above only catches summary fields. The new
+    # Metricool layout (08 Jun 2026+) puts detail metrics on dedicated pages
+    # using a "title → brand → values → percentages → labels" pattern.
+    # This router walks each page, classifies it by title, and extracts the
+    # structured fields into ig/fb/gbp dicts. Only OVERWRITES None values
+    # so the regex pass remains authoritative for what it already filled.
+    v3 = _parse_v3_pages(pages_text)
+
+    def _fill(target, source):
+        """Copy source[k] into target[k] only if target[k] is None or 0."""
+        for k, v in source.items():
+            if v is None or v == 0:
+                continue
+            if target.get(k) in (None, 0):
+                target[k] = v
+
+    _fill(ig, v3.get("ig") or {})
+    _fill(fb, v3.get("fb") or {})
+
+    # Top-level enrichment fields (lists + dicts the dashboard uses)
+    enrichment = {
+        "top_reels":     v3.get("top_reels")     or [],
+        "top_posts":     v3.get("top_posts")     or [],
+        "top_stories":   v3.get("top_stories")   or [],
+        "geo_top_cities": v3.get("geo_top_cities") or [],
+        "ig_competitors": v3.get("ig_competitors") or [],
+        "fb_competitors": v3.get("fb_competitors") or [],
+        "hashtags":      v3.get("hashtags")      or [],
+    }
+    # Move enriched lists onto ig/fb where the render expects them
+    if enrichment["top_reels"]:    ig["top_reels"]     = enrichment["top_reels"]
+    if enrichment["top_posts"]:    ig["top_posts"]     = enrichment["top_posts"]
+    if enrichment["top_stories"]:  ig["top_stories"]   = enrichment["top_stories"]
+    if enrichment["geo_top_cities"]: ig["geo_top_cities"] = enrichment["geo_top_cities"]
+    if enrichment["ig_competitors"]: ig["competitors"] = enrichment["ig_competitors"]
+    if enrichment["fb_competitors"]: fb["competitors"] = enrichment["fb_competitors"]
+    if enrichment["hashtags"]:     ig["hashtags"]      = enrichment["hashtags"]
+
+    # GBP per-location detail from page-router (Malaga from main PDF,
+    # Ellenbrook from sidecar PDF if present)
+    gbp_v3 = v3.get("gbp") or {}
+    _fill(gbp, gbp_v3.get("malaga") or {})   # populate top-level with Malaga as default
+    # Also expose per-location blocks for the dashboard's 2-location section
+    gbp["malaga_perf"]     = gbp_v3.get("malaga") or {}
+    gbp["ellenbrook_perf"] = gbp_v3.get("ellenbrook") or {}
+
     # ── Quality check — count how many fields parsed successfully ──
     def _count_filled(d):
         return sum(1 for v in d.values() if v is not None and v != 0)
@@ -499,6 +546,504 @@ def _section(full_text, primary_label, end_labels, also_match=None):
             if candidate < end_idx:
                 end_idx = candidate
     return full_text[start_idx:end_idx]
+
+
+# ── v3 page-router — extract rich detail pages ──────────────────────────────
+# The new Metricool layout (08 Jun 2026+) puts detail metrics on
+# dedicated pages with title → brand → values → percentages → labels
+# layout. Page-routing is more robust than full-text regex.
+
+def _v3_value_pct_pairs(text):
+    """Walk page text and find consecutive (value_line, pct_line) pairs.
+
+    A page like:
+        Reels published in period
+        chasingbetter247
+        1.81 4
+        +29.30% -33.33%
+        Engagement Reels
+        30 May 26 - 05 Jun 26
+
+    Returns: [([1.81, 4], [29.30, -33.33])]
+
+    Multi-pair example (Interactions of published reels):
+        Interactions of published reels
+        chasingbetter247
+        102 2 1 113
+        -19.05% +0.00% -75.00% -19.86%
+        Likes Comments Saved Interactions
+        8 4
+        -11.11% -33.33%
+        Shares Reels
+    Returns: [
+        ([102, 2, 1, 113], [-19.05, 0, -75, -19.86]),
+        ([8, 4], [-11.11, -33.33]),
+    ]
+    """
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    pairs = []
+
+    def _to_num(s):
+        s = s.replace(",", "").replace("+", "").strip()
+        mult = 1.0
+        if s.endswith("K") or s.endswith("k"):
+            s = s[:-1]; mult = 1_000
+        elif s.endswith("M") or s.endswith("m"):
+            s = s[:-1]; mult = 1_000_000
+        try:
+            f = float(s) * mult
+            return int(f) if f == int(f) else f
+        except ValueError:
+            return None
+
+    def _to_pct(s):
+        try:
+            return float(s.replace("%", "").replace("+", "").strip())
+        except ValueError:
+            return None
+
+    # Numeric line: contains only numbers + separators (no letters except K/M)
+    NUM_RE = re.compile(r"^[\d.,KMkm+\-\s]+$")
+    PCT_RE = re.compile(r"^[+\-\d.%\s]+%[+\-\d.%\s]*$")
+
+    i = 0
+    while i < len(lines) - 1:
+        if NUM_RE.match(lines[i]) and PCT_RE.match(lines[i + 1]):
+            nums = re.findall(r"[\d.,]+[KMk]?", lines[i])
+            pcts = re.findall(r"[+\-]?[\d.]+%", lines[i + 1])
+            vals = [_to_num(n) for n in nums]
+            ps   = [_to_pct(p) for p in pcts]
+            # Drop trailing Nones
+            vals = [v for v in vals if v is not None]
+            ps   = [p for p in ps if p is not None]
+            # Allow pcts to be SHORTER than values (PDF sometimes omits some
+            # pcts when no comparable prior period exists). Pad with None
+            # at the END so positional indexing still works.
+            if vals and ps:
+                while len(ps) < len(vals):
+                    ps.append(None)
+                # Cap pcts list at len(values)
+                ps = ps[:len(vals)]
+                pairs.append((vals, ps))
+            i += 2   # skip both consumed lines
+        else:
+            i += 1
+    return pairs
+
+
+def _v3_extract_value_label(text):
+    """Layout pattern: title / brand / value(s) / pcts(s) / labels(s).
+
+    Returns dict {label_lower: {value, pct}} for as many labels as we can
+    align numerically. Handles "K" / "M" suffix in values.
+    """
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    # Find the run of: numeric-line → percent-line → label-line
+    out = {}
+    for i in range(len(lines) - 2):
+        nums = re.findall(r"[+\-]?[\d.,]+[KMk]?", lines[i])
+        pcts = re.findall(r"[+\-]?[\d.]+%", lines[i + 1])
+        # labels often on the line AFTER pcts; sometimes 2 lines (when
+        # there's a sub-block with its own value/pct/label below)
+        # Find label line: must contain at least one alpha word, no digits
+        label_line = None
+        for j in (i + 2, i + 3):
+            if j < len(lines):
+                ll = lines[j]
+                if ll and re.search(r"[A-Za-z]", ll) and not re.search(r"\d", ll):
+                    label_line = ll
+                    break
+        if not label_line:
+            continue
+        labels = re.split(r"\s{2,}|\t+", label_line)
+        if len(labels) == 1:
+            # Single label OR a multi-word label like "Avg reach per day"
+            labels = [label_line]
+        if not labels:
+            continue
+
+        # Strip K/M suffix in values, parse to int/float
+        def _val(s):
+            s = s.replace(",", "").replace("+", "").strip()
+            mult = 1.0
+            if s.endswith("K") or s.endswith("k"):
+                s = s[:-1]; mult = 1_000
+            elif s.endswith("M") or s.endswith("m"):
+                s = s[:-1]; mult = 1_000_000
+            try:
+                v = float(s) * mult
+                return int(v) if v == int(v) else v
+            except ValueError:
+                return None
+
+        def _pct_val(s):
+            s = s.replace("%", "").replace("+", "").strip()
+            try:
+                return float(s)
+            except ValueError:
+                return None
+
+        values = [_val(n) for n in nums]
+        pcts_n = [_pct_val(p) for p in pcts]
+
+        # Align: shortest of (len(values), len(pcts_n), len(labels))
+        n = min(len(values), len(pcts_n) if pcts_n else len(values), len(labels))
+        for k in range(n):
+            lbl = labels[k].lower().strip().rstrip(".")
+            out[lbl] = {"value": values[k], "pct": pcts_n[k] if pcts_n else None}
+    return out
+
+
+def _v3_extract_value_only(text):
+    """Same as above but for single-value pages (e.g. 'Stories 23 -34.29%'
+    layout where labels are below the single value)."""
+    return _v3_extract_value_label(text)
+
+
+def _v3_parse_table_rows(text, header_keywords):
+    """Generic table-row extractor for the 'Ranking of …' pages.
+    Splits on lines that start with a date, captures the row as a list.
+    """
+    rows = []
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    capturing = False
+    for line in lines:
+        # Detect date prefix — "Jun 4, 2026" or similar
+        if re.match(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d+,\s+\d{4}", line):
+            rows.append(line)
+            capturing = True
+        elif capturing and line and not re.match(r"^(Showing|\d{1,2}:\d{2})", line):
+            # continuation of previous row's text
+            if rows:
+                rows[-1] += " " + line
+    return rows
+
+
+def _parse_v3_pages(pages_text):
+    """Walk pages and route by title to specific extractors.
+
+    Returns dict with keys:
+      ig, fb              — partial dicts to merge into ig/fb sections
+      top_reels, top_posts, top_stories, hashtags
+      geo_top_cities, ig_competitors, fb_competitors
+      gbp = {malaga: {...}, ellenbrook: {...}}
+    """
+    ig = {}
+    fb = {}
+    top_reels = []
+    top_posts = []
+    top_stories = []
+    hashtags = []
+    geo_top_cities = []
+    ig_competitors = []
+    fb_competitors = []
+    gbp = {"malaga": {}, "ellenbrook": {}}
+
+    # Identify pages by their first 2-3 lines (title + brand)
+    # Brand disambiguation: the SECOND line is the brand block.
+    #   "chasingbetter247"  (all-lowercase)        → Instagram handle
+    #   "ChasingBetter247"  (camelcase)            → Facebook page name (general)
+    #   "ChasingBetter247 Health & Fitness Gym ..." → GBP listing
+    # We preserve the raw second line (NOT lowercased) for disambiguation.
+    for idx, text in enumerate(pages_text):
+        if not text:
+            continue
+        raw_lines = text.split("\n")
+        title = (raw_lines[0] or "").strip().lower()
+        brand_raw = (raw_lines[1] or "").strip() if len(raw_lines) > 1 else ""
+        head = "\n".join(raw_lines[:3]).lower()
+
+        # Strict brand routing
+        is_ig_page = brand_raw == "chasingbetter247" or brand_raw.lower() == "chasingbetter247" and brand_raw[0:1].islower()
+        is_fb_page = brand_raw == "ChasingBetter247"
+        # GBP page header is the location name
+        is_gbp_malaga = "chasingbetter247 health & fitness gym" in brand_raw.lower() and "ellenbrook" not in brand_raw.lower()
+        is_gbp_ellenbrook = "ellenbrook" in brand_raw.lower() and "chasingbetter247" in brand_raw.lower()
+
+        # ── IG: Posts/Reels/Stories — published in period (lowercase = IG handle) ──
+        # Direct positional extraction: find consecutive (values, pcts) pairs
+        # then map by position based on the known page layout.
+        pairs = _v3_value_pct_pairs(text)
+
+        if "reels published in period" in title and is_ig_page:
+            # Layout: "<engagement> <reels>" + "<eng%> <reels%>"
+            if pairs and len(pairs[0][0]) >= 2:
+                v, p = pairs[0]
+                ig["reel_engagement"] = v[0]
+                ig["reel_engagement_chg"] = p[0]
+                ig["reels_published"] = v[1]
+                ig["reels_chg"] = p[1]
+        elif "reach of published reels" in title and is_ig_page:
+            # Layout: "<avg_reach> <reels>" + "<reach%> <reels%>"
+            if pairs and len(pairs[0][0]) >= 2:
+                v, p = pairs[0]
+                ig["reel_avg_reach"] = v[0]
+                ig["reel_avg_reach_chg"] = p[0]
+                if not ig.get("reels_published"):
+                    ig["reels_published"] = v[1]
+                    ig["reels_chg"] = p[1]
+        elif "interactions of published reels" in title and is_ig_page:
+            # Layout: 2 pairs.
+            # Pair 1: "<likes> <comments> <saved> <interactions>" + pcts (4 values)
+            # Pair 2: "<shares> <reels>" + pcts (2 values)
+            if pairs:
+                v, p = pairs[0]
+                if len(v) >= 4:
+                    ig["reel_likes"] = v[0]; ig["reel_likes_chg"] = p[0]
+                    ig["reel_comments"] = v[1]
+                    ig["reel_saved"]  = v[2]
+                    ig["reel_interactions_total"] = v[3]
+                if len(pairs) >= 2:
+                    v2, p2 = pairs[1]
+                    if len(v2) >= 2:
+                        ig["reel_shares"] = v2[0]
+        elif "stories published in period" in title and is_ig_page:
+            if pairs:
+                v, p = pairs[0]
+                # Multiple layouts seen:
+                #   Layout A (single value): "<stories>" + "<stories%>" → 1 value
+                #   Layout B (multi): "<impressions> <avg_reach> <stories>" + pcts
+                if len(v) == 1:
+                    ig["stories_published"] = v[0]
+                    ig["stories_chg"] = p[0]
+                elif len(v) >= 3:
+                    ig["stories_impressions"] = v[0]; ig["stories_impressions_chg"] = p[0]
+                    ig["story_avg_reach"] = v[1];     ig["story_reach_chg"] = p[1]
+                    ig["stories_published"] = v[2];   ig["stories_chg"] = p[2]
+        elif "posts published in period" in title and is_ig_page:
+            # Layout: "<engagement> <posts>" + pcts
+            if pairs and len(pairs[0][0]) >= 2:
+                v, p = pairs[0]
+                ig["post_engagement"] = v[0]; ig["post_engagement_chg"] = p[0]
+                ig["posts_published"] = v[1]; ig["posts_chg"] = p[1]
+        elif "reach of published posts" in title and is_ig_page:
+            # Layout: "<avg_reach> <posts>" + pcts
+            if pairs and len(pairs[0][0]) >= 2:
+                v, p = pairs[0]
+                ig["post_avg_reach"] = v[0]; ig["post_avg_reach_chg"] = p[0]
+        elif "interactions of published posts" in title and is_ig_page:
+            # Layout: 2 pairs.
+            # Pair 1: "<likes> <comments> <saved> <shares>" + pcts (4 values)
+            # Pair 2: "<interactions>" + "<interactions%>" (single value)
+            if pairs:
+                v, p = pairs[0]
+                if len(v) >= 4:
+                    ig["post_likes"]    = v[0]; ig["post_likes_chg"] = p[0]
+                    ig["post_comments"] = v[1]
+                    ig["post_saved"]    = v[2]
+                    ig["post_shares"]   = v[3]
+                if len(pairs) >= 2:
+                    v2, p2 = pairs[1]
+                    if v2: ig["post_interactions"] = v2[0]
+        elif "community growth" in title and is_ig_page:
+            # Layout: "<followers> <balance> <total_content>" + pcts (3 values)
+            if pairs and len(pairs[0][0]) >= 1:
+                v, p = pairs[0]
+                ig["followers"] = v[0]
+                if len(v) >= 2: ig["followers_balance"] = v[1]
+        elif "average reach per day" in title and is_ig_page:
+            # Layout: "<views> <avg_reach> <total_content>" + pcts
+            if pairs:
+                v, p = pairs[0]
+                if len(v) >= 2:
+                    ig["views"] = v[0]; ig["views_chg"] = p[0]
+                    ig["avg_reach_per_day"] = v[1]; ig["avg_reach_per_day_chg"] = p[1]
+
+        # ── IG: Top reels / Top posts / Top stories / Hashtags ──
+        elif "ranking of reels" in title and is_ig_page:
+            # Each row has format: "<text> Go <views> <reach> <likes> <saved> <comments> <shares> <engagement>"
+            # — the "Go" is the Metricool "Go to post" link inline. Capture the
+            # 7 numbers following "Go ". Date + time are on separate lines.
+            for line in text.split("\n"):
+                m = re.search(
+                    r"Go\s+(\d[\d,]*)\s+(\d[\d,]*)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\b",
+                    line,
+                )
+                if m:
+                    top_reels.append({
+                        "text":      line[:80].rsplit(" Go ", 1)[0][:80],
+                        "views":     int(m.group(1).replace(",", "")),
+                        "reach":     int(m.group(2).replace(",", "")),
+                        "likes":     int(m.group(3)),
+                        "saves":     int(m.group(4)),
+                        "comments":  int(m.group(5)),
+                        "shares":    int(m.group(6)),
+                        "engagement": float(m.group(7)),
+                        "avg_watch": "—",   # not in this layout (separate stat earlier)
+                    })
+            top_reels = top_reels[:5]
+        elif "ranking of posts" in title and is_ig_page:
+            # Format: "<text> Go <views> <reach> <likes> <comments> <saved> <engagement>" (6 numbers)
+            for line in text.split("\n"):
+                m = re.search(
+                    r"Go\s+(\d[\d,]*)\s+(\d[\d,]*)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\d.]+)\b",
+                    line,
+                )
+                if m:
+                    top_posts.append({
+                        "text":     line[:80].rsplit(" Go ", 1)[0][:80],
+                        "views":    int(m.group(1).replace(",", "")),
+                        "reach":    int(m.group(2).replace(",", "")),
+                        "likes":    int(m.group(3)),
+                        "comments": int(m.group(4)),
+                        "saved":    int(m.group(5)),
+                        "engagement": float(m.group(6)),
+                    })
+            top_posts = top_posts[:5]
+        elif "ranking of stories" in title:
+            for line in text.split("\n"):
+                # Format: "date / text / impressions reach replies tap-back tap-forward exits"
+                m = re.search(r"(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$", line.strip())
+                if m and "Jun" not in line and "May" not in line:
+                    top_stories.append({
+                        "impressions": int(m.group(1)),
+                        "reach":       int(m.group(2)),
+                        "replies":     int(m.group(3)),
+                        "tap_back":    int(m.group(4)),
+                        "tap_forward": int(m.group(5)),
+                        "exits":       int(m.group(6)),
+                    })
+        elif "ranking of hashtags" in title:
+            for line in text.split("\n"):
+                m = re.match(r"#([a-zA-Z0-9_]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)", line.strip())
+                if m:
+                    hashtags.append({
+                        "hashtag":  m.group(1),
+                        "posts":    int(m.group(2)),
+                        "views":    int(m.group(3)),
+                        "likes":    int(m.group(4)),
+                        "comments": int(m.group(5)),
+                    })
+
+        # ── IG: Demographics / countries+cities ──
+        elif "demographics: countries and cities" in title and is_ig_page:
+            # Each PDF line has BOTH columns: "Country X% City, Region Y%".
+            # findall all (name, pct) matches on each line, then keep the LAST
+            # match which is the CITY column. Reset list — this is the IG page
+            # we want (Facebook has its own demographics page with different format).
+            geo_top_cities = []
+            for line in text.split("\n"):
+                line = line.strip()
+                # Match "Name [, Region [, Subregion]] N.NN%" — supports up to 3 comma segments
+                matches = re.findall(
+                    r"([A-Z][A-Za-z\s]+(?:,\s+[A-Z][A-Za-z\s,]*)?)\s+([\d.]+)%",
+                    line,
+                )
+                if len(matches) >= 2:
+                    # Last match = city column (first = country)
+                    name = matches[-1][0].strip().rstrip(",")
+                    pct = float(matches[-1][1])
+                    geo_top_cities.append({"city": name, "pct": pct})
+            geo_top_cities = geo_top_cities[:8]
+
+        # ── IG/FB competitors ──
+        elif "competitors" in title and (is_ig_page or is_fb_page):
+            # IG competitor page has "Reels" column, FB has "Likes on page"
+            is_ig_competitors = is_ig_page and "reels" in text.lower()
+            for line in text.split("\n"):
+                # "Revo Fitness Gym / 107.79k 5 3 882.13 1440.13 2.15" — IG layout
+                # "World Gym Australia / 51.6k 51.6k 5 2.8 0.2 0 0.01" — FB layout (Followers + Likes)
+                m = re.match(r"^\s*([\d.]+[Kk]?)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*$", line)
+                if m:
+                    # The line above this line is the competitor name
+                    pass   # we'll handle table-row pairing differently
+            # Alternative: walk lines, pair name + numbers
+            lines = [l.strip() for l in text.split("\n") if l.strip()]
+            for i, line in enumerate(lines):
+                # IG: "107.79k 5 3 882.13 1440.13 2.15"
+                m_ig = re.match(r"^([\d.]+[Kk]?)\s+(\d+)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)$", line)
+                # FB: "51.6k 51.6k 5 2.8 0.2 0 0.01"
+                m_fb = re.match(r"^([\d.]+[Kk]?)\s+([\d.]+[Kk]?)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)$", line)
+                # Find preceding name (1 line up = name, 2 lines down = handle for IG)
+                name = lines[i-1] if i > 0 else ""
+                if name.replace(" ", "").isdigit() or name.startswith("Showing"):
+                    continue
+                def _kv(s):
+                    s = s.replace(",", "").replace("k", "000").replace("K", "000")
+                    try: return int(float(s))
+                    except: return 0
+                if m_ig and is_ig_competitors:
+                    handle = lines[i+1] if (i+1) < len(lines) else name
+                    ig_competitors.append({
+                        "name":       name,
+                        "handle":     handle,
+                        "followers":  _kv(m_ig.group(1)),
+                        "posts":      int(m_ig.group(2)),
+                        "reels":      int(m_ig.group(3)),
+                        "likes":      float(m_ig.group(4)),
+                        "comments":   float(m_ig.group(5)),
+                        "engagement": float(m_ig.group(6)),
+                    })
+                elif m_fb and not is_ig_competitors:
+                    fb_competitors.append({
+                        "name":       name,
+                        "followers":  _kv(m_fb.group(1)),
+                        "likes_page": _kv(m_fb.group(2)),
+                        "posts":      int(m_fb.group(3)),
+                        "reactions":  float(m_fb.group(4)),
+                        "comments":   float(m_fb.group(5)),
+                        "shares":     float(m_fb.group(6)),
+                        "engagement": float(m_fb.group(7)),
+                    })
+
+        # ── GBP Malaga (in main PDF) ──
+        elif title == "reach" and is_gbp_malaga:
+            # Layout: "<maps> <search> <total>" + "<maps%> <search%> <total%>"
+            if pairs and len(pairs[0][0]) >= 3:
+                v, p = pairs[0]
+                gbp["malaga"]["maps_reach"]   = v[0]; gbp["malaga"]["maps_chg"]   = p[0]
+                gbp["malaga"]["search_reach"] = v[1]; gbp["malaga"]["search_chg"] = p[1]
+                gbp["malaga"]["reach_total"]  = v[2]; gbp["malaga"]["reach_chg"]  = p[2]
+        elif title == "clicks" and is_gbp_malaga:
+            # Layout: "<website> <phone> <directions> <total>" + pcts
+            if pairs and len(pairs[0][0]) >= 4:
+                v, p = pairs[0]
+                gbp["malaga"]["website_clicks"] = v[0]; gbp["malaga"]["website_chg"]    = p[0]
+                gbp["malaga"]["phone_clicks"]   = v[1]; gbp["malaga"]["phone_chg"]      = p[1]
+                gbp["malaga"]["directions"]     = v[2]; gbp["malaga"]["directions_chg"] = p[2]
+                gbp["malaga"]["total_actions"]  = v[3]; gbp["malaga"]["actions_chg"]    = p[3]
+
+    # ── Ellenbrook GBP — sidecar PDF ──
+    ell_pdf = BASE_DIR / "cb247-inbox" / "metricool_GBP_Ellenbrook.pdf"
+    if ell_pdf.exists():
+        try:
+            import pdfplumber
+            with pdfplumber.open(ell_pdf) as pdf:
+                ell_pages = [p.extract_text() or "" for p in pdf.pages]
+            for text in ell_pages:
+                if not text: continue
+                title = (text.split("\n")[0] or "").strip().lower()
+                e_pairs = _v3_value_pct_pairs(text)
+                if title == "reach" and e_pairs and len(e_pairs[0][0]) >= 3:
+                    v, p = e_pairs[0]
+                    gbp["ellenbrook"]["maps_reach"]   = v[0]; gbp["ellenbrook"]["maps_chg"]   = p[0]
+                    gbp["ellenbrook"]["search_reach"] = v[1]; gbp["ellenbrook"]["search_chg"] = p[1]
+                    gbp["ellenbrook"]["reach_total"]  = v[2]; gbp["ellenbrook"]["reach_chg"]  = p[2]
+                elif title == "clicks" and e_pairs and len(e_pairs[0][0]) >= 4:
+                    v, p = e_pairs[0]
+                    gbp["ellenbrook"]["website_clicks"] = v[0]; gbp["ellenbrook"]["website_chg"]    = p[0]
+                    gbp["ellenbrook"]["phone_clicks"]   = v[1]; gbp["ellenbrook"]["phone_chg"]      = p[1]
+                    gbp["ellenbrook"]["directions"]     = v[2]; gbp["ellenbrook"]["directions_chg"] = p[2]
+                    gbp["ellenbrook"]["total_actions"]  = v[3]; gbp["ellenbrook"]["actions_chg"]    = p[3]
+                elif title == "reviews" and e_pairs and len(e_pairs[0][0]) >= 2:
+                    v, p = e_pairs[0]
+                    gbp["ellenbrook"]["star_rating"]    = v[0]; gbp["ellenbrook"]["star_rating_chg"]    = p[0]
+                    gbp["ellenbrook"]["reviews_total"]  = v[1]; gbp["ellenbrook"]["reviews_total_chg"]  = p[1]
+        except Exception as e:
+            print(f"[metricool] Ellenbrook GBP PDF parse warning: {e}")
+
+    return {
+        "ig": ig,
+        "fb": fb,
+        "top_reels": top_reels,
+        "top_posts": top_posts,
+        "top_stories": top_stories,
+        "hashtags": hashtags,
+        "geo_top_cities": geo_top_cities,
+        "ig_competitors": ig_competitors,
+        "fb_competitors": fb_competitors,
+        "gbp": gbp,
+    }
 
 
 if __name__ == "__main__":
