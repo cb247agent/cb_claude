@@ -1,6 +1,7 @@
 """
 pull_mwcc_ahrefs.py — Pull SEO analytics from Ahrefs API v3 for My World Childcare.
-Saves to state/mwcc-ahrefs-data.json.
+Saves to state/mwcc-ahrefs.json (same path as the CSV fallback parser
+parse_mwcc_ahrefs_csvs.py, so both write to the same canonical file).
 Requires AHREFS_API_KEY in .env (same key as CB247).
 
 Pulls:
@@ -278,7 +279,7 @@ def main():
     }
 
     STATE_DIR.mkdir(exist_ok=True)
-    output_file = STATE_DIR / "mwcc-ahrefs-data.json"
+    output_file = STATE_DIR / "mwcc-ahrefs.json"
     output_file.write_text(json.dumps(out, indent=2))
     print(f"\n[saved] {output_file}")
     print(f"  organic_keywords: {len(current_kws)}")

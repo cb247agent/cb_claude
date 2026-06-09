@@ -1,0 +1,173 @@
+name: competitor-spy-mwcc
+business: mwcc
+skills: competitor-seo-scraper
+
+# Layer 2 — MWCC competitor intelligence agent.
+# Mirrors agents/competitor-spy.yml (CB247) but adapted for childcare:
+#  - Different competitors (Midvale Hub, Goodstart, Nido, Care for Kids, KindiCare)
+#  - Different battle dimensions (NQS rating, ACECQA register, GBP rating + photo count,
+#    capacity claims, fee transparency, waitlist communication)
+#  - No Facebook-ads-library angle for childcare (centres rarely run national FB ads
+#    that show in the Australian library at scale)
+#
+# Architecture note:
+# Reads state/mwcc-work-queue.json (the structured Layer-1 emitter output) +
+# context/mwcc-competitors.md (curated battle cards). The Layer-2 boundary
+# still holds — state/mwcc-* is structured emitter output, not raw API data.
+#
+# Why this agent exists:
+# Before this agent fires, MWCC competitive intelligence lives only in a
+# context file (mwcc-competitors.md) and in human memory. This agent
+# produces a weekly markdown brief that quantifies competitor moves the
+# week they happen, so Kelley + Tia can respond inside the same week
+# instead of finding out 4 weeks later.
+
+context:
+  - context/mwcc-competitors.md         # 5 competitors: Midvale Hub, Goodstart, Nido, Care for Kids, KindiCare
+  - context/mwcc-business-config.json   # MWCC's 5 centres + service mix
+  - context/mwcc-brand-voice.md         # never criticise competitors disparagingly
+  - state/mwcc-gsc-data.json            # MWCC's current organic position vs competitor keywords
+  - state/mwcc-ahrefs.json              # competitor keyword gap (where they rank, MWCC doesn't)
+  - state/mwcc-gbp-performance.json     # MWCC's own GBP rating + reviews — context for competitor compare
+  - skills/competitor-seo-scraper/SKILL.md
+
+tools:
+  - Read(context/mwcc-*)
+  - Read(state/mwcc-gsc-data.json)
+  - Read(state/mwcc-ahrefs.json)
+  - Read(state/mwcc-gbp-performance.json)
+  - Read(outputs/mwcc/**)
+  - Read(skills/competitor-seo-scraper/SKILL.md)
+  - Write(outputs/mwcc/research/**)
+  - WebFetch                            # for ACECQA register lookup + competitor GBP page check
+  - WebSearch                           # for any recent news about competitor moves
+
+Inputs:
+  mwcc_centres:
+    - {name: Armadale,      services: [OSHC]}
+    - {name: Midvale,       services: [LDC, OSHC]}
+    - {name: Rockingham,    services: [OSHC]}
+    - {name: Seville Grove, services: [LDC, OSHC]}
+    - {name: Waikiki,       services: [LDC]}
+
+  competitors:
+    - name: Midvale Hub
+      domain: midvalehub.org.au
+      type: local
+      battles_with: [Midvale, Seville Grove]
+      key_signals_to_track:
+        - NQS rating (ACECQA register)
+        - "fees published vs hidden"
+        - "waitlist communication"
+        - GBP rating + recent reviews
+    - name: Goodstart Early Learning
+      domain: goodstart.org.au
+      type: national_chain
+      battles_with: [Armadale, Midvale, Seville Grove, Waikiki]
+      key_signals_to_track:
+        - new centre openings in MWCC catchment suburbs
+        - "national pricing changes"
+        - WA-specific marketing campaigns
+        - NQS rating per local centre
+    - name: Nido Early School
+      domain: nido.edu.au
+      type: national_premium
+      battles_with: [Waikiki, Seville Grove]
+      key_signals_to_track:
+        - "premium positioning angles (curriculum, educator qualifications)"
+        - Perth-specific marketing
+        - fee transparency vs MWCC
+    - name: Care for Kids
+      domain: careforkids.com.au
+      type: aggregator
+      battles_with: [all]
+      key_signals_to_track:
+        - MWCC's listing position in search results for "[suburb] childcare"
+        - competitor listings ahead of MWCC
+        - "review count + recency"
+    - name: KindiCare
+      domain: kindicare.com
+      type: aggregator
+      battles_with: [all]
+      key_signals_to_track:
+        - MWCC's profile completeness vs competitors
+        - "rating + review velocity"
+        - featured/promoted listings
+
+Workflow:
+  - name: ingest-prior-agent-context
+    description: |
+      Read outputs/mwcc/research/mwcc-weekly-research-$DATE.md if present
+      (the research-perth-childcare agent's market signals already include
+      a competitor activity section). Use that as the starting point — do
+      NOT duplicate the same intel. This agent's job is to go DEEPER on
+      competitor moves with quantification + recommended response.
+
+  - name: gbp-battle-table
+    description: |
+      Build a side-by-side GBP comparison covering MWCC vs Midvale Hub +
+      Goodstart + Nido for the suburbs where they overlap. Use state/mwcc-
+      gbp-performance.json for MWCC; WebFetch for competitor public GBP
+      pages. Columns: centre/competitor | suburb | rating | reviews count
+      | photos count | recent review sentiment (last 5).
+
+  - name: nqs-rating-watch
+    description: |
+      For each competitor centre that battles with an MWCC centre, look up
+      the current NQS rating on ACECQA register (WebFetch
+      acecqa.gov.au/resources/national-registers/services). Flag any
+      competitor that has moved from "Meeting" to "Exceeding" or vice
+      versa since last week. NQS upgrades are a real marketing signal.
+
+  - name: keyword-threat-map
+    description: |
+      For MWCC's target keywords (read from context/mwcc-seo-targets.md),
+      use state/mwcc-ahrefs.json to identify the top 5 keywords where
+      competitors have GAINED organic positions on MWCC this week (WoW
+      delta). For each: keyword | MWCC pos | competitor that gained
+      ground | recommended counter-move (which existing MWCC page to
+      update, or new content needed).
+
+  - name: strategic-recommendation
+    description: |
+      Synthesise the above into ONE specific counter-move MWCC should make
+      this week — concrete, time-boxed, with a named owner (Kelley / Tia /
+      Denver / John). Examples: "Goodstart Armadale just dropped from
+      Exceeding to Meeting — promote MWCC Armadale's Meeting+ status in
+      this week's GBP post" or "Midvale Hub published their 2027 waitlist
+      page — MWCC Midvale needs a parallel page by Friday."
+
+  - name: compliance-pass
+    description: |
+      MANDATORY before output: scrub for any disparaging language about
+      competitors. Per mwcc-brand-voice.md ("Never name a competitor
+      disparagingly"), this report is OBSERVATIONAL, not adversarial.
+      Rewrite any "Goodstart is worse" → "MWCC's NQS position is stronger
+      in [X] dimensions" etc. Flag any line that fails this check.
+
+  - name: write-report
+    description: |
+      Compose the final markdown brief. Required sections:
+       0. PIPELINE NOTE — if research-perth-childcare already flagged a
+          competitor move in its output, reference it (don't repeat) and
+          go deeper.
+       1. COMPETITOR MOVES THIS WEEK — ranked by threat level (high /
+          medium / low) for MWCC enrolment risk. Include what changed,
+          why it matters, recommended MWCC response.
+       2. GBP BATTLE TABLE — from gbp-battle-table step.
+       3. NQS RATING CHANGES — from nqs-rating-watch step.
+       4. KEYWORD THREATS — from keyword-threat-map step.
+       5. OPPORTUNITIES — what competitors are NOT covering that MWCC can
+          own this week (e.g., transparent CCS quotes, real educator
+          stories, room-by-room virtual tours).
+       6. STRATEGIC RECOMMENDATION — from strategic-recommendation step
+          (one specific counter-move, named owner, deadline).
+    output: outputs/mwcc/research/mwcc-competitor-weekly-$DATE.md
+
+# Cadence — runs Monday after SEO Agent (Agent 5/9) and before paid-ads-mwcc
+# (Agent 7/9). SEO Agent's keyword analysis feeds into the keyword-threat-map
+# step.
+Runs: Monday afternoon AWST (Phase 4.8 Agent 6/9)
+
+End:
+  - Print "MWCC COMPETITOR SPY COMPLETE — brief saved to outputs/mwcc/research/"

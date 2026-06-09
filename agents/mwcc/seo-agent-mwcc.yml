@@ -42,7 +42,7 @@ tools:
   - Read(context/mwcc-business-config.json)
   - Read(state/mwcc-work-queue.json)
   - Read(state/mwcc-gsc-data.json)
-  - Read(state/mwcc-ahrefs-data.json)
+  - Read(state/mwcc-ahrefs.json)
   - Read(skills/**)
   - Read(outputs/mwcc/**)
   - Write(outputs/mwcc/seo/**)

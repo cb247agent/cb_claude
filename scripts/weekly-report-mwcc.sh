@@ -218,7 +218,7 @@ if [ "$AHREFS_CSV_COUNT" -gt 0 ]; then
 else
     log "  No CSVs in mwcc-inbox/ahrefs/ — falling back to API pull"
     "$PYTHON" "$BASE_DIR/scripts/pull_mwcc_ahrefs.py" >> "$LOG" 2>&1 \
-        && log "  ✅ MWCC Ahrefs pull complete → state/mwcc-ahrefs-data.json" \
+        && log "  ✅ MWCC Ahrefs pull complete → state/mwcc-ahrefs.json" \
         || { FAILED_STEPS+=("mwcc-ahrefs"); log "  ⚠️  MWCC Ahrefs pull failed (units exhausted?) — check $LOG"; }
 fi
 
@@ -234,6 +234,23 @@ if "$PYTHON" "$BASE_DIR/scripts/parse_mwcc_metricool_pdf.py" >> "$LOG" 2>&1; the
 else
     FAILED_STEPS+=("mwcc-metricool")
     log "  ⚠️  MWCC Metricool parse failed — check $LOG"
+fi
+
+
+# ─────────────────────────────────────────────────────────────────
+# STEP 4.6a2 — MWCC Viral Hashtag Scrape (Apify TikTok + Instagram)
+# Powers content-intel-mwcc with real viral signals from Perth childcare
+# niche hashtags (#childcareperth, #perthmums, #workingparents, etc.).
+# Graceful: writes available=false placeholder if Apify is down / no key.
+# Cost: ~$0.20/run (capped at 5 posts × 7 tags × 2 platforms).
+# ─────────────────────────────────────────────────────────────────
+log ""
+log "─── STEP 4.6a2: MWCC Viral Hashtag Scrape (Apify) ───"
+if "$PYTHON" "$BASE_DIR/scripts/pull_mwcc_social_trends.py" >> "$LOG" 2>&1; then
+    log "  ✅ MWCC viral trends scraped → state/mwcc-social-trends.json"
+else
+    FAILED_STEPS+=("mwcc-social-trends")
+    log "  ⚠️  MWCC viral trends scrape failed (non-fatal — content-intel will degrade)"
 fi
 
 
@@ -282,28 +299,25 @@ log "─── STEP 4.7d: MWCC Enrolment Emitter ───"
 
 
 # ══════════════════════════════════════════════════════════════════
-# PHASE 4.8 — MWCC AGENT PIPELINE  (~30 min, sequential)
+# PHASE 4.8 — MWCC AGENT PIPELINE  (~40 min, sequential, 9-agent parity with CB247)
 # ══════════════════════════════════════════════════════════════════
-# Mirrors CB247's 9-agent pipeline (weekly-report.sh PHASE 2) but adapted
-# for childcare:
-#   - research-perth-childcare ← research-agent
-#   - audience-intel-mwcc      ← audience-intel
-#   - content-intel-mwcc       ← content-intel  (limitation: no MWCC viral
-#                                                 trends scrape yet; runs on
-#                                                 own-page data + competitor
-#                                                 signals only)
-#   - performance-mwcc         ← performance
-#   - seo-agent-mwcc           ← seo-agent
-#   - content-brief            ← content-agent
-#   - strategist-mwcc          ← strategist
-# competitor-spy + paid-ads have no MWCC YAML — intentionally skipped per
-# Tia 09 Jun 2026. Build YAMLs in a separate session if full parity needed.
+# Mirrors CB247's 9-agent pipeline (weekly-report.sh PHASE 2):
+#   1. research-perth-childcare ← research-agent
+#   2. audience-intel-mwcc      ← audience-intel
+#   3. content-intel-mwcc       ← content-intel  (now powered by Step 4.6a2
+#                                                  viral-trends scrape)
+#   4. performance-mwcc         ← performance
+#   5. seo-agent-mwcc           ← seo-agent (primary growth driver)
+#   6. competitor-spy-mwcc      ← competitor-spy (added 09 Jun 2026)
+#   7. paid-ads-mwcc            ← paid-ads      (added 09 Jun 2026)
+#   8. content-brief            ← content-agent
+#   9. strategist-mwcc          ← strategist
 log ""
-log "─── PHASE 4.8: MWCC AGENT PIPELINE ───"
-log "Running 7 agents sequentially to enrich the emitter cards into strategic briefs."
+log "─── PHASE 4.8: MWCC AGENT PIPELINE (9 agents — full CB247 parity) ───"
+log "Running 9 agents sequentially to enrich the emitter cards into strategic briefs."
 
-# ── Agent 1/7: Research (Perth childcare market signals) ──
-log "Agent 1/7 — research-perth-childcare"
+# ── Agent 1/9: Research (Perth childcare market signals) ──
+log "Agent 1/9 — research-perth-childcare"
 run_agent "research-perth-childcare" \
 "You are the MWCC (My World Childcare) Research Agent. Today is $DATE.
 
@@ -332,8 +346,8 @@ Save to: outputs/mwcc/research/mwcc-weekly-research-$DATE.md" \
 "Read(context/mwcc-competitors.md),Read(context/mwcc-business-config.json),Read(context/mwcc-seasonal-calendar.md),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ops.json),Write(outputs/mwcc/research/**)" \
 "$MODEL_SONNET"
 
-# ── Agent 2/7: Audience Intel (MWCC parent ICPs) ──
-log "Agent 2/7 — audience-intel-mwcc"
+# ── Agent 2/9: Audience Intel (MWCC parent ICPs) ──
+log "Agent 2/9 — audience-intel-mwcc"
 run_agent "audience-intel-mwcc" \
 "You are the MWCC Audience Intel Agent. Today is $DATE.
 
@@ -367,25 +381,21 @@ Save to: outputs/mwcc/research/mwcc-audience-weekly-$DATE.md" \
 "Read(context/mwcc-*.md),Read(context/mwcc-business-config.json),Read(state/mwcc-ga4.json),Read(state/mwcc-gsc-data.json),Read(outputs/mwcc/research/**),Write(outputs/mwcc/research/**)" \
 "$MODEL_HAIKU"
 
-# ── Agent 3/7: Content Intel (MWCC content patterns) ──
-# LIMITATION (09 Jun 2026): MWCC has no equivalent of CB247's social-trends.json
-# (Apify scrape of viral TikTok/IG fitness hashtags). This agent works from
-# MWCC's own-page performance + competitor signals + market research only.
-# To enable real viral-hook capability, build scripts/pull_mwcc_social_trends.py
-# (Apify scrape of #childcareperth, #perthmums, #workingparents).
-log "Agent 3/7 — content-intel-mwcc"
+# ── Agent 3/9: Content Intel (MWCC content patterns — now with live viral signal) ──
+# 09 Jun 2026 (later): added pull_mwcc_social_trends.py (Step 4.6a2). Apify
+# now scrapes #childcareperth, #perthmums, #workingparents etc. weekly. If
+# the placeholder file is present (available=false), the agent still runs
+# but degrades to own-page signals only.
+log "Agent 3/9 — content-intel-mwcc"
 run_agent "content-intel-mwcc" \
 "You are the MWCC Content Intel Agent. Today is $DATE.
-
-NOTE: Unlike CB247's content-intel, MWCC does not yet have a live viral-hashtag scrape.
-Work from the inputs below — own-page performance, competitor signals, market research.
-Be honest about the limitation in your output (\"trend signals not yet automated for MWCC\").
 
 Read these files:
 - context/mwcc-brand-voice.md                          (warm, knowledgeable, no superlatives)
 - context/mwcc-psychology-triggers.md                  (conversion triggers per ICP)
 - context/mwcc-marketing-strategy.md
 - state/mwcc-social.json                                (MWCC's own IG + FB + GBP performance)
+- state/mwcc-social-trends.json                         (Apify scrape of #childcareperth, #perthmums, #workingparents, etc. — top viral posts + co-occurring hashtags. Check 'available' field first; if false, fall back to own-page + competitor signals.)
 - outputs/mwcc/research/mwcc-weekly-research-$DATE.md  (market + competitor signals from Agent 1)
 - outputs/mwcc/research/mwcc-audience-weekly-$DATE.md  (ICP pulse from Agent 2)
 
@@ -393,21 +403,24 @@ MWCC: 5 Perth centres (Armadale OSHC, Midvale LDC+OSHC, Rockingham OSHC, Seville
 Lavender/purple palette. NO photos of children — locked rule. CCS mention required wherever fees come up.
 
 Output a structured markdown report covering:
-1. TOP 3 CONTENT HOOKS THIS WEEK — adapted from Agent 1 + Agent 2 signals (write actual caption opener for each, 12-18 words)
-2. TOP 3 CONTENT FORMATS that suit MWCC voice — Reel script outline, carousel outline, Story sequence
-3. COMPETITOR CONTENT GAPS — what Midvale Hub / Goodstart / Nido are NOT covering that MWCC can own
-4. OWN-PAGE WINNERS — from state/mwcc-social.json: which posts performed best last week, what pattern do they share?
-5. APPROVED VISUAL CATEGORIES — pick from: educators (with consent) · centre spaces · materials/artwork · branded graphics · parent quote graphics · storytelling captions. NEVER children's faces.
-6. CONTENT CALENDAR SIGNALS — which ICP to target on which platform this week (from Agent 2 ICP pulse)
+1. TOP 5 VIRAL HOOKS THIS WEEK — pulled FROM state/mwcc-social-trends.json top_posts. For each: hook 12-18 words (adapt the viral angle for MWCC voice — never copy verbatim) + which underlying viral post inspired it (cite engagement number + platform).
+2. TRENDING HASHTAG MIX — top 8 co-occurring hashtags from mwcc-social-trends.json (use these on IG/FB this week).
+3. TOP 3 CONTENT FORMATS that suit MWCC voice — Reel script outline, carousel outline, Story sequence.
+4. COMPETITOR CONTENT GAPS — what Midvale Hub / Goodstart / Nido are NOT covering that MWCC can own.
+5. OWN-PAGE WINNERS — from state/mwcc-social.json: which MWCC posts performed best last week, what pattern do they share?
+6. APPROVED VISUAL CATEGORIES — pick from: educators (with consent) · centre spaces · materials/artwork · branded graphics · parent quote graphics · storytelling captions. NEVER children's faces.
+7. CONTENT CALENDAR SIGNALS — which ICP to target on which platform this week (from Agent 2 ICP pulse).
 
-Be specific. Include actual caption openers. No emojis on email or landing pages (limited IG/FB OK).
+If state/mwcc-social-trends.json has 'available': false — note the limitation at the top of section 1 and fall back to own-page winners + competitor gaps as the hook source.
+
+Be specific. Include actual caption openers, not generic templates. No emojis on email or landing pages (limited IG/FB OK).
 Save to: outputs/mwcc/research/mwcc-content-intel-$DATE.md" \
 "$OUTPUTS/research/mwcc-content-intel-$DATE.md" \
-"Read(context/mwcc-*.md),Read(state/mwcc-social.json),Read(outputs/mwcc/research/**),Write(outputs/mwcc/research/**)" \
+"Read(context/mwcc-*.md),Read(state/mwcc-social.json),Read(state/mwcc-social-trends.json),Read(outputs/mwcc/research/**),Write(outputs/mwcc/research/**)" \
 "$MODEL_HAIKU"
 
-# ── Agent 4/7: Performance ──
-log "Agent 4/7 — performance-mwcc"
+# ── Agent 4/9: Performance ──
+log "Agent 4/9 — performance-mwcc"
 run_agent "performance-mwcc" \
 "You are the MWCC Performance Agent. Today is $DATE.
 
@@ -444,12 +457,9 @@ Save to: outputs/mwcc/research/mwcc-performance-week-$DATE.md" \
 "Read(state/mwcc-*.json),Read(context/mwcc-*),Write(outputs/mwcc/research/**)" \
 "$MODEL_SONNET"
 
-# ── Agent 5/7: SEO (primary growth driver — same role as CB247) ──
+# ── Agent 5/9: SEO (primary growth driver — same role as CB247) ──
 # Same directive as CB247 seo-agent: grow organic, reduce Google Ads spend.
-# Filename bug flagged: seo-agent-mwcc.yml references state/mwcc-ahrefs-data.json
-# but the real file is state/mwcc-ahrefs.json. The Read pattern below uses the
-# correct filename so the agent will actually find Ahrefs data.
-log "Agent 5/7 — seo-agent-mwcc (primary growth driver)"
+log "Agent 5/9 — seo-agent-mwcc (primary growth driver)"
 run_agent "seo-agent-mwcc" \
 "You are the MWCC SEO Agent. Today is $DATE. SEO is the PRIMARY growth driver — the goal
 is to grow organic search and REDUCE Google Ads spend by replacing paid traffic with organic.
@@ -487,8 +497,107 @@ Save to: outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md" \
 "Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/research/**),Write(outputs/mwcc/seo/**)" \
 "$MODEL_SONNET"
 
-# ── Agent 6/7: Content Brief (replaces content-agent) ──
-log "Agent 6/7 — content-brief (multi-format weekly content)"
+# ── Agent 6/9: Competitor Spy (MWCC competitor moves this week) ──
+log "Agent 6/9 — competitor-spy-mwcc"
+run_agent "competitor-spy-mwcc" \
+"You are the MWCC Competitor Spy Agent. Today is $DATE.
+
+MWCC competitors (verify scope against context/mwcc-competitors.md):
+- Midvale Hub                (local — battles Midvale + Seville Grove)
+- Goodstart Early Learning   (national chain — battles all 5 centres)
+- Nido Early School          (national premium — battles Waikiki + Seville Grove)
+- Care for Kids              (aggregator — battles all)
+- KindiCare                  (aggregator — battles all)
+
+Read these files:
+- context/mwcc-competitors.md                            (curated battle cards)
+- context/mwcc-business-config.json                      (MWCC's 5 centres + service mix)
+- context/mwcc-brand-voice.md                            (NEVER name a competitor disparagingly)
+- state/mwcc-gsc-data.json                               (organic position vs competitor keywords)
+- state/mwcc-ahrefs.json                                 (competitor keyword gap)
+- state/mwcc-gbp-performance.json                        (MWCC's own GBP performance — context for compare)
+- outputs/mwcc/research/mwcc-weekly-research-$DATE.md   (Agent 1 already flagged competitor moves — go DEEPER, don't repeat)
+- outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md       (SEO Agent's keyword gap analysis)
+
+Use WebFetch sparingly for: ACECQA register (https://www.acecqa.gov.au/resources/national-registers/services) per-centre NQS lookup; competitor public GBP pages for review count + recent review sentiment.
+
+COMPLIANCE GATE (MANDATORY):
+- This report is OBSERVATIONAL, not adversarial.
+- NEVER write 'Goodstart is worse' / 'Midvale Hub is failing' / 'Nido overcharges'.
+- Frame all comparisons as 'MWCC's [X] is stronger' or 'opportunity for MWCC to differentiate on [Y]'.
+- Per mwcc-brand-voice.md: 'Never name a competitor disparagingly'.
+
+Output a structured markdown report:
+1. PIPELINE NOTE — if Agent 1 (research-perth-childcare) already flagged a competitor move, reference it briefly and go deeper.
+2. COMPETITOR MOVES THIS WEEK — ranked by threat level for MWCC enrolments (🔴 high / 🟡 medium / 🟢 low). For each: what changed, why it matters for which MWCC centres, recommended MWCC response (specific, time-boxed, named owner).
+3. GBP BATTLE TABLE — MWCC centres vs overlapping competitors per suburb. Columns: centre/competitor | suburb | rating | reviews count | photos count | recent review sentiment (last 5).
+4. NQS RATING CHANGES — for each competitor centre, current NQS rating from ACECQA register. Flag any \"Working Towards → Meeting\" or \"Meeting → Exceeding\" moves since last week (real marketing signals).
+5. KEYWORD THREATS — top 5 keywords where competitors GAINED position on MWCC this week (from Ahrefs WoW delta). For each: keyword | MWCC pos | competitor that gained | counter-move (existing MWCC page to update OR new content).
+6. OPPORTUNITIES — what competitors are NOT covering that MWCC can own (transparent CCS quotes, real educator stories, room-by-room virtual tours, parent quote graphics).
+7. STRATEGIC RECOMMENDATION — ONE specific counter-move MWCC should make this week. Concrete, time-boxed, named owner (Tia / Denver / Kelley / John / Mark).
+
+Save to: outputs/mwcc/research/mwcc-competitor-weekly-$DATE.md" \
+"$OUTPUTS/research/mwcc-competitor-weekly-$DATE.md" \
+"Read(context/mwcc-*),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ahrefs.json),Read(state/mwcc-gbp-performance.json),Read(outputs/mwcc/**),Write(outputs/mwcc/research/**),WebFetch" \
+"$MODEL_SONNET"
+
+# ── Agent 7/9: Paid Ads (paid→organic switch — closes the loop with SEO Agent) ──
+log "Agent 7/9 — paid-ads-mwcc"
+run_agent "paid-ads-mwcc" \
+"You are the MWCC Paid Ads Agent. Today is $DATE.
+PRIMARY DIRECTIVE: REDUCE Google Ads spend as SEO takes over. Every dollar saved on an
+ad that's now covered by organic is a measurable win for the SEO programme.
+
+Read these files:
+- state/mwcc-ads.json                                    (Google Ads spend, conversions per campaign + location)
+- state/mwcc-ads-history.json                            (WoW trend)
+- state/mwcc-meta.json                                   (Meta paid + organic performance)
+- state/mwcc-meta-history.json                           (WoW trend)
+- state/mwcc-work-queue.json                             (live SEO emitter cards — which keywords rank where)
+- context/mwcc-business-config.json                      (CPA targets + pause/scale/optimise thresholds)
+- context/mwcc-brand-voice.md                            (NO 'best', NO 'limited spots' unless Kelley confirms)
+- context/mwcc-psychology-triggers.md                    (every ad copy variation needs ≥2 named triggers)
+- outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md       (THE KEY INPUT — read the GOOGLE ADS OFFSET section)
+- outputs/mwcc/research/mwcc-audience-weekly-$DATE.md   (ICP targeting brief for Meta)
+- outputs/mwcc/research/mwcc-content-intel-$DATE.md     (creative angles + viral hooks from Step 4.6a2 scrape)
+
+COMPLIANCE GATE (MANDATORY before saving):
+- NO 'best childcare' / 'leading childcare' / 'premier' — ACL undefendable.
+- NO 'limited spots' / 'spots filling fast' unless Kelley confirms capacity in writing.
+- CCS mention mandatory wherever fees appear in ad copy.
+- Service-type accuracy: don't advertise LDC at Armadale or Rockingham (OSHC-only); don't advertise OSHC at Waikiki (LDC-only).
+- NO photos of children in any visual brief — approved categories only.
+- Any creative copy needs ≥2 named psychology triggers from context/mwcc-psychology-triggers.md.
+
+Output a structured markdown report:
+
+GOOGLE ADS:
+1. PAUSE IMMEDIATELY — keywords MWCC now ranks organically #1-3 (from SEO Agent's GOOGLE ADS OFFSET section). For each: specific campaign + ad group + estimated weekly saving. EXCEPTION: never pause brand keywords ('my world childcare', 'my world child care') even if ranked #1 — defensive bid.
+2. REDUCE BUDGET — keywords MWCC ranks #4-10 (50% budget reduction recommended). Specific campaigns + new daily budget.
+3. KEEP RUNNING — keywords with no organic coverage where MWCC must hold paid presence.
+4. CUMULATIVE SAVINGS TRACKER — total saved this month vs start of programme (read prior week's paid-ads report to compute; if first week, start at \$0).
+5. CAMPAIGN HEALTH — each active Google Ads campaign: spend | CPA vs target (\$25 enquiry target) | conversions | RAG status | specific recommended action (with owner: Tia).
+
+META ADS:
+6. ACCOUNT HEALTH — any rejected ads, account warnings, audience saturation flags.
+7. AUDIENCE TARGETING — 3 segments from Audience Intel brief, ready to activate.
+8. CREATIVE REFRESH — top 3 ad copy variations using hooks from Content Intel. Each: headline (40 chars) | body (≤90 words) | CTA | visual brief (which approved category — NEVER children's faces) | named psychology triggers used.
+9. BUDGET SPLIT — recommended spend by suburb (Armadale, Midvale, Rockingham, Seville Grove, Waikiki) + ICP.
+
+UTM HYGIENE:
+10. UTM ISSUES — any miss-tagged live campaigns (utm_source / utm_medium / utm_campaign) for Tia to fix.
+
+ATTRIBUTION LOOP:
+11. PAID → ORGANIC CONFIRMED — keywords paused in prior weeks that organic has now successfully replaced. Measure: did organic clicks on that query meet/exceed last-month paid clicks for the same query? Cite specific keywords + numbers.
+
+Be specific: name exact campaign IDs, keyword groups, dollar amounts.
+Save to: outputs/mwcc/research/mwcc-paid-ads-weekly-$DATE.md" \
+"$OUTPUTS/research/mwcc-paid-ads-weekly-$DATE.md" \
+"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/**),Write(outputs/mwcc/research/**)" \
+"$MODEL_SONNET"
+
+# ── Agent 8/9: Content Brief (replaces content-agent) ──
+log "Agent 8/9 — content-brief (multi-format weekly content)"
 run_agent "content-brief" \
 "You are the MWCC Content Brief Agent. Today is $DATE.
 Generate a full week of READY-TO-PUBLISH content briefs — Jordan/Joanne should be able to
@@ -504,9 +613,11 @@ Read these files:
 - context/mwcc-seasonal-calendar.md                     (active campaigns + upcoming events)
 - context/mwcc-psychology-triggers.md                   (every piece needs ≥2 triggers)
 - outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md       (SEO content briefs from Agent 5)
-- outputs/mwcc/research/mwcc-content-intel-$DATE.md    (hooks, formats, gaps from Agent 3)
-- outputs/mwcc/research/mwcc-audience-weekly-$DATE.md  (ICP language, tone, pain points)
+- outputs/mwcc/research/mwcc-content-intel-$DATE.md    (viral hooks + hashtags from Agent 3)
+- outputs/mwcc/research/mwcc-audience-weekly-$DATE.md  (ICP language, tone, pain points from Agent 2)
 - outputs/mwcc/research/mwcc-weekly-research-$DATE.md  (seasonal alert from Agent 1)
+- outputs/mwcc/research/mwcc-competitor-weekly-$DATE.md (competitor gaps to exploit from Agent 6)
+- outputs/mwcc/research/mwcc-paid-ads-weekly-$DATE.md  (Meta creative briefs from Agent 7)
 
 HARD RULES (NEVER violate):
 - NO photos of children. Approved visual categories ONLY: educators (with consent) · centre spaces · materials/artwork · branded graphics · parent quotes · storytelling captions.
@@ -547,17 +658,17 @@ Save EVERYTHING to: outputs/mwcc/content/mwcc-weekly-content-$DATE.md" \
 "Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/**),Write(outputs/mwcc/content/**)" \
 "$MODEL_OPUS"
 
-# ── Agent 7/7: Strategist — inject upstream failure context ──
-log "Agent 7/7 — strategist-mwcc"
+# ── Agent 9/9: Strategist — inject upstream failure context ──
+log "Agent 9/9 — strategist-mwcc"
 if [ ${#FAILED_AGENTS[@]} -gt 0 ]; then
     MWCC_FAILURE_NOTE="PIPELINE WARNING: The following MWCC agents failed this run and their outputs may be missing or incomplete: ${FAILED_AGENTS[*]}. Add a 'PIPELINE ISSUES' section at the top of your strategy document listing each failed agent and what data is therefore missing."
 else
-    MWCC_FAILURE_NOTE="All 6 upstream MWCC agents completed successfully this run."
+    MWCC_FAILURE_NOTE="All 8 upstream MWCC agents completed successfully this run."
 fi
 
 run_agent "strategist-mwcc" \
 "You are the MWCC Marketing Strategist. Today is $DATE.
-Synthesise ALL 6 upstream agent outputs into ONE executive strategy document.
+Synthesise ALL 8 upstream agent outputs into ONE executive strategy document.
 This is the single source of truth Tia + Denver review before anything goes to the team.
 
 PIPELINE STATUS: $MWCC_FAILURE_NOTE
@@ -565,9 +676,11 @@ PIPELINE STATUS: $MWCC_FAILURE_NOTE
 Read ALL of these:
 - outputs/mwcc/research/mwcc-weekly-research-$DATE.md     (market signals)
 - outputs/mwcc/research/mwcc-audience-weekly-$DATE.md     (ICP pulse)
-- outputs/mwcc/research/mwcc-content-intel-$DATE.md       (hooks + formats)
+- outputs/mwcc/research/mwcc-content-intel-$DATE.md       (viral hooks + hashtags)
 - outputs/mwcc/research/mwcc-performance-week-$DATE.md    (KPI scorecard)
 - outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md         (SEO strategy + briefs)
+- outputs/mwcc/research/mwcc-competitor-weekly-$DATE.md   (competitor moves + threats)
+- outputs/mwcc/research/mwcc-paid-ads-weekly-$DATE.md     (paid→organic switch recs)
 - outputs/mwcc/content/mwcc-weekly-content-$DATE.md       (multi-format briefs)
 - context/mwcc-seasonal-calendar.md                       (campaign calendar)
 - context/mwcc-team-roster.md                             (team owners)
@@ -606,7 +719,7 @@ Save to: outputs/mwcc/blueprints/mwcc-weekly-strategy-$DATE.md" \
 "Read(context/mwcc-*),Read(outputs/mwcc/**),Write(outputs/mwcc/blueprints/**)" \
 "$MODEL_OPUS"
 
-log "Phase 4.8 complete — 7 MWCC agents run."
+log "Phase 4.8 complete — 9 MWCC agents run (full CB247 parity)."
 
 
 log "─── STEP 4.7d2: Extract Agent Action Proposals (Agent Action Contract) ───"
