@@ -112,7 +112,10 @@ Step 1h''  google_ads_emitter.py   4 Google actions
 Step 1h''' gbp_emitter.py          5 GBP actions
 Step 1h''''  social_emitter.py     5 Social actions
 Step 1h''''' membership_emitter.py 5 Membership actions
-Step 1i    sync_to_supabase.py     Upsert all 37 actions
+Step 1h''''''  opportunity_emitter.py   Up to 5 PAUSE + 3 REDUCE (ROI)
+Step 1h''''''' attribution_emitter.py   1 ROI Summary card
+Step 1h'''''''' extract_agent_actions.py  Layer 3 agent proposals
+Step 1i    sync_to_supabase.py     Upsert all actions
 ```
 
 **Phase 2 — Agents (30-45 min)**
@@ -138,6 +141,54 @@ Step 3c     deploy-dashboard.sh      git push → GitHub Pages
 
 **By 11:00 AWST:** Dashboard is refreshed, agent outputs are in `outputs/`,
 Tia gets an email with the weekly report link.
+
+---
+
+## 4.1 ROI cards — paid→organic switch loop (09 Jun 2026)
+
+The Work Queue now includes a structured ROI loop that identifies CB247
+paid keywords where CB247 already ranks organically. **This is the
+executive ROI lever** — every $ saved on paid that organic absorbs is
+real bottom-line.
+
+**You'll see these in the Work Queue:**
+
+- **PAUSE actions** (P1, owner Tia) — keywords ranking organic #1-3.
+  Description includes the projected $/month saving. Action: pause that
+  keyword in the named Google Ads campaign. Brand-defence keywords
+  (`chasingbetter`, `cb247`) are NEVER suggested for pause.
+
+- **REDUCE 50% actions** (P2, owner Tia) — keywords ranking organic #4-10.
+  Action: cut daily budget in half. Revisit after 14 days.
+
+- **ROI Summary card** (P3, info-only) — single card showing pipeline
+  ($/mo identified but not yet executed) and realised ($/mo proven via
+  measurement). This is what Robert + Denver see weekly.
+
+**Operator workflow:**
+
+1. Open Work Queue, filter `category=opportunity` (or look for orange
+   tags labelled "OPPORTUNITY")
+2. For each PAUSE/REDUCE card: open Google Ads, find the named campaign +
+   keyword, execute the change, mark verdict on the card:
+   - `winner` if executed cleanly
+   - `partial_win` if executed with caveat (e.g., paused but kept brand match)
+   - `no_change` if too risky / decision deferred
+3. Two weeks later: measurement_runner auto-fills `actual_kpis` showing
+   the real $ saved. No action needed from operator.
+4. Four weeks later: attribution_emitter aggregates into "ROI Realised:
+   $X this month" — appears in management email automatically.
+
+**Caveats:**
+
+- The opportunity emitter runs against THIS week's Google Ads spend. If
+  spend on a keyword swings (campaign restructure, seasonal), opportunities
+  may re-shuffle. Stable signals across 2+ weeks are most actionable.
+- Brand-defence guard means brand keywords NEVER get pause recommendations.
+  Currently hardcoded: `chasing better`, `cb247`, `chasingbetter247`. Add
+  more via the `BRAND_DEFENCE_PATTERNS` list in `opportunity_emitter.py`.
+- First "ROI Realised" message lands ~4 weeks after first execution
+  (measurement window).
 
 ---
 
