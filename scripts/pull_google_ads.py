@@ -109,6 +109,9 @@ def pull_google_ads():
     quality_scores     = []
     conversion_actions = []
     auction_insights   = []
+    # Track per-location auction_insights status so dashboard can show why
+    # the section is empty. Values: 'ok','awaiting_standard_access','query_error','no_data'.
+    auction_insights_status = {}
 
     for account in active_accounts:
         cid      = account["customer_id"]
@@ -190,8 +193,9 @@ def pull_google_ads():
             _pull_quality_scores(ga_service, cid, location, start_date, end_date))
         conversion_actions.extend(
             _pull_conversion_actions(ga_service, cid, location, start_date, end_date))
-        auction_insights.extend(
-            _pull_auction_insights(ga_service, cid, location, start_date, end_date))
+        ai_rows, ai_status = _pull_auction_insights(ga_service, cid, location, start_date, end_date)
+        auction_insights.extend(ai_rows)
+        auction_insights_status[location] = ai_status
 
     # --- Combined totals ---
     gt_spend = grand_totals["spend"]
@@ -217,6 +221,10 @@ def pull_google_ads():
         "quality_scores":     quality_scores,
         "conversion_actions": conversion_actions,
         "auction_insights":   auction_insights,
+        # Per-location status for auction_insights so the dashboard can show
+        # 'Awaiting Standard Access' instead of a generic empty state.
+        # Values: 'ok','awaiting_standard_access','query_error','no_data'.
+        "auction_insights_status": auction_insights_status,
     }
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -468,22 +476,37 @@ def _pull_conversion_actions(ga_service, cid, location, start_date, end_date):
 
 
 def _pull_auction_insights(ga_service, cid, location, start_date, end_date):
-    """Pull auction_insight_view — competitors appearing in your auctions."""
-    # Note: auction_insight_view aggregates differ from standard metrics.
-    # Per-domain rollup gives the cleanest competitor view.
+    """Pull auction_insight metrics — competitors appearing in your auctions.
+
+    Field-name history (verified 09 Jun 2026 against v24 metadata):
+    - v23 and earlier: metrics.search_impression_share, metrics.overlap_rate,
+      metrics.position_above_rate, metrics.outranking_share
+    - v24 (current):   metrics.auction_insight_search_impression_share,
+      metrics.auction_insight_search_overlap_rate,
+      metrics.auction_insight_search_position_above_rate,
+      metrics.auction_insight_search_outranking_share
+
+    Access gating: these metrics require Standard Access tier. Basic Access
+    tokens get back "The developer doesn't have access to metrics: …" — query
+    is correct, just gated. Status surfaced via the third return tuple element
+    so the dashboard can show 'Awaiting Standard Access' instead of an empty
+    'No data' state.
+
+    Returns: (rows_list, status_string)
+      status_string ∈ {'ok','awaiting_standard_access','query_error','no_data'}
+    """
     query = f"""
         SELECT
           segments.auction_insight_domain,
-          metrics.search_impression_share,
-          metrics.overlap_rate,
-          metrics.position_above_rate,
-          metrics.outranking_share
+          metrics.auction_insight_search_impression_share,
+          metrics.auction_insight_search_overlap_rate,
+          metrics.auction_insight_search_position_above_rate,
+          metrics.auction_insight_search_outranking_share
         FROM campaign
         WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
     """
     try:
         rows = ga_service.search(customer_id=cid, query=query)
-        # Aggregate by domain — average the share metrics (campaigns × domain)
         agg = {}
         for r in rows:
             domain = r.segments.auction_insight_domain
@@ -499,10 +522,10 @@ def _pull_auction_insights(ga_service, cid, location, start_date, end_date):
                 "outranking_share": 0.0,
             })
             entry["_n"] += 1
-            entry["impression_share"]    += float(r.metrics.search_impression_share or 0)
-            entry["overlap_rate"]        += float(r.metrics.overlap_rate or 0)
-            entry["position_above_rate"] += float(r.metrics.position_above_rate or 0)
-            entry["outranking_share"]    += float(r.metrics.outranking_share or 0)
+            entry["impression_share"]    += float(r.metrics.auction_insight_search_impression_share or 0)
+            entry["overlap_rate"]        += float(r.metrics.auction_insight_search_overlap_rate or 0)
+            entry["position_above_rate"] += float(r.metrics.auction_insight_search_position_above_rate or 0)
+            entry["outranking_share"]    += float(r.metrics.auction_insight_search_outranking_share or 0)
         out = []
         for d in agg.values():
             n = d.pop("_n") or 1
@@ -510,11 +533,28 @@ def _pull_auction_insights(ga_service, cid, location, start_date, end_date):
                 d[k] = round(d[k] / n, 4)
             out.append(d)
         out.sort(key=lambda x: x["impression_share"], reverse=True)
-        print(f"[Google Ads]   {location}: {len(out)} competitor domains in auction insights")
-        return out[:20]
+        if out:
+            print(f"[Google Ads]   {location}: {len(out)} competitor domains in auction insights")
+            return out[:20], "ok"
+        print(f"[Google Ads]   {location}: auction insights returned 0 rows (low-traffic week or no overlap)")
+        return [], "no_data"
     except Exception as e:
-        print(f"[Google Ads]   {location}: auction_insights skipped — {str(e)[:120]}")
-        return []
+        # GoogleAdsException nests the readable message in failure.errors[].message.
+        # str(e) starts with '(<_InactiveRpcError...)' — useless for matching.
+        # Extract the actual message before classifying.
+        failure_msg = ""
+        failure = getattr(e, "failure", None)
+        if failure and getattr(failure, "errors", None):
+            try:
+                failure_msg = "; ".join(err.message for err in failure.errors[:3])
+            except Exception:
+                failure_msg = ""
+        probe = failure_msg or str(e)
+        if "doesn't have access to metrics" in probe and "auction_insight" in probe.lower():
+            print(f"[Google Ads]   {location}: auction_insights gated — requires Standard Access tier (currently Basic)")
+            return [], "awaiting_standard_access"
+        print(f"[Google Ads]   {location}: auction_insights skipped — {(failure_msg or str(e))[:160]}")
+        return [], "query_error"
 
 
 def _write_empty(skip_reason):

@@ -25,6 +25,7 @@ STATE_DIR = BASE_DIR / "state"
 INDEX_PATH = BASE_DIR / "docs" / "index.html"
 ADS_DATA_FILE = STATE_DIR / "ads-data.json"          # weekly summary (history + combined)
 GADS_DATA_FILE = STATE_DIR / "google-ads-data.json"  # rich tables (search terms, QS, conv actions)
+APIFY_DATA_FILE = STATE_DIR / "apify-data.json"      # keyword_tracking + competitor_serp for Organic Ranking Overlap
 
 
 def build_payload():
@@ -58,12 +59,16 @@ def build_payload():
     search_terms = []
     quality_scores = []
     conversion_actions = []
+    auction_insights = []
+    auction_insights_status = {}   # per-location: 'ok'|'awaiting_standard_access'|'query_error'|'no_data'
     if GADS_DATA_FILE.exists():
         try:
             gads = json.loads(GADS_DATA_FILE.read_text())
             search_terms       = gads.get("search_terms")       or []
             quality_scores     = gads.get("quality_scores")     or []
             conversion_actions = gads.get("conversion_actions") or []
+            auction_insights   = gads.get("auction_insights")   or []
+            auction_insights_status = gads.get("auction_insights_status") or {}
         except Exception as e:
             print(f"[google-ads] could not parse {GADS_DATA_FILE}: {e}")
 
@@ -144,6 +149,113 @@ def build_payload():
             "reason":   f"{conv:g} conv at ${cpa_obs} CPA from broad/phrase match — promote to exact match to bid up directly. {s.get('location', '')}",
         })
 
+    # ── Organic Ranking Overlap — pull keyword_tracking + competitor_serp ─
+    # from apify-data.json. The Apify weekly run pulls:
+    #   apify-data.json.keyword_tracking → list of {keyword, position, clicks, impressions, ctr}
+    #     (where 'position' is CB247's organic SERP position; null if we don't rank)
+    #   apify-data.json.competitor_serp → list of {keyword, organic:[{title,url,position}], local_pack}
+    #     (top 5 organic results per tracked keyword — includes CB247 if we rank)
+    # Render expects ads.keyword_tracking = [{keyword, position, competitors:[domain,...]}].
+    # We merge: take keyword_tracking entries with non-null position, enrich each with the
+    # top 3 non-CB247 competitor domains from the matching competitor_serp entry.
+    keyword_tracking = []
+    apify_pulled_at = None
+    if APIFY_DATA_FILE.exists():
+        try:
+            apify = json.loads(APIFY_DATA_FILE.read_text())
+            apify_pulled_at = apify.get("date_pulled")
+            kt_raw = apify.get("keyword_tracking") or []
+            serp_raw = apify.get("competitor_serp") or []
+
+            # Build keyword → top-3 competitor-domains map from competitor_serp.
+            # Match keys are lowercased; fuzzy lookup is substring overlap (gym malaga
+            # in keyword_tracking matches "gym malaga perth" in competitor_serp).
+            def _domain(url):
+                try:
+                    from urllib.parse import urlparse
+                    h = urlparse(url).netloc.lower()
+                    return h.replace("www.", "")
+                except Exception:
+                    return ""
+
+            serp_competitors_by_kw = {}
+            for s in serp_raw:
+                kw = (s.get("keyword") or "").lower().strip()
+                if not kw:
+                    continue
+                organic = s.get("organic") or []
+                # Top non-CB247 organic domains, dedup, max 3
+                comps = []
+                seen = set()
+                for o in organic:
+                    d = _domain(o.get("url", ""))
+                    if not d or "chasingbetter247" in d:
+                        continue
+                    if d in seen:
+                        continue
+                    seen.add(d)
+                    comps.append(d)
+                    if len(comps) >= 3:
+                        break
+                serp_competitors_by_kw[kw] = comps
+
+            def _lookup_competitors(kw):
+                """Fuzzy lookup — exact, then substring match either direction."""
+                kw_l = (kw or "").lower().strip()
+                if not kw_l:
+                    return []
+                if kw_l in serp_competitors_by_kw:
+                    return serp_competitors_by_kw[kw_l]
+                for s_kw, comps in serp_competitors_by_kw.items():
+                    if kw_l in s_kw or s_kw in kw_l:
+                        return comps
+                return []
+
+            # Pass 1: keyword_tracking entries with a real position
+            seen_kws = set()
+            for k in kt_raw:
+                kw = (k.get("keyword") or "").strip()
+                if not kw or k.get("position") in (None, 0):
+                    continue
+                seen_kws.add(kw.lower())
+                keyword_tracking.append({
+                    "keyword":     kw,
+                    "position":    k.get("position"),
+                    "clicks":      k.get("clicks", 0),
+                    "impressions": k.get("impressions", 0),
+                    "competitors": _lookup_competitors(kw),
+                    "source":      "gsc",
+                })
+
+            # Pass 2: competitor_serp entries where CB247 appears in organic[]
+            # — gives us additional ranked keywords beyond the GSC-tracked list.
+            for s in serp_raw:
+                kw = (s.get("keyword") or "").strip()
+                if not kw or kw.lower() in seen_kws:
+                    continue
+                cb_pos = None
+                for o in (s.get("organic") or []):
+                    d = _domain(o.get("url", ""))
+                    if "chasingbetter247" in d:
+                        cb_pos = o.get("position")
+                        break
+                if not cb_pos:
+                    continue
+                seen_kws.add(kw.lower())
+                keyword_tracking.append({
+                    "keyword":     kw,
+                    "position":    cb_pos,
+                    "clicks":      0,
+                    "impressions": 0,
+                    "competitors": serp_competitors_by_kw.get(kw.lower(), []),
+                    "source":      "serp",
+                })
+
+            # Sort: best position first
+            keyword_tracking.sort(key=lambda x: (x.get("position") or 999))
+        except Exception as e:
+            print(f"[google-ads] could not parse {APIFY_DATA_FILE}: {e}")
+
     return {
         "generated_at":  datetime.now(timezone.utc).isoformat(),
         "week_label":    latest.get("week_label", ""),
@@ -173,6 +285,18 @@ def build_payload():
         "search_terms":       search_terms,
         "quality_scores":     quality_scores,
         "conversion_actions": conversion_actions,
+        # Auction Insights — populated when Standard Access is granted. Until
+        # then, auction_insights_status carries 'awaiting_standard_access' per
+        # location so the render can show the right message instead of generic
+        # 'No data'. Sourced from state/google-ads-data.json.
+        "auction_insights":          auction_insights,
+        "auction_insights_status":   auction_insights_status,
+        # Organic Ranking Overlap — sourced from state/apify-data.json.
+        # Each entry: {keyword, position, clicks, impressions, competitors:[domain,...], source}.
+        # source ∈ {'gsc','serp'} — GSC = Google Search Console (real CTR data),
+        # SERP = scraped Google SERP (position only, no CTR).
+        "keyword_tracking":     keyword_tracking,
+        "apify_pulled_at":      apify_pulled_at,
         # Keyword recommendations — derived from converting search terms not yet
         # exact-match keywords. Read by render under ads.bidding.new_recs.
         "bidding": {
