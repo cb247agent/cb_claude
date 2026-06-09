@@ -84,9 +84,9 @@ _load_env()
 APIFY_API_KEY        = os.environ.get("APIFY_API_KEY", "")
 APIFY_BASE_URL       = "https://api.apify.com/v2"
 APIFY_SERP_ACTOR_ID   = "nFJndFXA5zjCTuudP"              # Google Search Scraper
-APIFY_REDDIT_ACTOR_ID = "trudax~reddit-scraper"          # Reddit (verified 09 Jun 2026 — CB247's apify/reddit-scraper is gone)
-APIFY_TRENDS_ACTOR_ID = "emastra~google-trends-scraper"  # Google Trends (verified live, but needs minimal payload)
-APIFY_FBADS_ACTOR_ID  = "apify~facebook-ads-scraper"     # FB Ads (verified — tilde, not slash)
+APIFY_REDDIT_ACTOR_ID = "trudax~reddit-scraper-lite"     # Reddit LITE (FREE — verified 09 Jun 2026)
+APIFY_TRENDS_ACTOR_ID = "emastra~google-trends-scraper"  # Google Trends — Required: none, accepts searchTerms[] + geo + timeRange
+APIFY_FBADS_ACTOR_ID  = "apify~facebook-ads-scraper"     # FB Ads — Required: startUrls[]. Uses page URL not search URL.
 
 # ── MWCC SERP keywords — childcare + suburb + service-type queries ─────
 SERP_QUERIES = [
@@ -125,13 +125,13 @@ TRENDS_KEYWORDS = [
 ]
 
 # ── FB Ads Library — MWCC competitors ──────────────────────────────────
-# Goodstart national + Nido national + Care for Kids aggregator.
-# Midvale Hub doesn't run visible national FB ads (confirmed in earlier
-# research) so excluded — would return empty.
+# Actor requires startUrls[] pointing to each competitor's FB PAGE
+# (not the ads library search URL). Discovered via inputSchema 09 Jun 2026.
+# Midvale Hub excluded — local, no national FB presence.
 FB_ADS_COMPETITORS = [
-    {"name": "Goodstart Early Learning", "page_name": "goodstartearlylearning"},
-    {"name": "Nido Early School",        "page_name": "nidoearlyschool"},
-    {"name": "Care for Kids",            "page_name": "careforkids"},
+    {"name": "Goodstart Early Learning", "page_url": "https://www.facebook.com/GoodstartEarlyLearning"},
+    {"name": "Nido Early School",        "page_url": "https://www.facebook.com/nidoearlyschool"},
+    {"name": "Care for Kids",            "page_url": "https://www.facebook.com/careforkids"},
 ]
 FB_ADS_MAX_PER_COMPETITOR = 20
 
@@ -309,11 +309,13 @@ def pull_reddit_intel() -> dict | None:
         _write_placeholder(out_path, "APIFY_API_KEY not set.")
         return None
 
-    print(f"  → Reddit: {len(REDDIT_SEARCHES)} searches")
+    print(f"  → Reddit: {len(REDDIT_SEARCHES)} searches (free actor: {APIFY_REDDIT_ACTOR_ID})")
 
     all_posts = []
     for search in REDDIT_SEARCHES:
         print(f"     · r/{search['subreddit']} '{search['query']}'")
+        # trudax/reddit-scraper-lite (FREE) — accepts startUrls + maxItems
+        # + skipComments. No 'proxy' field needed (handled by actor).
         items = _run_apify_actor(
             APIFY_REDDIT_ACTOR_ID,
             {
@@ -326,9 +328,7 @@ def pull_reddit_intel() -> dict | None:
                     "method": "GET",
                 }],
                 "maxItems":     REDDIT_MAX_ITEMS_PER_SEARCH,
-                "maxComments":  REDDIT_MAX_COMMENTS_PER_POST,
                 "skipComments": False,
-                "proxy":        {"useApifyProxy": True},
             },
             timeout_checks=60,
         )
@@ -475,15 +475,20 @@ def pull_google_trends() -> dict | None:
 
     print(f"  → Google Trends: {len(TRENDS_KEYWORDS)} keywords, geo=AU-WA, range=3m")
 
-    # NOTE: emastra google-trends-scraper rejected payload with 'category' int.
-    # Stripped to minimal schema — matches the actor's current example.
+    # Payload discovered via build inputSchema + tested 09 Jun 2026:
+    # - geo: ONLY country codes ("AU"), NOT subregions ("AU-WA" rejected).
+    # - Actor returns interest_by_subregion as a bonus field — we can
+    #   filter WA from there post-hoc if needed.
+    # - Run takes ~45s/keyword (~5 min for 7 keywords).
     items = _run_apify_actor(
         APIFY_TRENDS_ACTOR_ID,
         {
             "searchTerms": TRENDS_KEYWORDS,
-            "geo":         "AU-WA",      # Western Australia
-            "timeRange":   "today 3-m",  # Last 3 months
+            "geo":         "AU",           # Country-level only (actor limitation)
+            "timeRange":   "today 3-m",
+            "isMultiple":  False,
         },
+        timeout_checks=240,                # 240 × 5s = 20 min ceiling for 7 keywords
     )
     if not items:
         _write_placeholder(out_path,
@@ -491,12 +496,24 @@ def pull_google_trends() -> dict | None:
             "broken-actors list pending subscription top-up.")
         return None
 
+    # Actual field names (verified via live run 09 Jun 2026):
+    # - searchTerm / inputUrlOrTerm   (instead of 'keyword')
+    # - interestOverTime_timelineData (instead of 'interestOverTime')
+    # - interestBySubregion           (bonus — for WA-specific signal)
+    # - relatedTopics_top             (instead of 'relatedTopics')
     trends = []
     for item in items:
-        keyword = item.get("keyword") or item.get("query") or ""
-        interest = item.get("interestOverTime") or item.get("values") or []
-        current_value = interest[-1].get("value") if interest else None
-        prev_value    = interest[-4].get("value") if len(interest) >= 4 else None
+        keyword = item.get("searchTerm") or item.get("inputUrlOrTerm") or item.get("keyword") or ""
+        # timelineData entries: {time, formattedTime, value: [int]}
+        timeline = item.get("interestOverTime_timelineData") or item.get("interestOverTime") or []
+        def _val(point):
+            v = point.get("value")
+            if isinstance(v, list) and v:
+                return v[0]
+            return v
+
+        current_value = _val(timeline[-1]) if timeline else None
+        prev_value    = _val(timeline[-4]) if len(timeline) >= 4 else None
 
         trend_dir = "stable"
         if current_value and prev_value:
@@ -505,13 +522,21 @@ def pull_google_trends() -> dict | None:
             elif current_value < prev_value * 0.85:
                 trend_dir = "declining"
 
+        # Pull WA-specific interest from subregion data when present
+        wa_interest = None
+        for sr in (item.get("interestBySubregion") or []):
+            if "western australia" in (sr.get("geoName", "") or "").lower():
+                wa_interest = _val(sr)
+                break
+
         trends.append({
-            "keyword":       keyword,
-            "current_value": current_value,
-            "prev_value":    prev_value,
-            "direction":     trend_dir,
-            "interest_data": interest[-12:],
-            "related":       item.get("relatedTopics") or item.get("relatedQueries") or [],
+            "keyword":         keyword,
+            "current_value":   current_value,
+            "prev_value":      prev_value,
+            "direction":       trend_dir,
+            "wa_interest":     wa_interest,   # bonus WA signal vs country avg
+            "interest_data":   timeline[-12:],
+            "related":         item.get("relatedTopics_top") or item.get("relatedTopics") or [],
         })
     trends.sort(key=lambda t: t.get("current_value") or 0, reverse=True)
     rising   = [t for t in trends if t["direction"] == "rising"]
@@ -521,7 +546,7 @@ def pull_google_trends() -> dict | None:
         "scraped":          _now_iso(),
         "brand":            "mwcc",
         "available":        True,
-        "geo":              "AU-WA (Western Australia)",
+        "geo":              "AU (national) + WA bonus via interestBySubregion",
         "keywords_tracked": len(trends),
         "trends":           trends,
         "rising_topics":    rising,
@@ -559,29 +584,35 @@ def pull_facebook_ads() -> dict | None:
 
     print(f"  → FB Ads: {len(FB_ADS_COMPETITORS)} competitors")
 
+    # Payload discovered + tested 09 Jun 2026:
+    # - required startUrls[] pointing to each competitor's FB PAGE
+    # - DROP activeStatus filter (returned no_items with it on Goodstart)
+    # - Single API call with all competitors batched (cheaper than 3 calls).
+    items = _run_apify_actor(
+        APIFY_FBADS_ACTOR_ID,
+        {
+            "startUrls":    [{"url": c["page_url"]} for c in FB_ADS_COMPETITORS],
+            "resultsLimit": FB_ADS_MAX_PER_COMPETITOR,
+        },
+        timeout_checks=120,
+    )
+
     all_ads = []
-    for competitor in FB_ADS_COMPETITORS:
-        print(f"     · {competitor['name']}")
-        items = _run_apify_actor(
-            APIFY_FBADS_ACTOR_ID,
-            {
-                "searchPageOrAdLibraryUrl": (
-                    f"https://www.facebook.com/ads/library/?active_status=active"
-                    f"&ad_type=all&country=AU"
-                    f"&q={competitor['page_name']}"
-                    f"&search_type=keyword_unordered"
-                ),
-                "maxItems": FB_ADS_MAX_PER_COMPETITOR,
-                "proxy":    {"useApifyProxy": True, "apifyProxyCountry": "AU"},
-            },
-            timeout_checks=90,
-        )
-        if items:
-            for item in items:
-                ad = _normalise_fb_ad(item, competitor["name"])
-                if ad:
-                    all_ads.append(ad)
-        time.sleep(3)
+    if items:
+        # Tag each ad with the competitor by inputUrl match
+        url_to_name = {c["page_url"].lower(): c["name"] for c in FB_ADS_COMPETITORS}
+        for item in items:
+            # Skip wrapper error items (page had no public ads)
+            if item.get("error") == "no_items":
+                continue
+            input_url = (item.get("inputUrl") or "").lower()
+            competitor_name = next(
+                (name for url, name in url_to_name.items() if url in input_url or input_url in url),
+                "Unknown",
+            )
+            ad = _normalise_fb_ad(item, competitor_name)
+            if ad:
+                all_ads.append(ad)
 
     if not all_ads:
         _write_placeholder(out_path,
@@ -606,6 +637,11 @@ def pull_facebook_ads() -> dict | None:
 
 
 def _normalise_fb_ad(item: dict, competitor_name: str) -> dict | None:
+    # apify~facebook-ads-scraper return shape (verified 09 Jun 2026):
+    # pageID, pageInfo, adArchiveID, startDateFormatted, endDateFormatted,
+    # collationCount, ad_creative_body, etc.
+    page_info = item.get("pageInfo") or {}
+
     body = item.get("ad_creative_bodies", [])
     body_text = body[0] if body else (item.get("ad_creative_body") or "")
 
@@ -617,17 +653,19 @@ def _normalise_fb_ad(item: dict, competitor_name: str) -> dict | None:
 
     return {
         "competitor":      competitor_name,
-        "ad_id":           item.get("id") or item.get("ad_archive_id") or "",
+        "page_name":       page_info.get("name") or "",
+        "ad_id":           item.get("adArchiveID") or item.get("adArchiveId") or item.get("ad_archive_id") or "",
         "headline":        title_text[:200],
         "body":            body_text[:500],
         "cta":             cta_text,
         "format":          item.get("ad_creative_media_type") or item.get("media_type") or "unknown",
-        "started":         item.get("ad_delivery_start_time") or "",
+        "started":         item.get("startDateFormatted") or item.get("ad_delivery_start_time") or "",
+        "ended":           item.get("endDateFormatted") or "",
+        "collation_count": item.get("collationCount"),   # how many variants
         "impressions_min": (item.get("impressions") or {}).get("lower_bound"),
         "impressions_max": (item.get("impressions") or {}).get("upper_bound"),
-        "spend_min":       (item.get("spend") or {}).get("lower_bound"),
         "is_active":       item.get("is_active", True),
-        "url":             item.get("snapshot_url") or "",
+        "url":             item.get("snapshot_url") or item.get("url") or "",
     }
 
 
