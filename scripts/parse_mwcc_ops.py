@@ -807,11 +807,50 @@ def parse_mwcc_ops(inbox_path=None):
     breach_centres = [
         n for n, c in ops_data.items() if c.get("wage_breach", False)
     ]
-    # Per Kelley rule (09 Jun 2026): per-room over-100% is operational
-    # rebalance, NOT compliance. compliance_risk_rooms is now always empty
-    # at the per-room level. True centre-level compliance check is a
-    # future addition pending licensed_centre_capacity from Tia.
-    compliance_risk_rooms: list[str] = []  # legal compliance — centre-level only (TODO)
+
+    # ─── Centre-level compliance check (Kelley rule, 09 Jun 2026) ──────
+    # Per Kelley: compliance breach = centre TOTAL bodies under the roof
+    # > licensed centre capacity. Per-room overflow is operational
+    # rebalance (Kelley moves children between rooms within ratio).
+    #
+    # licensed_centre_capacity comes from utilisation.xlsx > Total Capacity
+    # column (Tia 09 Jun 2026). It's WEEKLY (5 child-days per room × 5
+    # weekdays). We compare centre weekly occupied vs licensed weekly.
+    LICENSED_CAPACITY_BY_CENTRE = {
+        "Armadale":      420,
+        "Midvale":       560,
+        "Rockingham":    560,
+        "Seville Grove": 370,
+        "Waikiki":       285,
+    }
+
+    centres_in_compliance_breach = []
+    for centre_name, c in ops_data.items():
+        licensed = LICENSED_CAPACITY_BY_CENTRE.get(centre_name)
+        if not licensed:
+            continue
+        # weekly occupied = sum across rooms of (avg_daily × 5 days)
+        # (avg_daily already excludes weekends per the Mon–Fri parse)
+        rooms = c.get("rooms_detail", {}) or {}
+        centre_weekly_occupied = sum(
+            (r.get("avg_daily", 0) or 0) * 5 for r in rooms.values()
+        )
+        centre_pct = (centre_weekly_occupied / licensed * 100) if licensed else None
+        c["licensed_centre_capacity"]   = licensed
+        c["centre_weekly_occupied"]     = round(centre_weekly_occupied, 1)
+        c["centre_occupancy_pct"]       = round(centre_pct, 1) if centre_pct is not None else None
+        c["compliance_breach"]          = bool(centre_weekly_occupied > licensed)
+        if c["compliance_breach"]:
+            centres_in_compliance_breach.append(
+                f"{centre_name} ({centre_weekly_occupied:.0f}/{licensed} weekly)"
+            )
+
+    # Legacy field name kept for back-compat with dashboard/email/report
+    # readers. Now populated with CENTRE-LEVEL breach strings (rare, severe)
+    # instead of per-room (common, operational).
+    compliance_risk_rooms = centres_in_compliance_breach
+
+    # Operational rebalance signal — per-room over 100%, NOT a compliance issue
     rooms_needing_rebalance = [
         f"{centre} — {room}"
         for centre, c in ops_data.items()
@@ -845,9 +884,10 @@ def parse_mwcc_ops(inbox_path=None):
             "total_exits":                total_exits,
             "net_movement":               total_enrolments - total_exits,
             "total_revenue":              round(total_revenue, 2),
-            "centres_in_wage_breach":     breach_centres,
-            "rooms_with_compliance_risk": compliance_risk_rooms,    # always [] now; centre-level check TODO
-            "rooms_needing_rebalance":    rooms_needing_rebalance,  # operational signal for Kelley
+            "centres_in_wage_breach":         breach_centres,
+            "rooms_with_compliance_risk":     compliance_risk_rooms,    # now centre-level breaches (Kelley rule 09 Jun 2026)
+            "centres_in_compliance_breach":   centres_in_compliance_breach,  # explicit alias for clarity
+            "rooms_needing_rebalance":        rooms_needing_rebalance,  # operational signal for Kelley
             # Unique-child counts (deduplicated across centres for transfers)
             # Per Tia direction 08 Jun 2026 — when a child transfers between
             # centres OWNA records them twice. Counting unique names gives

@@ -6,11 +6,11 @@
   "ahrefs_domain": "myworldcc.com.au/",
 
   "centres": [
-    {"name": "Armadale", "suburb": "Armadale", "service_type": "OSHC", "rooms": ["Before School", "After School"]},
-    {"name": "Midvale", "suburb": "Midvale", "service_type": "LDC+OSHC", "rooms": ["Babies", "Toddlers", "Kindy", "Before School", "After School"]},
-    {"name": "Rockingham", "suburb": "Rockingham", "service_type": "OSHC", "rooms": ["Before School", "After School"]},
-    {"name": "Seville Grove", "suburb": "Seville Grove", "service_type": "LDC+OSHC", "rooms": ["Babies", "Toddlers", "Kindy", "Before School", "After School"]},
-    {"name": "Waikiki", "suburb": "Waikiki", "service_type": "LDC", "rooms": ["Babies", "Toddlers", "Kindy"]}
+    {"name": "Armadale", "suburb": "Armadale", "service_type": "OSHC", "rooms": ["Before School", "After School"], "licensed_centre_capacity": 420, "licensed_capacity_basis": "weekly (5 child-days × per-room cap × 5 days, from utilisation.xlsx > Total Capacity column)"},
+    {"name": "Midvale", "suburb": "Midvale", "service_type": "LDC+OSHC", "rooms": ["Babies", "Toddlers", "Kindy", "Before School", "After School"], "licensed_centre_capacity": 560, "licensed_capacity_basis": "weekly"},
+    {"name": "Rockingham", "suburb": "Rockingham", "service_type": "OSHC", "rooms": ["Before School", "After School"], "licensed_centre_capacity": 560, "licensed_capacity_basis": "weekly"},
+    {"name": "Seville Grove", "suburb": "Seville Grove", "service_type": "LDC+OSHC", "rooms": ["Babies", "Toddlers", "Kindy", "Before School", "After School"], "licensed_centre_capacity": 370, "licensed_capacity_basis": "weekly"},
+    {"name": "Waikiki", "suburb": "Waikiki", "service_type": "LDC", "rooms": ["Babies", "Toddlers", "Kindy"], "licensed_centre_capacity": 285, "licensed_capacity_basis": "weekly"}
   ],
 
   "competitors": [
