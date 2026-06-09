@@ -68,7 +68,7 @@ run_agent() {
     local name="$1"
     local prompt="$2"
     local out="$3"
-    local tools="${4:-Read(context/**),Read(outputs/**),Write(outputs/**)}"
+    local tools="${4:-Read(context/**),Read(outputs/**)}"
     local model="${5:-$MODEL_SONNET}"
     local agent_log="$BASE_DIR/logs/agents/$(date +%Y-%m-%d)-mwcc-${name}.log"
 
@@ -341,9 +341,10 @@ Output a structured markdown report covering:
 6. OPPORTUNITIES — gaps competitors are NOT filling that MWCC can own (e.g., transparent CCS quotes, real educator faces, room-by-room tour content).
 
 Be specific. No fluff. No \"best\" claims. CCS mention required wherever fees come up.
-Save to: outputs/mwcc/research/mwcc-weekly-research-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/research/mwcc-weekly-research-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/mwcc-weekly-research-$DATE.md" \
-"Read(context/mwcc-competitors.md),Read(context/mwcc-business-config.json),Read(context/mwcc-seasonal-calendar.md),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ops.json),Write(outputs/mwcc/research/**)" \
+"Read(context/mwcc-competitors.md),Read(context/mwcc-business-config.json),Read(context/mwcc-seasonal-calendar.md),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ops.json)" \
 "$MODEL_SONNET"
 
 # ── Agent 2/9: Audience Intel (MWCC parent ICPs) ──
@@ -376,9 +377,10 @@ Output a structured markdown report covering:
 6. TONE RECOMMENDATION — how MWCC should sound this week. Warm, knowledgeable, specific. NEVER salesy.
 
 Be specific. No \"best\" claims. CCS always mentioned with \"subject to eligibility\".
-Save to: outputs/mwcc/research/mwcc-audience-weekly-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/research/mwcc-audience-weekly-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/mwcc-audience-weekly-$DATE.md" \
-"Read(context/mwcc-*.md),Read(context/mwcc-business-config.json),Read(state/mwcc-ga4.json),Read(state/mwcc-gsc-data.json),Read(outputs/mwcc/research/**),Write(outputs/mwcc/research/**)" \
+"Read(context/mwcc-*.md),Read(context/mwcc-business-config.json),Read(state/mwcc-ga4.json),Read(state/mwcc-gsc-data.json),Read(outputs/mwcc/research/**)" \
 "$MODEL_HAIKU"
 
 # ── Agent 3/9: Content Intel (MWCC content patterns — now with live viral signal) ──
@@ -414,9 +416,10 @@ Output a structured markdown report covering:
 If state/mwcc-social-trends.json has 'available': false — note the limitation at the top of section 1 and fall back to own-page winners + competitor gaps as the hook source.
 
 Be specific. Include actual caption openers, not generic templates. No emojis on email or landing pages (limited IG/FB OK).
-Save to: outputs/mwcc/research/mwcc-content-intel-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/research/mwcc-content-intel-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/mwcc-content-intel-$DATE.md" \
-"Read(context/mwcc-*.md),Read(state/mwcc-social.json),Read(state/mwcc-social-trends.json),Read(outputs/mwcc/research/**),Write(outputs/mwcc/research/**)" \
+"Read(context/mwcc-*.md),Read(state/mwcc-social.json),Read(state/mwcc-social-trends.json),Read(outputs/mwcc/research/**)" \
 "$MODEL_HAIKU"
 
 # ── Agent 4/9: Performance ──
@@ -452,9 +455,10 @@ Output a structured markdown performance report covering:
 7. 3 ACTIONS — one each for Organic, Paid, Operations (centre-level).
 
 Every number must come from state/mwcc-*.json. No fabricated metrics.
-Save to: outputs/mwcc/research/mwcc-performance-week-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/research/mwcc-performance-week-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/mwcc-performance-week-$DATE.md" \
-"Read(state/mwcc-*.json),Read(context/mwcc-*),Write(outputs/mwcc/research/**)" \
+"Read(state/mwcc-*.json),Read(context/mwcc-*)" \
 "$MODEL_SONNET"
 
 # ── Agent 5/9: SEO (primary growth driver — same role as CB247) ──
@@ -492,9 +496,10 @@ Output a structured markdown SEO report covering:
 8. EMITTER CARD EXPANSION — for EACH SEO action card in mwcc-work-queue.json (source_page=seo-organic, source_agent != mwcc-content-calendar), write a 1-paragraph strategic brief: why it matters, page structure rec, expected impact, who owns (John / Mark / Kelley).
 
 Be actionable. No \"best\" claims. CCS mention required in every blog brief.
-Save to: outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN SEO BRIEF AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/seo/mwcc-weekly-seo-brief-$DATE.md automatically. Generate the FULL brief directly — do NOT summarise, do NOT say 'I will write...' — just write the brief markdown directly." \
 "$OUTPUTS/seo/mwcc-weekly-seo-brief-$DATE.md" \
-"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/research/**),Write(outputs/mwcc/seo/**)" \
+"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/research/**)" \
 "$MODEL_SONNET"
 
 # ── Agent 6/9: Competitor Spy (MWCC competitor moves this week) ──
@@ -536,9 +541,9 @@ Output a structured markdown report:
 6. OPPORTUNITIES — what competitors are NOT covering that MWCC can own (transparent CCS quotes, real educator stories, room-by-room virtual tours, parent quote graphics).
 7. STRATEGIC RECOMMENDATION — ONE specific counter-move MWCC should make this week. Concrete, time-boxed, named owner (Tia / Denver / Kelley / John / Mark).
 
-Save to: outputs/mwcc/research/mwcc-competitor-weekly-$DATE.md" \
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN COMPETITOR BRIEF AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/research/mwcc-competitor-weekly-$DATE.md automatically. Generate the FULL brief directly — do NOT summarise, do NOT say 'I will write...' — just write the brief markdown directly." \
 "$OUTPUTS/research/mwcc-competitor-weekly-$DATE.md" \
-"Read(context/mwcc-*),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ahrefs.json),Read(state/mwcc-gbp-performance.json),Read(outputs/mwcc/**),Write(outputs/mwcc/research/**),WebFetch" \
+"Read(context/mwcc-*),Read(state/mwcc-gsc-data.json),Read(state/mwcc-ahrefs.json),Read(state/mwcc-gbp-performance.json),Read(outputs/mwcc/**),WebFetch" \
 "$MODEL_SONNET"
 
 # ── Agent 7/9: Paid Ads (paid→organic switch — closes the loop with SEO Agent) ──
@@ -591,9 +596,10 @@ ATTRIBUTION LOOP:
 11. PAID → ORGANIC CONFIRMED — keywords paused in prior weeks that organic has now successfully replaced. Measure: did organic clicks on that query meet/exceed last-month paid clicks for the same query? Cite specific keywords + numbers.
 
 Be specific: name exact campaign IDs, keyword groups, dollar amounts.
-Save to: outputs/mwcc/research/mwcc-paid-ads-weekly-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN PAID-ADS REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/research/mwcc-paid-ads-weekly-$DATE.md automatically. Generate the FULL report directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/mwcc-paid-ads-weekly-$DATE.md" \
-"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/**),Write(outputs/mwcc/research/**)" \
+"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/**)" \
 "$MODEL_SONNET"
 
 # ── Agent 8/9: Content Brief (replaces content-agent) ──
@@ -653,9 +659,9 @@ Generate ALL of the following — complete, copy-paste ready briefs (NOT final p
 
 Use psychology triggers from context/mwcc-psychology-triggers.md — name which triggers each piece uses at the top.
 
-Save EVERYTHING to: outputs/mwcc/content/mwcc-weekly-content-$DATE.md" \
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT EVERYTHING (all 6 content sections — GBP posts × 5, blog briefs × 2, IG/FB posts × 5, IG story × 3, email × 1, review templates × 3) AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/content/mwcc-weekly-content-$DATE.md automatically. Generate ALL content directly — do NOT summarise, do NOT say 'I will write...' — just write everything in your response." \
 "$OUTPUTS/content/mwcc-weekly-content-$DATE.md" \
-"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/**),Write(outputs/mwcc/content/**)" \
+"Read(state/mwcc-*.json),Read(context/mwcc-*),Read(outputs/mwcc/**)" \
 "$MODEL_OPUS"
 
 # ── Agent 9/9: Strategist — inject upstream failure context ──
@@ -714,9 +720,9 @@ Output a concise MWCC executive strategy document covering:
 
 5. WEEKLY NARRATIVE — 3 sentences: where MWCC is, what moved, what matters most.
 
-Save to: outputs/mwcc/blueprints/mwcc-weekly-strategy-$DATE.md" \
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL EXECUTIVE STRATEGY MARKDOWN AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/mwcc/blueprints/mwcc-weekly-strategy-$DATE.md automatically. Generate the FULL strategy directly — do NOT summarise, do NOT say 'I will write...' or 'ready to save once permission granted' — just write the strategy markdown directly." \
 "$OUTPUTS/blueprints/mwcc-weekly-strategy-$DATE.md" \
-"Read(context/mwcc-*),Read(outputs/mwcc/**),Write(outputs/mwcc/blueprints/**)" \
+"Read(context/mwcc-*),Read(outputs/mwcc/**)" \
 "$MODEL_OPUS"
 
 log "Phase 4.8 complete — 9 MWCC agents run (full CB247 parity)."

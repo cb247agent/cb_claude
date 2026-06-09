@@ -64,7 +64,7 @@ run_agent() {
     local name="$1"
     local prompt="$2"
     local out="$3"
-    local tools="${4:-Read(context/**),Read(outputs/**),Write(outputs/**)}"
+    local tools="${4:-Read(context/**),Read(outputs/**)}"
     local model="${5:-$MODEL_SONNET}"
     local agent_log="$BASE_DIR/logs/agents/$(date +%Y-%m-%d)-${name}.log"
 
@@ -228,9 +228,10 @@ Output a structured markdown report covering:
 7. OPPORTUNITIES — what competitors are NOT saying that CB247 should own
 
 Be specific. Use actual data from the files. No filler.
-Save to: outputs/research/weekly-research-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/research/weekly-research-$DATE.md automatically. Generate the FULL report content directly in your response — do NOT summarise, do NOT say 'I will write...' or 'saved to...' — just write the report markdown directly." \
 "$OUTPUTS/research/weekly-research-$DATE.md" \
-"Read(context/research-context.json),Read(context/seasonal-calendar.md),Write(outputs/research/**)" \
+"Read(context/research-context.json),Read(context/seasonal-calendar.md)" \
 "$MODEL_SONNET"
 
 # ── Agent 2: Audience Intel ──
@@ -257,9 +258,10 @@ Output a structured markdown report covering:
 6. TONE RECOMMENDATION — how CB247 should sound this week (based on market mood)
 
 Be specific and data-driven.
-Save to: outputs/research/audience-weekly-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/research/audience-weekly-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/audience-weekly-$DATE.md" \
-"Read(context/audience-context.json),Read(outputs/research/**),Write(outputs/research/**)" \
+"Read(context/audience-context.json),Read(outputs/research/**)" \
 "$MODEL_HAIKU"
 
 # ── Agent 3: Content Intel ──
@@ -286,9 +288,10 @@ Output a structured markdown report covering:
 6. CONTENT CALENDAR SIGNALS — which of the 4 ICPs to target on which platform this week
 
 Be specific. Include actual hooks word-for-word. This feeds directly into content creation.
-Save to: outputs/research/content-intel-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/research/content-intel-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/content-intel-$DATE.md" \
-"Read(context/content-intel-context.json),Read(outputs/research/**),Write(outputs/research/**)" \
+"Read(context/content-intel-context.json),Read(outputs/research/**)" \
 "$MODEL_HAIKU"
 
 # ── Agent 4: Performance ──
@@ -311,9 +314,10 @@ Output a structured markdown performance report covering:
 6. 3 ACTIONS — one each for Organic, Paid, and Content
 
 Be precise. Every number must come from context/performance-context.json.
-Save to: outputs/research/performance-week-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/research/performance-week-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/performance-week-$DATE.md" \
-"Read(context/performance-context.json),Write(outputs/research/**)" \
+"Read(context/performance-context.json)" \
 "$MODEL_SONNET"
 
 # ── Agent 5: SEO Agent (primary growth driver) ──
@@ -346,9 +350,10 @@ Output a structured markdown SEO report covering:
 9. LOCAL PACK STATUS — which keywords CB247 appears in 3-pack, which it's missing from
 
 Be actionable. Every recommendation must have a specific fix, not just 'improve this page'.
-Save to: outputs/seo/weekly-seo-brief-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/seo/weekly-seo-brief-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/seo/weekly-seo-brief-$DATE.md" \
-"Read(context/seo-context.json),Read(outputs/research/**),Write(outputs/seo/**)" \
+"Read(context/seo-context.json),Read(outputs/research/**)" \
 "$MODEL_SONNET"
 
 # ── Agent 6: Competitor Spy ──
@@ -373,9 +378,10 @@ Output a structured markdown competitive intelligence report covering:
 6. STRATEGIC RECOMMENDATION — one specific counter-move CB247 should make this week
 
 Be competitive and specific. Name actual keywords, prices, and tactics.
-Save to: outputs/research/competitor-weekly-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/research/competitor-weekly-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/competitor-weekly-$DATE.md" \
-"Read(context/competitor-context.json),Read(outputs/research/**),Read(outputs/seo/**),Write(outputs/research/**)" \
+"Read(context/competitor-context.json),Read(outputs/research/**),Read(outputs/seo/**)" \
 "$MODEL_SONNET"
 
 # ── Agent 7: Paid Ads ──
@@ -405,9 +411,10 @@ META ADS (prepared for reinstatement):
 8. BUDGET SPLIT — recommended spend by ICP when account reinstates
 
 Be specific: name exact campaigns, keyword groups, and dollar amounts.
-Save to: outputs/research/paid-ads-weekly-$DATE.md" \
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL MARKDOWN REPORT AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/research/paid-ads-weekly-$DATE.md automatically. Generate the FULL report content directly — do NOT summarise, do NOT say 'I will write...' — just write the report markdown directly." \
 "$OUTPUTS/research/paid-ads-weekly-$DATE.md" \
-"Read(context/paid-ads-context.json),Read(outputs/seo/**),Read(outputs/research/**),Write(outputs/research/**)" \
+"Read(context/paid-ads-context.json),Read(outputs/seo/**),Read(outputs/research/**)" \
 "$MODEL_SONNET"
 
 # ── Agent 8: Content Agent ──
@@ -457,9 +464,9 @@ Generate ALL of the following — complete, copy-paste ready:
 6. META AD COPY (3 variations — for when account reinstates)
    Format: [Audience] [Headline] [Body 90 words] [CTA] [Format: image/video/carousel]
 
-Save EVERYTHING to: outputs/content/weekly-content-$DATE.md" \
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT EVERYTHING (all 6 sections — GBP posts, blog drafts, social posts, reel scripts, review templates, Meta ad copy) AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/content/weekly-content-$DATE.md automatically. Generate ALL content directly — do NOT summarise, do NOT say 'I will write...' — just write everything in your response." \
 "$OUTPUTS/content/weekly-content-$DATE.md" \
-"Read(context/content-agent-context.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(context/psychology-triggers.md),Read(outputs/**),Write(outputs/content/**)" \
+"Read(context/content-agent-context.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(context/psychology-triggers.md),Read(outputs/**)" \
 "$MODEL_OPUS"
 
 # ── Agent 9: Strategist — inject upstream failure context ──
@@ -515,9 +522,9 @@ Output a concise executive strategy document covering:
 
 5. WEEKLY NARRATIVE — 3 sentences: where we are, what moved, what matters most
 
-Save to: outputs/blueprints/weekly-strategy-$DATE.md" \
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT THE FULL EXECUTIVE STRATEGY MARKDOWN AS YOUR DIRECT RESPONSE. The bash wrapper saves your stdout to outputs/blueprints/weekly-strategy-$DATE.md automatically. Generate the FULL strategy directly — do NOT summarise, do NOT say 'I will write...' or 'ready to save once permission granted' — just write the strategy markdown directly." \
 "$OUTPUTS/blueprints/weekly-strategy-$DATE.md" \
-"Read(context/seasonal-calendar.md),Read(outputs/**),Write(outputs/blueprints/**)" \
+"Read(context/seasonal-calendar.md),Read(outputs/**)" \
 "$MODEL_OPUS"
 
 log "Phase 2 complete — all 9 agents run."
