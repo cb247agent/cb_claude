@@ -20486,17 +20486,22 @@ window.openMwccPlannerModal = (id) => {
     //    draft_link column. Convention: drafts live at predictable filenames.
     const _deriveBlogDraftUrl = (r) => {
       if (r.category !== 'seo-organic' && r.source_page !== 'seo-organic') return null;
-      // Pull the quoted title fragment from the action title (the actual blog headline)
+      // Pull the quoted title fragment from the action title (the actual blog headline).
+      // Tolerant of titles that were source-truncated (closing " missing, ends with …)
+      // — match content between opening " and the next ", …, or end of string.
       const t = r.title || '';
-      const m = t.match(/"([^"]+)"/);
+      const m = t.match(/"([^"…]+)/);
       if (!m) return null;
+      // Slug logic must match scripts/generate_mwcc_content_actions.py::_slugify(max_len=50)
+      // so the modal points at the same file the brief generator + filesystem use.
       const slug = m[1].toLowerCase()
         .replace(/[^a-z0-9]+/g,'-')
         .replace(/^-+|-+$/g,'')
-        .slice(0, 60).replace(/-+$/, '');
-      // Known full-draft slugs (manually curated). Add new entries as drafts are written.
+        .slice(0, 50).replace(/-+$/, '');
+      // Known renames: when the generated 50-char slug differs from a curated
+      // human-friendly filename. Add new entries as drafts are renamed.
       const KNOWN_FULL_DRAFTS = {
-        'what-is-ccs-and-how-do-i-apply-a-perth-parent-s-plain-english-guide': 'what-is-ccs-and-how-do-i-apply',
+        'what-is-ccs-and-how-do-i-apply-a-perth-parent-s-pl': 'what-is-ccs-and-how-do-i-apply',
       };
       const filename = KNOWN_FULL_DRAFTS[slug] || slug;
       return `blog-drafts/mwcc/${filename}.html`;
