@@ -283,7 +283,14 @@ def _parse_utilisation(path: Path) -> dict:
 
     Strategy: take the LAST header block (most recent week).
     Occupancy % = avg(Mon–Fri occupied) / capacity × 100
-    Compliance risk = occupancy % > 100 (exceeds licensed capacity)
+
+    Per-room overflow handling (Kelley rule, 09 Jun 2026):
+      Per-room occupancy > 100% is NOT a compliance breach. Kelley moves
+      children between rooms within ratio (e.g. older Toddlers → Babies'
+      room if it has headroom). True licensed-capacity breach is a
+      CENTRE-LEVEL check: total bodies under the roof > licensed centre
+      capacity. We flag per-room overflow as `staffing_rebalance_needed`
+      (operational signal for Kelley), NOT `compliance_risk` (legal).
     """
     print(f"[MWCC Ops] Parsing utilisation: {path.name}")
     wb     = openpyxl.load_workbook(path, data_only=True)
@@ -364,11 +371,16 @@ def _parse_utilisation(path: Path) -> dict:
             occ    = round(avg / capacity * 100, 1) if capacity > 0 else 0.0
 
             rooms[room_name] = {
-                "capacity":        capacity,
-                "avg_daily":       avg,
-                "occupancy_pct":   occ,
-                "daily_mon_fri":   daily_vals,
-                "compliance_risk": occ > 100.0,
+                "capacity":                 capacity,
+                "avg_daily":                avg,
+                "occupancy_pct":            occ,
+                "daily_mon_fri":            daily_vals,
+                # Per Kelley rule (09 Jun 2026): per-room overflow = staffing
+                # rebalance signal, NOT compliance. Kelley shuffles between rooms
+                # within ratio. True compliance breach is centre-level (TODO:
+                # needs licensed_centre_capacity from Tia per centre).
+                "staffing_rebalance_needed": occ > 100.0,
+                "compliance_risk":          False,  # CENTRE-LEVEL check; always False at room level
             }
 
         result[centre_name] = {
@@ -378,10 +390,10 @@ def _parse_utilisation(path: Path) -> dict:
         }
 
         room_summary = "  ".join(
-            f"{r}: {d['occupancy_pct']}%{'⚠' if d['compliance_risk'] else ''}"
+            f"{r}: {d['occupancy_pct']}%{'↻' if d.get('staffing_rebalance_needed') else ''}"
             for r, d in rooms.items()
         )
-        print(f"[MWCC Ops]   {centre_name}: {room_summary}")
+        print(f"[MWCC Ops]   {centre_name}: {room_summary}  (↻ = rebalance signal, NOT compliance)")
 
     return result
 
@@ -795,11 +807,16 @@ def parse_mwcc_ops(inbox_path=None):
     breach_centres = [
         n for n, c in ops_data.items() if c.get("wage_breach", False)
     ]
-    compliance_risk_rooms = [
+    # Per Kelley rule (09 Jun 2026): per-room over-100% is operational
+    # rebalance, NOT compliance. compliance_risk_rooms is now always empty
+    # at the per-room level. True centre-level compliance check is a
+    # future addition pending licensed_centre_capacity from Tia.
+    compliance_risk_rooms: list[str] = []  # legal compliance — centre-level only (TODO)
+    rooms_needing_rebalance = [
         f"{centre} — {room}"
         for centre, c in ops_data.items()
         for room, d in c.get("rooms_detail", {}).items()
-        if d.get("compliance_risk", False)
+        if d.get("staffing_rebalance_needed", False)
     ]
 
     # Override the period from the OWNA file with the canonical Mon-Fri window.
@@ -829,7 +846,8 @@ def parse_mwcc_ops(inbox_path=None):
             "net_movement":               total_enrolments - total_exits,
             "total_revenue":              round(total_revenue, 2),
             "centres_in_wage_breach":     breach_centres,
-            "rooms_with_compliance_risk": compliance_risk_rooms,
+            "rooms_with_compliance_risk": compliance_risk_rooms,    # always [] now; centre-level check TODO
+            "rooms_needing_rebalance":    rooms_needing_rebalance,  # operational signal for Kelley
             # Unique-child counts (deduplicated across centres for transfers)
             # Per Tia direction 08 Jun 2026 — when a child transfers between
             # centres OWNA records them twice. Counting unique names gives
@@ -853,8 +871,8 @@ def parse_mwcc_ops(inbox_path=None):
     print(f"[MWCC Ops] Revenue     : ${total_revenue:,.2f}")
     if breach_centres:
         print(f"[MWCC Ops] ⚠️  Wage breach (>{WAGE_BREACH_THRESHOLD}%): {', '.join(breach_centres)}")
-    if compliance_risk_rooms:
-        print(f"[MWCC Ops] ⚠️  Occupancy >100%: {', '.join(compliance_risk_rooms)}")
+    if rooms_needing_rebalance:
+        print(f"[MWCC Ops] ↻ Rooms >100% (Kelley to rebalance, NOT compliance): {', '.join(rooms_needing_rebalance)}")
 
     return output
 

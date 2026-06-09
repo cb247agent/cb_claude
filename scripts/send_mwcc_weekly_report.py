@@ -149,8 +149,12 @@ def build_digest() -> dict:
     prior_centres = (ops_history[-2].get("centres", {}) if len(ops_history) >= 2 else {}) or {}
     prior_avg_occ = _capacity_weighted_occupancy(prior_centres) if prior_centres else None
 
-    # Compliance risks
+    # Per Kelley rule (09 Jun 2026): per-room overflow is operational
+    # (Kelley rebalances within ratio), NOT compliance. compliance_risk
+    # rooms list is now always empty at room-level. Rebalance candidates
+    # come from rooms_needing_rebalance instead.
     risk_rooms = ops.get("network_summary", {}).get("rooms_with_compliance_risk", []) or []
+    rebalance_rooms = ops.get("network_summary", {}).get("rooms_needing_rebalance", []) or []
 
     # Top P1+P2 actions
     actions = work_queue.get("actions") or []
@@ -176,7 +180,7 @@ def build_digest() -> dict:
             for r in rooms.values()
         )
         if at_risk:
-            centre_status.append((name, f"{occ}%", "⚠ Compliance risk"))
+            centre_status.append((name, f"{occ}%", "↻ Room rebalance (Kelley)"))
         elif occ >= 70:
             centre_status.append((name, f"{occ}%", "✓ Within capacity"))
         else:
@@ -189,7 +193,8 @@ def build_digest() -> dict:
         f"${total_spend:.0f} ad spend · {_fmt_num(ga4_sessions)} GA4 sessions."
     )
     if risk_rooms:
-        biggest_risk = f"<b>{', '.join(risk_rooms)}</b> — over licensed capacity. Cap intake or activate waitlist."
+        # Should always be empty per Kelley rule (09 Jun 2026); kept for backwards compat
+        biggest_risk = f"<b>{', '.join(risk_rooms)}</b> — centre total over licensed capacity. Compliance review needed."
     elif net_enrol is not None and net_enrol < 0:
         biggest_risk = f"<b>Net enrolments {net_enrol}</b> — exits outpace enrolments. Kelley pulls cancel reasons from OWNA."
     elif avg_occ is not None and avg_occ < 50:
@@ -198,7 +203,8 @@ def build_digest() -> dict:
         biggest_risk = "No critical risks. Monitor at-risk rooms + WoW deltas."
 
     if risk_rooms:
-        top_priority = f"Kelley to cap {risk_rooms[0]} intake by Friday and brief families on transition."
+        # Always empty per Kelley rule unless centre-total breach
+        top_priority = f"Compliance review: {risk_rooms[0]} — centre total exceeds licensed."
     elif p1_p2:
         top_priority = f"Review {len(p1_p2)} P1/P2 actions below. Top: {p1_p2[0].get('title','—')}"
     else:

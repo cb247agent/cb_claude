@@ -675,8 +675,11 @@ def _section_compliance(ops):
         </section>
         """
     items = []
+    # Per Kelley rule (09 Jun 2026): risk_rooms is now always [] at the
+    # room level (operational rebalance, not compliance). True compliance
+    # check is centre-total — TODO: needs licensed_centre_capacity per centre.
     for r in risk_rooms:
-        items.append(f'<li style="margin:4px 0"><b style="color:{PALETTE["risk"]}">RISK</b> · {r} <span style="color:{PALETTE["muted"]}">(over licensed capacity — cap intake immediately)</span></li>')
+        items.append(f'<li style="margin:4px 0"><b style="color:{PALETTE["risk"]}">RISK</b> · {r} <span style="color:{PALETTE["muted"]}">(centre total exceeds licensed — compliance review)</span></li>')
     for c in wage_centres:
         items.append(f'<li style="margin:4px 0"><b style="color:{PALETTE["warn"]}">WAGE</b> · {c} <span style="color:{PALETTE["muted"]}">(wage % above 42% breach threshold)</span></li>')
     return f"""
