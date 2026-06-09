@@ -20478,7 +20478,30 @@ window.openMwccPlannerModal = (id) => {
   //  actions this stays hidden.
   const draftLinkEl = document.getElementById('modal-draft-link-wrap');
   if (draftLinkEl) {
-    const draftUrl = row.draft_link || row.draftLink || null;
+    // Resolve draft URL — order of precedence:
+    // 1. row.draft_link / row.draftLink (explicit, from Supabase if column exists)
+    // 2. For blog actions (platform=blog), derive the slug from the row title
+    //    and look for a file at docs/blog-drafts/mwcc/[slug].html. This is a
+    //    workaround because the Supabase table doesn't currently have a
+    //    draft_link column. Convention: drafts live at predictable filenames.
+    const _deriveBlogDraftUrl = (r) => {
+      if (r.category !== 'seo-organic' && r.source_page !== 'seo-organic') return null;
+      // Pull the quoted title fragment from the action title (the actual blog headline)
+      const t = r.title || '';
+      const m = t.match(/"([^"]+)"/);
+      if (!m) return null;
+      const slug = m[1].toLowerCase()
+        .replace(/[^a-z0-9]+/g,'-')
+        .replace(/^-+|-+$/g,'')
+        .slice(0, 60).replace(/-+$/, '');
+      // Known full-draft slugs (manually curated). Add new entries as drafts are written.
+      const KNOWN_FULL_DRAFTS = {
+        'what-is-ccs-and-how-do-i-apply-a-perth-parent-s-plain-english-guide': 'what-is-ccs-and-how-do-i-apply',
+      };
+      const filename = KNOWN_FULL_DRAFTS[slug] || slug;
+      return `blog-drafts/mwcc/${filename}.html`;
+    };
+    const draftUrl = row.draft_link || row.draftLink || _deriveBlogDraftUrl(row);
     if (draftUrl) {
       // Robust URL: strip any #fragment / ?query from current location
       // before joining, so a hash like #mwcc-content-planner can't corrupt

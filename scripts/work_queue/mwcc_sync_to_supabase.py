@@ -83,6 +83,9 @@ def _to_db_row(action: dict) -> dict:
         "overall_verdict": action.get("overall_verdict"),
         "measured_at":     action.get("measured_at"),
         "notes_human":     action.get("notes_human") or "",
+        # draft_link / publish_date NOT synced — columns don't exist in
+        # mwcc_work_queue_actions table yet. The dashboard derives draft
+        # URLs from the action title for blog actions as a fallback.
     }
 
 
