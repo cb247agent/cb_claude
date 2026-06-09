@@ -71,7 +71,11 @@ def _draft_block(action):
     if not draft:
         return ""
     # If relative path, prefix with ../ so it resolves from docs/briefs/
-    draft_url = draft if draft.startswith("http") else f"../{draft}"
+    # Strip any leading 'docs/' — GitHub Pages serves FROM docs/, so the
+    # URL path doesn't include 'docs'. Bug fix 08 Jun 2026: '../docs/blog-drafts/...'
+    # resolved to /cb_claude/docs/blog-drafts/... → 404.
+    _draft = draft.replace("docs/", "", 1) if draft.startswith("docs/") else draft
+    draft_url = _draft if _draft.startswith("http") else f"../{_draft}"
     return f"""<div class="section" style="background:{MWCC_PURPLE_MIST};border-left:4px solid {MWCC_PURPLE};border-radius:4px;padding:14px 18px;margin:14px 0">
     <div class="label" style="color:{MWCC_PURPLE_DEEP};margin-bottom:8px">Draft — Ready for Review</div>
     <a href="{draft_url}" target="_blank" style="display:inline-block;background:{MWCC_PURPLE};color:#fff;padding:10px 22px;border-radius:5px;text-decoration:none;font-weight:700;font-size:13px">Open Draft Blog →</a>
