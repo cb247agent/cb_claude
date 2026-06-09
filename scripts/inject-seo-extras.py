@@ -7,7 +7,11 @@ the (currently stale) CB247 baker, which would wipe the MWCC/KB/Sparrows render
 functions added directly to docs/index.html.
 
 Sources:
-  state/ahrefs-snapshot-2026-06-01.json — Frozen Ahrefs from June 1 cron
+  state/ahrefs-snapshot-YYYY-MM-DD.json — Newest available Ahrefs snapshot.
+                                          Picked dynamically by date in filename
+                                          (was hardcoded to 1 Jun; now follows the
+                                          newest export landed via either
+                                          pull_ahrefs.py or parse_cb247_ahrefs_csvs.py).
   state/screaming-frog-data.json        — Technical crawl (errors, warnings)
   state/ga4-data.json                   — GA4 current + previous (for organic WoW)
   state/gsc-data.json                   — GSC date range (for dynamic period label)
@@ -21,6 +25,25 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATE_DIR = BASE_DIR / "state"
 INDEX_PATH = BASE_DIR / "docs" / "index.html"
+
+
+def _newest_ahrefs_snapshot():
+    """Find the newest state/ahrefs-snapshot-*.json by the date in the filename.
+
+    Filename format: ahrefs-snapshot-YYYY-MM-DD.json
+    Sort by the embedded date (not mtime) so a manually-touched older snapshot
+    doesn't override a fresh export.
+    """
+    pattern = re.compile(r"ahrefs-snapshot-(\d{4}-\d{2}-\d{2})\.json$")
+    candidates = []
+    for f in STATE_DIR.glob("ahrefs-snapshot-*.json"):
+        m = pattern.match(f.name)
+        if m:
+            candidates.append((m.group(1), f))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda c: c[0], reverse=True)
+    return candidates[0][1]
 
 
 def _load(filename, default=None):
@@ -41,7 +64,17 @@ def _safe_int(v, default=0):
 
 
 def build_seo_extras():
-    ahrefs_frozen = _load("ahrefs-snapshot-2026-06-01.json", default={})
+    # Pick the newest dated snapshot — previously hardcoded to 1 Jun, now follows
+    # whatever parse_cb247_ahrefs_csvs.py or pull_ahrefs.py last wrote.
+    snapshot = _newest_ahrefs_snapshot()
+    if snapshot:
+        try:
+            ahrefs_frozen = json.loads(snapshot.read_text())
+        except Exception:
+            ahrefs_frozen = {}
+    else:
+        # Backward-compat fallback (older snapshot if no dated one exists)
+        ahrefs_frozen = _load("ahrefs-snapshot-2026-06-01.json", default={})
     frog = _load("screaming-frog-data.json", default={})
     ga4 = _load("ga4-data.json", default={})
     gsc = _load("gsc-data.json", default={})

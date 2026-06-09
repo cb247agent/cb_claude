@@ -108,6 +108,13 @@ log "Step 1b — Ahrefs (rankings + gaps + organic value)..."
 "$PYTHON" "$BASE_DIR/scripts/pull_ahrefs.py" >> "$LOG" 2>&1 \
     || fail "pull_ahrefs.py had issues — continuing"
 
+log "Step 1b' — Manual Ahrefs CSV/PDF parse (fallback for API token outage)..."
+# Reads cb247-inbox/ahrefs/*.csv + Overview_*.pdf — if Tia drops fresh exports
+# in there, this overwrites state/ahrefs-data.json + state/ahrefs-snapshot-*.json
+# with manual data. Falls through silently if inbox is empty or unchanged.
+"$PYTHON" "$BASE_DIR/scripts/parse_cb247_ahrefs_csvs.py" >> "$LOG" 2>&1 \
+    || fail "parse_cb247_ahrefs_csvs.py had issues — continuing"
+
 log "Step 1c — Apify (SERP + Maps + Reddit + Trends + FB Ads)..."
 "$PYTHON" "$BASE_DIR/scripts/pull_apify.py" >> "$LOG" 2>&1 \
     || fail "pull_apify.py had issues — continuing"
