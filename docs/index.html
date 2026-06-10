@@ -13321,6 +13321,49 @@ window.MWCC_DATA = {
 </div><!-- /app -->
 
 <!-- ══ CONTENT PLANNER MODAL ══════════════════════════════════════════ -->
+<!-- ── Streamlined View Details modal for Prioritised Action List (Wave 2.8 · 10 Jun 2026) ──
+     Different from the kanban planner-modal: no calendar, no status cycling.
+     Just title · why · impact · meeting decision pills · save. Decisions sync
+     to Supabase planner_approval and reflect back on the action list button
+     so the team can scan at a glance which items have been decided. -->
+<div class="modal-overlay" id="proposed-action-modal" onclick="if(event.target===this)closeProposedActionModal()">
+  <div class="modal-box" style="max-width:680px">
+    <div style="padding:24px 26px 18px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-accent-deep);margin-bottom:6px" id="pamodal-source"></div>
+          <h2 style="font-size:18px;font-weight:700;line-height:1.35;color:var(--text);margin:0" id="pamodal-title"></h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px" id="pamodal-chips"></div>
+        </div>
+        <button onclick="closeProposedActionModal()" style="background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;padding:0 4px;line-height:1">✕</button>
+      </div>
+    </div>
+    <div style="padding:18px 26px">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Why This Matters</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--text-2);margin-bottom:20px" id="pamodal-why"></div>
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Expected Impact</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--text-2);margin-bottom:8px" id="pamodal-impact"></div>
+    </div>
+    <div style="margin:0 26px;background:var(--gray-0,#f8f9fa);border-radius:6px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:12px;font-weight:600;color:var(--text-2)">Meeting decision:</div>
+      <button class="appr-pill" id="pamodal-pill-approved" onclick="setProposedActionDecision('approved')">Approved</button>
+      <button class="appr-pill" id="pamodal-pill-adjustment" onclick="setProposedActionDecision('adjustment')">Adjusted</button>
+      <button class="appr-pill" id="pamodal-pill-rejected" onclick="setProposedActionDecision('rejected')">Rejected</button>
+    </div>
+    <div id="pamodal-notes-wrap" style="display:none;padding:14px 26px 0">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Adjustment / Rejection Notes</div>
+      <textarea id="pamodal-notes" rows="3" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:12.5px;font-family:inherit;resize:vertical" placeholder="Describe what needs to change or why this was rejected…"></textarea>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 26px;border-top:1px solid var(--border);margin-top:18px;gap:12px;flex-wrap:wrap">
+      <div style="font-size:11px;color:var(--muted)">All decisions sync to Supabase. Visible to whole team.</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeProposedActionModal()" style="background:#fff;border:1px solid var(--border);border-radius:4px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit">Close</button>
+        <button id="pamodal-save-btn" onclick="saveProposedActionDecision()" disabled style="background:var(--brand-accent);color:#fff;border:none;border-radius:4px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;opacity:.5">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="planner-modal" onclick="if(event.target===this)closePlannerModal()">
   <div class="modal-box">
     <div class="modal-head">
@@ -14189,31 +14232,54 @@ function _renderActionList(actions, opts = {}) {
       <th style="font-size:10px">Expected Impact</th>
       <th style="width:110px"></th>
     </tr></thead><tbody>
-    ${items.map((a, i) => {
-      const n = _norm(a);
-      // Stash the full action object + sourcePage on the button as JSON in a
-      // data attribute. Wave 2.3 wires openProposedActionModal() to read it.
-      // HTML-escape the JSON so quotes inside don't break the attribute.
-      const payload = JSON.stringify({ action: a, normalised: n, sourcePage, index: i })
-        .replace(/&/g, '&amp;').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
-      return `<tr>
-        <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
-        <td>
-          <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${n.title}</div>
-          ${n.desc ? `<div style="font-size:11px;color:var(--muted);line-height:1.6">${n.desc}</div>` : ''}
-        </td>
-        <td style="font-size:11px"><b>${n.owner}</b>${n.owner_role ? `<div style="font-size:10px;color:var(--muted)">${n.owner_role}</div>` : ''}</td>
-        <td>${effortBadge(n.effort)}</td>
-        <td>${priorityPill(n.priority)}</td>
-        <td style="font-size:11px;color:var(--text-2)">${n.impact}</td>
-        <td style="text-align:right">
-          <button class="view-details-btn"
-                  data-action-payload="${payload}"
-                  onclick="openProposedActionModal(this.dataset.actionPayload)"
-                  style="background:#fff;color:var(--brand-accent-deep);border:1px solid var(--brand-accent);border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .15s">View Details →</button>
-        </td>
-      </tr>`;
-    }).join('')}
+    ${(() => {
+      // Wave 2.8: read saved approvals so the button flips to a decision
+      // pill once a meeting decision has been made on the action.
+      const approvalMap = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY) || '{}');
+      return items.map((a, i) => {
+        const n = _norm(a);
+        // Stash the full action object + sourcePage on the button as JSON in
+        // a data attribute. openProposedActionModal() reads it.
+        const payload = JSON.stringify({ action: a, normalised: n, sourcePage, index: i })
+          .replace(/&/g, '&amp;').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
+
+        // Compute deterministic action ID (same algorithm openProposedActionModal uses)
+        const actionId = (typeof _proposedActionId === 'function')
+          ? _proposedActionId(sourcePage, n.title)
+          : '';
+        const decision = actionId ? (approvalMap[actionId]?.status || null) : null;
+
+        // Decision → button style/label
+        const decisionMap = {
+          'approved':   { label: '✓ Approved',  bg: '#dcfce7', fg: '#166534', bd: '#16a34a' },
+          'adjustment': { label: '⚠ Adjusted',  bg: '#fef3c7', fg: '#92400e', bd: '#d97706' },
+          'rejected':   { label: '✗ Rejected',  bg: '#fee2e2', fg: '#991b1b', bd: '#dc2626' },
+        };
+        const dm = decision ? decisionMap[decision] : null;
+        const btnStyle = dm
+          ? `background:${dm.bg};color:${dm.fg};border:1px solid ${dm.bd};border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .15s`
+          : `background:#fff;color:var(--brand-accent-deep);border:1px solid var(--brand-accent);border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .15s`;
+        const btnLabel = dm ? dm.label : 'View Details →';
+
+        return `<tr>
+          <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
+          <td>
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${n.title}</div>
+            ${n.desc ? `<div style="font-size:11px;color:var(--muted);line-height:1.6">${n.desc}</div>` : ''}
+          </td>
+          <td style="font-size:11px"><b>${n.owner}</b>${n.owner_role ? `<div style="font-size:10px;color:var(--muted)">${n.owner_role}</div>` : ''}</td>
+          <td>${effortBadge(n.effort)}</td>
+          <td>${priorityPill(n.priority)}</td>
+          <td style="font-size:11px;color:var(--text-2)">${n.impact}</td>
+          <td style="text-align:right">
+            <button class="view-details-btn"
+                    data-action-payload="${payload}"
+                    onclick="openProposedActionModal(this.dataset.actionPayload)"
+                    style="${btnStyle}">${btnLabel}</button>
+          </td>
+        </tr>`;
+      }).join('');
+    })()}
     </tbody></table>
     ${opts.footer || opts.workQueueLink
       ? `<p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">
@@ -17311,6 +17377,10 @@ function _proposedActionId(sourcePage, title) {
   return `prop-${sourcePage}-${wk}-${_proposedActionHash(sig)}`;
 }
 
+// State for the streamlined modal (Wave 2.8 redesign)
+let _paModalId = null;
+let _paModalDecision = null;
+
 window.openProposedActionModal = async (payloadStr) => {
   let payload;
   try {
@@ -17328,42 +17398,26 @@ window.openProposedActionModal = async (payloadStr) => {
   const id = _proposedActionId(sourcePage, normalised.title);
   console.log(`[openProposedActionModal] ${id} · ${normalised.title.slice(0, 60)}`);
 
-  // Build the work_queue_actions row
-  // Map effort to hours (S=2, M=6, L=12) when caller gave a letter
   const effortHours = (typeof normalised.effort === 'number')
     ? normalised.effort
     : (normalised.effort === 'S' ? 2 : normalised.effort === 'M' ? 6 : normalised.effort === 'L' ? 12 : null);
 
   const row = {
-    id,
-    source_page: sourcePage,
-    source_run_at: new Date().toISOString(),
-    title: normalised.title,
-    description: normalised.desc || '',
-    owner: normalised.owner || '',
-    owner_role: normalised.owner_role || '',
-    priority: normalised.priority || 'P2',
-    effort_hours: effortHours,
-    category: sourcePage,
-    data_quality: 'medium',
-    urgent: false,
-    projected_kpis: action.projected_kpis || [],
-    related_actions: [],
+    id, source_page: sourcePage, source_run_at: new Date().toISOString(),
+    title: normalised.title, description: normalised.desc || '',
+    owner: normalised.owner || '', owner_role: normalised.owner_role || '',
+    priority: normalised.priority || 'P2', effort_hours: effortHours,
+    category: sourcePage, data_quality: 'medium', urgent: false,
+    projected_kpis: action.projected_kpis || [], related_actions: [],
   };
 
-  // ALWAYS stash locally first — guarantees _findWorkItem can resolve the
-  // id even if Supabase upsert is slow or fails. The realtime broadcast will
-  // later replace this with the canonical Supabase row.
   if (!window._localProposedActions) window._localProposedActions = {};
   window._localProposedActions[id] = row;
 
-  // Upsert to Supabase (idempotent on id)
   if (window.cbState && window.cbState.workQueue && _supa) {
     try {
       const r = await _supa.from('work_queue_actions').upsert(row, { onConflict: 'id' });
       if (r.error) console.warn('[openProposedActionModal] upsert failed:', r.error);
-      else console.log('[openProposedActionModal] upserted to Supabase');
-      // Optimistically add to cbState items so the canonical list has it
       if (cbState.workQueue._items) {
         const idx = cbState.workQueue._items.findIndex(x => x.id === id);
         if (idx < 0) cbState.workQueue._items.push(row);
@@ -17374,7 +17428,6 @@ window.openProposedActionModal = async (payloadStr) => {
     }
   }
 
-  // Ensure status row exists (Proposed by default)
   const SKEY = 'cb247-planner-status';
   const saved = JSON.parse(localStorage.getItem(SKEY) || '{}');
   if (!saved[id]) {
@@ -17385,14 +17438,189 @@ window.openProposedActionModal = async (payloadStr) => {
     }
   }
 
-  // Open the existing planner modal — it handles everything from here
-  // (display, approval pills, status cycling, notes, Supabase writes)
-  if (typeof openPlannerModal === 'function') {
-    openPlannerModal(id);
-  } else {
-    console.error('[openProposedActionModal] openPlannerModal not available');
-  }
+  // Wave 2.8: render the new streamlined modal instead of the full kanban one.
+  _renderProposedActionModalContent(id, action, normalised, sourcePage);
 };
+
+// Build the modal body (Wave 2.8 redesign). Pulls richer Why/Impact text
+// from the raw action (CB247-shape: a.why, a.impact · MWCC-shape: a.description,
+// a.expected_impact + projected_kpis) than the table-row summary shows.
+function _renderProposedActionModalContent(id, action, normalised, sourcePage) {
+  _paModalId = id;
+  _paModalDecision = null;
+
+  // ── Header line 1: SOURCE-PAGE · PRIORITY ─────────────────────────────────
+  const sourceLabel = (sourcePage || 'unknown').toUpperCase().replace(/-/g, '-');
+  const prio = normalised.priority || 'P2';
+  $('pamodal-source').textContent = `${sourceLabel} · ${prio}`;
+
+  // ── Header line 2: Title ──────────────────────────────────────────────────
+  $('pamodal-title').textContent = normalised.title;
+
+  // ── Header line 3: Chips (owner · effort · KPI) ───────────────────────────
+  const ownerLabel = normalised.owner_role
+    ? `${normalised.owner} (${normalised.owner_role})`
+    : normalised.owner;
+  let effortLabel;
+  if (typeof normalised.effort === 'number') {
+    effortLabel = normalised.effort <= 2 ? 'S' : normalised.effort <= 6 ? 'M' : 'L';
+  } else if (typeof normalised.effort === 'string') {
+    effortLabel = normalised.effort;
+  } else {
+    effortLabel = '—';
+  }
+  const kpiText = _projectedKpiTextForModal(action) || normalised.impact;
+  const kpiIsTeal = (action.projected_kpis && action.projected_kpis.length > 0);
+  $('pamodal-chips').innerHTML = `
+    <span style="background:#f3f4f6;color:var(--text-2);font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px">${ownerLabel}</span>
+    <span style="background:#f3f4f6;color:var(--text-2);font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px">Effort: ${effortLabel}</span>
+    ${kpiText ? `<span style="background:rgba(63,166,154,.12);color:var(--brand-accent-deep);font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px">${kpiText}</span>` : ''}
+  `;
+
+  // ── Why This Matters (rich text from raw action) ──────────────────────────
+  $('pamodal-why').innerHTML = _buildWhyText(action, normalised, sourcePage);
+
+  // ── Expected Impact (rich text + KPI projections) ─────────────────────────
+  $('pamodal-impact').innerHTML = _buildImpactText(action, normalised);
+
+  // ── Restore saved decision pills ──────────────────────────────────────────
+  const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY) || '{}');
+  const saved = approval[id] || {};
+  _paModalDecision = saved.status || null;
+  _refreshPaPills(_paModalDecision);
+  const notesWrap = $('pamodal-notes-wrap');
+  const notesEl = $('pamodal-notes');
+  if (saved.notes) notesEl.value = saved.notes;
+  else notesEl.value = '';
+  notesWrap.style.display = (_paModalDecision === 'adjustment' || _paModalDecision === 'rejected') ? 'block' : 'none';
+  _refreshPaSaveBtn();
+
+  // Open
+  $('proposed-action-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function _refreshPaPills(decision) {
+  ['approved', 'adjustment', 'rejected'].forEach(d => {
+    const el = $(`pamodal-pill-${d}`);
+    el.className = 'appr-pill' + (d === decision ? ` sel-${d}` : '');
+  });
+}
+
+function _refreshPaSaveBtn() {
+  const btn = $('pamodal-save-btn');
+  if (!btn) return;
+  const enabled = _paModalDecision !== null;
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? '1' : '.5';
+  btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+}
+
+window.setProposedActionDecision = (decision) => {
+  _paModalDecision = decision;
+  _refreshPaPills(decision);
+  $('pamodal-notes-wrap').style.display = (decision === 'adjustment' || decision === 'rejected') ? 'block' : 'none';
+  _refreshPaSaveBtn();
+};
+
+window.closeProposedActionModal = () => {
+  $('proposed-action-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  _paModalId = null;
+  _paModalDecision = null;
+};
+
+window.saveProposedActionDecision = async () => {
+  if (!_paModalId || !_paModalDecision) return;
+  const notes = $('pamodal-notes').value || '';
+  if (window.cbState?.planner) {
+    try {
+      await cbState.planner.setApproval(_paModalId, _paModalDecision, notes);
+    } catch (e) {
+      console.warn('[pa-modal] setApproval failed:', e);
+    }
+  } else {
+    // Fallback: write to localStorage directly
+    const map = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY) || '{}');
+    map[_paModalId] = { status: _paModalDecision, notes };
+    localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(map));
+  }
+  closeProposedActionModal();
+  // Re-render the active page so the "View Details" button picks up the new
+  // decision state (button label flips to Approved/Adjusted/Rejected pill).
+  if (typeof _rerenderActivePage === 'function') _rerenderActivePage();
+};
+
+// Helpers — build the modal body text from richer raw fields
+function _projectedKpiTextForModal(action) {
+  const kpis = action?.projected_kpis;
+  if (!Array.isArray(kpis) || kpis.length === 0) return '';
+  const k = kpis.find(x => x && x.baseline != null && x.target != null) || kpis[0];
+  if (!k) return '';
+  const window = k.measurement_window_days ? `${k.measurement_window_days}d` : '14d';
+  const name = (k.metric || 'metric').replace(/_/g, ' ');
+  if (k.baseline != null && k.target != null) {
+    return `${name} ${k.baseline} → ${k.target} (${window})`;
+  }
+  return `${name} (${window})`;
+}
+
+function _buildWhyText(action, normalised, sourcePage) {
+  // CB247-shape: a.why (rich HTML strings sometimes used)
+  // MWCC-shape: a.description (plain text)
+  // Fallback: normalised.desc
+  const whyRaw = action?.why || action?.description || normalised.desc || '';
+  if (whyRaw) return whyRaw;
+  // Last-resort fallback: synthesise from sourcePage + title
+  const friendly = (sourcePage || 'team').replace(/-/g, ' ');
+  return `This action came out of this week's ${friendly} performance review. The Brand Manager flagged it as a P${normalised.priority?.replace(/P/g,'') || '2'} priority worth executing inside the next two weeks. Full rationale and source data live on the ${friendly} page above.`;
+}
+
+function _buildImpactText(action, normalised) {
+  // Layer 1: explicit impact string
+  const impactRaw = action?.impact || action?.expected_impact || normalised.impact || '';
+  // Layer 2: structured KPI projections (formatted as a sentence)
+  const kpis = action?.projected_kpis || [];
+  let kpiSentence = '';
+  if (Array.isArray(kpis) && kpis.length > 0) {
+    const lines = kpis.slice(0, 3).map(k => {
+      const name = (k.metric || 'metric').replace(/_/g, ' ');
+      const win  = k.measurement_window_days ? ` over ${k.measurement_window_days} days` : '';
+      if (k.baseline != null && k.target != null) {
+        return `<b>${name}</b> ${k.baseline} → ${k.target}${win}`;
+      }
+      if (k.delta_min != null && k.delta_max != null) {
+        return `<b>${name}</b> +${k.delta_min}…+${k.delta_max}${win}`;
+      }
+      return `<b>${name}</b>${win}`;
+    });
+    kpiSentence = `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);font-size:12px;color:var(--text-2)"><b style="color:var(--brand-accent-deep);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase">Tracked KPIs:</b> ${lines.join(' · ')}</div>`;
+  }
+  return (impactRaw || 'Direct lift on the metric tracked above. Verdict at +14d.') + kpiSentence;
+}
+
+// Allow the rest of the page to know which render function is currently active
+// so we can re-render after a decision changes. Default: best-effort (rerun
+// whatever is on the current visible page).
+function _rerenderActivePage() {
+  const active = document.querySelector('.page.active');
+  if (!active) return;
+  const id = active.id || '';
+  // page-id → render function map
+  const map = {
+    'page-seo':              () => typeof renderSEO === 'function' && renderSEO(),
+    'page-google-ads':       () => typeof renderGAds === 'function' && renderGAds(),
+    'page-meta-ads':         () => typeof renderMeta === 'function' && renderMeta(),
+    'page-organic-social':   () => typeof renderOrgSocial === 'function' && renderOrgSocial(),
+    'page-gbp':              () => typeof renderGBP === 'function' && renderGBP(),
+    'page-cb247-membership': () => typeof renderCb247Membership === 'function' && renderCb247Membership(),
+    'page-overview':         () => typeof renderOverview === 'function' && renderOverview(),
+  };
+  const fn = map[id];
+  if (fn) {
+    try { fn(); } catch (e) { console.warn('[rerender]', id, e); }
+  }
+}
 
 // ── Planner Modal ─────────────────────────────────────────────────────────────
 let _modalItemId = null;
