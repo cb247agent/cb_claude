@@ -261,6 +261,27 @@ def parse_pgm_summary():
                 if club_name == full:
                     per_club[short] = {k: row.get(k, 0) for k in summary_headers if k != "Club"}
 
+    # ── Totals row fallback ───────────────────────────────────────────────────
+    # PGM sometimes exports a "Total" label row with NO numeric values
+    # (verified 09 Jun 2026 — the Total row was empty cells). In that case
+    # totals ends up {} or full of Nones, which breaks all dashboard
+    # "X contracts" sub-texts and bar charts. Sum per-club rows as fallback.
+    metric_keys = [k for k in summary_headers if k and k != "Club"]
+    has_numeric_totals = any(
+        isinstance(totals.get(k), (int, float)) and totals.get(k) is not None
+        for k in metric_keys
+    )
+    if not has_numeric_totals and per_club:
+        totals = {}
+        for k in metric_keys:
+            s = 0
+            for short in per_club:
+                v = per_club[short].get(k)
+                if isinstance(v, (int, float)):
+                    s += v
+            totals[k] = s
+        print(f"  [totals row missing in PGM export — summed per-club: {totals}]")
+
     # Per-tab base unique people
     new_rows = list(_read_tab(wb, "New contracts"))
     ended_rows = list(_read_tab(wb, "Ended contracts"))
