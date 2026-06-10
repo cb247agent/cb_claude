@@ -17533,6 +17533,8 @@ window.closeProposedActionModal = () => {
 window.saveProposedActionDecision = async () => {
   if (!_paModalId || !_paModalDecision) return;
   const notes = $('pamodal-notes').value || '';
+
+  // 1. Save approval decision (existing wiring → planner_approval table)
   if (window.cbState?.planner) {
     try {
       await cbState.planner.setApproval(_paModalId, _paModalDecision, notes);
@@ -17540,11 +17542,29 @@ window.saveProposedActionDecision = async () => {
       console.warn('[pa-modal] setApproval failed:', e);
     }
   } else {
-    // Fallback: write to localStorage directly
     const map = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY) || '{}');
     map[_paModalId] = { status: _paModalDecision, notes };
     localStorage.setItem(PLANNER_APPROVAL_KEY, JSON.stringify(map));
   }
+
+  // 2. Decision → kanban stage mapping (Wave 2.9 · 10 Jun 2026)
+  //    Approved   → 'In Progress' (assignee picks up · appears on Work Queue)
+  //    Adjusted   → 'Proposed'    (stays in meeting queue for next review)
+  //    Rejected   → 'Rejected'    (hidden from main kanban view)
+  const stageMap = {
+    'approved':   'In Progress',
+    'adjustment': 'Proposed',
+    'rejected':   'Rejected',
+  };
+  const newStage = stageMap[_paModalDecision];
+  if (newStage && window.cbState?.planner) {
+    try {
+      await cbState.planner.setStatus(_paModalId, newStage);
+    } catch (e) {
+      console.warn('[pa-modal] setStatus failed:', e);
+    }
+  }
+
   closeProposedActionModal();
   // Re-render the active page so the "View Details" button picks up the new
   // decision state (button label flips to Approved/Adjusted/Rejected pill).
