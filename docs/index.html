@@ -17397,6 +17397,125 @@ window.openProposedActionModal = async (payloadStr) => {
 // ── Planner Modal ─────────────────────────────────────────────────────────────
 let _modalItemId = null;
 
+// Wave 2.7 (10 Jun 2026): inline brief renderer for prop-* IDs.
+// Mirrors scripts/generate_briefs.py output so the View Brief link works
+// identically whether the action came from a Python emitter or the
+// Prioritised Action List's View Details popup.
+function _renderProposedActionBriefHTML(row) {
+  const esc = (s) => String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  const CB247_TEAL = '#3FA69A';
+  const CB247_TEAL_DEEP = '#2d7d72';
+  const CB247_TEAL_MIST = '#f0fdf4';
+  const CB247_DARK = '#1a1a2e';
+  const CATEGORY_BADGE = {
+    'seo-organic':    {bg:'#f3e8ff', fg:'#6b21a8'},
+    'seo':            {bg:'#f3e8ff', fg:'#6b21a8'},
+    'meta-ads':       {bg:'#ede9fe', fg:'#5b21b6'},
+    'google-ads':     {bg:'#fef3c7', fg:'#92400e'},
+    'organic-social': {bg:'#fce7f3', fg:'#9d174d'},
+    'gbp':            {bg:'rgba(63,166,154,.15)', fg:CB247_TEAL_DEEP},
+    'membership':     {bg:'#f0fdf4', fg:'#15803d'},
+    'opportunity':    {bg:'#fef3c7', fg:'#92400e'},
+    'overview':       {bg:'#f3f4f6', fg:'#374151'},
+  };
+  const PRIO_COLOR = { P1:'#ef4444', P2:'#f59e0b', P3:CB247_TEAL };
+
+  const title = esc(row.title || 'Untitled action');
+  const desc  = esc(row.description || '(No description)');
+  const owner = esc(row.owner || 'Team');
+  const role  = esc(row.owner_role || '');
+  const priority = row.priority || 'P2';
+  const source = row.source_page || row.category || '';
+  const effort = esc(row.effort_hours || '');
+  const aid = esc(row.id || '');
+
+  const pks = row.projected_kpis || [];
+  const primary = pks[0] || {};
+  const kpiMetric = esc(primary.metric || '');
+  const kpiBase = esc(primary.baseline ?? '?');
+  const kpiTarget = (primary.target !== undefined && primary.target !== null) ? esc(primary.target) : null;
+  const kpiDeltaMin = primary.delta_min;
+  const kpiDeltaMax = primary.delta_max;
+  const kpiWindow = esc(primary.measurement_window_days || '');
+
+  let captionHTML;
+  if (kpiMetric === 'qualitative_assessment') {
+    captionHTML = `<b>Qualitative action</b> — verdict captured by the team after the measurement window (${kpiWindow || '14'} days) elapses.`;
+  } else if (kpiMetric) {
+    const targetStr = kpiTarget !== null
+      ? `<b>${kpiTarget}</b>`
+      : (kpiDeltaMin !== undefined && kpiDeltaMax !== undefined)
+        ? `<b>+${esc(kpiDeltaMin)}–${esc(kpiDeltaMax)}</b>`
+        : '<b>—</b>';
+    captionHTML = `<b>${kpiMetric}</b>: ${kpiBase} → ${targetStr}` + (kpiWindow ? ` · measured over ${kpiWindow} days` : '');
+  } else {
+    captionHTML = 'No projected KPI on this action.';
+  }
+
+  let allKpisHTML = '';
+  if (pks.length > 1) {
+    const rows = pks.map(k =>
+      `<tr><td style="padding:6px 8px;border-bottom:1px solid #f0f2f5">${esc(k.metric || '')}</td><td style="padding:6px 8px;border-bottom:1px solid #f0f2f5;text-align:right">${esc(k.baseline ?? '?')}</td><td style="padding:6px 8px;border-bottom:1px solid #f0f2f5;text-align:right"><b>${esc(k.target ?? '?')}</b></td><td style="padding:6px 8px;border-bottom:1px solid #f0f2f5;text-align:right;color:#6b7280">${esc(k.measurement_window_days || '')}d</td></tr>`
+    ).join('');
+    allKpisHTML = `<div class="section"><div class="label">All Projected KPIs (${pks.length})</div><table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px"><thead><tr style="border-bottom:2px solid #e5e7eb"><th style="padding:6px 8px;text-align:left;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Metric</th><th style="padding:6px 8px;text-align:right;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Baseline</th><th style="padding:6px 8px;text-align:right;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Target</th><th style="padding:6px 8px;text-align:right;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Window</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+
+  const badge = CATEGORY_BADGE[source] || {bg:'#f0f0f0', fg:'#374151'};
+  const prioColor = PRIO_COLOR[priority] || CB247_TEAL;
+  const catLabel = (source || 'CB247').toUpperCase().replace(/-/g, ' ');
+
+  // Parent promo lookup (Wave 5 linkage). Reads _promoData() if available.
+  let promoBlock = '';
+  if (row.parent_promo_id && typeof _promoById === 'function') {
+    const p = _promoById(row.parent_promo_id);
+    if (p) {
+      const trackColor = p.track === 'retention' ? '#92400e' : CB247_TEAL_DEEP;
+      const trackBg    = p.track === 'retention' ? '#fef3c7' : CB247_TEAL_MIST;
+      promoBlock = `<div class="section" style="background:${trackBg};border-radius:4px;margin:0 28px 14px;padding:14px 18px"><div class="label" style="color:${trackColor}">Parent Promo — ${esc((p.track||'').charAt(0).toUpperCase()+(p.track||'').slice(1))} Track</div><div style="font-size:14px;font-weight:700;color:${CB247_DARK};margin-bottom:4px">${esc(p.label||'')}</div><div style="font-size:12px;color:#374151;margin-bottom:8px">${esc(p.subtitle||'')}</div><div style="font-size:11.5px;color:#6b7280;line-height:1.6"><b>Offer:</b> ${esc((p.offer||{}).headline||'')}<br><b>Audience:</b> ${esc(p.target_audience||'')} · <b>Stage:</b> ${esc(p.stage||'')}</div></div>`;
+    }
+  }
+
+  const today = new Date().toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${title} · CB247 Brief</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:${CB247_DARK};padding:24px}
+.brief-card{max-width:740px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 2px 16px rgba(0,0,0,.08);overflow:hidden}
+.brief-header{background:${CB247_DARK};padding:24px 28px;color:#fff}
+.brief-header .logo{font-size:13px;color:${CB247_TEAL};font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.brief-header h1{font-size:20px;font-weight:700;line-height:1.3}
+.meta-row{display:flex;gap:10px;flex-wrap:wrap;padding:16px 28px;background:#f8f9fa;border-bottom:1px solid #e5e7eb}
+.meta-chip{border-radius:99px;padding:4px 12px;font-size:11px;font-weight:700}
+.section{padding:18px 28px;border-bottom:1px solid #f0f2f5}
+.section:last-child{border-bottom:none}
+.label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:8px}
+.instructions{font-size:13px;line-height:1.8;color:#374151;white-space:pre-wrap}
+.caption-box{background:${CB247_TEAL_MIST};border-left:3px solid ${CB247_TEAL};border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;line-height:1.7;color:${CB247_DARK}}
+.src{display:inline-block;background:${CB247_TEAL_MIST};color:${CB247_TEAL_DEEP};border-radius:99px;padding:4px 14px;font-size:12px;font-weight:700}
+.footer{text-align:center;padding:16px;font-size:11px;color:#9ca3af}
+.banner{background:#fffbeb;color:#92400e;font-size:11px;padding:8px 28px;border-bottom:1px solid #f0d894;text-align:center}
+@media print{body{background:#fff}.brief-card{box-shadow:none}}
+</style></head><body><div class="brief-card">
+<div class="brief-header"><div class="logo">ChasingBetter247 — Action Brief</div><h1>${title}</h1></div>
+<div class="banner">Generated client-side from the Prioritised Action List · approvals + status sync via the dashboard modal</div>
+<div class="meta-row">
+<span class="meta-chip" style="background:${badge.bg};color:${badge.fg}">${catLabel}</span>
+<span class="meta-chip" style="background:${CB247_TEAL_MIST};color:${CB247_TEAL_DEEP}">${owner}${role ? ' · ' + role : ''}</span>
+<span class="meta-chip" style="background:${prioColor};color:#fff">${priority}</span>
+${effort ? `<span class="meta-chip" style="background:#f3f4f6;color:#374151">Effort: ${effort}h</span>` : ''}
+</div>
+<div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
+<div class="section"><div class="label">Primary Projected KPI</div><div class="caption-box">${captionHTML}</div></div>
+${allKpisHTML}
+<div class="section"><div class="label">Source Page · Action ID</div><span class="src">${esc(source || '–')}</span><code style="background:#f3f4f6;padding:3px 8px;border-radius:3px;font-size:11px;color:#6b7280;margin-left:8px">${aid}</code></div>
+${promoBlock}
+<div class="footer">CB247 Marketing OS · Action Brief · Generated ${today}</div>
+</div></body></html>`;
+}
+
 window.openPlannerModal = (id) => {
   const item = _findWorkItem(id);   // matches both content + action items
   if(!item) return;
@@ -17442,13 +17561,38 @@ window.openPlannerModal = (id) => {
   notes.value = apprData.notes||'';
   notesWrap.style.display = (apprData.status==='adjustment'||apprData.status==='rejected') ? 'block' : 'none';
 
-  // Brief link — points to docs/briefs/[id].html
+  // Brief link — points to docs/briefs/[id].html for Python-emitter actions.
   // (Restore display in case MWCC's openMwccPlannerModal hid it last open)
   const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
   const _bl = $('modal-brief-link');
-  _bl.href = `${baseUrl}/briefs/${id}.html`;
   _bl.style.display = '';
   _bl.textContent = 'View Brief';
+  _bl.target = '_blank';
+  // Clear any prior onclick from previous open (prop-* items set one)
+  _bl.onclick = null;
+
+  // Wave 2.7 fix (10 Jun 2026): prop-* IDs come from openProposedActionModal
+  // (the Prioritised Action List View Details button). They don't have a
+  // pre-baked file in docs/briefs/ — they're generated client-side. Build
+  // the brief HTML inline and open via blob URL so the link works without
+  // requiring a server-side rebuild for every dynamic action.
+  if (typeof id === 'string' && id.startsWith('prop-')) {
+    _bl.href = '#';
+    _bl.onclick = (e) => {
+      e.preventDefault();
+      const row = (window.cbState?.workQueue?._items || []).find(x => x.id === id)
+                || (window._localProposedActions && window._localProposedActions[id]);
+      if (!row) {
+        alert('Could not find action data to build brief. Try closing + reopening this popup.');
+        return;
+      }
+      const html = _renderProposedActionBriefHTML(row);
+      const blob = new Blob([html], { type: 'text/html' });
+      window.open(URL.createObjectURL(blob), '_blank');
+    };
+  } else {
+    _bl.href = `${baseUrl}/briefs/${id}.html`;
+  }
 
   // Draft link — show prominent button if item has a draftLink
   const draftLinkEl = document.getElementById('modal-draft-link-wrap');
