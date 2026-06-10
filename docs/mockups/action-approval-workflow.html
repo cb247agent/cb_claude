@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mockup: Action Approval Workflow · CB247</title>
+<style>
+  :root {
+    --teal: #3FA69A;
+    --teal-deep: #2d7d72;
+    --teal-mist: #f3faf9;
+    --teal-pale: #e8f5f4;
+    --text: #1a1a1a;
+    --text-2: #4b5563;
+    --muted: #6b7280;
+    --gray-0: #f9fafb;
+    --gray-1: #f3f4f6;
+    --gray-2: #e5e7eb;
+    --gray-3: #d1d5db;
+    --risk: #dc2626;
+    --warn: #f59e0b;
+    --ok: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    background: var(--gray-0);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  .mockup-banner {
+    background: linear-gradient(135deg, var(--teal-deep), var(--teal));
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: 10px;
+    margin-bottom: 22px;
+  }
+  .mockup-banner-label {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    font-weight: 700; opacity: .85;
+  }
+  .mockup-banner h1 { margin: 4px 0 6px; font-size: 22px; font-weight: 700; }
+  .mockup-banner p { margin: 0; font-size: 12.5px; opacity: .92; line-height: 1.55; }
+
+  .section-title {
+    font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    font-weight: 700; color: var(--muted); margin: 22px 0 10px;
+    border-bottom: 1px solid var(--gray-2); padding-bottom: 6px;
+  }
+
+  .annotation {
+    background: var(--teal-mist);
+    border-left: 3px solid var(--teal);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-bottom: 12px;
+    border-radius: 0 4px 4px 0;
+  }
+  .annotation b { color: var(--teal-deep); }
+  .ann-tag {
+    display: inline-block; background: var(--teal); color: #fff;
+    font-size: 9px; font-weight: 700; padding: 1px 6px;
+    border-radius: 3px; letter-spacing: .06em; margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--gray-2);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .card-h {
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--gray-1);
+    font-size: 13px; font-weight: 700;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--gray-1); vertical-align: top; }
+  th {
+    font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; background: var(--gray-0);
+  }
+  tr:last-child td { border-bottom: none; }
+  td .title {
+    font-weight: 600; font-size: 12.5px; margin-bottom: 4px; line-height: 1.4;
+  }
+  td .why {
+    font-size: 11px; color: var(--muted); line-height: 1.5;
+  }
+  .priority-pill {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 10px; font-weight: 700; color: #fff;
+  }
+  .p1 { background: var(--risk); }
+  .p2 { background: var(--warn); }
+  .p3 { background: var(--muted); }
+  .effort-badge {
+    display: inline-block; font-size: 9px; padding: 2px 6px; border-radius: 3px;
+    color: #fff; font-weight: 700; letter-spacing: .02em;
+  }
+  .e-s { background: var(--ok); }
+  .e-m { background: var(--warn); }
+  .e-l { background: var(--risk); }
+
+  /* The NEW button — this is the key addition */
+  .view-btn {
+    background: #fff;
+    color: var(--teal-deep);
+    border: 1px solid var(--teal);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+    font-family: inherit;
+  }
+  .view-btn:hover { background: var(--teal-pale); }
+  .view-btn::after { content: " →"; }
+
+  /* Modal — mimics existing planner modal style */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 100;
+    align-items: flex-start; justify-content: center;
+    padding: 60px 20px 20px;
+    overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 10px;
+    width: 100%; max-width: 640px;
+    padding: 22px 26px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  }
+  .modal-close {
+    float: right;
+    background: none; border: none; cursor: pointer;
+    font-size: 20px; color: var(--muted); padding: 0;
+    line-height: 1;
+  }
+  .modal h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; }
+  .modal .modal-source {
+    font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--teal-deep); font-weight: 700; margin-bottom: 10px;
+  }
+  .modal .chip-row { margin: 10px 0 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-block;
+    background: var(--gray-1);
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--text-2);
+  }
+  .chip.kpi { background: var(--teal-pale); color: var(--teal-deep); font-weight: 600; }
+  .modal-section-label {
+    font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); font-weight: 700; margin: 14px 0 4px;
+  }
+  .modal-body p { margin: 0 0 8px; font-size: 12.5px; line-height: 1.6; }
+
+  /* Approval pills */
+  .appr-row {
+    margin: 16px 0 8px; padding: 12px 14px;
+    background: var(--gray-0); border-radius: 6px;
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .appr-label { font-size: 11px; font-weight: 700; color: var(--text-2); margin-right: 6px; }
+  .appr-pill {
+    cursor: pointer;
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border: 1.5px solid var(--gray-3);
+    background: #fff;
+    color: var(--text-2);
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .appr-pill:hover { background: var(--gray-1); }
+  .appr-pill.sel-approved {
+    background: var(--ok); border-color: var(--ok); color: #fff;
+  }
+  .appr-pill.sel-adjustment {
+    background: var(--warn); border-color: var(--warn); color: #fff;
+  }
+  .appr-pill.sel-rejected {
+    background: var(--risk); border-color: var(--risk); color: #fff;
+  }
+  .notes-wrap {
+    display: none; margin-top: 12px;
+  }
+  .notes-wrap.show { display: block; }
+  .notes-wrap textarea {
+    width: 100%; min-height: 70px;
+    border: 1px solid var(--gray-2); border-radius: 6px;
+    padding: 8px 10px; font-size: 12px; font-family: inherit;
+    resize: vertical;
+  }
+  .modal-foot {
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--gray-1);
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .save-btn {
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .save-btn:hover { background: var(--teal-deep); }
+  .save-btn:disabled {
+    background: var(--gray-3); cursor: not-allowed;
+  }
+
+  /* Outcome preview */
+  .outcome-card {
+    display: none;
+    margin-top: 14px; padding: 14px 16px;
+    border-radius: 8px; border-left: 4px solid;
+    font-size: 12px;
+  }
+  .outcome-card.show { display: block; }
+  .outcome-card.approved { background: rgba(22,163,74,.08); border-color: var(--ok); }
+  .outcome-card.adjustment { background: rgba(245,158,11,.08); border-color: var(--warn); }
+  .outcome-card.rejected { background: rgba(220,38,38,.08); border-color: var(--risk); }
+  .outcome-card b { font-weight: 700; }
+  .outcome-card .preview {
+    margin-top: 8px; padding: 10px 12px;
+    background: #fff; border-radius: 4px;
+    border: 1px solid var(--gray-2); font-size: 11px;
+  }
+
+  /* Kanban preview */
+  .kanban {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin: 14px 0;
+  }
+  .kan-col {
+    background: var(--gray-0);
+    border: 1px solid var(--gray-2);
+    border-radius: 4px;
+    padding: 8px;
+    min-height: 70px;
+    font-size: 10px;
+  }
+  .kan-col.highlight {
+    background: var(--teal-mist);
+    border-color: var(--teal);
+    border-width: 2px;
+  }
+  .kan-col-label {
+    font-size: 9px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); font-weight: 700; margin-bottom: 6px;
+  }
+  .kan-col.highlight .kan-col-label { color: var(--teal-deep); }
+  .kan-arrow {
+    text-align: center; color: var(--gray-3);
+    align-self: center; padding: 4px 0;
+  }
+  .kan-card {
+    background: #fff;
+    border: 1px solid var(--gray-2);
+    border-radius: 3px;
+    padding: 6px 8px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .kan-card.example {
+    background: var(--teal-pale);
+    border-color: var(--teal);
+    color: var(--teal-deep);
+  }
+
+  .legend {
+    background: #fff;
+    border: 1px solid var(--gray-2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 18px;
+    font-size: 11.5px;
+  }
+  .legend ul { margin: 6px 0 0; padding-left: 18px; }
+  .legend li { margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="mockup-banner">
+    <div class="mockup-banner-label">Interactive Mockup · Not Live</div>
+    <h1>Action Approval Workflow</h1>
+    <p>
+      Click "View Details" on any row → review in popup → mark as Approved / Adjusted / Rejected → see where it ends up.
+      All data on this page is for demonstration only — nothing here writes to Supabase or the live dashboard.
+    </p>
+  </div>
+
+  <!-- ANNOTATION 1: The page-level action list -->
+  <div class="annotation">
+    <span class="ann-tag">1</span>
+    <b>What you see now:</b> the existing "Next 2 Weeks — Prioritised Action List" you already have on every page
+    (Membership, Google Ads, Org Social, SEO, Meta Ads, GBP). <b>The only change:</b> a small "View Details" button
+    is added at the end of each row.
+  </div>
+
+  <div class="section-title">Example · Organic Social Page — Next 2 Weeks Prioritised Action List</div>
+
+  <div class="card">
+    <div class="card-h">Next 2 Weeks — Prioritised Action List <span style="font-weight:400;color:var(--muted);font-size:11px">· 30 May 2026 → 5 Jun 2026</span></div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:24px">#</th>
+          <th>Action</th>
+          <th>Owner</th>
+          <th style="width:60px">Priority</th>
+          <th style="width:50px">Effort</th>
+          <th style="width:120px"></th>
+        </tr>
+      </thead>
+      <tbody id="action-table-body">
+        <!-- Rows injected by JS -->
+      </tbody>
+    </table>
+    <p style="font-size:10px;color:var(--muted);padding:10px 16px 8px;margin:0">
+      Auto-generated from this week's data. Click "View Details" to review and decide in Monday meeting.
+    </p>
+  </div>
+
+  <!-- ANNOTATION 2: The popup -->
+  <div class="annotation">
+    <span class="ann-tag">2</span>
+    <b>When you click View Details:</b> the existing planner popup opens, pre-filled with the action's title,
+    description, owner, effort, and projected KPI. <b>The approval pills (Approved / Adjusted / Rejected) already exist</b>
+    in the modal — we'd just wire them to action items from page lists, not just Work Queue items.
+  </div>
+
+  <!-- ANNOTATION 3: After approval -->
+  <div class="annotation">
+    <span class="ann-tag">3</span>
+    <b>What happens after you click a pill:</b>
+    <ul style="margin:6px 0 0;padding-left:18px;font-size:11.5px">
+      <li><b>Approved</b> → action enters Work Queue with stage <b>In Progress</b>, owner notified, appears on calendar at due date</li>
+      <li><b>Adjusted</b> → action goes to Work Queue at stage <b>Idea</b> with your meeting notes attached for editing</li>
+      <li><b>Rejected</b> → action archived (hidden by default, recoverable via "Show rejected" toggle)</li>
+    </ul>
+  </div>
+
+  <div class="section-title">Kanban — Where Approved Actions Land</div>
+
+  <div class="annotation" style="background:var(--gray-0);border-left-color:var(--gray-3)">
+    <b>Proposed stage (new):</b> All actions emitted this week land here first — awaiting Monday review. After your decision,
+    they move to <b>In Progress</b> (approved), stay in <b>Proposed</b> with notes (adjusted), or go to <b>Rejected</b>.
+  </div>
+
+  <div class="kanban">
+    <div class="kan-col highlight">
+      <div class="kan-col-label">Proposed</div>
+      <div class="kan-card example">Batch-film 4-6 reels</div>
+      <div class="kan-card">Stories: lift to 80/wk</div>
+      <div class="kan-card">A/B reel hooks</div>
+    </div>
+    <div class="kan-col">
+      <div class="kan-col-label">In Progress</div>
+      <div class="kan-card">FIFO Gym blog</div>
+    </div>
+    <div class="kan-col">
+      <div class="kan-col-label">Angela QC</div>
+      <div class="kan-card">Winter promo email</div>
+    </div>
+    <div class="kan-col">
+      <div class="kan-col-label">Denver Approval</div>
+    </div>
+    <div class="kan-col">
+      <div class="kan-col-label">Scheduled</div>
+      <div class="kan-card">Sauna ice bath reel</div>
+    </div>
+    <div class="kan-col">
+      <div class="kan-col-label">Published</div>
+      <div class="kan-card">Thursday Thirsty</div>
+    </div>
+    <div class="kan-col" style="background:#fef2f2;border-color:#fecaca">
+      <div class="kan-col-label" style="color:#991b1b">Rejected · hidden</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <b style="color:var(--teal-deep)">Existing flow stays unchanged:</b>
+    <ul>
+      <li><b>In Progress</b> → Angela QC → Denver Approval → Scheduled → Published</li>
+      <li>Status changes already sync to Supabase and update the calendar view</li>
+      <li>Approval pills already exist — we'd just expose them to page-level actions</li>
+    </ul>
+  </div>
+
+  <div class="section-title">Example · After Monday Meeting (filter view)</div>
+
+  <div class="annotation">
+    <b>On Tuesday morning:</b> the team opens the Work Queue page. Default filter is <b>"Approved &amp; In Progress"</b>.
+    They see only what was agreed in the meeting — no clutter. The Proposed column is hidden until next Friday when fresh
+    recommendations land.
+  </div>
+
+  <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:30px">
+    Try clicking <b>View Details</b> on any action above to see the full flow.<br>
+    This is a static mockup. Real changes will sync to Supabase + dashboard when built.
+  </p>
+
+</div>
+
+<!-- ── MODAL ──────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-source" id="modal-source"></div>
+    <h2 id="modal-title">Action title</h2>
+    <div class="chip-row" id="modal-chips"></div>
+
+    <div class="modal-section-label">Why this matters</div>
+    <div class="modal-body">
+      <p id="modal-why">Why this matters description.</p>
+    </div>
+
+    <div class="modal-section-label">Expected impact</div>
+    <div class="modal-body">
+      <p id="modal-impact">Expected impact description.</p>
+    </div>
+
+    <!-- THE APPROVAL ROW — already exists in production -->
+    <div class="appr-row">
+      <span class="appr-label">Meeting decision:</span>
+      <button class="appr-pill" id="appr-approved" onclick="setDecision('approved')">Approved</button>
+      <button class="appr-pill" id="appr-adjustment" onclick="setDecision('adjustment')">Adjusted</button>
+      <button class="appr-pill" id="appr-rejected" onclick="setDecision('rejected')">Rejected</button>
+    </div>
+
+    <div class="notes-wrap" id="notes-wrap">
+      <div class="modal-section-label" style="margin-top:6px">Meeting notes (optional)</div>
+      <textarea id="notes" placeholder="e.g. 'Push to next week — Tia on leave Mon-Wed'"></textarea>
+    </div>
+
+    <!-- Outcome preview cards — appear after a decision is chosen -->
+    <div class="outcome-card approved" id="out-approved">
+      <b>✓ Approved.</b> When you click <b>Save</b>:
+      <div class="preview">
+        → Action enters <b>Work Queue</b> as <b>In Progress</b><br>
+        → Assigned to: <span id="out-owner-1">(owner)</span><br>
+        → Appears on calendar at due date<br>
+        → Owner gets notified (if we wire email/Slack)
+      </div>
+    </div>
+    <div class="outcome-card adjustment" id="out-adjustment">
+      <b>↻ Adjusted.</b> When you click <b>Save</b>:
+      <div class="preview">
+        → Action moves to Work Queue as <b>Idea</b> with your notes attached<br>
+        → Editable in the Work Queue popup before promotion<br>
+        → Owner: <span id="out-owner-2">(owner)</span> — they'll see the notes and revised brief
+      </div>
+    </div>
+    <div class="outcome-card rejected" id="out-rejected">
+      <b>✗ Rejected.</b> When you click <b>Save</b>:
+      <div class="preview">
+        → Action hidden from default views, logged in Rejected bucket<br>
+        → Recoverable via "Show rejected" filter on Work Queue page<br>
+        → Won't re-appear next week unless the underlying condition reverts
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <span style="font-size:10.5px;color:var(--muted)">All decisions sync to Supabase. Visible to whole team.</span>
+      <button class="save-btn" id="save-btn" disabled onclick="saveAndClose()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Example actions — pulled from real CB247 organic social action list this week
+const ACTIONS = [
+  {
+    id: 'a1',
+    source: 'organic-social',
+    priority: 'P1',
+    effort: 'M',
+    title: 'Batch-film 4–6 original branded reels (Sunday session)',
+    why: 'All top 5 reels this week were reposts — zero original CB247 branded content. One Sunday session = 4–6 reels: sauna · ice bath · class moment · member story · facility walkthrough. Lead each with bold on-screen text within 0.5 sec.',
+    owner: 'Content (Tia + Brand Manager)',
+    impact: 'Fixes the "0 originals" gap. Each branded reel that beats the 15s watch threshold gets 3–5× the distribution of reposts.',
+    kpi: 'Lift Reel avg watch time 6 → 15 sec (14d)',
+  },
+  {
+    id: 'a2',
+    source: 'organic-social',
+    priority: 'P2',
+    effort: 'S',
+    title: 'Stories: lift to 80–90/week (currently 56)',
+    why: 'Stories delivered 48,270 impressions (-28% WoW) — but still dominant format by reach. Keep under 7 frames per arc. Use for time-sensitive offers, class reminders, behind-the-scenes.',
+    owner: 'Content',
+    impact: 'Direct +20–30% story impressions if cadence sustained. Highest-reach format with lowest production cost.',
+    kpi: 'Lift Stories/week 56 → 85 (7d)',
+  },
+  {
+    id: 'a3',
+    source: 'organic-social',
+    priority: 'P3',
+    effort: 'S',
+    title: 'Stop Facebook organic — drop to 1–2 posts/week',
+    why: 'Only 202 interactions from 111,710 impressions this week. CB247 5.3K followers vs Revo 49.6K (9.4× gap). Organic FB cannot close this. Keep 1–2 posts/week for GBP/SEO signal only.',
+    owner: 'Content',
+    impact: 'Frees ~2 hours/week of production time. No measurable downside (FB organic already near-zero engagement).',
+    kpi: 'Reduce FB posts/wk 63 → 8 (7d)',
+  },
+  {
+    id: 'a4',
+    source: 'organic-social',
+    priority: 'P2',
+    effort: 'M',
+    title: 'A/B test reel hooks — 2 variants per topic',
+    why: 'Watch time 4–8s (benchmark 15s+). Hooks aren\'t stopping the scroll. Film 2 versions per topic: (A) bold text overlay in 0–0.5s · (B) action-frame opener. Run both, kill the loser after 48h.',
+    owner: 'Content',
+    impact: 'Doubling watch time from 8s → 15s+ historically triples Reach via Instagram\'s distribution algorithm.',
+    kpi: 'Lift Reel reach 1,558 → 3,500 avg (14d)',
+  },
+];
+
+// Render the action table
+const tbody = document.getElementById('action-table-body');
+ACTIONS.forEach((a, i) => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="font-weight:700;color:var(--teal-deep)">${i + 1}</td>
+    <td>
+      <div class="title">${a.title}</div>
+      <div class="why">${a.why}</div>
+    </td>
+    <td style="font-size:11px">${a.owner}</td>
+    <td><span class="priority-pill p${a.priority.slice(1)}">${a.priority}</span></td>
+    <td><span class="effort-badge e-${a.effort.toLowerCase()}">${a.effort}</span></td>
+    <td>
+      <button class="view-btn" onclick="openModal('${a.id}')">View Details</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// Modal handlers
+let currentAction = null;
+let currentDecision = null;
+
+function openModal(id) {
+  const a = ACTIONS.find(x => x.id === id);
+  if (!a) return;
+  currentAction = a;
+  currentDecision = null;
+
+  document.getElementById('modal-source').textContent = a.source + ' · ' + a.priority;
+  document.getElementById('modal-title').textContent = a.title;
+  document.getElementById('modal-chips').innerHTML = `
+    <span class="chip">${a.owner}</span>
+    <span class="chip">Effort: ${a.effort}</span>
+    <span class="chip kpi">${a.kpi}</span>
+  `;
+  document.getElementById('modal-why').textContent = a.why;
+  document.getElementById('modal-impact').textContent = a.impact;
+  document.getElementById('out-owner-1').textContent = a.owner;
+  document.getElementById('out-owner-2').textContent = a.owner;
+
+  // Reset state
+  ['approved','adjustment','rejected'].forEach(v => {
+    document.getElementById('appr-'+v).className = 'appr-pill';
+    document.getElementById('out-'+v).classList.remove('show');
+  });
+  document.getElementById('notes-wrap').classList.remove('show');
+  document.getElementById('notes').value = '';
+  document.getElementById('save-btn').disabled = true;
+
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function setDecision(d) {
+  currentDecision = d;
+  // Reset all pills
+  ['approved','adjustment','rejected'].forEach(v => {
+    document.getElementById('appr-'+v).className = 'appr-pill';
+    document.getElementById('out-'+v).classList.remove('show');
+  });
+  // Select clicked pill
+  document.getElementById('appr-'+d).className = 'appr-pill sel-'+d;
+  // Show outcome preview
+  document.getElementById('out-'+d).classList.add('show');
+  // Show notes for adjustment/rejected
+  const notesWrap = document.getElementById('notes-wrap');
+  if (d === 'adjustment' || d === 'rejected') {
+    notesWrap.classList.add('show');
+  } else {
+    notesWrap.classList.remove('show');
+  }
+  // Enable save
+  document.getElementById('save-btn').disabled = false;
+}
+
+function saveAndClose() {
+  const notes = document.getElementById('notes').value;
+  const msg = `[Mockup only — no real save]\n\n` +
+    `Action: ${currentAction.title}\n` +
+    `Decision: ${currentDecision.toUpperCase()}\n` +
+    (notes ? `Notes: ${notes}\n` : '') +
+    `\nIn production, this would:\n` +
+    (currentDecision === 'approved'
+      ? `→ Insert into Supabase work_queue_actions with stage='In Progress'\n→ Appear on Work Queue + calendar`
+      : currentDecision === 'adjustment'
+        ? `→ Insert into Supabase work_queue_actions with stage='Idea' + notes\n→ Appear on Work Queue for editing`
+        : `→ Archive to Rejected bucket with reason\n→ Hidden from default views`);
+  alert(msg);
+  closeModal();
+}
+</script>
+
+</body>
+</html>
