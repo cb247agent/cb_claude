@@ -13294,7 +13294,7 @@ window.cbState = {
     flush();
 
     if (!_supa) { lines.push('FAIL — client not initialised'); flush(); return; }
-    const ins = await _supa.from('planner_status').insert({ item_id: itemId, status: 'Idea', updated_by: me }).select();
+    const ins = await _supa.from('planner_status').insert({ item_id: itemId, status: 'Proposed', updated_by: me }).select();
     if (ins.error) { lines.push(`FAIL on insert: ${ins.error.message}`); flush(); return; }
     lines.push(`  insert OK — item_id=${itemId}`); flush();
 
@@ -13331,7 +13331,7 @@ window.cbState = {
     ch.subscribe(async (status) => {
       if (status !== 'SUBSCRIBED') return;
       lines.push(`  subscription active — sending test insert...`); flush();
-      await _supa.from('planner_status').insert({ item_id: id, status: 'Idea', updated_by: me });
+      await _supa.from('planner_status').insert({ item_id: id, status: 'Proposed', updated_by: me });
 
       setTimeout(async () => {
         if (!received) {
@@ -16926,7 +16926,7 @@ const MWCC_PLANNER_APPROVAL_KEY = 'mwcc-planner-approval';
 // 08 Jun 2026: Tracks which queue ('cb247' | 'mwcc') the current modal item came from
 // so shared handlers (cycleFromModal, saveModalAndClose, setModalApproval) can branch.
 let _modalQueue = 'cb247';
-const PLANNER_STATUSES = ['Idea','Scheduled','Published'];
+const PLANNER_STATUSES = ['Proposed','Scheduled','Published'];
 const PLANNER_STATUS_COLORS = {Idea:'#f3f4f6',Scheduled:'rgba(63,166,154,.1)',Published:'rgba(63,166,154,.15)'};
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -17017,7 +17017,7 @@ window.openPlannerModal = (id) => {
 
   const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
   const approval = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY)||'{}');
-  const status = saved[id]||'Idea';
+  const status = saved[id]||'Proposed';
   const apprData = approval[id]||{};
 
   // Platform tag
@@ -17219,14 +17219,16 @@ window.setModalApproval = (val) => {
   const SKEY  = _statusKey();
   const AKEY  = _approvalKey();
   const saved = JSON.parse(localStorage.getItem(SKEY)||'{}');
-  const curr = saved[_modalItemId]||'Idea';
+  const curr = saved[_modalItemId]||'Proposed';
   let newStatus = curr;
   if(val==='approved') {
     const idx = KCOLS.findIndex(c=>c.key===curr);
     const lastIdx = KCOLS.length - 1;
     newStatus = KCOLS[Math.min(idx+1, lastIdx)].key;
   } else if(val==='rejected') {
-    newStatus = 'Idea';
+    // Rejected sends the card back to Proposed for re-discussion next Monday
+    // (true "Rejected" state is tracked via planner_approval.decision, not status)
+    newStatus = 'Proposed';
   }
   if(newStatus !== curr) {
     // CB247 writes through Supabase via cbState.planner; MWCC stays
@@ -17272,7 +17274,7 @@ window.cycleFromModal = () => {
   const KCOLS = _kanbanCols();
   const SKEY  = _statusKey();
   const saved = JSON.parse(localStorage.getItem(SKEY)||'{}');
-  const curr = saved[_modalItemId]||'Idea';
+  const curr = saved[_modalItemId]||'Proposed';
   const idx = KCOLS.findIndex(c=>c.key===curr);
   const next = KCOLS[(idx+1)%KCOLS.length].key;
   if (_modalQueue === 'cb247' && window.cbState?.planner) {
@@ -17351,24 +17353,60 @@ function assigneeBadge(a) {
 }
 
 // ── KANBAN STATUS CONFIG ──────────────────────────────────────────────────────
+// New 5-stage kanban (updated 10 Jun 2026 per Tia):
+//   Proposed → In Progress → Brand Manager QC → Scheduled → Published
+// + Rejected (hidden by default, see _showRejected toggle in renderPlanner)
+// Approval (Denver + team) happens at Proposed via the View Details popup,
+// so there's no longer a separate "Denver Approval" stage between QC and Scheduled.
+// 'Idea' was renamed to 'Proposed' to reflect that cards arrive there from
+// emitters and await Monday meeting review rather than being loose backlog.
 const KANBAN_COLS = [
-  {key:'Idea',            label:'Idea',            color:'#f9fafb', border:'#d1d5db'},
-  {key:'In Progress',     label:'In Progress',     color:'#f9fafb', border:'#3FA69A'},
-  {key:'Angela QC',       label:'Angela QC',       color:'#f9fafb', border:'#1a1a1a'},
-  {key:'Denver Approval', label:'Denver Approval', color:'#f9fafb', border:'#7c2d12'},
-  {key:'Scheduled',       label:'Scheduled',       color:'#f9fafb', border:'#3FA69A'},
-  {key:'Published',       label:'Published',       color:'rgba(63,166,154,.06)', border:'#3FA69A'},
+  {key:'Proposed',         label:'Proposed',         color:'#f9fafb', border:'#d1d5db'},
+  {key:'In Progress',      label:'In Progress',      color:'#f9fafb', border:'#3FA69A'},
+  {key:'Brand Manager QC', label:'Brand Manager QC', color:'#f9fafb', border:'#1a1a1a'},
+  {key:'Scheduled',        label:'Scheduled',        color:'#f9fafb', border:'#3FA69A'},
+  {key:'Published',        label:'Published',        color:'rgba(63,166,154,.06)', border:'#3FA69A'},
 ];
-// MWCC mirror — same shape but with "Kelley QC" brand-gate (MWCC Manager, not Angela)
-// and purple accent border instead of teal.
+// MWCC mirror — same 5-stage shape but with MWCC purple accents.
+// MWCC's brand-gate role is also "Brand Manager QC" (was Kelley QC).
 const MWCC_KANBAN_COLS = [
-  {key:'Idea',            label:'Idea',            color:'#f9fafb', border:'#d1d5db'},
-  {key:'In Progress',     label:'In Progress',     color:'#f9fafb', border:'#8b6fd9'},
-  {key:'Kelley QC',       label:'Kelley QC',       color:'#f9fafb', border:'#1a1a1a'},
-  {key:'Denver Approval', label:'Denver Approval', color:'#f9fafb', border:'#7c2d12'},
-  {key:'Scheduled',       label:'Scheduled',       color:'#f9fafb', border:'#8b6fd9'},
-  {key:'Published',       label:'Published',       color:'rgba(139,111,217,.08)', border:'#8b6fd9'},
+  {key:'Proposed',         label:'Proposed',         color:'#f9fafb', border:'#d1d5db'},
+  {key:'In Progress',      label:'In Progress',      color:'#f9fafb', border:'#8b6fd9'},
+  {key:'Brand Manager QC', label:'Brand Manager QC', color:'#f9fafb', border:'#1a1a1a'},
+  {key:'Scheduled',        label:'Scheduled',        color:'#f9fafb', border:'#8b6fd9'},
+  {key:'Published',        label:'Published',        color:'rgba(139,111,217,.08)', border:'#8b6fd9'},
 ];
+
+// One-time client-side migration of cached localStorage values.
+// Any team member whose browser cached old stage names ('Idea', 'Denver
+// Approval', 'Angela QC', 'Kelley QC') gets them auto-converted on next
+// page load. Runs once per browser, then sets a flag.
+(function _migrateLocalKanbanStages(){
+  const FLAG_KEY = 'cb247-kanban-migration-2026-06-10';
+  if (localStorage.getItem(FLAG_KEY)) return;  // already migrated this browser
+  const STAGE_RENAME = {
+    'Idea':            'Proposed',
+    'Denver Approval': 'Brand Manager QC',  // collapse Denver Approval into QC
+    'Angela QC':       'Brand Manager QC',
+    'Kelley QC':       'Brand Manager QC',
+  };
+  ['cb247-planner-status','mwcc-planner-status'].forEach(key => {
+    let dirty = false;
+    let data;
+    try { data = JSON.parse(localStorage.getItem(key) || '{}'); }
+    catch { return; }
+    Object.keys(data).forEach(id => {
+      const old = data[id];
+      if (STAGE_RENAME[old]) {
+        data[id] = STAGE_RENAME[old];
+        dirty = true;
+      }
+    });
+    if (dirty) localStorage.setItem(key, JSON.stringify(data));
+  });
+  localStorage.setItem(FLAG_KEY, new Date().toISOString());
+  console.log('[migration] kanban stages migrated to 5-stage flow');
+})();
 // Helper to pick the right kanban for the current modal context
 const _kanbanCols = () => _modalQueue === 'mwcc' ? MWCC_KANBAN_COLS : KANBAN_COLS;
 const _statusKey  = () => _modalQueue === 'mwcc' ? MWCC_PLANNER_STATUS_KEY : PLANNER_STATUS_KEY;
@@ -17384,17 +17422,20 @@ function renderPlanner() {
   // Work Queue = content items + operational actions, both in the same flow.
   // (Published / Done items will move to Performance Review — handled below.)
   const ALL_ITEMS    = _getAllWorkItems();
-  const ACTIVE_ITEMS = ALL_ITEMS.filter(i => (saved[i.id]||'Idea') !== 'Published');
+  const ACTIVE_ITEMS = ALL_ITEMS.filter(i => (saved[i.id]||'Proposed') !== 'Published');
 
   // ── Status counts for KPI bar ────────────────────────────────────────────
   const counts = {};
   KANBAN_COLS.forEach(c => counts[c.key] = 0);
   ALL_ITEMS.forEach(item => {
-    const s = saved[item.id] || 'Idea';
+    const s = saved[item.id] || 'Proposed';
     counts[s] = (counts[s]||0) + 1;
   });
-  const pendingAngelaQC = counts['Angela QC'] || 0;
-  const pendingDenver   = counts['Denver Approval'] || 0;
+  // Old 'Angela QC' and 'Denver Approval' keys may still appear in cached
+  // localStorage — the migration block in <script> at the top maps them to
+  // 'Brand Manager QC'. We also sum legacy keys here defensively.
+  const pendingBrandQC  = (counts['Brand Manager QC'] || 0) + (counts['Angela QC'] || 0) + (counts['Kelley QC'] || 0) + (counts['Denver Approval'] || 0);
+  const inProgress      = counts['In Progress'] || 0;
   const scheduled       = counts['Scheduled'] || 0;
   const published       = counts['Published'] || 0;
   const contentCount    = ACTIVE_ITEMS.filter(i => i.kind === 'content').length;
@@ -17406,11 +17447,13 @@ function renderPlanner() {
   // Page intro removed — static <p> in page-header (around line 6580) already
   // describes the page. The Total Items KPI card below shows the live count.
 
+  const proposed        = counts['Proposed'] || 0;
+
   // ── KPI bar ────────────────────────────────────────────────────────────
   html += `<div class="kpi-grid cols-5 mb">
     ${kpiCard('','Total Items', totalItems, null, 'In this 2-week plan')}
-    ${kpiCard('','Pending Angela QC', pendingAngelaQC, null, 'Waiting for brand QC', pendingAngelaQC>0?'amber':'')}
-    ${kpiCard('','Pending Denver', pendingDenver, null, 'Waiting for COO sign-off', pendingDenver>0?'amber':'')}
+    ${kpiCard('','Proposed', proposed, null, 'Awaiting Monday meeting review', proposed>0?'amber':'')}
+    ${kpiCard('','Pending Brand QC', pendingBrandQC, null, 'Waiting for Brand Manager check', pendingBrandQC>0?'amber':'')}
     ${kpiCard('','Scheduled', scheduled, null, 'Approved + in scheduler', scheduled>0?'green':'')}
     ${kpiCard('','Published', published, null, 'Live this cycle', published>0?'green':'')}
   </div>`;
@@ -17418,27 +17461,26 @@ function renderPlanner() {
   // ── Approval flow reminder ───────────────────────────────────────────────
   html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:11px;color:var(--text-2)">
     <span style="font-weight:700;color:var(--brand-accent-deep)">Approval flow:</span>
-    <span>AI / team drafts</span><span style="color:var(--muted)">→</span>
-    <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
-    In Progress<span style="color:var(--muted)">→</span>
-    <b>Angela QC</b> (brand)<span style="color:var(--muted)">→</span>
-    <b>Denver</b> sign-off<span style="color:var(--muted)">→</span>
-    <b>Joanne</b> schedules social · <b>Mark</b> publishes Webflow · <b>Tia</b> posts GBP
+    <b>Proposed</b> (emitters)<span style="color:var(--muted)">→</span>
+    Brand Manager + team review at Monday meeting<span style="color:var(--muted)">→</span>
+    <b>In Progress</b> (approved)<span style="color:var(--muted)">→</span>
+    <b>Brand Manager QC</b><span style="color:var(--muted)">→</span>
+    <b>Scheduled</b><span style="color:var(--muted)">→</span>
+    <b>Published</b>
   </div>`;
 
   // ── v2: Stage legend ──────────────────────────────────────────────────
   html += `<div class="wq-legend">
-    <div class="wq-legend-item"><span class="wq-legend-swatch s-idea"></span>Idea (needs Tia review)</div>
-    <div class="wq-legend-item"><span class="wq-legend-swatch s-inprog"></span>In Progress</div>
-    <div class="wq-legend-item"><span class="wq-legend-swatch s-angela"></span>Angela QC (brand)</div>
-    <div class="wq-legend-item"><span class="wq-legend-swatch s-denver"></span>Denver Approval</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-idea"></span>Proposed (awaiting Monday review)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-inprog"></span>In Progress (approved)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-angela"></span>Brand Manager QC</div>
     <div class="wq-legend-item"><span class="wq-legend-swatch s-sched"></span>Scheduled (ready)</div>
     <div class="wq-legend-item"><span class="wq-legend-swatch s-pub"></span>Published</div>
   </div>`;
 
   // ── v2: Filter strip ──────────────────────────────────────────────────
   const _filter = window._planFilter || 'all';
-  const _stageCount = (key) => ALL_ITEMS.filter(i => (saved[i.id]||'Idea') === key).length;
+  const _stageCount = (key) => ALL_ITEMS.filter(i => (saved[i.id]||'Proposed') === key).length;
   const _btn = (key, label, count) => {
     const isActive = _filter === key;
     return `<button class="wq-filter-btn ${isActive?'active':''}" onclick="setPlanFilter('${key}')">${label}<span class="count">${count}</span></button>`;
@@ -17446,23 +17488,28 @@ function renderPlanner() {
   html += `<div class="wq-filter">
     <span class="wq-filter-label">Show:</span>
     ${_btn('all',     'All',          ALL_ITEMS.length)}
-    ${_btn('Idea',    'Idea',         _stageCount('Idea'))}
+    ${_btn('Proposed','Proposed',     _stageCount('Proposed'))}
     ${_btn('In Progress','In Progress',_stageCount('In Progress'))}
-    ${_btn('Angela QC','Angela QC',    _stageCount('Angela QC'))}
-    ${_btn('Denver Approval','Denver', _stageCount('Denver Approval'))}
+    ${_btn('Brand Manager QC','Brand QC', _stageCount('Brand Manager QC'))}
     ${_btn('Scheduled','Scheduled',    _stageCount('Scheduled'))}
     ${_btn('Published','Published',    _stageCount('Published'))}
   </div>`;
 
   // Helper: map stage label → CSS class
+  // Legacy keys ('Idea', 'Angela QC', 'Kelley QC', 'Denver Approval') map
+  // through migration but keep their old CSS classes for back-compat with
+  // the existing palette swatches.
   const _stageClass = (st) => ({
-    'Idea':'s-idea', 'In Progress':'s-inprog', 'Angela QC':'s-angela',
-    'Denver Approval':'s-denver', 'Scheduled':'s-sched', 'Published':'s-pub'
+    'Proposed':'s-idea', 'Idea':'s-idea',
+    'In Progress':'s-inprog',
+    'Brand Manager QC':'s-angela', 'Angela QC':'s-angela', 'Kelley QC':'s-angela', 'Denver Approval':'s-angela',
+    'Scheduled':'s-sched',
+    'Published':'s-pub'
   })[st] || 's-idea';
 
   // Helper: render one stage-coloured card (used by calendar + backlog)
   const _renderWqCard = (item) => {
-    const st = saved[item.id] || 'Idea';
+    const st = saved[item.id] || 'Proposed';
     if (_filter !== 'all' && _filter !== st) return '';   // filter hides
     const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
     const stLabel = st === 'Published' ? '✓ PUBLISHED' : st.toUpperCase();
@@ -17627,7 +17674,7 @@ window.setPlanFilter = (stage) => {
 // Advance a planner item to next status without opening modal
 window.advanceStatus = (id) => {
   const saved = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
-  const curr = saved[id] || 'Idea';
+  const curr = saved[id] || 'Proposed';
   const idx = KANBAN_COLS.findIndex(c=>c.key===curr);
   const next = KANBAN_COLS[(idx+1) % KANBAN_COLS.length].key;
   // Phase B: write through cbState (localStorage + Supabase + broadcast)
@@ -21011,7 +21058,7 @@ function renderGroupOverview() {
       // Exclude items marked Published in either local planner
       const savedCb = JSON.parse(localStorage.getItem('cb247-planner-status') || '{}');
       const savedMw = JSON.parse(localStorage.getItem('mwcc-planner-status') || '{}');
-      const st = savedCb[a.id] || savedMw[a.id] || 'Idea';
+      const st = savedCb[a.id] || savedMw[a.id] || 'Proposed';
       return st !== 'Published';
     };
     const active = [...cb247Q, ...mwccQ].filter(_isActive);
@@ -22600,27 +22647,26 @@ function renderMwccContentPlanner() {
       _source:      r,
     };
   });
-  const ACTIVE = ALL.filter(i => (saved[i.id]||'Idea') !== 'Published');
+  const ACTIVE = ALL.filter(i => (saved[i.id]||'Proposed') !== 'Published');
 
-  const MWCC_STAGES = ['Idea','In Progress','Kelley QC','Denver Approval','Scheduled','Published'];
+  // MWCC kanban now mirrors CB247's 5-stage flow (updated 10 Jun 2026)
+  const MWCC_STAGES = ['Proposed','In Progress','Brand Manager QC','Scheduled','Published'];
   const counts = {};
   MWCC_STAGES.forEach(s => counts[s] = 0);
-  ALL.forEach(item => { counts[saved[item.id]||'Idea'] = (counts[saved[item.id]||'Idea']||0) + 1; });
+  ALL.forEach(item => { counts[saved[item.id]||'Proposed'] = (counts[saved[item.id]||'Proposed']||0) + 1; });
 
-  // ── KPI counts (08 Jun 2026 — Tia direction: clone CB247 format 1:1.
-  //    Removed MWCC-specific Data Freshness banner, Executive Verdict block,
-  //    Blocked-items amber insight — none of those exist on CB247's Work Queue,
-  //    so they don't exist here either.)
-  const blockedKelley = counts['Kelley QC'] || 0;
-  const blockedDenver = counts['Denver Approval'] || 0;
+  // Defensive: sum legacy 'Kelley QC' / 'Denver Approval' / 'Idea' so caches
+  // from before the 10 Jun migration still display correctly until refresh.
+  const blockedBrandMW = (counts['Brand Manager QC']||0) + (counts['Kelley QC']||0) + (counts['Denver Approval']||0);
+  const proposedMW     = (counts['Proposed']||0) + (counts['Idea']||0);
 
   let html = '';
 
   // ── KPI bar ──
   html += `<div class="kpi-grid cols-5 mb">
     ${kpiCard('','Total Items', ACTIVE.length, null, 'In this 2-week plan')}
-    ${kpiCard('','Pending Kelley QC', blockedKelley, null, 'Waiting for brand QC', blockedKelley>0?'amber':'')}
-    ${kpiCard('','Pending Denver', blockedDenver, null, 'Waiting for COO sign-off', blockedDenver>0?'amber':'')}
+    ${kpiCard('','Proposed', proposedMW, null, 'Awaiting Monday meeting review', proposedMW>0?'amber':'')}
+    ${kpiCard('','Pending Brand QC', blockedBrandMW, null, 'Waiting for Brand Manager check', blockedBrandMW>0?'amber':'')}
     ${kpiCard('','Scheduled', counts['Scheduled']||0, null, 'Approved + in scheduler', (counts['Scheduled']||0)>0?'green':'')}
     ${kpiCard('','Published', counts['Published']||0, null, 'Live this cycle', (counts['Published']||0)>0?'green':'')}
   </div>`;
@@ -22628,27 +22674,26 @@ function renderMwccContentPlanner() {
   // ── Approval flow (purple, no teal) ──
   html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid var(--mwcc-purple-soft);border-radius:6px;font-size:11px;color:var(--text-2)">
     <span style="font-weight:700;color:var(--brand-accent-deep)">Approval flow:</span>
-    <span>AI / team drafts</span><span style="color:var(--muted)">→</span>
-    <b>Tia</b> reviews<span style="color:var(--muted)">→</span>
-    In Progress<span style="color:var(--muted)">→</span>
-    <b>Kelley QC</b> (brand)<span style="color:var(--muted)">→</span>
-    <b>Denver</b> sign-off<span style="color:var(--muted)">→</span>
-    <b>Joanne</b> schedules Meta · <b>Mark</b> publishes Webflow · <b>Kelley</b> + reception execute frontline
+    <b>Proposed</b> (emitters)<span style="color:var(--muted)">→</span>
+    Brand Manager + team review at Monday meeting<span style="color:var(--muted)">→</span>
+    <b>In Progress</b> (approved)<span style="color:var(--muted)">→</span>
+    <b>Brand Manager QC</b><span style="color:var(--muted)">→</span>
+    <b>Scheduled</b><span style="color:var(--muted)">→</span>
+    <b>Published</b>
   </div>`;
 
   // ── Stage legend ──
   html += `<div class="wq-legend">
-    <div class="wq-legend-item"><span class="wq-legend-swatch s-idea"></span>Idea (needs Tia review)</div>
-    <div class="wq-legend-item"><span class="wq-legend-swatch s-inprog"></span>In Progress</div>
-    <div class="wq-legend-item"><span class="wq-legend-swatch s-angela"></span>Kelley QC (brand)</div>
-    <div class="wq-legend-item"><span class="wq-legend-swatch s-denver"></span>Denver Approval</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-idea"></span>Proposed (awaiting Monday review)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-inprog"></span>In Progress (approved)</div>
+    <div class="wq-legend-item"><span class="wq-legend-swatch s-angela"></span>Brand Manager QC</div>
     <div class="wq-legend-item"><span class="wq-legend-swatch s-sched"></span>Scheduled (ready)</div>
     <div class="wq-legend-item"><span class="wq-legend-swatch s-pub"></span>Published</div>
   </div>`;
 
   // ── Filter strip ──
   const _filter = window._mwccFilter || 'all';
-  const _stageCount = (key) => ALL.filter(i => (saved[i.id]||'Idea') === key).length;
+  const _stageCount = (key) => ALL.filter(i => (saved[i.id]||'Proposed') === key).length;
   const _btn = (key, label, count) => {
     const isActive = _filter === key;
     return `<button class="wq-filter-btn ${isActive?'active':''}" onclick="setMwccFilter('${key}')">${label}<span class="count">${count}</span></button>`;
@@ -22656,18 +22701,21 @@ function renderMwccContentPlanner() {
   html += `<div class="wq-filter">
     <span class="wq-filter-label">Show:</span>
     ${_btn('all',     'All',          ALL.length)}
-    ${_btn('Idea',    'Idea',         _stageCount('Idea'))}
+    ${_btn('Proposed','Proposed',     _stageCount('Proposed'))}
     ${_btn('In Progress','In Progress',_stageCount('In Progress'))}
-    ${_btn('Kelley QC','Kelley QC',    _stageCount('Kelley QC'))}
-    ${_btn('Denver Approval','Denver', _stageCount('Denver Approval'))}
+    ${_btn('Brand Manager QC','Brand QC', _stageCount('Brand Manager QC'))}
     ${_btn('Scheduled','Scheduled',    _stageCount('Scheduled'))}
     ${_btn('Published','Published',    _stageCount('Published'))}
   </div>`;
 
   // Helper: map stage → CSS class (reuse the s-* CSS already in dashboard)
+  // Legacy keys map through migration but keep their old CSS classes.
   const _stageClass = (st) => ({
-    'Idea':'s-idea', 'In Progress':'s-inprog', 'Kelley QC':'s-angela',
-    'Denver Approval':'s-denver', 'Scheduled':'s-sched', 'Published':'s-pub'
+    'Proposed':'s-idea', 'Idea':'s-idea',
+    'In Progress':'s-inprog',
+    'Brand Manager QC':'s-angela', 'Kelley QC':'s-angela', 'Angela QC':'s-angela', 'Denver Approval':'s-angela',
+    'Scheduled':'s-sched',
+    'Published':'s-pub'
   })[st] || 's-idea';
 
   // BUG FIX 08 Jun 2026: was `window.PLAT_CFG || {}` — PLAT_CFG is a top-level
@@ -22676,7 +22724,7 @@ function renderMwccContentPlanner() {
   // _renderWqCard uses PLAT_CFG[item.platform] direct (closure access) and
   // works correctly. Aligned to that pattern.
   const _renderCard = (item) => {
-    const st = saved[item.id] || 'Idea';
+    const st = saved[item.id] || 'Proposed';
     if (_filter !== 'all' && _filter !== st) return '';
     const pc = PLAT_CFG[item.platform] || {bg:'#f3f4f6',color:'#444'};
     const stLabel = st === 'Published' ? '✓ PUBLISHED' : st.toUpperCase();
@@ -22915,7 +22963,7 @@ window.openMwccPlannerModal = (id) => {
 
   // Status pill + cycle button (uses MWCC kanban)
   const saved = JSON.parse(localStorage.getItem(MWCC_PLANNER_STATUS_KEY) || '{}');
-  const status = saved[id] || 'Idea';
+  const status = saved[id] || 'Proposed';
   const sc = PLANNER_STATUS_COLORS[status] || '#f3f4f6';
   $('modal-status-pill').innerHTML = `<span style="background:${sc};border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700">${status}</span>`;
   const _cidx = MWCC_KANBAN_COLS.findIndex(c => c.key === status);
