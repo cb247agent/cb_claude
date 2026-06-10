@@ -21649,7 +21649,73 @@ function renderCb247Membership() {
     </p>
   </div>`;
 
-  // ── 3.5 PROMO TRACKING — current campaign performance ──────────────────
+  // ── 4. Cancellation Reasons (CleverWaiver) ─────────────────────────────
+  if (cw.available && reasonsList.length > 0) {
+    const maxCount = Math.max(...reasonsList.map(([_,v]) => v));
+    html += sectionTitle('Cancellation Reasons — CleverWaiver Survey');
+    html += `<div class="grid-2 mb">
+      <div class="card">
+        <div class="card-h">Top Reasons (all responses)</div>
+        ${reasonsList.map(([reason, count]) => {
+          const pct = Math.round((count/maxCount)*100);
+          return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:3px">
+              <span style="font-size:12px">${reason}</span>
+              <span style="font-size:11px;font-weight:700">${count} <span style="color:var(--muted);font-weight:400">(${Math.round(count/cw.total_responses*100)}%)</span></span>
+            </div>
+            <div style="background:#f0f2f5;border-radius:4px;height:8px;overflow:hidden">
+              <div style="background:#b91c1c;width:${pct}%;height:100%"></div>
+            </div>
+          </div>`;
+        }).join('')}
+        <p style="font-size:10.5px;color:var(--muted);margin-top:8px">Source: ${cw.total_responses} cancellation survey responses · ${period}</p>
+      </div>
+      <div class="card">
+        <div class="card-h">"What would have helped you stay longer?"</div>
+        ${Object.entries(cw.would_have_helped||{}).slice(0,8).map(([item, count]) => `
+          <div class="stat-row">
+            <span class="stat-label">${item}</span>
+            <span class="stat-val">${count}</span>
+          </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 0">No actionable feedback this week (most responses were "Nothing specific" or "N/A").</div>'}
+        <p style="font-size:10.5px;color:var(--muted);margin-top:8px">Filtered: excludes "Nothing specific" and "N/A" responses.</p>
+      </div>
+    </div>`;
+  }
+
+  // ── 5. Add-On Performance ──────────────────────────────────────────────
+  if (ctx.available && ctx.addon_active) {
+    const addons = Object.entries(ctx.addon_active);
+    if (addons.length > 0) {
+      html += sectionTitle('Add-On Performance — Currently Live');
+      html += `<div class="card mb"><table>
+        <thead><tr><th>Add-On</th><th class="num">Malaga</th><th class="num">Ellenbrook</th><th class="num">Combined</th><th style="font-size:10px">Note</th></tr></thead><tbody>
+        ${addons.map(([cat, total]) => {
+          const malC = (ctx.addon_by_club.Malaga||{})[cat] || 0;
+          const ellC = (ctx.addon_by_club.Ellenbrook||{})[cat] || 0;
+          let note = '';
+          if (cat.includes('Recovery')) note = 'Strongest add-on signal — sauna + ice bath bundle';
+          else if (cat.includes('Reformer')) note = 'Premium service · CB247 differentiator';
+          else if (cat.includes('Neon')) note = 'Group fitness add-on';
+          else if (cat.includes('ChasinRX')) note = 'Performance/HYROX add-on';
+          else if (cat.includes('Sauna Only')) note = 'Standalone sauna access';
+          return `<tr>
+            <td style="font-weight:600">${cat}</td>
+            <td class="num">${malC}</td>
+            <td class="num">${ellC}</td>
+            <td class="num"><b>${total}</b></td>
+            <td style="font-size:10.5px;color:var(--muted)">${note}</td>
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+        <p style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">Source: PGM AllContracts where Membership Status = Live. Excludes ended / suspended add-ons.</p>
+      </div>`;
+    }
+  }
+
+  // ── 5.5 PROMO TRACKING — current campaign performance ──────────────────
+  // Position: after Add-On Performance, before Next 2 Weeks action list
+  // (moved 09 Jun 2026 per Tia — flows better after add-ons since both
+  // surface paid-subscription performance).
   // Reads M.promo_tracking (populated by parse_membership_data.py from the
   // PGM AllContracts plan-name field). Each entry: {label, started, active,
   // new_this_week, plan_breakdown}.
@@ -21816,69 +21882,6 @@ function renderCb247Membership() {
         </p>
       </div>`;
     });
-  }
-
-  // ── 4. Cancellation Reasons (CleverWaiver) ─────────────────────────────
-  if (cw.available && reasonsList.length > 0) {
-    const maxCount = Math.max(...reasonsList.map(([_,v]) => v));
-    html += sectionTitle('Cancellation Reasons — CleverWaiver Survey');
-    html += `<div class="grid-2 mb">
-      <div class="card">
-        <div class="card-h">Top Reasons (all responses)</div>
-        ${reasonsList.map(([reason, count]) => {
-          const pct = Math.round((count/maxCount)*100);
-          return `<div style="margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:3px">
-              <span style="font-size:12px">${reason}</span>
-              <span style="font-size:11px;font-weight:700">${count} <span style="color:var(--muted);font-weight:400">(${Math.round(count/cw.total_responses*100)}%)</span></span>
-            </div>
-            <div style="background:#f0f2f5;border-radius:4px;height:8px;overflow:hidden">
-              <div style="background:#b91c1c;width:${pct}%;height:100%"></div>
-            </div>
-          </div>`;
-        }).join('')}
-        <p style="font-size:10.5px;color:var(--muted);margin-top:8px">Source: ${cw.total_responses} cancellation survey responses · ${period}</p>
-      </div>
-      <div class="card">
-        <div class="card-h">"What would have helped you stay longer?"</div>
-        ${Object.entries(cw.would_have_helped||{}).slice(0,8).map(([item, count]) => `
-          <div class="stat-row">
-            <span class="stat-label">${item}</span>
-            <span class="stat-val">${count}</span>
-          </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 0">No actionable feedback this week (most responses were "Nothing specific" or "N/A").</div>'}
-        <p style="font-size:10.5px;color:var(--muted);margin-top:8px">Filtered: excludes "Nothing specific" and "N/A" responses.</p>
-      </div>
-    </div>`;
-  }
-
-  // ── 5. Add-On Performance ──────────────────────────────────────────────
-  if (ctx.available && ctx.addon_active) {
-    const addons = Object.entries(ctx.addon_active);
-    if (addons.length > 0) {
-      html += sectionTitle('Add-On Performance — Currently Live');
-      html += `<div class="card mb"><table>
-        <thead><tr><th>Add-On</th><th class="num">Malaga</th><th class="num">Ellenbrook</th><th class="num">Combined</th><th style="font-size:10px">Note</th></tr></thead><tbody>
-        ${addons.map(([cat, total]) => {
-          const malC = (ctx.addon_by_club.Malaga||{})[cat] || 0;
-          const ellC = (ctx.addon_by_club.Ellenbrook||{})[cat] || 0;
-          let note = '';
-          if (cat.includes('Recovery')) note = 'Strongest add-on signal — sauna + ice bath bundle';
-          else if (cat.includes('Reformer')) note = 'Premium service · CB247 differentiator';
-          else if (cat.includes('Neon')) note = 'Group fitness add-on';
-          else if (cat.includes('ChasinRX')) note = 'Performance/HYROX add-on';
-          else if (cat.includes('Sauna Only')) note = 'Standalone sauna access';
-          return `<tr>
-            <td style="font-weight:600">${cat}</td>
-            <td class="num">${malC}</td>
-            <td class="num">${ellC}</td>
-            <td class="num"><b>${total}</b></td>
-            <td style="font-size:10.5px;color:var(--muted)">${note}</td>
-          </tr>`;
-        }).join('')}
-        </tbody></table>
-        <p style="font-size:10.5px;color:var(--muted);padding:8px 14px 0">Source: PGM AllContracts where Membership Status = Live. Excludes ended / suspended add-ons.</p>
-      </div>`;
-    }
   }
 
   // ── 6. Next 2 Weeks action list ────────────────────────────────────────
