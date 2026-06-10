@@ -17438,6 +17438,7 @@ function _proposedActionId(sourcePage, title) {
 // State for the streamlined modal (Wave 2.8 redesign)
 let _paModalId = null;
 let _paModalDecision = null;
+let _paModalKind = 'action';   // Wave 2.12 — 'action' (operational, skips QC) or 'content' (full QC flow)
 
 window.openProposedActionModal = async (payloadStr) => {
   let payload;
@@ -17610,13 +17611,26 @@ function _refreshPaStageSection(id) {
   stagePill.style.color = sc.fg;
   stagePill.textContent = current;
 
-  // Next stage logic
+  // Wave 2.12 (10 Jun 2026): Two-track kanban flow.
+  //   Content (kind='content'): Proposed → In Progress → Brand Manager QC → Scheduled → Published
+  //   Action  (kind='action'):  Proposed → In Progress → Published            (skips QC + Scheduled)
+  // Brand Manager QC only matters for content — operational fixes (Google Ads
+  // budget tweaks, GBP review responses, save calls) don't have brand voice
+  // to QC. Scheduled also only matters for content (you don't "schedule" a
+  // budget change). Verdict at +14d (Wave 6 auto-promote) handles closing
+  // the loop for both kinds.
   let nextStage = null;
   if (current === 'Rejected') {
     nextStage = 'Proposed';                          // Bounce-back to re-discuss
   } else if (current === 'Published') {
     nextStage = null;                                // Terminal — Performance Review takes it from here
+  } else if (_paModalKind === 'action') {
+    // Operational fast-path: Proposed → In Progress → Published
+    if (current === 'Proposed' || current === 'Idea') nextStage = 'In Progress';
+    else if (current === 'In Progress')                nextStage = 'Published';
+    else                                                nextStage = 'Published'; // fallback for legacy stages
   } else {
+    // Content full path through KANBAN_COLS
     const idx = KANBAN_COLS.findIndex(c => c.key === current);
     if (idx >= 0 && idx < KANBAN_COLS.length - 1) {
       nextStage = KANBAN_COLS[idx + 1].key;
@@ -17667,13 +17681,13 @@ window.cycleProposedActionStage = async () => {
 window.openActionModal = (id) => {
   if (!id) return;
 
-  // 1. Try Supabase-mirrored work_queue_actions row
+  // 1. Try Supabase-mirrored work_queue_actions row (always operational)
   let row = (window.cbState?.workQueue?._items || []).find(x => x.id === id);
   // 2. Try optimistic local stash
   if (!row && window._localProposedActions) row = window._localProposedActions[id];
 
   if (row) {
-    // Build the action+normalised shape from the row
+    _paModalKind = 'action';   // Wave 2.12 — operational kind (skips Brand Manager QC)
     const action = {
       title: row.title,
       description: row.description,
@@ -17703,6 +17717,9 @@ window.openActionModal = (id) => {
   if (typeof _findWorkItem === 'function') {
     const item = _findWorkItem(id);
     if (item) {
+      // Wave 2.12 — kind comes straight from the item (PLANNER_ITEMS = 'content',
+      // converted work-queue rows = 'action').
+      _paModalKind = item.kind || 'action';
       const action = {
         title: item.title,
         description: item.instructions || item.caption || '',
@@ -17759,6 +17776,7 @@ window.closeProposedActionModal = () => {
   document.body.style.overflow = '';
   _paModalId = null;
   _paModalDecision = null;
+  _paModalKind = 'action';   // Wave 2.12 — reset to default safe kind
 };
 
 window.saveProposedActionDecision = async () => {
@@ -18471,23 +18489,35 @@ function renderPlanner() {
   const proposed        = counts['Proposed'] || 0;
 
   // ── KPI bar ────────────────────────────────────────────────────────────
+  // Wave 2.12: "Pending Brand QC" now explicitly labelled "content only" —
+  // operational actions skip QC in the split flow.
   html += `<div class="kpi-grid cols-5 mb">
     ${kpiCard('','Total Items', totalItems, null, 'In this 2-week plan')}
     ${kpiCard('','Proposed', proposed, null, 'Awaiting Monday meeting review', proposed>0?'amber':'')}
-    ${kpiCard('','Pending Brand QC', pendingBrandQC, null, 'Waiting for Brand Manager check', pendingBrandQC>0?'amber':'')}
-    ${kpiCard('','Scheduled', scheduled, null, 'Approved + in scheduler', scheduled>0?'green':'')}
+    ${kpiCard('','Pending Brand QC', pendingBrandQC, null, 'Content only — ops skips QC', pendingBrandQC>0?'amber':'')}
+    ${kpiCard('','Scheduled', scheduled, null, 'Content ready to publish', scheduled>0?'green':'')}
     ${kpiCard('','Published', published, null, 'Live this cycle', published>0?'green':'')}
   </div>`;
 
   // ── Approval flow reminder ───────────────────────────────────────────────
-  html += `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:11px;color:var(--text-2)">
-    <span style="font-weight:700;color:var(--brand-accent-deep)">Approval flow:</span>
-    <b>Proposed</b> (emitters)<span style="color:var(--muted)">→</span>
-    Brand Manager + team review at Monday meeting<span style="color:var(--muted)">→</span>
-    <b>In Progress</b> (approved)<span style="color:var(--muted)">→</span>
-    <b>Brand Manager QC</b><span style="color:var(--muted)">→</span>
-    <b>Scheduled</b><span style="color:var(--muted)">→</span>
-    <b>Published</b>
+  // Wave 2.12 (10 Jun 2026): TWO flows — content needs QC, ops doesn't.
+  html += `<div style="margin-bottom:20px;padding:12px 14px;background:#fff;border:1px solid rgba(63,166,154,.4);border-radius:6px;font-size:11px;color:var(--text-2);line-height:1.85">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+      <span style="background:rgba(63,166,154,.12);color:var(--brand-accent-deep);font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase">Content flow</span>
+      <b>Proposed</b><span style="color:var(--muted)">→</span>
+      <b>In Progress</b><span style="color:var(--muted)">→</span>
+      <b>Brand Manager QC</b><span style="color:var(--muted)">→</span>
+      <b>Scheduled</b><span style="color:var(--muted)">→</span>
+      <b>Published</b>
+      <span style="color:var(--muted);font-size:10px;margin-left:6px">blogs · IG · TikTok · GBP · EDM</span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span style="background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase">Ops flow</span>
+      <b>Proposed</b><span style="color:var(--muted)">→</span>
+      <b>In Progress</b><span style="color:var(--muted)">→</span>
+      <b>Published</b>
+      <span style="color:var(--muted);font-size:10px;margin-left:6px">budget tweaks · GBP responses · save calls · SEO fixes — skip QC + Scheduled</span>
+    </div>
   </div>`;
 
   // ── v2: Stage legend ──────────────────────────────────────────────────
