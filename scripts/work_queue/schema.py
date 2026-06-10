@@ -161,6 +161,14 @@ class WorkQueueAction:
     # Examples: "strategist" · "seo-agent" · "competitor-spy" · "mwcc-strategist"
     source_agent: Optional[str] = None
 
+    # Wave 5 (10 Jun 2026) — Promo Pipeline linkage. When an action is a child
+    # of a parent promo concept (e.g. a reel for "Don't Quit Winter"), this
+    # holds the promo ID. The dashboard uses it to:
+    #   1. Render "Awaiting Assets" badge on In Progress cards whose parent
+    #      promo has no gdrive_folder_url yet
+    #   2. Cascade promo stage changes to child items (future)
+    parent_promo_id: Optional[str] = None
+
     # Measurement-time (filled later)
     actual_kpis: Optional[List[ActualKPI]] = None
     overall_verdict: Optional[str] = None     # one of VALID_VERDICT

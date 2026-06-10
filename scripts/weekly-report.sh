@@ -191,14 +191,31 @@ log "Step 1h''''''' — Emit ROI Attribution summary (cumulative savings)..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/attribution_emitter.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Attribution emitter had issues — check $LOG"
 
-# ── Step 1h'''''''' — Extract Agent Action Proposals (Agent Action Contract) ──
+# ── PROMO PIPELINE BLOCK (Wave 5 · 10 Jun 2026) ──────────────────────────────
+# promo_concept_emitter reads seasonal calendar + membership signals (future-
+# cancel pool, exit reasons, add-on uptake) and emits monthly promo concepts
+# split into Acquisition + Retention tracks. Each concept also seeds child
+# Work Queue actions tagged with parent_promo_id, which lights up the
+# "Awaiting Assets" badge on In Progress kanban cards.
+# inject-promo-pipeline rewrites the docs/index.html <script id="promo-
+# pipeline-block"> so renderPromoPipeline + renderAssetLibrary consume the
+# latest concepts at next page load.
+log "Step 1h'''''''' — Emit Promo Concepts (acquisition + retention)..."
+"$PYTHON" "$BASE_DIR/scripts/work_queue/promo_concept_emitter.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Promo concept emitter had issues — check $LOG"
+
+log "Step 1h''''''''' — Inject promo pipeline into dashboard..."
+"$PYTHON" "$BASE_DIR/scripts/inject-promo-pipeline.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Promo pipeline injector had issues — check $LOG"
+
+# ── Step 1h'''''''''' — Extract Agent Action Proposals (Agent Action Contract) ──
 # Layer 3 (Agents): when CB247 agents produce markdown output ending with a
 # ```json proposed_actions block, extract them as WorkQueueAction objects
 # and merge into state/work-queue.json. See agents/AGENT_ACTION_CONTRACT.md.
 # Graceful no-op if no agents have produced output yet (early days for the
 # new contract). Must run BEFORE sync_to_supabase so extracted actions get
 # pushed up.
-log "Step 1h'''''''' — Extract Agent action proposals (Agent Action Contract)..."
+log "Step 1h'''''''''' — Extract Agent action proposals (Agent Action Contract)..."
 "$PYTHON" "$BASE_DIR/scripts/extract_agent_actions.py" --business cb247 >> "$LOG" 2>&1 \
     || log "  ⚠️  Agent action extraction had issues — check $LOG (non-fatal)"
 
