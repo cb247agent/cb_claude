@@ -12654,6 +12654,7 @@ window.MWCC_DATA = {
   </div>
   <div class="sidebar-section" data-biz-group="cb247">
     <div class="sidebar-section-label">Team Workspace</div>
+    <div class="sidebar-item" data-page="promo-pipeline" onclick="nav(this)">Promo Pipeline</div>
     <div class="sidebar-item" data-page="content-planner" onclick="nav(this)">Work Queue</div>
     <div class="sidebar-item" data-page="content-review" onclick="nav(this)">Performance Review</div>
   </div>
@@ -12869,6 +12870,18 @@ window.MWCC_DATA = {
         <p>Local search visibility — Malaga &amp; Ellenbrook</p>
       </div>
       <div id="gbp-content"></div>
+    </div>
+
+    <!-- ══ PAGE: PROMO PIPELINE  (Wave 3 · 10 Jun 2026) ══════════════════════════════
+         Two-track view: Acquisition (new members) + Retention (existing members).
+         Each promo card is the parent of child Work Queue items (reels, stories,
+         blog posts, EDM, landing page) needed to execute it. -->
+    <div class="page" id="page-promo-pipeline">
+      <div class="page-header">
+        <h1>Promo Pipeline</h1>
+        <p>Two-track campaign view — Acquisition (new members) + Retention (current + at-risk members). Each promo cascades into the Work Queue items + Asset Brief required to execute it. Approve at the Monday meeting via the View Details popup.</p>
+      </div>
+      <div id="promo-pipeline-content"></div>
     </div>
 
     <!-- ══ PAGE: WORK QUEUE  (formerly Content Planner — now also includes operational actions) ══ -->
@@ -17985,6 +17998,311 @@ window.setActionVerdict = async (actionId, verdict) => {
   await window.cbState.workQueue.setVerdict(actionId, verdict);
   // Trigger re-render even if realtime broadcast lags
   if (typeof renderContentReview === 'function') renderContentReview();
+};
+
+// ── Render: Promo Pipeline (Wave 3 · 10 Jun 2026) ─────────────────────────────
+// Two-track view: Acquisition (LEFT teal) + Retention (RIGHT amber).
+// Each promo card cascades into Work Queue child items + an Asset Brief
+// for the monthly shoot. Click a card → detail modal (Wave 3.4).
+//
+// Data: hardcoded PROMO_PIPELINE_DATA for now (Wave 5 will replace with
+// state/promo-pipeline.json populated by a Claude-powered emitter).
+
+const PROMO_PIPELINE_DATA = {
+  acquisition: [
+    {
+      id: 'promo-winter-is-coming-2026-06',
+      track: 'acquisition',
+      stage: 'In Production',     // Concept | Approved | Asset Shoot Scheduled | In Production | Active | Performance Review
+      label: 'Winter Is Coming',
+      subtitle: '3-month winter campaign framework (Jun-Aug)',
+      started: '2026-06-01',
+      ends: '2026-08-31',
+      phase: 'Phase 2 — Main Launch (1 Jun)',
+      target_audience: 'new_member',
+      offer: {
+        headline: 'Tapered free months — earlier you join, more you get',
+        pricing: 'June: 3 months free · July: 2 months · August: 1 month',
+        base: '$11.95/wk all-access base',
+        eligibility: 'New members only',
+      },
+      tone: 'Strong / cinematic / high-energy / community-focused. "Don\'t go backwards this winter."',
+      rationale: 'Winter is the natural acquisition dip. Tapered offer creates urgency to join early. Cinematic tone differentiates from generic gym discounting.',
+      asset_requirements: {
+        reels: 6,
+        stories: 12,
+        static_posts: 4,
+        edm_assets: 1,
+        landing_page: 1,
+        in_club_posters: 2,
+      },
+      gdrive_folder_url: '',  // To be added once shoot scheduled
+      child_actions: [],       // Wave 3 stretch: link to Work Queue items
+      metrics: {
+        new_joins_target: 80,
+        new_joins_actual: 63,
+        projected_revenue_lift: '$11,420/mo at full pipeline',
+      },
+    },
+  ],
+  retention: [
+    {
+      id: 'promo-dont-quit-winter-2026-06',
+      track: 'retention',
+      stage: 'Concept',
+      label: "Don't Quit Winter",
+      subtitle: 'Save-call retention offer · counterpart to Winter Is Coming',
+      started: '',
+      ends: '2026-08-31',
+      phase: 'Awaiting Monday approval',
+      target_audience: 'at_risk_cancellation',
+      offer: {
+        headline: 'Free Recovery month if you freeze instead of cancel',
+        pricing: '$0 add-on cost · Sauna + Ice Bath through 31 August',
+        base: 'Members in future-cancel pipeline (352 currently)',
+        eligibility: 'Active members in future-cancel pipeline who freeze for at least 4 weeks instead of submitting cancel',
+      },
+      tone: 'Community-focused / supportive / "we\'ve got you" — quieter than the cinematic acquisition track.',
+      rationale: 'Future-cancel pipeline is 352 (4× new joins this week). Save-call programme is the #1 retention action but currently has no offer. Recovery is the top add-on (19 active) — bundling it free as a "stay" incentive aligns with what existing members already love. Saving 30% = ~100 members preserved/mo at $48/mo each = ~$4,800/mo recovered revenue at zero CAC.',
+      asset_requirements: {
+        reels: 3,
+        stories: 4,
+        edm_assets: 1,
+        save_call_script: 1,
+      },
+      gdrive_folder_url: '',
+      child_actions: [],
+      metrics: {
+        future_cancel_pool: 352,
+        save_rate_target: 30,
+        projected_revenue_saved: '$4,800/mo (~100 members at $48/mo)',
+      },
+    },
+    {
+      id: 'promo-held-the-line-2026-07',
+      track: 'retention',
+      stage: 'Concept',
+      label: 'Held the Line',
+      subtitle: 'Loyalty perk for 6mo+ members · August reward',
+      started: '',
+      ends: '2026-08-31',
+      phase: 'Concept · Aug rollout planned',
+      target_audience: 'existing_member',
+      offer: {
+        headline: 'Free Recovery month in August for members 6+ months in',
+        pricing: '$0 add-on · normally $20/wk',
+        base: 'No upfront commitment required',
+        eligibility: 'Members with 6+ months tenure',
+      },
+      tone: 'Community-focused · "You stayed through winter, we\'ve got you" · gratitude angle.',
+      rationale: 'Members who use Recovery once almost always convert to paid add-on. Free month = trial that turns into recurring revenue. Loyalty signal at the same time. Zero marginal cost (existing facility).',
+      asset_requirements: {
+        reels: 2,
+        stories: 4,
+        edm_assets: 1,
+      },
+      gdrive_folder_url: '',
+      child_actions: [],
+      metrics: {
+        eligible_pool: '~2,400 members (est)',
+        conversion_target: 25,
+        projected_add_on_revenue: '$2,000/mo recurring',
+      },
+    },
+  ],
+};
+
+// Stage colour + position helpers
+const PROMO_STAGES_ORDER = ['Concept','Approved','Asset Shoot Scheduled','In Production','Active','Performance Review'];
+const PROMO_STAGE_COLOURS = {
+  'Concept':                  {bg:'#f3f4f6', color:'#4b5563', label:'Concept'},
+  'Approved':                 {bg:'#e8f5f4', color:'#0a5e54', label:'Approved'},
+  'Asset Shoot Scheduled':    {bg:'#fef3c7', color:'#92400e', label:'Shoot Scheduled'},
+  'In Production':            {bg:'#fef3c7', color:'#92400e', label:'In Production'},
+  'Active':                   {bg:'rgba(63,166,154,.15)', color:'#2d7d72', label:'Active'},
+  'Performance Review':       {bg:'#e0e7ff', color:'#3730a3', label:'Performance Review'},
+};
+
+const PROMO_AUDIENCE_LABELS = {
+  'new_member':          {label:'New Members',    bg:'rgba(63,166,154,.12)', color:'#2d7d72'},
+  'existing_member':     {label:'Existing Members', bg:'rgba(245,158,11,.12)', color:'#92400e'},
+  'at_risk_cancellation':{label:'At-Risk · Future-Cancel Pipeline', bg:'rgba(220,38,38,.10)', color:'#991b1b'},
+  'win_back_pool':       {label:'Win-Back Pool', bg:'rgba(99,102,241,.12)', color:'#3730a3'},
+};
+
+function _promoCardHTML(p) {
+  const stage = PROMO_STAGE_COLOURS[p.stage] || PROMO_STAGE_COLOURS['Concept'];
+  const audience = PROMO_AUDIENCE_LABELS[p.target_audience] || PROMO_AUDIENCE_LABELS['new_member'];
+  const assetTotal = Object.values(p.asset_requirements || {}).reduce((sum, n) => sum + (typeof n === 'number' ? n : 0), 0);
+  return `<div onclick="openPromoDetailModal('${p.id}')" style="background:#fff;border:1px solid var(--border);border-left:4px solid ${audience.color};border-radius:8px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px">
+      <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.3">${p.label}</div>
+      <span style="background:${stage.bg};color:${stage.color};font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:99px;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase">${stage.label}</span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4">${p.subtitle}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+      <span style="background:${audience.bg};color:${audience.color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase">${audience.label}</span>
+      ${p.phase ? `<span style="background:#f0f2f5;color:var(--muted);font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px">${p.phase}</span>` : ''}
+    </div>
+    <div style="font-size:11.5px;color:var(--text-2);line-height:1.5;margin-bottom:8px;font-weight:600">${p.offer.headline}</div>
+    <div style="font-size:10.5px;color:var(--muted);font-style:italic;margin-bottom:10px">${p.offer.pricing}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:8px;font-size:10.5px;color:var(--muted)">
+      <span>${p.started ? 'Started ' + p.started : 'Awaiting approval'}</span>
+      <span>${assetTotal} assets needed</span>
+    </div>
+  </div>`;
+}
+
+function renderPromoPipeline() {
+  const el = $('promo-pipeline-content');
+  if (!el) return;
+
+  const acq = PROMO_PIPELINE_DATA.acquisition || [];
+  const ret = PROMO_PIPELINE_DATA.retention || [];
+
+  // ── Banner ────────────────────────────────────────────────────────────
+  let html = `<div class="insight teal mb" style="border-left-width:6px">
+    <div class="insight-label">Two-track promo system · monthly cadence</div>
+    <div style="font-size:12.5px;line-height:1.7">
+      <b>Acquisition</b> brings new members in. <b>Retention</b> keeps current members + recovers at-risk + wins back leavers.
+      Both tracks plan around the same monthly Asset Shoot day — one session captures content for both. Approve concepts at the Monday meeting via the View Details popup.
+    </div>
+  </div>`;
+
+  // ── KPI strip ─────────────────────────────────────────────────────────
+  const acqActive = acq.filter(p => p.stage === 'Active' || p.stage === 'In Production').length;
+  const retActive = ret.filter(p => p.stage === 'Active' || p.stage === 'In Production').length;
+  const acqConcept = acq.filter(p => p.stage === 'Concept').length;
+  const retConcept = ret.filter(p => p.stage === 'Concept').length;
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Acquisition Active', acqActive, null, `${acqConcept} concept · ${acq.length} total`, acqActive>0?'green':'')}
+    ${kpiCard('','Retention Active', retActive, null, `${retConcept} concept · ${ret.length} total`, retActive>0?'amber':'')}
+    ${kpiCard('','Concepts Awaiting Approval', acqConcept + retConcept, null, 'Decide at Monday meeting', (acqConcept+retConcept)>0?'amber':'')}
+    ${kpiCard('','Next Asset Shoot', '—', null, 'Schedule on Asset Library page', '')}
+  </div>`;
+
+  // ── Two-track layout ──────────────────────────────────────────────────
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <!-- ACQUISITION TRACK -->
+    <div>
+      <div style="border-bottom:2px solid var(--brand-accent);padding-bottom:8px;margin-bottom:14px">
+        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--brand-accent-deep);margin-bottom:2px">Acquisition Track</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">Bring new members in</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Cinematic / aspirational / "join us"</div>
+      </div>
+      ${acq.length > 0 ? acq.map(_promoCardHTML).join('') : `<div style="padding:30px 16px;text-align:center;color:var(--muted);background:var(--gray-0);border:1px dashed var(--border);border-radius:8px;font-size:12px">No acquisition concepts yet. Run the Promo Concept Generator (Wave 5) to populate.</div>`}
+    </div>
+
+    <!-- RETENTION TRACK -->
+    <div>
+      <div style="border-bottom:2px solid #f59e0b;padding-bottom:8px;margin-bottom:14px">
+        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#92400e;margin-bottom:2px">Retention Track</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">Keep current + recover at-risk</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Community-focused / "we've got you"</div>
+      </div>
+      ${ret.length > 0 ? ret.map(_promoCardHTML).join('') : `<div style="padding:30px 16px;text-align:center;color:var(--muted);background:var(--gray-0);border:1px dashed var(--border);border-radius:8px;font-size:12px">No retention concepts yet. Run the Promo Concept Generator (Wave 5) to populate.</div>`}
+    </div>
+  </div>`;
+
+  // ── Asset Shoot summary ───────────────────────────────────────────────
+  const allActive = acq.concat(ret).filter(p => ['Approved', 'Asset Shoot Scheduled', 'In Production'].includes(p.stage));
+  if (allActive.length > 0) {
+    const totalReels = allActive.reduce((s, p) => s + ((p.asset_requirements && p.asset_requirements.reels) || 0), 0);
+    const totalStories = allActive.reduce((s, p) => s + ((p.asset_requirements && p.asset_requirements.stories) || 0), 0);
+    const totalPosts = allActive.reduce((s, p) => s + ((p.asset_requirements && p.asset_requirements.static_posts) || 0), 0);
+    html += `<div class="card mb" style="padding:16px 18px">
+      <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:10px">Consolidated Asset Brief — Next Shoot Day</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px">
+        <div><b style="font-size:18px;color:var(--brand-accent-deep)">${totalReels}</b> <span style="color:var(--muted)">reels</span></div>
+        <div><b style="font-size:18px;color:var(--brand-accent-deep)">${totalStories}</b> <span style="color:var(--muted)">stories</span></div>
+        <div><b style="font-size:18px;color:var(--brand-accent-deep)">${totalPosts}</b> <span style="color:var(--muted)">static posts</span></div>
+        <div style="margin-left:auto;align-self:flex-end;font-size:11px;color:var(--muted)">Full brief → <b style="color:var(--brand-accent-deep)">Asset Library page</b> (Wave 4)</div>
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// ── Promo Detail Modal (Wave 3.4) ─────────────────────────────────────
+function _promoById(id) {
+  for (const track of ['acquisition', 'retention']) {
+    const found = (PROMO_PIPELINE_DATA[track] || []).find(p => p.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
+window.openPromoDetailModal = (id) => {
+  const p = _promoById(id);
+  if (!p) return;
+
+  // Reuse the existing modal-overlay container if present, otherwise create one
+  let overlay = document.getElementById('promo-detail-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'promo-detail-overlay';
+    overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:flex-start;justify-content:center;padding:60px 20px 20px;overflow-y:auto';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
+    document.body.appendChild(overlay);
+  }
+
+  const audience = PROMO_AUDIENCE_LABELS[p.target_audience] || PROMO_AUDIENCE_LABELS['new_member'];
+  const stage = PROMO_STAGE_COLOURS[p.stage] || PROMO_STAGE_COLOURS['Concept'];
+
+  const assetLines = Object.entries(p.asset_requirements || {})
+    .map(([k, v]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-1);font-size:12px"><span style="color:var(--text-2);text-transform:capitalize">${k.replace(/_/g, ' ')}</span><b style="color:var(--text);font-variant-numeric:tabular-nums">${v}</b></div>`)
+    .join('');
+
+  const metricLines = Object.entries(p.metrics || {})
+    .map(([k, v]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-1);font-size:12px"><span style="color:var(--text-2);text-transform:capitalize">${k.replace(/_/g, ' ')}</span><b style="color:var(--text);font-variant-numeric:tabular-nums">${v}</b></div>`)
+    .join('');
+
+  overlay.innerHTML = `<div style="background:#fff;border-radius:10px;width:100%;max-width:680px;padding:24px 28px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <button onclick="document.getElementById('promo-detail-overlay').style.display='none'" style="float:right;background:none;border:none;cursor:pointer;font-size:22px;color:var(--muted);padding:0;line-height:1">×</button>
+    <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:${audience.color};font-weight:700;margin-bottom:6px">${audience.label} · ${p.track} track</div>
+    <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:var(--text)">${p.label}</h2>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${p.subtitle}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+      <span style="background:${stage.bg};color:${stage.color};font-size:10px;font-weight:700;padding:4px 10px;border-radius:99px;letter-spacing:.04em;text-transform:uppercase">${stage.label}</span>
+      <span style="background:#f3f4f6;color:var(--text-2);font-size:11px;padding:4px 10px;border-radius:99px">${p.phase || '—'}</span>
+      ${p.started ? `<span style="background:#f3f4f6;color:var(--text-2);font-size:11px;padding:4px 10px;border-radius:99px">${p.started} → ${p.ends}</span>` : ''}
+    </div>
+
+    <div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:6px">Offer Structure</div>
+    <div style="background:var(--teal-mist,#f3faf9);border:1px solid var(--brand-accent);border-radius:6px;padding:12px 14px;margin-bottom:16px">
+      <div style="font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:6px">${p.offer.headline}</div>
+      <div style="font-size:11.5px;color:var(--text-2);line-height:1.6">${p.offer.pricing}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px"><b>Base:</b> ${p.offer.base}</div>
+      <div style="font-size:11px;color:var(--muted)"><b>Eligibility:</b> ${p.offer.eligibility}</div>
+    </div>
+
+    <div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:6px">Tone &amp; Rationale</div>
+    <p style="font-size:12px;line-height:1.7;color:var(--text-2);margin:0 0 8px"><b style="color:var(--text)">Tone:</b> ${p.tone}</p>
+    <p style="font-size:12px;line-height:1.7;color:var(--text-2);margin:0 0 16px"><b style="color:var(--text)">Why:</b> ${p.rationale}</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div>
+        <div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:6px">Asset Requirements</div>
+        ${assetLines || '<div style="font-size:12px;color:var(--muted)">None defined</div>'}
+      </div>
+      <div>
+        <div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:6px">Targets &amp; Metrics</div>
+        ${metricLines || '<div style="font-size:12px;color:var(--muted)">None set yet</div>'}
+      </div>
+    </div>
+
+    <div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:6px">Google Drive Folder</div>
+    ${p.gdrive_folder_url
+      ? `<a href="${p.gdrive_folder_url}" target="_blank" rel="noopener" style="display:inline-block;background:#fff;border:1px solid var(--brand-accent);color:var(--brand-accent-deep);padding:8px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;margin-bottom:18px">Open in Google Drive →</a>`
+      : `<div style="font-size:11.5px;color:var(--muted);margin-bottom:18px;font-style:italic">No folder yet — paste URL into the promo data once shoot is scheduled. (Wave 4 will add upload zone.)</div>`}
+
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <span>Child Work Queue items: <b>${(p.child_actions || []).length}</b> · linked via promo ID</span>
+      <button onclick="document.getElementById('promo-detail-overlay').style.display='none'" style="background:var(--brand-accent);color:#fff;border:none;border-radius:4px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Close</button>
+    </div>
+  </div>`;
+  overlay.style.display = 'flex';
 };
 
 function renderContentReview() {
@@ -23602,6 +23920,7 @@ function init() {
   renderOrgSocial();
   renderMeta();
   renderGBP();
+  renderPromoPipeline();   // Wave 3 · 10 Jun 2026
   renderPlanner();
   renderContentReview();
   renderTracker();
