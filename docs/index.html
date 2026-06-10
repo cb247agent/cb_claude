@@ -12655,6 +12655,7 @@ window.MWCC_DATA = {
   <div class="sidebar-section" data-biz-group="cb247">
     <div class="sidebar-section-label">Team Workspace</div>
     <div class="sidebar-item" data-page="promo-pipeline" onclick="nav(this)">Promo Pipeline</div>
+    <div class="sidebar-item" data-page="asset-library" onclick="nav(this)">Asset Library</div>
     <div class="sidebar-item" data-page="content-planner" onclick="nav(this)">Work Queue</div>
     <div class="sidebar-item" data-page="content-review" onclick="nav(this)">Performance Review</div>
   </div>
@@ -12882,6 +12883,19 @@ window.MWCC_DATA = {
         <p>Two-track campaign view — Acquisition (new members) + Retention (current + at-risk members). Each promo cascades into the Work Queue items + Asset Brief required to execute it. Approve at the Monday meeting via the View Details popup.</p>
       </div>
       <div id="promo-pipeline-content"></div>
+    </div>
+
+    <!-- ══ PAGE: ASSET LIBRARY  (Wave 4 · 10 Jun 2026) ════════════════════════════════
+         Monthly shoot countdown + consolidated brief aggregating asset requirements
+         from every active promo in Promo Pipeline. The brief feeds the Asset Creator
+         on the monthly shoot day. Generated assets land in Google Drive folders
+         linked from each promo. -->
+    <div class="page" id="page-asset-library">
+      <div class="page-header">
+        <h1>Asset Library</h1>
+        <p>Monthly shoot countdown + consolidated brief for the Asset Creator. Every "Awaiting Assets" Work Queue card blocks on a Google Drive folder link being added to its parent promo. Generate the markdown brief 7 days before the shoot.</p>
+      </div>
+      <div id="asset-library-content"></div>
     </div>
 
     <!-- ══ PAGE: WORK QUEUE  (formerly Content Planner — now also includes operational actions) ══ -->
@@ -17694,8 +17708,20 @@ function renderPlanner() {
     const stLabel = st === 'Published' ? '✓ PUBLISHED' : st.toUpperCase();
     const ownerLine = item.assignee ? ` · ${item.assignee}` : '';
     const priorityLine = item.priority ? ` · ${item.priority}` : '';
+
+    // ── Wave 4: "Awaiting Assets" badge on In Progress cards whose parent
+    // promo has no gdrive_folder_url yet. Forward-compatible: item.parent_promo_id
+    // is set by Wave 5's emitter when promo concepts cascade into Work Queue.
+    let awaitingBadge = '';
+    if (st === 'In Progress' && item.parent_promo_id && typeof _promoById === 'function') {
+      const parent = _promoById(item.parent_promo_id);
+      if (parent && !parent.gdrive_folder_url) {
+        awaitingBadge = `<span style="background:rgba(245,158,11,.15);color:#92400e;font-size:8px;font-weight:700;padding:1.5px 5px;border-radius:2px;display:inline-block;margin-bottom:3px;margin-left:3px;letter-spacing:.04em;text-transform:uppercase">Awaiting Assets</span>`;
+      }
+    }
+
     return `<div class="wq-card ${_stageClass(st)}" onclick="openPlannerModal('${item.id}')">
-      <span class="src-badge" style="background:${pc.bg};color:${pc.color}">${(PLAT_CFG[item.platform]?.label || item.platform).toUpperCase()}</span>
+      <span class="src-badge" style="background:${pc.bg};color:${pc.color}">${(PLAT_CFG[item.platform]?.label || item.platform).toUpperCase()}</span>${awaitingBadge}
       <div class="title">${item.title}</div>
       <div class="stage-line">${stLabel}${priorityLine}${ownerLine}</div>
     </div>`;
@@ -18304,6 +18330,242 @@ window.openPromoDetailModal = (id) => {
   </div>`;
   overlay.style.display = 'flex';
 };
+
+// ── Render: Asset Library (Wave 4 · 10 Jun 2026) ──────────────────────────────
+// Monthly shoot calendar + consolidated brief aggregating asset_requirements
+// from every active promo in PROMO_PIPELINE_DATA. The brief is what the Asset
+// Creator works from on shoot day. Each promo's generated assets land in its
+// Google Drive folder (URL pasted into the promo, then surfaced here).
+//
+// The shoot schedule is hardcoded for now — Tia edits it monthly. Wave 5
+// (Promo Concept Generator) may push dates forward automatically based on
+// upcoming campaign launches.
+
+const ASSET_LIBRARY_DATA = {
+  asset_creator: {
+    role: 'Asset Creator',
+    cadence: 'Monthly batch shoot',
+    notice_days: 7,                                  // Brief auto-generated 7d before shoot
+    email_env_var: 'ASSET_CREATOR_EMAIL',            // Read in scripts/generate_asset_brief.py
+    gdrive_root: 'https://drive.google.com/drive/folders/cb247-assets-2026',
+  },
+  shoot_schedule: [
+    // ISO date · location · status (scheduled / planned / completed)
+    {date:'2026-06-18', location:'CB247 Ellenbrook', status:'scheduled', notes:"Phase 2 Winter Is Coming main launch + Don't Quit Winter retention intro"},
+    {date:'2026-07-23', location:'CB247 Malaga',     status:'planned',   notes:"Phase 3 Winter wrap + Held the Line teaser"},
+    {date:'2026-08-20', location:'CB247 Ellenbrook', status:'planned',   notes:"Held the Line August reward + Spring transition assets"},
+  ],
+  ai_production_stack: [
+    {tool:'Opus Clip',  use:'Auto-cut long-form footage → reels + TikTok shorts',     cost:'$15/mo'},
+    {tool:'Captions',   use:'AI captions + B-roll fillers + face tracking',           cost:'$24/mo'},
+    {tool:'Canva Pro',  use:'Static posts, stories, EDM headers, in-club posters',    cost:'$15/mo'},
+    {tool:'Midjourney', use:'Concept art, alternative thumbnails, cinematic stills',  cost:'$20/mo'},
+  ],
+};
+
+function _assetDaysUntil(isoDate) {
+  if (!isoDate) return Infinity;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const target = new Date(isoDate + 'T00:00:00');
+  return Math.round((target - today) / (1000 * 60 * 60 * 24));
+}
+
+function _assetNextShoot() {
+  const future = (ASSET_LIBRARY_DATA.shoot_schedule || [])
+    .filter(s => _assetDaysUntil(s.date) >= 0 && s.status !== 'completed')
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return future[0] || null;
+}
+
+function _assetActivePromos() {
+  // Promos prepping for or running on the next shoot:
+  // anything not in 'Active' (already in market) and not 'Performance Review' (closed loop)
+  const all = (PROMO_PIPELINE_DATA.acquisition || []).concat(PROMO_PIPELINE_DATA.retention || []);
+  return all.filter(p => ['Concept','Approved','Asset Shoot Scheduled','In Production'].includes(p.stage));
+}
+
+function _assetTotalsForBrief(promos) {
+  const totals = {};
+  promos.forEach(p => {
+    Object.entries(p.asset_requirements || {}).forEach(([k, v]) => {
+      if (typeof v === 'number') totals[k] = (totals[k] || 0) + v;
+    });
+  });
+  return totals;
+}
+
+function _formatAssetKey(k) {
+  return k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function renderAssetLibrary() {
+  const el = $('asset-library-content');
+  if (!el) return;
+
+  const nextShoot = _assetNextShoot();
+  const daysAway = nextShoot ? _assetDaysUntil(nextShoot.date) : null;
+  const activePromos = _assetActivePromos();
+  const totals = _assetTotalsForBrief(activePromos);
+  const grandTotal = Object.values(totals).reduce((s, n) => s + n, 0);
+
+  // Status colour for countdown
+  let countdownStatus = '';
+  let countdownLabel = '—';
+  if (nextShoot) {
+    if (daysAway < 0) { countdownStatus = 'red';    countdownLabel = `${Math.abs(daysAway)} days overdue`; }
+    else if (daysAway === 0) { countdownStatus = 'red';    countdownLabel = 'Today'; }
+    else if (daysAway <= 3) { countdownStatus = 'red';    countdownLabel = `${daysAway} day${daysAway===1?'':'s'} away`; }
+    else if (daysAway <= 7) { countdownStatus = 'amber';  countdownLabel = `${daysAway} days away`; }
+    else                    { countdownStatus = 'green';  countdownLabel = `${daysAway} days away`; }
+  }
+
+  // ── Banner ────────────────────────────────────────────────────────────
+  let html = `<div class="insight teal mb" style="border-left-width:6px">
+    <div class="insight-label">Monthly shoot model · one session, two tracks</div>
+    <div style="font-size:12.5px;line-height:1.7">
+      Asset Creator works <b>monthly</b>. One shoot day captures content for every active promo — acquisition + retention. Brief auto-generated <b>${ASSET_LIBRARY_DATA.asset_creator.notice_days} days</b> before each shoot. Run <code style="background:var(--gray-1);padding:2px 5px;border-radius:3px;font-size:11px">python scripts/generate_asset_brief.py</code> to bake the markdown brief.
+    </div>
+  </div>`;
+
+  // ── KPI strip ─────────────────────────────────────────────────────────
+  html += `<div class="kpi-grid cols-4 mb">
+    ${kpiCard('','Next Shoot', nextShoot ? nextShoot.date.slice(5) : '—', null, nextShoot ? nextShoot.location : 'No shoot scheduled', countdownStatus)}
+    ${kpiCard('','Countdown', countdownLabel, null, nextShoot ? (countdownStatus==='red'?'Action needed now':countdownStatus==='amber'?'Brief due soon':'On track') : '', countdownStatus)}
+    ${kpiCard('','Active Promos', activePromos.length, null, `${activePromos.filter(p=>p.track==='acquisition').length} acquisition · ${activePromos.filter(p=>p.track==='retention').length} retention`, activePromos.length>0?'green':'')}
+    ${kpiCard('','Total Assets Needed', grandTotal, null, Object.keys(totals).length + ' formats', grandTotal>0?'amber':'')}
+  </div>`;
+
+  // ── Shoot schedule card ───────────────────────────────────────────────
+  const scheduleRows = (ASSET_LIBRARY_DATA.shoot_schedule || []).map(s => {
+    const days = _assetDaysUntil(s.date);
+    const isPast = days < 0;
+    const statusPill = s.status === 'scheduled'
+      ? `<span style="background:rgba(63,166,154,.12);color:#2d7d72;font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;letter-spacing:.04em;text-transform:uppercase">Scheduled</span>`
+      : s.status === 'planned'
+        ? `<span style="background:#fef3c7;color:#92400e;font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;letter-spacing:.04em;text-transform:uppercase">Planned</span>`
+        : `<span style="background:#f3f4f6;color:#6b7280;font-size:9px;font-weight:700;padding:3px 8px;border-radius:99px;letter-spacing:.04em;text-transform:uppercase">Completed</span>`;
+    const daysLabel = isPast ? `<span style="color:var(--muted)">${Math.abs(days)}d ago</span>` : `<b>${days}d</b>`;
+    return `<tr style="border-bottom:1px solid var(--gray-1)">
+      <td style="padding:8px 4px;font-size:12px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums">${s.date}</td>
+      <td style="padding:8px 4px;font-size:12px;color:var(--text-2)">${s.location}</td>
+      <td style="padding:8px 4px;font-size:12px;color:var(--muted)">${s.notes}</td>
+      <td style="padding:8px 4px;font-size:12px;text-align:right">${daysLabel}</td>
+      <td style="padding:8px 4px;text-align:right">${statusPill}</td>
+    </tr>`;
+  }).join('');
+
+  html += `<div class="card mb" style="padding:18px 20px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:3px">Shoot Schedule</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">Next 3 monthly shoots</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted)">Edit dates in <code style="background:var(--gray-1);padding:1px 4px;border-radius:3px">ASSET_LIBRARY_DATA.shoot_schedule</code></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border)">
+          <th style="padding:8px 4px;text-align:left;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Date</th>
+          <th style="padding:8px 4px;text-align:left;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Location</th>
+          <th style="padding:8px 4px;text-align:left;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Focus</th>
+          <th style="padding:8px 4px;text-align:right;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">When</th>
+          <th style="padding:8px 4px;text-align:right;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Status</th>
+        </tr>
+      </thead>
+      <tbody>${scheduleRows || '<tr><td colspan="5" style="padding:14px;text-align:center;color:var(--muted);font-size:12px">No shoots scheduled — add to ASSET_LIBRARY_DATA.</td></tr>'}</tbody>
+    </table>
+  </div>`;
+
+  // ── Consolidated Brief — what to capture on next shoot day ───────────
+  if (nextShoot && activePromos.length > 0) {
+    const totalsHtml = Object.entries(totals)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `<div style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 12px;min-width:110px;flex:1">
+        <div style="font-size:22px;font-weight:700;color:var(--brand-accent-deep);line-height:1;font-variant-numeric:tabular-nums">${v}</div>
+        <div style="font-size:10px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-top:4px">${_formatAssetKey(k)}</div>
+      </div>`).join('');
+
+    const perPromoRows = activePromos.map(p => {
+      const audience = PROMO_AUDIENCE_LABELS[p.target_audience] || PROMO_AUDIENCE_LABELS['new_member'];
+      const promoTotal = Object.values(p.asset_requirements || {}).reduce((s, n) => s + (typeof n === 'number' ? n : 0), 0);
+      const breakdown = Object.entries(p.asset_requirements || {})
+        .map(([k, v]) => `<span style="background:#fff;border:1px solid var(--border);color:var(--text-2);font-size:10.5px;padding:2px 7px;border-radius:3px;margin-right:4px;display:inline-block">${v} ${_formatAssetKey(k).toLowerCase()}</span>`)
+        .join('');
+      const gdriveCell = p.gdrive_folder_url
+        ? `<a href="${p.gdrive_folder_url}" target="_blank" rel="noopener" style="color:var(--brand-accent-deep);font-size:11px;font-weight:600;text-decoration:none">Open folder →</a>`
+        : `<span style="background:rgba(245,158,11,.12);color:#92400e;font-size:9.5px;font-weight:700;padding:3px 7px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase">Awaiting folder</span>`;
+      return `<tr style="border-bottom:1px solid var(--gray-1)">
+        <td style="padding:10px 4px;vertical-align:top">
+          <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:2px">${p.label}</div>
+          <span style="background:${audience.bg};color:${audience.color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase">${audience.label}</span>
+        </td>
+        <td style="padding:10px 4px;vertical-align:top;line-height:1.9">${breakdown || '<span style="color:var(--muted);font-size:11px">No requirements set</span>'}</td>
+        <td style="padding:10px 4px;text-align:right;vertical-align:top;font-size:13px;font-weight:700;color:var(--brand-accent-deep);font-variant-numeric:tabular-nums">${promoTotal}</td>
+        <td style="padding:10px 4px;text-align:right;vertical-align:top">${gdriveCell}</td>
+      </tr>`;
+    }).join('');
+
+    html += `<div class="card mb" style="padding:18px 20px;border:2px solid var(--brand-accent)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--brand-accent-deep);margin-bottom:3px">Consolidated Brief · ${nextShoot.date}</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text)">What to capture on next shoot day</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">${nextShoot.location} · ${nextShoot.notes}</div>
+        </div>
+        <button onclick="alert('Run: python scripts/generate_asset_brief.py\\n\\nOutput: outputs/asset-briefs/' + (new Date().toISOString().slice(0,7)) + '-brief.md\\n\\nThis will also email the brief to ASSET_CREATOR_EMAIL (set in .env)')" style="background:var(--brand-accent);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em">Generate Markdown Brief →</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">${totalsHtml}</div>
+      <div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:6px">Per-promo breakdown</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:8px 4px;text-align:left;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Promo</th>
+            <th style="padding:8px 4px;text-align:left;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Asset Mix</th>
+            <th style="padding:8px 4px;text-align:right;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Total</th>
+            <th style="padding:8px 4px;text-align:right;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">GDrive</th>
+          </tr>
+        </thead>
+        <tbody>${perPromoRows}</tbody>
+      </table>
+    </div>`;
+  } else if (!nextShoot) {
+    html += `<div class="card mb" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
+      No upcoming shoot scheduled. Add a date to <code style="background:var(--gray-1);padding:1px 4px;border-radius:3px">ASSET_LIBRARY_DATA.shoot_schedule</code> in docs/index.html.
+    </div>`;
+  } else {
+    html += `<div class="card mb" style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
+      No active promos prepping for next shoot. Approve concepts in Promo Pipeline to populate the brief.
+    </div>`;
+  }
+
+  // ── AI Production Stack ───────────────────────────────────────────────
+  const aiRows = ASSET_LIBRARY_DATA.ai_production_stack.map(t => `<tr style="border-bottom:1px solid var(--gray-1)">
+    <td style="padding:8px 4px;font-size:12.5px;font-weight:700;color:var(--text)">${t.tool}</td>
+    <td style="padding:8px 4px;font-size:12px;color:var(--text-2);line-height:1.5">${t.use}</td>
+    <td style="padding:8px 4px;font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums">${t.cost}</td>
+  </tr>`).join('');
+  const aiTotalNumeric = ASSET_LIBRARY_DATA.ai_production_stack
+    .reduce((s, t) => s + parseFloat((t.cost.match(/[\d.]+/) || ['0'])[0]), 0);
+
+  html += `<div class="card mb" style="padding:18px 20px">
+    <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:3px">AI Production Stack</div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">Tools the Asset Creator uses post-shoot</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:14px">Total ~$${aiTotalNumeric.toFixed(0)}/mo — replaces video editor + graphics contractor costs.</div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border)">
+          <th style="padding:8px 4px;text-align:left;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Tool</th>
+          <th style="padding:8px 4px;text-align:left;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Used For</th>
+          <th style="padding:8px 4px;text-align:right;font-size:9.5px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase">Cost</th>
+        </tr>
+      </thead>
+      <tbody>${aiRows}</tbody>
+    </table>
+  </div>`;
+
+  el.innerHTML = html;
+}
 
 function renderContentReview() {
   // v2 simplification (06 Jun 2026, Tia direction):
@@ -23921,6 +24183,7 @@ function init() {
   renderMeta();
   renderGBP();
   renderPromoPipeline();   // Wave 3 · 10 Jun 2026
+  renderAssetLibrary();    // Wave 4 · 10 Jun 2026
   renderPlanner();
   renderContentReview();
   renderTracker();
