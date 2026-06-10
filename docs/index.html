@@ -13344,6 +13344,16 @@ window.MWCC_DATA = {
       <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Expected Impact</div>
       <div style="font-size:13px;line-height:1.7;color:var(--text-2);margin-bottom:8px" id="pamodal-impact"></div>
     </div>
+
+    <!-- Wave 2.11 (10 Jun 2026): Current Stage section — lets mid-pipeline
+         cards advance through the kanban (In Progress → Brand Manager QC →
+         Scheduled → Published) without needing the old kanban modal. -->
+    <div id="pamodal-stage-section" style="margin:0 26px 14px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Current Stage</div>
+      <span id="pamodal-stage-pill" style="font-size:11px;font-weight:700;letter-spacing:.04em;border-radius:99px;padding:3px 12px;background:#f3f4f6;color:var(--text-2)">—</span>
+      <button id="pamodal-cycle-btn" onclick="cycleProposedActionStage()" style="margin-left:auto;background:var(--brand-accent);color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit">Move to: — →</button>
+    </div>
+
     <div style="margin:0 26px;background:var(--gray-0,#f8f9fa);border-radius:6px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div style="font-size:12px;font-weight:600;color:var(--text-2)">Meeting decision:</div>
       <button class="appr-pill" id="pamodal-pill-approved" onclick="setProposedActionDecision('approved')">Approved</button>
@@ -13355,7 +13365,10 @@ window.MWCC_DATA = {
       <textarea id="pamodal-notes" rows="3" style="width:100%;border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:12.5px;font-family:inherit;resize:vertical" placeholder="Describe what needs to change or why this was rejected…"></textarea>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 26px;border-top:1px solid var(--border);margin-top:18px;gap:12px;flex-wrap:wrap">
-      <div style="font-size:11px;color:var(--muted)">All decisions sync to Supabase. Visible to whole team.</div>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <a id="pamodal-brief-link" href="#" target="_blank" style="font-size:12px;font-weight:600;color:var(--brand-accent-deep);text-decoration:none;border:1px solid var(--brand-accent);padding:6px 12px;border-radius:4px">View Brief</a>
+        <span style="font-size:11px;color:var(--muted)">All decisions sync to Supabase. Visible to whole team.</span>
+      </div>
       <div style="display:flex;gap:8px">
         <button onclick="closeProposedActionModal()" style="background:#fff;border:1px solid var(--border);border-radius:4px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit">Close</button>
         <button id="pamodal-save-btn" onclick="saveProposedActionDecision()" disabled style="background:var(--brand-accent);color:#fff;border:none;border-radius:4px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;opacity:.5">Save</button>
@@ -17540,10 +17553,183 @@ function _renderProposedActionModalContent(id, action, normalised, sourcePage) {
   notesWrap.style.display = (_paModalDecision === 'adjustment' || _paModalDecision === 'rejected') ? 'block' : 'none';
   _refreshPaSaveBtn();
 
+  // ── Wave 2.11: Stage section — current stage pill + Move-to-next button ──
+  _refreshPaStageSection(id);
+
+  // ── Wave 2.11: View Brief — same logic as the old planner modal but
+  //    rendered into the streamlined footer link.
+  const brief = $('pamodal-brief-link');
+  if (brief) {
+    brief.onclick = null;
+    brief.style.display = '';
+    if (typeof id === 'string' && id.startsWith('prop-')) {
+      // Inline-render the brief from the in-memory row via a blob URL
+      brief.href = '#';
+      brief.onclick = (e) => {
+        e.preventDefault();
+        const row = (window.cbState?.workQueue?._items || []).find(x => x.id === id)
+                  || (window._localProposedActions && window._localProposedActions[id]);
+        if (!row) { alert('Could not find action data to build brief.'); return; }
+        const html = _renderProposedActionBriefHTML(row);
+        const blob = new Blob([html], { type: 'text/html' });
+        window.open(URL.createObjectURL(blob), '_blank');
+      };
+    } else {
+      const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
+      brief.href = `${baseUrl}/briefs/${id}.html`;
+    }
+  }
+
   // Open
   $('proposed-action-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+// Wave 2.11 (10 Jun 2026): refresh the Current Stage pill + Move-to-next button.
+// Reads localStorage planner_status, looks up the next stage in KANBAN_COLS,
+// disables the button when at the final stage (Published) or in a special
+// state (Rejected → bounce back to Proposed).
+function _refreshPaStageSection(id) {
+  const stateMap = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY) || '{}');
+  const current = stateMap[id] || 'Proposed';
+  const stagePill = $('pamodal-stage-pill');
+  const cycleBtn  = $('pamodal-cycle-btn');
+  if (!stagePill || !cycleBtn) return;
+
+  // Stage pill colour by stage
+  const stageColours = {
+    'Proposed':         { bg:'#f3f4f6', fg:'#374151' },
+    'In Progress':      { bg:'rgba(63,166,154,.12)', fg:'#2d7d72' },
+    'Brand Manager QC': { bg:'#fef3c7', fg:'#92400e' },
+    'Scheduled':        { bg:'rgba(63,166,154,.15)', fg:'#2d7d72' },
+    'Published':        { bg:'var(--brand-accent,#3FA69A)', fg:'#fff' },
+    'Rejected':         { bg:'#fee2e2', fg:'#991b1b' },
+  };
+  const sc = stageColours[current] || stageColours['Proposed'];
+  stagePill.style.background = sc.bg;
+  stagePill.style.color = sc.fg;
+  stagePill.textContent = current;
+
+  // Next stage logic
+  let nextStage = null;
+  if (current === 'Rejected') {
+    nextStage = 'Proposed';                          // Bounce-back to re-discuss
+  } else if (current === 'Published') {
+    nextStage = null;                                // Terminal — Performance Review takes it from here
+  } else {
+    const idx = KANBAN_COLS.findIndex(c => c.key === current);
+    if (idx >= 0 && idx < KANBAN_COLS.length - 1) {
+      nextStage = KANBAN_COLS[idx + 1].key;
+    }
+  }
+
+  if (nextStage) {
+    cycleBtn.textContent = `Move to: ${nextStage} →`;
+    cycleBtn.disabled = false;
+    cycleBtn.style.opacity = '1';
+    cycleBtn.style.cursor = 'pointer';
+    cycleBtn.dataset.nextStage = nextStage;
+  } else {
+    cycleBtn.textContent = `Published — terminal stage`;
+    cycleBtn.disabled = true;
+    cycleBtn.style.opacity = '.5';
+    cycleBtn.style.cursor = 'not-allowed';
+    delete cycleBtn.dataset.nextStage;
+  }
+}
+
+// Wave 2.11: advance the item to the next kanban stage from the streamlined
+// modal. Mirrors the OLD planner-modal Move button — same setStatus call so
+// the realtime broadcast fires + every dashboard tab refreshes.
+window.cycleProposedActionStage = async () => {
+  if (!_paModalId) return;
+  const btn = $('pamodal-cycle-btn');
+  const nextStage = btn?.dataset?.nextStage;
+  if (!nextStage) return;
+  if (window.cbState?.planner) {
+    try {
+      await cbState.planner.setStatus(_paModalId, nextStage);
+    } catch (e) { console.warn('[pa-modal] cycleStage failed:', e); }
+  } else {
+    const map = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY) || '{}');
+    map[_paModalId] = nextStage;
+    localStorage.setItem(PLANNER_STATUS_KEY, JSON.stringify(map));
+  }
+  _refreshPaStageSection(_paModalId);                   // re-render the pill + button
+  if (typeof _rerenderActivePage === 'function') _rerenderActivePage();
+};
+
+// Wave 2.11: universal entry point — any kanban / calendar / backlog card
+// click routes through here. Builds the {action, normalised, sourcePage}
+// triple that _renderProposedActionModalContent expects, from whichever
+// source has the row (cbState.workQueue._items · window._localProposedActions
+// · PLANNER_ITEMS for content cards).
+window.openActionModal = (id) => {
+  if (!id) return;
+
+  // 1. Try Supabase-mirrored work_queue_actions row
+  let row = (window.cbState?.workQueue?._items || []).find(x => x.id === id);
+  // 2. Try optimistic local stash
+  if (!row && window._localProposedActions) row = window._localProposedActions[id];
+
+  if (row) {
+    // Build the action+normalised shape from the row
+    const action = {
+      title: row.title,
+      description: row.description,
+      why: row.description,
+      impact: '',
+      expected_impact: '',
+      owner: row.owner,
+      owner_role: row.owner_role,
+      priority: row.priority,
+      effort_hours: row.effort_hours,
+      projected_kpis: row.projected_kpis || [],
+    };
+    const normalised = {
+      title: row.title || '—',
+      desc: row.description || '',
+      owner: row.owner || '—',
+      owner_role: row.owner_role || '',
+      effort: row.effort_hours,
+      priority: row.priority || 'P2',
+      impact: '',
+    };
+    _renderProposedActionModalContent(id, action, normalised, row.source_page || row.category || 'unknown');
+    return;
+  }
+
+  // 3. Fall back to a content item (PLANNER_ITEMS) via _findWorkItem
+  if (typeof _findWorkItem === 'function') {
+    const item = _findWorkItem(id);
+    if (item) {
+      const action = {
+        title: item.title,
+        description: item.instructions || item.caption || '',
+        why: item.instructions || '',
+        impact: item.caption || '',
+        owner: item.assignee,
+        owner_role: item.assigneeRole,
+        priority: item.priority,
+        effort_hours: null,
+        projected_kpis: item.projectedKpis || [],
+      };
+      const normalised = {
+        title: item.title || '—',
+        desc: item.instructions || item.caption || '',
+        owner: item.assignee || '—',
+        owner_role: item.assigneeRole || '',
+        effort: null,
+        priority: item.priority || 'P2',
+        impact: item.caption || '',
+      };
+      _renderProposedActionModalContent(id, action, normalised, item.sourcePage || item.platform || 'unknown');
+      return;
+    }
+  }
+
+  console.warn('[openActionModal] no row found for id:', id);
+};
 
 function _refreshPaPills(decision) {
   ['approved', 'adjustment', 'rejected'].forEach(d => {
@@ -18377,7 +18563,14 @@ function renderPlanner() {
       }
     }
 
-    return `<div class="wq-card ${_stageClass(st)}" onclick="openPlannerModal('${item.id}')">
+    // Wave 2.11 (10 Jun 2026): Work Queue cards now open the streamlined
+    // modal (same one as the Prioritised Action List View Details). Falls
+    // back to the kanban planner-modal if openActionModal isn't defined
+    // (older deploy / cached browser).
+    const _clickHandler = (typeof openActionModal === 'function')
+      ? `openActionModal('${item.id}')`
+      : `openPlannerModal('${item.id}')`;
+    return `<div class="wq-card ${_stageClass(st)}" onclick="${_clickHandler}">
       <span class="src-badge" style="background:${pc.bg};color:${pc.color}">${(PLAT_CFG[item.platform]?.label || item.platform).toUpperCase()}</span>${awaitingBadge}
       <div class="title">${item.title}</div>
       <div class="stage-line">${stLabel}${priorityLine}${ownerLine}</div>
