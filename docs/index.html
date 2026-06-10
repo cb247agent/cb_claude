@@ -15014,7 +15014,7 @@ function renderSEO() {
   // Default priorities by index — first 2 are P1, next 2 are P2, rest P3
   actions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(actions, {
-    sourcePage: 'membership',
+    sourcePage: 'seo-organic',   // Wave 2 copy-paste bug: was 'membership' (10 Jun 2026)
     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
   });
 
@@ -15765,7 +15765,7 @@ function renderGAds() {
 
   _actions2w.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(_actions2w, {
-    sourcePage: 'seo-organic',
+    sourcePage: 'google-ads',    // Wave 2 copy-paste bug: was 'seo-organic' (10 Jun 2026)
     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
   });
 
