@@ -253,7 +253,7 @@
   /* Kanban preview */
   .kanban {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 6px;
     margin: 14px 0;
   }
@@ -366,22 +366,25 @@
     <span class="ann-tag">3</span>
     <b>What happens after you click a pill:</b>
     <ul style="margin:6px 0 0;padding-left:18px;font-size:11.5px">
-      <li><b>Approved</b> → action enters Work Queue with stage <b>In Progress</b>, owner notified, appears on calendar at due date</li>
-      <li><b>Adjusted</b> → action goes to Work Queue at stage <b>Idea</b> with your meeting notes attached for editing</li>
-      <li><b>Rejected</b> → action archived (hidden by default, recoverable via "Show rejected" toggle)</li>
+      <li><b>Approved</b> (Denver + team in meeting) → action moves from <b>Proposed</b> → <b>In Progress</b>, owner notified, appears on calendar at due date</li>
+      <li><b>Adjusted</b> → action stays in <b>Proposed</b> with your meeting notes attached, ready to re-discuss next week</li>
+      <li><b>Rejected</b> → action archived in the Rejected bucket (hidden by default, recoverable via "Show rejected" toggle)</li>
     </ul>
   </div>
 
   <div class="section-title">Kanban — Where Approved Actions Land</div>
 
   <div class="annotation" style="background:var(--gray-0);border-left-color:var(--gray-3)">
-    <b>Proposed stage (new):</b> All actions emitted this week land here first — awaiting Monday review. After your decision,
-    they move to <b>In Progress</b> (approved), stay in <b>Proposed</b> with notes (adjusted), or go to <b>Rejected</b>.
+    <b>Proposed stage (new):</b> All actions emitted this week land here first — awaiting Monday review.
+    <b>Denver's approval happens HERE</b> via the View Details popup during the meeting, not as a separate kanban
+    column. After the meeting decision, items move to <b>In Progress</b> (approved), stay in <b>Proposed</b> with
+    notes (adjusted), or go to <b>Rejected</b>.
   </div>
 
   <div class="kanban">
     <div class="kan-col highlight">
       <div class="kan-col-label">Proposed</div>
+      <div style="font-size:9px;color:var(--teal-deep);background:#fff;border:1px solid var(--teal);border-radius:3px;padding:3px 5px;margin-bottom:6px;font-weight:700;text-align:center">Meeting · Denver approves</div>
       <div class="kan-card example">Batch-film 4-6 reels</div>
       <div class="kan-card">Stories: lift to 80/wk</div>
       <div class="kan-card">A/B reel hooks</div>
@@ -393,9 +396,6 @@
     <div class="kan-col">
       <div class="kan-col-label">Angela QC</div>
       <div class="kan-card">Winter promo email</div>
-    </div>
-    <div class="kan-col">
-      <div class="kan-col-label">Denver Approval</div>
     </div>
     <div class="kan-col">
       <div class="kan-col-label">Scheduled</div>
@@ -411,11 +411,12 @@
   </div>
 
   <div class="legend">
-    <b style="color:var(--teal-deep)">Existing flow stays unchanged:</b>
+    <b style="color:var(--teal-deep)">Corrected flow per Tia (09 Jun 2026):</b>
     <ul>
-      <li><b>In Progress</b> → Angela QC → Denver Approval → Scheduled → Published</li>
-      <li>Status changes already sync to Supabase and update the calendar view</li>
-      <li>Approval pills already exist — we'd just expose them to page-level actions</li>
+      <li><b>Proposed</b> · Denver + team approve at meeting via View Details popup</li>
+      <li>↓</li>
+      <li><b>In Progress</b> → Angela QC → Scheduled → Published</li>
+      <li><i>Note: the old "Denver Approval" stage between Angela QC and Scheduled goes away — Denver's gate is at the front of the pipeline now, not the middle.</i></li>
     </ul>
   </div>
 
@@ -469,24 +470,25 @@
     <div class="outcome-card approved" id="out-approved">
       <b>✓ Approved.</b> When you click <b>Save</b>:
       <div class="preview">
-        → Action enters <b>Work Queue</b> as <b>In Progress</b><br>
-        → Assigned to: <span id="out-owner-1">(owner)</span><br>
+        → Action moves from <b>Proposed</b> → <b>In Progress</b><br>
+        → Owner: <span id="out-owner-1">(owner)</span><br>
         → Appears on calendar at due date<br>
+        → Will flow through: In Progress → Angela QC → Scheduled → Published<br>
         → Owner gets notified (if we wire email/Slack)
       </div>
     </div>
     <div class="outcome-card adjustment" id="out-adjustment">
       <b>↻ Adjusted.</b> When you click <b>Save</b>:
       <div class="preview">
-        → Action moves to Work Queue as <b>Idea</b> with your notes attached<br>
-        → Editable in the Work Queue popup before promotion<br>
-        → Owner: <span id="out-owner-2">(owner)</span> — they'll see the notes and revised brief
+        → Action stays in <b>Proposed</b> with your notes attached<br>
+        → Owner: <span id="out-owner-2">(owner)</span> — they'll see the notes for next week's meeting<br>
+        → Re-emerges next Monday in the discussion list
       </div>
     </div>
     <div class="outcome-card rejected" id="out-rejected">
       <b>✗ Rejected.</b> When you click <b>Save</b>:
       <div class="preview">
-        → Action hidden from default views, logged in Rejected bucket<br>
+        → Action moves from Proposed → <b>Rejected</b> (hidden bucket)<br>
         → Recoverable via "Show rejected" filter on Work Queue page<br>
         → Won't re-appear next week unless the underlying condition reverts
       </div>
@@ -636,10 +638,10 @@ function saveAndClose() {
     (notes ? `Notes: ${notes}\n` : '') +
     `\nIn production, this would:\n` +
     (currentDecision === 'approved'
-      ? `→ Insert into Supabase work_queue_actions with stage='In Progress'\n→ Appear on Work Queue + calendar`
+      ? `→ Move from Proposed → In Progress in Supabase work_queue_actions\n→ Appear on Work Queue + calendar\n→ Flow through: In Progress → Angela QC → Scheduled → Published`
       : currentDecision === 'adjustment'
-        ? `→ Insert into Supabase work_queue_actions with stage='Idea' + notes\n→ Appear on Work Queue for editing`
-        : `→ Archive to Rejected bucket with reason\n→ Hidden from default views`);
+        ? `→ Stay in Proposed in Supabase work_queue_actions, with notes attached\n→ Re-surfaces for next Monday meeting`
+        : `→ Move from Proposed → Rejected (hidden bucket)\n→ Recoverable via 'Show rejected' filter`);
   alert(msg);
   closeModal();
 }
