@@ -13939,6 +13939,12 @@ function _renderActionList(actions, opts = {}) {
     };
   };
 
+  // Source-page tag — flows through to View Details popup so the approval
+  // is attributed to the right surface (organic-social, google-ads, gbp, etc.)
+  // Defaults to 'unknown' so callers don't need to be updated immediately
+  // for the View Details button to work.
+  const sourcePage = opts.sourcePage || 'unknown';
+
   let html = sectionTitle(titleStr);
   html += `<div class="card mb"><table>
     <thead><tr>
@@ -13948,9 +13954,15 @@ function _renderActionList(actions, opts = {}) {
       <th style="width:60px">Effort</th>
       <th style="width:60px">Priority</th>
       <th style="font-size:10px">Expected Impact</th>
+      <th style="width:110px"></th>
     </tr></thead><tbody>
     ${items.map((a, i) => {
       const n = _norm(a);
+      // Stash the full action object + sourcePage on the button as JSON in a
+      // data attribute. Wave 2.3 wires openProposedActionModal() to read it.
+      // HTML-escape the JSON so quotes inside don't break the attribute.
+      const payload = JSON.stringify({ action: a, normalised: n, sourcePage, index: i })
+        .replace(/&/g, '&amp;').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
       return `<tr>
         <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
         <td>
@@ -13961,6 +13973,12 @@ function _renderActionList(actions, opts = {}) {
         <td>${effortBadge(n.effort)}</td>
         <td>${priorityPill(n.priority)}</td>
         <td style="font-size:11px;color:var(--text-2)">${n.impact}</td>
+        <td style="text-align:right">
+          <button class="view-details-btn"
+                  data-action-payload="${payload}"
+                  onclick="openProposedActionModal(this.dataset.actionPayload)"
+                  style="background:#fff;color:var(--brand-accent-deep);border:1px solid var(--brand-accent);border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .15s">View Details →</button>
+        </td>
       </tr>`;
     }).join('')}
     </tbody></table>
@@ -13970,7 +13988,8 @@ function _renderActionList(actions, opts = {}) {
           ${opts.workQueueLink ? ` Open <a href="#" onclick="nav(document.querySelector('[data-page=${opts.workQueueLink.page || 'mwcc-content-planner'}]'));return false">Work Queue</a> to mark complete or change verdict.` : ''}
         </p>`
       : ''}
-  </div>`;
+  </div>
+  <style>.view-details-btn:hover{background:rgba(63,166,154,.1)!important}</style>`;
   return html;
 }
 
@@ -14762,6 +14781,7 @@ function renderSEO() {
   // Default priorities by index — first 2 are P1, next 2 are P2, rest P3
   actions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(actions, {
+    sourcePage: 'membership',
     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
   });
 
@@ -15512,6 +15532,7 @@ function renderGAds() {
 
   _actions2w.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(_actions2w, {
+    sourcePage: 'seo-organic',
     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
   });
 
@@ -15962,6 +15983,7 @@ function renderOrgSocial() {
   _socialActions[4].priority = 'P3'; // GBP posts
   _socialActions[5].priority = 'P2'; // A/B test reel hooks
   html += _renderActionList(_socialActions, {
+    sourcePage: 'organic-social',
     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog.',
   });
 
@@ -16488,6 +16510,7 @@ function renderMeta() {
 
   _metaActions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(_metaActions, {
+    sourcePage: 'meta-ads',
     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
   });
 
@@ -16877,6 +16900,7 @@ function renderGBP() {
 
   _gbpActions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(_gbpActions, {
+    sourcePage: 'gbp',
     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
   });
 
@@ -17004,8 +17028,138 @@ function _getAllWorkItems() {
 }
 
 function _findWorkItem(id) {
-  return _getAllWorkItems().find(x => x.id === id) || null;
+  // Primary: the canonical work-items list (content + Supabase work queue)
+  const hit = _getAllWorkItems().find(x => x.id === id);
+  if (hit) return hit;
+  // Fallback: newly-created proposed actions stashed locally before Supabase
+  // sync completes. Used by openProposedActionModal so the modal can open
+  // immediately on the click without waiting for the realtime broadcast.
+  if (window._localProposedActions && window._localProposedActions[id]) {
+    return _workQueueRowToWorkItem(window._localProposedActions[id]);
+  }
+  return null;
 }
+
+// ── Proposed Action Modal (Wave 2 · 10 Jun 2026) ──────────────────────────────
+// Called by the "View Details" button on every page's Next 2 Weeks
+// Prioritised Action List. Receives the action data as a JSON string in a
+// data attribute, generates a deterministic ID (hash of sourcePage + title +
+// week), upserts to Supabase work_queue_actions if not already there,
+// initialises planner_status to 'Proposed', then opens the existing
+// openPlannerModal which handles all the approval/kanban/notes machinery.
+//
+// Idempotent: re-clicking the same action gets the same ID and just re-opens
+// the modal showing whatever state it's already in.
+
+// Simple deterministic 32-bit hash (FNV-1a variant)
+function _proposedActionHash(input) {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return h.toString(36);
+}
+
+// Get current ISO week — 2026w24 etc
+function _proposedActionWeekIso() {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));   // ISO Mon-based
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}w${String(weekNo).padStart(2, '0')}`;
+}
+
+// Build the deterministic id from sourcePage + title (+ week to keep IDs
+// stable within a week but fresh next week if the action persists)
+function _proposedActionId(sourcePage, title) {
+  const wk = _proposedActionWeekIso();
+  const sig = `${sourcePage}|${title.slice(0, 100)}|${wk}`;
+  return `prop-${sourcePage}-${wk}-${_proposedActionHash(sig)}`;
+}
+
+window.openProposedActionModal = async (payloadStr) => {
+  let payload;
+  try {
+    payload = JSON.parse(payloadStr);
+  } catch (e) {
+    console.error('[openProposedActionModal] bad payload:', e);
+    return;
+  }
+  const { action, normalised, sourcePage } = payload;
+  if (!action || !normalised || !sourcePage) {
+    console.error('[openProposedActionModal] missing fields:', payload);
+    return;
+  }
+
+  const id = _proposedActionId(sourcePage, normalised.title);
+  console.log(`[openProposedActionModal] ${id} · ${normalised.title.slice(0, 60)}`);
+
+  // Build the work_queue_actions row
+  // Map effort to hours (S=2, M=6, L=12) when caller gave a letter
+  const effortHours = (typeof normalised.effort === 'number')
+    ? normalised.effort
+    : (normalised.effort === 'S' ? 2 : normalised.effort === 'M' ? 6 : normalised.effort === 'L' ? 12 : null);
+
+  const row = {
+    id,
+    source_page: sourcePage,
+    source_run_at: new Date().toISOString(),
+    title: normalised.title,
+    description: normalised.desc || '',
+    owner: normalised.owner || '',
+    owner_role: normalised.owner_role || '',
+    priority: normalised.priority || 'P2',
+    effort_hours: effortHours,
+    category: sourcePage,
+    data_quality: 'medium',
+    urgent: false,
+    projected_kpis: action.projected_kpis || [],
+    related_actions: [],
+  };
+
+  // ALWAYS stash locally first — guarantees _findWorkItem can resolve the
+  // id even if Supabase upsert is slow or fails. The realtime broadcast will
+  // later replace this with the canonical Supabase row.
+  if (!window._localProposedActions) window._localProposedActions = {};
+  window._localProposedActions[id] = row;
+
+  // Upsert to Supabase (idempotent on id)
+  if (window.cbState && window.cbState.workQueue && _supa) {
+    try {
+      const r = await _supa.from('work_queue_actions').upsert(row, { onConflict: 'id' });
+      if (r.error) console.warn('[openProposedActionModal] upsert failed:', r.error);
+      else console.log('[openProposedActionModal] upserted to Supabase');
+      // Optimistically add to cbState items so the canonical list has it
+      if (cbState.workQueue._items) {
+        const idx = cbState.workQueue._items.findIndex(x => x.id === id);
+        if (idx < 0) cbState.workQueue._items.push(row);
+        else cbState.workQueue._items[idx] = row;
+      }
+    } catch (e) {
+      console.warn('[openProposedActionModal] supabase error:', e);
+    }
+  }
+
+  // Ensure status row exists (Proposed by default)
+  const SKEY = 'cb247-planner-status';
+  const saved = JSON.parse(localStorage.getItem(SKEY) || '{}');
+  if (!saved[id]) {
+    saved[id] = 'Proposed';
+    localStorage.setItem(SKEY, JSON.stringify(saved));
+    if (window.cbState?.planner) {
+      try { cbState.planner.setStatus(id, 'Proposed'); } catch {}
+    }
+  }
+
+  // Open the existing planner modal — it handles everything from here
+  // (display, approval pills, status cycling, notes, Supabase writes)
+  if (typeof openPlannerModal === 'function') {
+    openPlannerModal(id);
+  } else {
+    console.error('[openProposedActionModal] openPlannerModal not available');
+  }
+};
 
 // ── Planner Modal ─────────────────────────────────────────────────────────────
 let _modalItemId = null;
@@ -17421,7 +17575,13 @@ function renderPlanner() {
 
   // Work Queue = content items + operational actions, both in the same flow.
   // (Published / Done items will move to Performance Review — handled below.)
-  const ALL_ITEMS    = _getAllWorkItems();
+  // Rejected actions (planner_approval.decision === 'rejected') are HIDDEN
+  // by default — toggle window._showRejected = true to surface them.
+  const _showRejected = !!window._showRejected;
+  const ALL_ITEMS_RAW = _getAllWorkItems();
+  const ALL_ITEMS = _showRejected
+    ? ALL_ITEMS_RAW
+    : ALL_ITEMS_RAW.filter(i => (approved[i.id] || {}).status !== 'rejected');
   const ACTIVE_ITEMS = ALL_ITEMS.filter(i => (saved[i.id]||'Proposed') !== 'Published');
 
   // ── Status counts for KPI bar ────────────────────────────────────────────
@@ -17485,6 +17645,11 @@ function renderPlanner() {
     const isActive = _filter === key;
     return `<button class="wq-filter-btn ${isActive?'active':''}" onclick="setPlanFilter('${key}')">${label}<span class="count">${count}</span></button>`;
   };
+  // Count rejected items in raw set (before hide-filter applied) for the toggle label
+  const _rejectedCount = ALL_ITEMS_RAW.filter(i => (approved[i.id] || {}).status === 'rejected').length;
+  const _showRejBtnLabel = _showRejected
+    ? `<span style="color:var(--brand-accent-deep)">Show rejected ✓</span>`
+    : `Show rejected`;
   html += `<div class="wq-filter">
     <span class="wq-filter-label">Show:</span>
     ${_btn('all',     'All',          ALL_ITEMS.length)}
@@ -17493,6 +17658,7 @@ function renderPlanner() {
     ${_btn('Brand Manager QC','Brand QC', _stageCount('Brand Manager QC'))}
     ${_btn('Scheduled','Scheduled',    _stageCount('Scheduled'))}
     ${_btn('Published','Published',    _stageCount('Published'))}
+    <button class="wq-filter-btn" onclick="window._showRejected=!window._showRejected;renderPlanner()" style="margin-left:auto;background:${_showRejected?'rgba(220,38,38,.08)':'#fff'};border-color:${_showRejected?'var(--risk,#dc2626)':'var(--border-strong)'}">${_showRejBtnLabel}<span class="count">${_rejectedCount}</span></button>
   </div>`;
 
   // Helper: map stage label → CSS class
