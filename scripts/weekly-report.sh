@@ -226,6 +226,16 @@ log "Step 1i — Sync Work Queue to Supabase..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/sync_to_supabase.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Work Queue sync had issues — check $LOG"
 
+# ── Step 1j: Regenerate per-action HTML briefs (Fix 10 Jun 2026) ──
+# CB247 mirror of generate_mwcc_briefs.py. The dashboard modal's "View Brief"
+# link opens docs/briefs/{action_id}.html — these files must exist for every
+# current Work Queue ID or the link 404s. This script reads
+# state/work-queue.json + state/promo-pipeline.json and bakes one HTML brief
+# per action (with parent_promo_id linkage for child items).
+log "Step 1j — Regenerate per-action briefs..."
+"$PYTHON" "$BASE_DIR/scripts/generate_briefs.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Brief generation had issues — check $LOG"
+
 log "Phase 1 complete."
 
 
