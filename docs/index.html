@@ -4703,7 +4703,8 @@ window.PROMO_PIPELINE_LIVE = {
         "family_joins_target": 25,
         "kids_hub_signup_target": 40,
         "projected_revenue_lift": "$2,800/mo at full pipeline"
-      }
+      },
+      "_prior_performance": "Only 0 decided verdict so far \u00b7 keep collecting signal"
     }
   ],
   "retention": [
@@ -4737,7 +4738,8 @@ window.PROMO_PIPELINE_LIVE = {
         "future_cancel_pool": 279,
         "save_rate_target": 30,
         "projected_revenue_saved": "~$4017/mo at 30% save rate"
-      }
+      },
+      "_prior_performance": "Only 0 decided verdict so far \u00b7 keep collecting signal"
     },
     {
       "id": "promo-stay-with-us-2026-06",
@@ -4769,7 +4771,8 @@ window.PROMO_PIPELINE_LIVE = {
         "switched_reduction_target_pct": 50,
         "perk_redemption_rate_target_pct": 60,
         "projected_revenue_saved": "~$3,200/mo (50% reduction \u00d7 $48/mo \u00d7 est. 67 members)"
-      }
+      },
+      "_prior_performance": "Only 0 decided verdict so far \u00b7 keep collecting signal"
     },
     {
       "id": "promo-addon-trial-2026-06",
@@ -4800,7 +4803,8 @@ window.PROMO_PIPELINE_LIVE = {
         "trial_signup_target": 80,
         "trial_to_paid_conversion_pct": 40,
         "projected_add_on_revenue": "$2,560/mo recurring (80 \u00d7 40% \u00d7 $20/wk \u00d7 4)"
-      }
+      },
+      "_prior_performance": "Only 0 decided verdict so far \u00b7 keep collecting signal"
     },
     {
       "id": "promo-welcome-back-2026-06",
@@ -4831,10 +4835,11 @@ window.PROMO_PIPELINE_LIVE = {
         "edm_open_target_pct": 35,
         "pt_booking_target": 50,
         "projected_revenue_saved": "~$1,800/mo (50 reactivated \u00d7 $48/mo \u00d7 75% retention)"
-      }
+      },
+      "_prior_performance": "Only 0 decided verdict so far \u00b7 keep collecting signal"
     }
   ],
-  "generated_at": "2026-06-10T08:07:17.554847Z",
+  "generated_at": "2026-06-10T08:17:58.971723Z",
   "generator": "promo_concept_emitter v1.0.0"
 };
 </script>
@@ -13566,6 +13571,17 @@ window.cbState = {
         const map = {};
         statuses.data.forEach(r => { map[r.item_id] = r.status; });
         localStorage.setItem(this.PLANNER_STATUS_KEY, JSON.stringify(map));
+
+        // Wave 6: backfill published_at from Supabase planner_status.updated_at.
+        // For every row currently in 'Published' state, use updated_at as the
+        // proxy timestamp. Preserves any locally-stored values that are newer.
+        const pubMap = JSON.parse(localStorage.getItem('cb247-planner-published-at') || '{}');
+        statuses.data.forEach(r => {
+          if (r.status === 'Published' && r.updated_at && !pubMap[r.item_id]) {
+            pubMap[r.item_id] = r.updated_at;
+          }
+        });
+        localStorage.setItem('cb247-planner-published-at', JSON.stringify(pubMap));
       }
       if (approvals.data) {
         const map = {};
@@ -13610,6 +13626,13 @@ window.cbState = {
             delete map[payload.old.item_id];
           } else if (payload.new && payload.new.item_id) {
             map[payload.new.item_id] = payload.new.status;
+            // Wave 6: track published_at on broadcast too (other browsers
+            // marking items Published should sync the clock locally).
+            if (payload.new.status === 'Published' && payload.new.updated_at) {
+              const pubMap = JSON.parse(localStorage.getItem('cb247-planner-published-at') || '{}');
+              pubMap[payload.new.item_id] = payload.new.updated_at;
+              localStorage.setItem('cb247-planner-published-at', JSON.stringify(pubMap));
+            }
           }
           localStorage.setItem(self.PLANNER_STATUS_KEY, JSON.stringify(map));
           if (self._rerender) self._rerender();
@@ -13656,6 +13679,18 @@ window.cbState = {
       const map = JSON.parse(localStorage.getItem(this.PLANNER_STATUS_KEY) || '{}');
       map[itemId] = status;
       localStorage.setItem(this.PLANNER_STATUS_KEY, JSON.stringify(map));
+
+      // Wave 6 (10 Jun 2026): track WHEN each item transitions to Published so
+      // Performance Review can compute days-since-publish and auto-promote at
+      // 14 days. Resets the clock on every Publish transition (handles republish).
+      // Backed by Supabase planner_status.updated_at — localStorage is the
+      // fast-path cache used by renderContentReview.
+      if (status === 'Published') {
+        const pubMap = JSON.parse(localStorage.getItem('cb247-planner-published-at') || '{}');
+        pubMap[itemId] = new Date().toISOString();
+        localStorage.setItem('cb247-planner-published-at', JSON.stringify(pubMap));
+      }
+
       if (!_supa) return Promise.resolve();
       const me = window.cbState.whoAmI();
       return _supa.from('planner_status').upsert({
@@ -18148,20 +18183,51 @@ function _renderVerdictCard(row) {
 }
 
 // Card for actions Published but not yet measured
+// Wave 6: helpers for days-since-publish computation + auto-promotion.
+function _daysSincePublished(itemId) {
+  const pubMap = JSON.parse(localStorage.getItem('cb247-planner-published-at') || '{}');
+  const isoTs = pubMap[itemId];
+  if (!isoTs) return null;
+  const pubTs = new Date(isoTs).getTime();
+  if (Number.isNaN(pubTs)) return null;
+  return Math.floor((Date.now() - pubTs) / (1000 * 60 * 60 * 24));
+}
+
 function _renderPendingMeasurementCard(row) {
   const kpis = row.projected_kpis || [];
   const windowDays = kpis.length
     ? Math.max.apply(null, kpis.map(k => k.measurement_window_days || 14))
     : 14;
 
-  return `<div class="verdict-card verdict-pending">
+  // Wave 6: auto-promote @ 14 days post-publish. The card flips from "Awaiting
+  // measurement" (informational) to "Review now" (action-required) when the
+  // measurement window has elapsed without a verdict being recorded.
+  const daysSince = _daysSincePublished(row.id);
+  const isAutoPromoted = daysSince !== null && daysSince >= 14;
+
+  const pillLabel = isAutoPromoted ? 'Review now · auto-promoted' : 'Awaiting measurement';
+  const pillClass = isAutoPromoted ? 'pill-underperforming' : 'pill-pending';
+  const borderColor = isAutoPromoted ? '#dc2626' : '';
+  const promoTag = row.parent_promo_id
+    ? `<span style="background:rgba(63,166,154,.12);color:#2d7d72;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase;margin-left:6px">Promo: ${row.parent_promo_id}</span>`
+    : '';
+
+  const daysLine = daysSince !== null
+    ? `<b>${daysSince} day${daysSince!==1?'s':''}</b> since published`
+    : `published timestamp not yet captured`;
+
+  const bodyText = isAutoPromoted
+    ? `${daysLine}. Measurement window of <b>${windowDays} days</b> has elapsed — verdict your impact at next Monday meeting. Notes feed back into next month's Promo Concept Generator.`
+    : `${daysLine}. Verdict will appear automatically once <b>${windowDays} days</b> have elapsed since this was marked Published. The runner fires every 6 hours via pull_all.py.`;
+
+  return `<div class="verdict-card verdict-pending" ${borderColor?`style="border-left-color:${borderColor}"`:''}>
     <div class="verdict-header">
       <span class="verdict-source-badge src-${row.source_page || 'unknown'}">${_prettySource(row.source_page)}</span>
-      <span class="verdict-pill pill-pending">Awaiting measurement</span>
-      <div class="verdict-title">${row.title || 'Untitled'}</div>
+      <span class="verdict-pill ${pillClass}">${pillLabel}</span>
+      <div class="verdict-title">${row.title || 'Untitled'}${promoTag}</div>
     </div>
     <div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.6">
-      Verdict will appear automatically once the measurement window (<b>${windowDays} days</b>) elapses since this was marked Published. The runner fires every 6 hours via pull_all.py.<br>
+      ${bodyText}<br>
       <span style="font-size:10.5px">Force a verdict now: <code style="background:#f3f4f6;padding:1px 5px;border-radius:2px;font-size:10px">python scripts/work_queue/measurement_runner.py --force-id ${row.id}</code></span>
     </div>
   </div>`;
@@ -18775,7 +18841,38 @@ function renderContentReview() {
     return acc;
   }, {});
 
+  // Wave 6: auto-promotion subset — Published items past their 14-day window
+  // surface as "Review now" cards at the TOP of the awaitingMeasure list.
+  const autoPromoted = awaitingMeasure.filter(r => {
+    const d = _daysSincePublished(r.id);
+    return d !== null && d >= 14;
+  });
+  // Sort awaitingMeasure: auto-promoted first (oldest first), then by recency
+  awaitingMeasure.sort((a, b) => {
+    const da = _daysSincePublished(a.id);
+    const db = _daysSincePublished(b.id);
+    const aIs = da !== null && da >= 14;
+    const bIs = db !== null && db >= 14;
+    if (aIs && !bIs) return -1;
+    if (!aIs && bIs) return 1;
+    if (aIs && bIs) return (db || 0) - (da || 0);  // oldest first within auto-promoted
+    return 0;
+  });
+
   let html = '';
+
+  // ── Wave 6: Monday meeting prompt banner ──────────────────────────────
+  // Surfaces top-of-page when items have crossed the 14-day measurement window
+  // without a verdict. The Brand Manager works through these at the weekly
+  // meeting; verdicts feed back into next month's Promo Concept Generator.
+  if (autoPromoted.length > 0) {
+    html += `<div class="insight teal mb" style="border-left:6px solid #dc2626;background:#fff5f5">
+      <div class="insight-label" style="color:#991b1b">Monday meeting · ${autoPromoted.length} verdict${autoPromoted.length!==1?'s':''} required</div>
+      <div style="font-size:12.5px;line-height:1.7">
+        <b>${autoPromoted.length}</b> Published action${autoPromoted.length!==1?'s have':' has'} passed the 14-day measurement window without a verdict. Review them below (sorted oldest first) and pick a verdict per card. Verdicts on items tagged with a <b>Promo:</b> badge feed back into next month's <b>Promo Concept Generator</b> — winners get repeated, underperformers get retired.
+      </div>
+    </div>`;
+  }
 
   // Page subtitle removed — static <p> in page-header (around line 6589) already
   // describes the page. The Measured Outcomes section title carries the rest.
@@ -18833,7 +18930,14 @@ function renderContentReview() {
 
     // ── Pending measurement cards ──
     if (awaitingMeasure.length > 0) {
-      html += sectionTitle(`Awaiting Measurement — ${awaitingMeasure.length} Published action${awaitingMeasure.length !== 1 ? 's' : ''}`);
+      // Wave 6: surface auto-promoted count inside the section title so the team
+      // can scan at a glance — "5 Published · 2 require verdict now"
+      const totalPub = awaitingMeasure.length;
+      const autoCount = autoPromoted.length;
+      const titleSuffix = autoCount > 0
+        ? ` · <span style="color:#dc2626">${autoCount} require verdict now</span>`
+        : '';
+      html += sectionTitle(`Awaiting Measurement — ${totalPub} Published action${totalPub !== 1 ? 's' : ''}${titleSuffix}`);
       html += awaitingMeasure.map(_renderPendingMeasurementCard).join('');
     }
 
@@ -18891,6 +18995,24 @@ function renderContentReview() {
   </div>`;
 
   $('review-content').innerHTML = html;
+
+  // Wave 6: surface auto-promoted count on the sidebar Performance Review item
+  // so the Brand Manager sees the red badge even when on a different page.
+  const sidebarItem = document.querySelector('.sidebar-item[data-page="content-review"]');
+  if (sidebarItem) {
+    let badge = sidebarItem.querySelector('.badge');
+    if (autoPromoted.length > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge';
+        sidebarItem.appendChild(badge);
+      }
+      badge.style.background = '#dc2626';
+      badge.textContent = autoPromoted.length;
+    } else if (badge) {
+      badge.remove();
+    }
+  }
 }
 
 // ── Render: Status bar ────────────────────────────────────────────────────────

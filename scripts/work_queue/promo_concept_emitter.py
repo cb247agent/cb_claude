@@ -100,6 +100,76 @@ def _load_existing_promo_pipeline() -> dict:
         return {"acquisition": [], "retention": []}
 
 
+# ── Prior verdict signals (Wave 6 feedback loop) ─────────────────────────────
+# After each cycle, the Performance Review page records verdicts on child Work
+# Queue actions. Each child carries parent_promo_id back to its concept. The
+# emitter reads those verdicts and biases the next batch:
+#   - winner-heavy archetype → repeat with variation
+#   - underperforming archetype → retire (skip emission this month)
+#   - no history → emit fresh
+
+ARCHETYPE_FROM_PROMO_ID = re.compile(r"^promo-([a-z0-9-]+?)-\d{4}-\d{2}$")
+
+
+def _archetype_of(promo_id: str) -> Optional[str]:
+    """promo-dont-quit-save-call-2026-06 → 'dont-quit-save-call'"""
+    if not promo_id:
+        return None
+    m = ARCHETYPE_FROM_PROMO_ID.match(promo_id)
+    return m.group(1) if m else None
+
+
+def _prior_verdict_signals() -> dict:
+    """Read state/work-queue.json, aggregate verdicts by promo archetype.
+    Returns: {archetype: {winners, decided, sample_size}}"""
+    if not WORK_QUEUE_FILE.exists():
+        return {}
+    try:
+        wq = json.loads(WORK_QUEUE_FILE.read_text())
+    except Exception:
+        return {}
+    out: dict[str, dict] = {}
+    for a in wq.get("actions", []) or []:
+        ppid = a.get("parent_promo_id")
+        if not ppid:
+            continue
+        archetype = _archetype_of(ppid)
+        if not archetype:
+            continue
+        verdict = a.get("overall_verdict")
+        entry = out.setdefault(archetype, {"winners": 0, "partial": 0, "no_change": 0, "underperforming": 0, "decided": 0, "sample_size": 0})
+        entry["sample_size"] += 1
+        if verdict == "winner":
+            entry["winners"] += 1
+            entry["decided"] += 1
+        elif verdict == "partial_win":
+            entry["partial"] += 1
+            entry["decided"] += 1
+        elif verdict == "no_change":
+            entry["no_change"] += 1
+            entry["decided"] += 1
+        elif verdict == "underperforming":
+            entry["underperforming"] += 1
+            entry["decided"] += 1
+    return out
+
+
+def _archetype_recommendation(archetype: str, signals: dict) -> tuple[str, str]:
+    """Returns (decision, reason). decision ∈ {'emit', 'skip', 'emit_with_variation'}."""
+    if archetype not in signals:
+        return ("emit", "First run · no prior verdicts")
+    s = signals[archetype]
+    decided = s["decided"]
+    if decided < 2:
+        return ("emit", f"Only {decided} decided verdict so far · keep collecting signal")
+    win_rate = (s["winners"] + 0.5 * s["partial"]) / decided
+    if win_rate >= 0.6:
+        return ("emit_with_variation", f"Prior cycle: {s['winners']} of {decided} winners ({int(win_rate*100)}%) · repeat archetype with fresh angle")
+    if win_rate < 0.25:
+        return ("skip", f"Prior cycle: {s['winners']} of {decided} winners ({int(win_rate*100)}%) · retire archetype, try a different lever")
+    return ("emit", f"Prior cycle: {s['winners']} of {decided} winners ({int(win_rate*100)}%) · mixed signal, retry once")
+
+
 # ── Signal extraction (heuristic engine) ──────────────────────────────────────
 
 
@@ -656,6 +726,33 @@ def main() -> int:
     # Build concepts
     new_acquisition = _build_acquisition_concepts(signals, events, month_iso)
     new_retention = _build_retention_concepts(signals, month_iso)
+
+    # Wave 6: apply prior-verdict feedback. Skip archetypes that historically
+    # underperform; tag winners as "Repeat of last cycle's winner". Stamp
+    # _prior_performance onto each concept so the dashboard renders the badge.
+    prior = _prior_verdict_signals()
+    if prior:
+        print(f"Prior verdict signals on file ({len(prior)} archetypes):")
+        for arch, s in prior.items():
+            print(f"  {arch:30s} winners={s['winners']:2d} decided={s['decided']:2d} sample={s['sample_size']:2d}")
+        print()
+
+    def _apply_feedback(concepts: list[dict]) -> list[dict]:
+        kept = []
+        for c in concepts:
+            arch = _archetype_of(c["id"])
+            decision, reason = _archetype_recommendation(arch or "", prior)
+            c["_prior_performance"] = reason
+            if decision == "skip":
+                print(f"  [feedback] SKIP {c['id']:55s} ← {reason}")
+                continue
+            if decision == "emit_with_variation":
+                c["phase"] = f"{c.get('phase','Concept')} · {reason}"
+            kept.append(c)
+        return kept
+
+    new_acquisition = _apply_feedback(new_acquisition)
+    new_retention = _apply_feedback(new_retention)
 
     print(f"Generated {len(new_acquisition)} acquisition + {len(new_retention)} retention concepts for {month_iso}\n")
 
