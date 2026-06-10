@@ -13738,7 +13738,15 @@ window.cbState = {
       const me = window.cbState.whoAmI();
       return _supa.from('planner_status').upsert({
         item_id: itemId, status, updated_by: me, updated_at: new Date().toISOString()
-      }).then(r => { if (r.error) console.warn('[cbState.planner] setStatus failed:', r.error); });
+      }).then(r => {
+        if (r.error) {
+          console.warn('[cbState.planner] setStatus failed:', r.error);
+          // Wave 2.10 (10 Jun 2026): surface Supabase write failures to the
+          // user so silent constraint violations stop hiding bugs. Local
+          // cache still has the change — this banner just flags it.
+          _showSupabaseErrorBanner(`Status "${status}" couldn't sync to Supabase: ${r.error.message || r.error.code || 'unknown error'}`);
+        }
+      });
     },
 
     // Optimistic write: notes/decision merged with existing record (preserves prior values when passed undefined).
@@ -13759,7 +13767,12 @@ window.cbState = {
         notes:    merged.notes  || null,
         updated_by: me,
         updated_at: new Date().toISOString()
-      }).then(r => { if (r.error) console.warn('[cbState.planner] setApproval failed:', r.error); });
+      }).then(r => {
+        if (r.error) {
+          console.warn('[cbState.planner] setApproval failed:', r.error);
+          _showSupabaseErrorBanner(`Decision "${merged.status}" couldn't sync: ${r.error.message || r.error.code || 'unknown'}`);
+        }
+      });
     },
   },
 
@@ -17243,6 +17256,25 @@ const PLANNER_ITEMS = [
 
 const PLANNER_STATUS_KEY = 'cb247-planner-status';
 const PLANNER_APPROVAL_KEY = 'cb247-planner-approval';
+
+// Wave 2.10 (10 Jun 2026): visible error banner for silent Supabase failures.
+// CHECK constraint mismatches between dashboard vocabulary and the live DB
+// used to fail silently (only console.warn). Now they pop a 6-second amber
+// toast at the top of the screen so we catch schema drift early.
+function _showSupabaseErrorBanner(message) {
+  let el = document.getElementById('supabase-error-banner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'supabase-error-banner';
+    el.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#fef3c7;color:#92400e;border:1px solid #f59e0b;border-radius:6px;padding:10px 16px 10px 18px;font-size:12.5px;font-weight:600;z-index:2000;box-shadow:0 4px 14px rgba(0,0,0,.15);max-width:560px;display:flex;align-items:center;gap:10px;font-family:inherit';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<span style="font-size:14px">⚠</span><div style="flex:1">${message}<div style="font-size:10.5px;color:#78350f;margin-top:2px;font-weight:500">Change saved locally only — won't sync across browsers until fixed.</div></div><button onclick="this.parentElement.remove()" style="background:none;border:none;font-size:16px;color:#92400e;cursor:pointer;padding:0 0 0 4px;line-height:1">✕</button>`;
+  el.style.display = 'flex';
+  clearTimeout(window._supaErrorTimeout);
+  window._supaErrorTimeout = setTimeout(() => { if (el && el.parentElement) el.remove(); }, 6000);
+}
+
 // MWCC parallel keys — used by openMwccPlannerModal + handlers when _modalQueue==='mwcc'
 const MWCC_PLANNER_STATUS_KEY = 'mwcc-planner-status';
 const MWCC_PLANNER_APPROVAL_KEY = 'mwcc-planner-approval';
@@ -17317,8 +17349,21 @@ function _getAllWorkItems() {
 
   // Prefer Supabase work_queue (Session 2) — the source of truth from emitters
   const wq = (window.cbState?.workQueue?.getAll() || []);
-  if (wq.length > 0) {
-    return content.concat(wq.map(_workQueueRowToWorkItem));
+
+  // Wave 2.10 (10 Jun 2026): ALWAYS merge optimistic prop-* rows from
+  // window._localProposedActions on top, deduped by id. Without this, the
+  // realtime broadcast on any work_queue_actions change triggers _hydrate()
+  // which overwrites _items — if the prop-* upsert hadn't finished yet
+  // (or failed for any reason), the row vanishes from the Work Queue.
+  const localStash = window._localProposedActions || {};
+  const byId = new Map();
+  wq.forEach(r => byId.set(r.id, r));
+  Object.values(localStash).forEach(r => {
+    if (!byId.has(r.id)) byId.set(r.id, r);     // Supabase wins when both present
+  });
+
+  if (byId.size > 0) {
+    return content.concat([...byId.values()].map(_workQueueRowToWorkItem));
   }
 
   // Legacy fallback: D.tracker.actions from the old agent output (kept for transition period)
@@ -17626,7 +17671,10 @@ function _rerenderActivePage() {
   const active = document.querySelector('.page.active');
   if (!active) return;
   const id = active.id || '';
-  // page-id → render function map
+  // page-id → render function map.
+  // Wave 2.10 fix (10 Jun 2026): added content-planner + content-review so
+  // Save in the modal refreshes the Work Queue + Performance Review pages
+  // when the user is on them, not just the source pages.
   const map = {
     'page-seo':              () => typeof renderSEO === 'function' && renderSEO(),
     'page-google-ads':       () => typeof renderGAds === 'function' && renderGAds(),
@@ -17635,6 +17683,8 @@ function _rerenderActivePage() {
     'page-gbp':              () => typeof renderGBP === 'function' && renderGBP(),
     'page-cb247-membership': () => typeof renderCb247Membership === 'function' && renderCb247Membership(),
     'page-overview':         () => typeof renderOverview === 'function' && renderOverview(),
+    'page-content-planner':  () => typeof renderPlanner === 'function' && renderPlanner(),
+    'page-content-review':   () => typeof renderContentReview === 'function' && renderContentReview(),
   };
   const fn = map[id];
   if (fn) {
@@ -18275,6 +18325,13 @@ function renderPlanner() {
   const _showRejBtnLabel = _showRejected
     ? `<span style="color:var(--brand-accent-deep)">Show rejected ✓</span>`
     : `Show rejected`;
+  // Wave 2.10: Rejected gets a real filter pill — counts items whose
+  // planner_status is 'Rejected' OR planner_approval.status is 'rejected'.
+  // Clicking it forces _showRejected ON + sets filter to 'Rejected' so the
+  // backlog actually shows the rejected items (was previously filter-less).
+  const _rejectedStageCount = ALL_ITEMS_RAW.filter(i =>
+    (saved[i.id] === 'Rejected') || ((approved[i.id] || {}).status === 'rejected')
+  ).length;
   html += `<div class="wq-filter">
     <span class="wq-filter-label">Show:</span>
     ${_btn('all',     'All',          ALL_ITEMS.length)}
@@ -18283,6 +18340,7 @@ function renderPlanner() {
     ${_btn('Brand Manager QC','Brand QC', _stageCount('Brand Manager QC'))}
     ${_btn('Scheduled','Scheduled',    _stageCount('Scheduled'))}
     ${_btn('Published','Published',    _stageCount('Published'))}
+    <button class="wq-filter-btn ${_filter==='Rejected'?'active':''}" onclick="window._showRejected=true;setPlanFilter('Rejected')" style="background:${_filter==='Rejected'?'rgba(220,38,38,.1)':'#fff'};border-color:${_filter==='Rejected'?'#dc2626':'var(--border-strong)'};color:${_filter==='Rejected'?'#991b1b':''}">Rejected<span class="count" style="${_filter==='Rejected'?'background:#dc2626;color:#fff':''}">${_rejectedStageCount}</span></button>
     <button class="wq-filter-btn" onclick="window._showRejected=!window._showRejected;renderPlanner()" style="margin-left:auto;background:${_showRejected?'rgba(220,38,38,.08)':'#fff'};border-color:${_showRejected?'var(--risk,#dc2626)':'var(--border-strong)'}">${_showRejBtnLabel}<span class="count">${_rejectedCount}</span></button>
   </div>`;
 
@@ -18295,7 +18353,8 @@ function renderPlanner() {
     'In Progress':'s-inprog',
     'Brand Manager QC':'s-angela', 'Angela QC':'s-angela', 'Kelley QC':'s-angela', 'Denver Approval':'s-angela',
     'Scheduled':'s-sched',
-    'Published':'s-pub'
+    'Published':'s-pub',
+    'Rejected':'s-denver'   // Wave 2.10: reuse the existing red border style for rejected cards
   })[st] || 's-idea';
 
   // Helper: render one stage-coloured card (used by calendar + backlog)

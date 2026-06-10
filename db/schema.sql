@@ -29,14 +29,22 @@
 
 CREATE TABLE IF NOT EXISTS public.planner_status (
     item_id      text PRIMARY KEY,
-    status       text NOT NULL DEFAULT 'Idea'
+    status       text NOT NULL DEFAULT 'Proposed'
+                 -- Wave 1 (10 Jun 2026) renamed stages. Legacy keys are
+                 -- kept in the allow-list until every team browser cycles.
+                 -- Migration: db/migrations/2026-06-10-kanban-stages-check.sql
                  CHECK (status IN (
-                     'Idea',
+                     'Proposed',         -- was 'Idea'
                      'In Progress',
-                     'Angela QC',
-                     'Denver Approval',
+                     'Brand Manager QC', -- merged Angela QC + Denver Approval
                      'Scheduled',
-                     'Published'
+                     'Published',
+                     'Rejected',         -- new (hidden column)
+                     -- Legacy (kept for in-flight rows from old browsers)
+                     'Idea',
+                     'Angela QC',
+                     'Kelley QC',
+                     'Denver Approval'
                  )),
     updated_by   text,                          -- identity from "Who am I?" picker
     updated_at   timestamptz NOT NULL DEFAULT now()
