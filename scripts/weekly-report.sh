@@ -236,6 +236,16 @@ log "Step 1j — Regenerate per-action briefs..."
 "$PYTHON" "$BASE_DIR/scripts/generate_briefs.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Brief generation had issues — check $LOG"
 
+# ── Step 1k: Re-index blog drafts (Wave 2.15 · 11 Jun 2026) ──
+# Scans docs/blog-drafts/*.html and writes the slug list into
+# docs/index.html as window.BLOG_DRAFTS_INDEX. The dashboard's
+# _findExistingDraft() helper uses this to auto-attach drafts to
+# matching content actions (e.g. "Improve organic content for
+# 'gym ellenbrook perth'" → gym-ellenbrook-perth.html).
+log "Step 1k — Inject blog-drafts index..."
+"$PYTHON" "$BASE_DIR/scripts/inject-blog-drafts-index.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Blog drafts index injection had issues — check $LOG"
+
 log "Phase 1 complete."
 
 
