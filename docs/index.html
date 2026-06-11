@@ -14141,6 +14141,44 @@ const sectionTitle = t => `<div class="section-title">${t}</div>`;
 //     footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days.',
 //     workQueueLink: { page: 'mwcc-content-planner' },  // optional
 //   });
+// Wave 2.14 (11 Jun 2026): Classify an action as 'content' (member-facing
+// copy, needs Brand Manager QC) vs 'action' (operational fix, no brand
+// voice). Used by openActionModal to set _paModalKind, and by each page
+// render to split the Prioritised List into Content + Ops sections.
+//
+// Decision order: title keywords win over source-page defaults. The title
+// is the strongest signal — emitter output usually starts with a verb that
+// already implies kind ("Build new content", "Fix crawl errors", etc.).
+function _classifyActionKind(action) {
+  if (!action) return 'action';
+  const sp = String(action.source_page || action.sourcePage || '').toLowerCase();
+  const t  = String(action.title || '').toLowerCase().trim();
+
+  // ── Content — member-facing copy production ──────────────────────────
+  if (/^build\s+new\s+content/.test(t))             return 'content';
+  if (/^optimise\s+on-page/.test(t))                return 'content';
+  if (/^improve\s+organic\s+content/.test(t))       return 'content';
+  if (/^write\s/.test(t))                           return 'content';
+  if (/^draft\s/.test(t))                           return 'content';
+  if (/^post\s+to\s/.test(t))                       return 'content';
+  if (/^respond\s+to\s+review/.test(t))             return 'content';
+  if (/^batch-?film/.test(t))                       return 'content';
+  if (/save\s+call|save-call/.test(t))              return 'content';
+  if (/^(reel|story|tiktok|gbp\s+post|blog)\b/.test(t)) return 'content';
+  if (/—\s*(reel|story|tiktok|gbp post|email|blog)/.test(t)) return 'content';
+
+  // ── Action — operational fixes, no brand voice ───────────────────────
+  if (/^(fix|setup|set up|connect|verify|test|audit|investigate|migrate)\s/.test(t)) return 'action';
+  if (/^(scale|lift|pause|reduce|stop|switch|cap|increase|decrease)\s/.test(t))     return 'action';
+  if (/^list\s+cb247\s+on/.test(t))                 return 'action';
+  if (/^add\s+(internal\s+link|negative\s+keyword)/.test(t)) return 'action';
+
+  // ── Source-page defaults when title gives no signal ──────────────────
+  if (sp === 'organic-social' || sp === 'gbp' || sp === 'seo-organic') return 'content';
+
+  return 'action';
+}
+
 function _renderActionList(actions, opts = {}) {
   if (!Array.isArray(actions) || actions.length === 0) return '';
   const limit  = opts.limit  || 8;
@@ -15120,12 +15158,27 @@ function renderSEO() {
 
   // Default priorities by index — first 2 are P1, next 2 are P2, rest P3
   actions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
-  html += _renderActionList(actions, {
-    sourcePage: 'seo-organic',   // Wave 2 copy-paste bug: was 'membership' (10 Jun 2026)
-    limit: 30,                   // Wave 2.13: surface all emitter rows (was default 8 → hid 17)
-    workQueueLink: { page: 'content-planner' },
-    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Hand-coded picks at the top + all seo_emitter rows below.',
-  });
+
+  // Wave 2.14: split into Content vs Ops prioritised lists. Same source_page
+  // tag for both, just different titles + footer copy explaining each flow.
+  const _seoContent = actions.filter(a => _classifyActionKind(a) === 'content');
+  const _seoOps     = actions.filter(a => _classifyActionKind(a) === 'action');
+  if (_seoContent.length > 0) {
+    html += _renderActionList(_seoContent, {
+      title: 'Content — Prioritised List',
+      sourcePage: 'seo-organic', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Content flow: Proposed → In Progress → Brand Manager QC → Scheduled → Published. Page copy, blogs, landing pages, on-page edits — all go through brand voice QC.',
+    });
+  }
+  if (_seoOps.length > 0) {
+    html += _renderActionList(_seoOps, {
+      title: 'Operational — Prioritised List',
+      sourcePage: 'seo-organic', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Ops flow: Proposed → In Progress → Published (skips QC + Scheduled). Crawl-error fixes, schema, directory listings, redirects — no brand copy to QC.',
+    });
+  }
 
   $('seo-content').innerHTML = html;
 }
@@ -15884,12 +15937,27 @@ function renderGAds() {
   } catch (e) { console.warn('[renderGAds] could not merge emitter actions:', e); }
 
   _actions2w.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
-  html += _renderActionList(_actions2w, {
-    sourcePage: 'google-ads',    // Wave 2 copy-paste bug: was 'seo-organic' (10 Jun 2026)
-    limit: 30,                   // Wave 2.13: surface all emitter rows
-    workQueueLink: { page: 'content-planner' },
-    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Hand-coded picks at the top + all google_ads_emitter rows below.',
-  });
+
+  // Wave 2.14: split into Content + Ops. Google Ads is mostly ops (budget,
+  // bidding, conversion tracking) — Content section often empty.
+  const _gAdsContent = _actions2w.filter(a => _classifyActionKind(a) === 'content');
+  const _gAdsOps     = _actions2w.filter(a => _classifyActionKind(a) === 'action');
+  if (_gAdsContent.length > 0) {
+    html += _renderActionList(_gAdsContent, {
+      title: 'Content — Prioritised List',
+      sourcePage: 'google-ads', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Content flow: Proposed → In Progress → Brand Manager QC → Scheduled → Published. Ad copy, RSA headlines, landing page copy — all go through brand voice QC.',
+    });
+  }
+  if (_gAdsOps.length > 0) {
+    html += _renderActionList(_gAdsOps, {
+      title: 'Operational — Prioritised List',
+      sourcePage: 'google-ads', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Ops flow: Proposed → In Progress → Published (skips QC + Scheduled). Budget changes, bidding strategy, negative keywords, conversion tracking — no brand copy to QC.',
+    });
+  }
 
   // ── Full Paid Ads Agent report (kept as collapsed reference) ────────────
   const _ao_ads = D.raw_agent_outputs || {};
@@ -16337,10 +16405,34 @@ function renderOrgSocial() {
   _socialActions[3].priority = 'P2'; // GBP review responses
   _socialActions[4].priority = 'P3'; // GBP posts
   _socialActions[5].priority = 'P2'; // A/B test reel hooks
-  html += _renderActionList(_socialActions, {
-    sourcePage: 'organic-social',
-    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog.',
-  });
+  // Wave 2.14: merge emitter rows + split into Content + Ops.
+  try {
+    const wq = window.cbState?.workQueue?.getAll?.() || [];
+    const existing = new Set(_socialActions.map(a => (a.title || '').trim().toLowerCase()));
+    wq.filter(a =>
+      a.source_page === 'organic-social' &&
+      !(a.id || '').startsWith('prop-') &&
+      !existing.has((a.title || '').trim().toLowerCase())
+    ).forEach(a => _socialActions.push(a));
+  } catch (e) { console.warn('[renderOrgSocial] could not merge emitter actions:', e); }
+  const _socContent = _socialActions.filter(a => _classifyActionKind(a) === 'content');
+  const _socOps     = _socialActions.filter(a => _classifyActionKind(a) === 'action');
+  if (_socContent.length > 0) {
+    html += _renderActionList(_socContent, {
+      title: 'Content — Prioritised List',
+      sourcePage: 'organic-social', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Content flow: Proposed → In Progress → Brand Manager QC → Scheduled → Published. Reels, stories, posts, captions — all go through brand voice QC.',
+    });
+  }
+  if (_socOps.length > 0) {
+    html += _renderActionList(_socOps, {
+      title: 'Operational — Prioritised List',
+      sourcePage: 'organic-social', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Ops flow: Proposed → In Progress → Published (skips QC + Scheduled). Account setup, scheduling tools, analytics fixes — no brand copy to QC.',
+    });
+  }
 
   // ── Unavailable-metrics disclosure (honest gap statement) ───────────────
   if (SX.unavailable_metrics && SX.unavailable_metrics.length > 0) {
@@ -16875,12 +16967,26 @@ function renderMeta() {
   } catch (e) { console.warn('[renderMeta] could not merge emitter actions:', e); }
 
   _metaActions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
-  html += _renderActionList(_metaActions, {
-    sourcePage: 'meta-ads',
-    limit: 30,                   // Wave 2.13: surface all emitter rows
-    workQueueLink: { page: 'content-planner' },
-    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Hand-coded picks at the top + all meta_emitter rows below.',
-  });
+
+  // Wave 2.14: split into Content + Ops sections.
+  const _metaContent = _metaActions.filter(a => _classifyActionKind(a) === 'content');
+  const _metaOps     = _metaActions.filter(a => _classifyActionKind(a) === 'action');
+  if (_metaContent.length > 0) {
+    html += _renderActionList(_metaContent, {
+      title: 'Content — Prioritised List',
+      sourcePage: 'meta-ads', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Content flow: Proposed → In Progress → Brand Manager QC → Scheduled → Published. Ad creative copy, image briefs, video scripts — all go through brand voice QC.',
+    });
+  }
+  if (_metaOps.length > 0) {
+    html += _renderActionList(_metaOps, {
+      title: 'Operational — Prioritised List',
+      sourcePage: 'meta-ads', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Ops flow: Proposed → In Progress → Published (skips QC + Scheduled). Pixel setup, audience changes, budget tweaks, CAPI — no brand copy to QC.',
+    });
+  }
 
   $('meta-content').innerHTML = html;
 
@@ -17267,10 +17373,35 @@ function renderGBP() {
   }
 
   _gbpActions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
-  html += _renderActionList(_gbpActions, {
-    sourcePage: 'gbp',
-    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
-  });
+
+  // Wave 2.14: merge emitter rows + split into Content + Ops.
+  try {
+    const wq = window.cbState?.workQueue?.getAll?.() || [];
+    const existing = new Set(_gbpActions.map(a => (a.title || '').trim().toLowerCase()));
+    wq.filter(a =>
+      a.source_page === 'gbp' &&
+      !(a.id || '').startsWith('prop-') &&
+      !existing.has((a.title || '').trim().toLowerCase())
+    ).forEach(a => _gbpActions.push(a));
+  } catch (e) { console.warn('[renderGBP] could not merge emitter actions:', e); }
+  const _gbpContent = _gbpActions.filter(a => _classifyActionKind(a) === 'content');
+  const _gbpOps     = _gbpActions.filter(a => _classifyActionKind(a) === 'action');
+  if (_gbpContent.length > 0) {
+    html += _renderActionList(_gbpContent, {
+      title: 'Content — Prioritised List',
+      sourcePage: 'gbp', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Content flow: Proposed → In Progress → Brand Manager QC → Scheduled → Published. GBP posts, review responses, Q&A copy — all go through brand voice QC.',
+    });
+  }
+  if (_gbpOps.length > 0) {
+    html += _renderActionList(_gbpOps, {
+      title: 'Operational — Prioritised List',
+      sourcePage: 'gbp', limit: 30,
+      workQueueLink: { page: 'content-planner' },
+      footer: 'Ops flow: Proposed → In Progress → Published (skips QC + Scheduled). Profile data fixes, category settings, attribute toggles, directory listings — no brand copy to QC.',
+    });
+  }
 
   $('gbp-content').innerHTML = html;
 }
@@ -17730,7 +17861,7 @@ window.openActionModal = (id) => {
   if (!row && window._localProposedActions) row = window._localProposedActions[id];
 
   if (row) {
-    _paModalKind = 'action';   // Wave 2.12 — operational kind (skips Brand Manager QC)
+    _paModalKind = _classifyActionKind(row);   // Wave 2.14 — title + source_page heuristic
     const action = {
       title: row.title,
       description: row.description,
@@ -17762,7 +17893,10 @@ window.openActionModal = (id) => {
     if (item) {
       // Wave 2.12 — kind comes straight from the item (PLANNER_ITEMS = 'content',
       // converted work-queue rows = 'action').
-      _paModalKind = item.kind || 'action';
+      // Wave 2.14: PLANNER_ITEMS templates carry an explicit kind; everything
+      // else (Supabase work_queue_actions converted via _workQueueRowToWorkItem)
+      // gets passed through the title/source-page classifier.
+      _paModalKind = item.kind || _classifyActionKind(item);
       const action = {
         title: item.title,
         description: item.instructions || item.caption || '',
