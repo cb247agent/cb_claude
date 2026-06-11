@@ -52,6 +52,13 @@ VALID_METRICS = {
     # ROI / paid→organic switch tracking (added 09 Jun 2026)
     "ads_spend_saved_monthly",          # per-keyword: $ saved by pausing paid in favour of organic
     "cumulative_ads_savings_monthly",   # aggregate: $ saved across all switches this month
+    # Technical-SEO ops metrics (added 11 Jun 2026, SEO Strategist Option C)
+    # The LLM strategist proposes ops actions like "fix 3 broken URLs" or
+    # "add LocalBusiness schema" that are measurable as counts → 0. Without
+    # these here the normaliser drops them.
+    "pages_4xx",                        # count of URLs returning 4xx (target: 0)
+    "schema_implemented",               # 0/1 — has the page got LocalBusiness JSON-LD yet
+    "duplicate_metas",                  # count of pages sharing the same meta description (target: 0)
     "qualitative_assessment",
 }
 

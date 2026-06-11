@@ -58,6 +58,10 @@ DEFAULT_WINDOW_DAYS = {
     "gsc_impressions_weekly": 14,
     "gsc_ctr":                14,
     "ahrefs_domain_rating":   28,
+    # Technical-SEO ops metrics — short window, these are fix-and-verify
+    "pages_4xx":              7,
+    "schema_implemented":     7,
+    "duplicate_metas":        7,
 }
 
 # Block matcher mirrors extract_agent_actions.py
