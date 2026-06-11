@@ -15103,11 +15103,22 @@ function renderSEO() {
     });
   }
 
+  // Wave 2.13 (10 Jun 2026): merge emitter actions so this page surfaces
+  // every seo_emitter row, not just the hand-coded high-confidence picks.
+  // Before this, only the 3 hand-coded actions were visible — the other
+  // ~17 emitter actions sat hidden in Work Queue → Operational Backlog.
+  try {
+    const wq = window.cbState?.workQueue?.getAll?.() || [];
+    wq.filter(a => a.source_page === 'seo-organic').forEach(a => actions.push(a));
+  } catch (e) { console.warn('[renderSEO] could not merge emitter actions:', e); }
+
   // Default priorities by index — first 2 are P1, next 2 are P2, rest P3
   actions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(actions, {
     sourcePage: 'seo-organic',   // Wave 2 copy-paste bug: was 'membership' (10 Jun 2026)
-    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
+    limit: 30,                   // Wave 2.13: surface all emitter rows (was default 8 → hid 17)
+    workQueueLink: { page: 'content-planner' },
+    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Hand-coded picks at the top + all seo_emitter rows below.',
   });
 
   $('seo-content').innerHTML = html;
@@ -15855,10 +15866,19 @@ function renderGAds() {
     });
   }
 
+  // Wave 2.13 (10 Jun 2026): merge emitter rows so this page surfaces every
+  // google_ads_emitter row, not just the hand-coded picks.
+  try {
+    const wq = window.cbState?.workQueue?.getAll?.() || [];
+    wq.filter(a => a.source_page === 'google-ads').forEach(a => _actions2w.push(a));
+  } catch (e) { console.warn('[renderGAds] could not merge emitter actions:', e); }
+
   _actions2w.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(_actions2w, {
     sourcePage: 'google-ads',    // Wave 2 copy-paste bug: was 'seo-organic' (10 Jun 2026)
-    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
+    limit: 30,                   // Wave 2.13: surface all emitter rows
+    workQueueLink: { page: 'content-planner' },
+    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Hand-coded picks at the top + all google_ads_emitter rows below.',
   });
 
   // ── Full Paid Ads Agent report (kept as collapsed reference) ────────────
@@ -16833,10 +16853,19 @@ function renderMeta() {
     impact: 'Cost per Lead becomes visible · Meta optimises for actual conversion intent instead of click chasers',
   });
 
+  // Wave 2.13 (10 Jun 2026): merge emitter rows so this page surfaces every
+  // meta_emitter row, not just the hand-coded picks.
+  try {
+    const wq = window.cbState?.workQueue?.getAll?.() || [];
+    wq.filter(a => a.source_page === 'meta-ads').forEach(a => _metaActions.push(a));
+  } catch (e) { console.warn('[renderMeta] could not merge emitter actions:', e); }
+
   _metaActions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
   html += _renderActionList(_metaActions, {
     sourcePage: 'meta-ads',
-    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Review and reassign in next Monday meeting.',
+    limit: 30,                   // Wave 2.13: surface all emitter rows
+    workQueueLink: { page: 'content-planner' },
+    footer: 'Effort: S = under half a day · M = 1–2 days · L = 3–5 days. Priority: P1 = act this week · P2 = next 2 weeks · P3 = backlog. Hand-coded picks at the top + all meta_emitter rows below.',
   });
 
   $('meta-content').innerHTML = html;
