@@ -82,6 +82,37 @@ def _upsert_batch(rows: List[dict]) -> tuple[int, str]:
     return resp.status_code, resp.text
 
 
+def _retry_one_by_one(chunk: List[dict], batch_label: str) -> tuple[int, list]:
+    """When a batch fails atomically, retry each row alone to find the offender(s).
+    Returns (count_synced, list_of_failed_rows).
+
+    Per PostgREST batch upsert semantics, a single CHECK / NOT NULL / type
+    violation rolls back the entire batch. This fan-out narrows the failure
+    to specific row IDs so we can fix the data without losing the rest.
+    """
+    print(f"    ⚠️  batch {batch_label} atomic failure — retrying row-by-row to isolate bad rows...")
+    synced = 0
+    failed: list = []
+    for row in chunk:
+        status, body = _upsert_batch([row])
+        if 200 <= status < 300:
+            synced += 1
+        else:
+            failed.append({
+                "id":          row.get("id", "?"),
+                "source_page": row.get("source_page", "?"),
+                "status":      status,
+                "error":       body[:200],
+            })
+    if synced:
+        print(f"    ✅ {synced} of {len(chunk)} rows synced individually")
+    if failed:
+        print(f"    ❌ {len(failed)} rows could NOT be synced (bad data — fix manually):")
+        for f in failed[:20]:
+            print(f"       id={f['id']:50s} source={f['source_page']:15s} {f['status']} · {f['error']}")
+    return synced, failed
+
+
 def main():
     if not WORK_QUEUE_FILE.exists():
         print(f"[sync] no {WORK_QUEUE_FILE} yet — run an emitter first")
@@ -102,21 +133,33 @@ def main():
 
     rows = [_to_db_row(a) for a in actions]
 
-    # Upsert in batches of 50 to stay well under any payload limits
+    # Upsert in batches of 50 to stay well under any payload limits.
+    # On atomic batch failure: fall through to row-by-row retry so we
+    # don't lose the whole batch + the rest of the queue (Fix 10 Jun 2026).
     BATCH = 50
     synced = 0
+    all_failed: list = []
     for i in range(0, len(rows), BATCH):
         chunk = rows[i:i + BATCH]
+        batch_num = i // BATCH + 1
         status, body = _upsert_batch(chunk)
         if 200 <= status < 300:
             synced += len(chunk)
-            print(f"  batch {i // BATCH + 1}: {len(chunk)} OK ({status})")
+            print(f"  batch {batch_num}: {len(chunk)} OK ({status})")
         else:
-            print(f"  batch {i // BATCH + 1}: FAILED ({status})")
+            print(f"  batch {batch_num}: FAILED ({status})")
             print(f"    response (first 500 chars): {body[:500]}")
-            sys.exit(2)
+            # Retry row-by-row instead of exiting — preserves remaining batches
+            ok, bad = _retry_one_by_one(chunk, str(batch_num))
+            synced += ok
+            all_failed.extend(bad)
 
-    print(f"[sync] OK — {synced}/{len(rows)} actions synced to Supabase {TABLE}")
+    print()
+    print(f"[sync] {synced}/{len(rows)} actions synced to Supabase {TABLE}")
+    if all_failed:
+        print(f"[sync] ⚠️  {len(all_failed)} rows could not be synced — see above for details.")
+        # Exit non-zero to flag the issue but don't lose the partial sync
+        sys.exit(3)
 
 
 if __name__ == "__main__":

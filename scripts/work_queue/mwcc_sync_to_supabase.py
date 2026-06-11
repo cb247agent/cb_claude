@@ -95,6 +95,32 @@ def _upsert_batch(rows: List[dict]) -> tuple[int, str]:
     return resp.status_code, resp.text
 
 
+def _retry_one_by_one(chunk: List[dict], batch_label: str) -> tuple[int, list]:
+    """Fix 10 Jun 2026 (mirrors sync_to_supabase.py): when a batch fails
+    atomically, retry each row alone to isolate the bad row IDs."""
+    print(f"    ⚠️  batch {batch_label} atomic failure — retrying row-by-row to isolate bad rows...")
+    synced = 0
+    failed: list = []
+    for row in chunk:
+        status, body = _upsert_batch([row])
+        if 200 <= status < 300:
+            synced += 1
+        else:
+            failed.append({
+                "id":          row.get("id", "?"),
+                "source_page": row.get("source_page", "?"),
+                "status":      status,
+                "error":       body[:200],
+            })
+    if synced:
+        print(f"    ✅ {synced} of {len(chunk)} rows synced individually")
+    if failed:
+        print(f"    ❌ {len(failed)} rows could NOT be synced (bad data — fix manually):")
+        for f in failed[:20]:
+            print(f"       id={f['id']:50s} source={f['source_page']:15s} {f['status']} · {f['error']}")
+    return synced, failed
+
+
 def main():
     if not WORK_QUEUE_FILE.exists():
         print(f"[mwcc-sync] no {WORK_QUEUE_FILE} yet — run an emitter first")
@@ -154,20 +180,31 @@ def main():
 
     rows = [_to_db_row(a) for a in clean_actions]
 
+    # On atomic batch failure: fall through to row-by-row retry instead of
+    # exiting — preserves remaining batches + isolates the bad row IDs.
+    # Fix 10 Jun 2026 (mirrors sync_to_supabase.py).
     BATCH = 50
     synced = 0
+    all_failed: list = []
     for i in range(0, len(rows), BATCH):
         chunk = rows[i:i + BATCH]
+        batch_num = i // BATCH + 1
         status, body = _upsert_batch(chunk)
         if 200 <= status < 300:
             synced += len(chunk)
-            print(f"  batch {i // BATCH + 1}: {len(chunk)} OK ({status})")
+            print(f"  batch {batch_num}: {len(chunk)} OK ({status})")
         else:
-            print(f"  batch {i // BATCH + 1}: FAILED ({status})")
+            print(f"  batch {batch_num}: FAILED ({status})")
             print(f"    response (first 500 chars): {body[:500]}")
-            sys.exit(2)
+            ok, bad = _retry_one_by_one(chunk, str(batch_num))
+            synced += ok
+            all_failed.extend(bad)
 
-    print(f"[mwcc-sync] OK — {synced}/{len(rows)} actions synced to Supabase {TABLE}")
+    print()
+    print(f"[mwcc-sync] {synced}/{len(rows)} actions synced to Supabase {TABLE}")
+    if all_failed:
+        print(f"[mwcc-sync] ⚠️  {len(all_failed)} rows could not be synced — see above for details.")
+        sys.exit(3)
 
 
 if __name__ == "__main__":
