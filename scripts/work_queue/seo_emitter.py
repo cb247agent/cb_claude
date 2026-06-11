@@ -64,6 +64,98 @@ PROTECT_MIN_CLICKS = 20
 PROTECT_MAX_POSITION = 3
 
 
+# ── Artifact classifier ──────────────────────────────────────────────────────
+# Tia's question 11 Jun 2026: "Build new content for X" was too abstract —
+# nobody knew if that meant a blog, a service page, or a landing page. The
+# Brand Manager couldn't QC because the deliverable wasn't named.
+#
+# Different SEO keywords need different artifacts:
+#   - Local + service-program keyword (e.g. "24/7 crossfit gym",
+#     "reformer pilates malaga")   → SERVICE PAGE  (commercial, conversion)
+#   - Local + generic keyword (e.g. "gym near me", "best gym perth")
+#                                  → LANDING PAGE  (commercial, conversion)
+#   - Question / how-to / guide (e.g. "how to start crossfit",
+#     "best foods for muscle gain") → BLOG POST     (informational, top-of-funnel)
+#
+# This classifier returns (artifact_type, action_verb) so the emitter can
+# write a title and description that name the artifact explicitly.
+
+# Patterns that signal informational intent → blog
+_INFORMATIONAL_PATTERNS = (
+    "how to", "how do", "how does",
+    "what is", "what are", "what's the",
+    "why ", "should i", "can i", "do i need",
+    "best foods", "best exercises", "best time",
+    "tips for", "guide to", "guide:",
+    "before ", "after ", " vs ", " versus ",
+    "benefits of", "the science", "explained",
+    "beginner", "for beginners",
+)
+
+# CB247 service programs — keyword containing one of these → SERVICE PAGE
+_CB247_SERVICES = (
+    "crossfit", "reformer pilates", "pilates", "yoga", "spin",
+    "sauna", "ice bath", "personal trainer", " pt ", "kids hub",
+    "neon21", "chasingrx", "24/7", "group fitness",
+)
+
+# Local commercial modifiers — adding "gym" or local intent → LANDING PAGE
+_LOCAL_PATTERNS = (
+    "near me", "malaga", "ellenbrook", "perth", " wa", "australia",
+)
+
+
+def _classify_seo_artifact(keyword: str) -> tuple[str, str]:
+    """Return (artifact_type, action_verb) for a given SEO keyword.
+
+    artifact_type ∈ {"service-page", "landing-page", "blog"}
+    action_verb is the imperative phrase prefixed to the action title.
+    """
+    kw = (keyword or "").lower().strip()
+
+    # Informational queries → blog
+    if any(p in kw for p in _INFORMATIONAL_PATTERNS):
+        return ("blog", "Post blog")
+
+    # CB247 service keywords → service page (the program's dedicated page)
+    if any(s in kw for s in _CB247_SERVICES):
+        return ("service-page", "Build service page")
+
+    # Local + "gym" or any local modifier → landing page (location hub)
+    if "gym" in kw or any(p in kw for p in _LOCAL_PATTERNS):
+        return ("landing-page", "Build landing page")
+
+    # Default: long-tail content → blog
+    return ("blog", "Post blog")
+
+
+def _deliverable_copy(artifact_type: str, keyword: str) -> str:
+    """One paragraph telling the Brand Manager exactly what to make."""
+    if artifact_type == "blog":
+        return (
+            f"Draft a 1,200–1,500 word blog post answering the searcher's "
+            f"question for '{keyword}'. Lead with the question, answer with "
+            f"CB247 context (Malaga + Ellenbrook, 8,000+ members, $11.95/wk), "
+            f"and end with a soft membership CTA. Internal-link to the relevant "
+            f"service page and to the homepage."
+        )
+    if artifact_type == "service-page":
+        return (
+            f"Build a dedicated service page for '{keyword}' on "
+            f"chasingbetter247.com.au. Hero (photo + 1-line value prop), "
+            f"3–4 feature blocks (timetable, equipment, coach if PT, member "
+            f"results), pricing snippet, FAQ, primary CTA. Internal-link from "
+            f"homepage and the program hub."
+        )
+    # landing-page
+    return (
+        f"Build a focused landing page targeting '{keyword}'. Hero matches "
+        f"the search query, top fold has the local proof points (location, "
+        f"hours, price), 2–3 conversion blocks (book a tour, free pass, "
+        f"membership CTA), and FAQ. Internal-link from homepage."
+    )
+
+
 # ── Emitters ─────────────────────────────────────────────────────────────────
 
 
@@ -104,9 +196,11 @@ def _emit_optimise(queries: list, week: str, start_serial: int) -> tuple[List[Wo
             title=f"Optimise on-page for '{keyword}' — currently #{baseline_pos:.1f}",
             description=(
                 f"Keyword '{keyword}' is ranking #{baseline_pos:.1f} with {baseline_clicks} clicks "
-                f"and {baseline_impr} impressions per week. "
-                f"Optimise the title tag, meta description, and H1 of the ranking page. "
-                f"Add 1-2 internal links from related content. Tighten content depth if needed. "
+                f"and {baseline_impr} impressions per week.\n\n"
+                f"Deliverable — page edit (no new artifact): rewrite the title tag, meta description, "
+                f"and H1 of the existing ranking page. Add 1–2 internal links from related content. "
+                f"Tighten content depth if the page is thin.\n\n"
+                f"Flow: SEO Specialist edits the page → Brand Manager QC → publish.\n\n"
                 f"Target: push to #{target_pos}."
             ),
             owner="John",
@@ -160,15 +254,21 @@ def _emit_build(queries: list, week: str, start_serial: int) -> tuple[List[WorkQ
         baseline_impr = int(q.get("impressions") or 0)
         baseline_clicks = int(q.get("clicks") or 0)
 
+        # Decide what artifact to make (blog vs service page vs landing page)
+        # so the team can act without guessing. Added 11 Jun 2026.
+        artifact_type, action_verb = _classify_seo_artifact(keyword)
+        deliverable_desc = _deliverable_copy(artifact_type, keyword)
+
         actions.append(WorkQueueAction(
             id=make_action_id("seo", week, serial),
             source_page="seo-organic",
             source_run_at=ts,
-            title=f"Build new content for '{keyword}' — {baseline_impr} impressions, ranking #{baseline_pos:.0f}",
+            title=f"{action_verb}: '{keyword}' — {baseline_impr} impressions, ranking #{baseline_pos:.0f}",
             description=(
                 f"Keyword '{keyword}' has {baseline_impr} weekly impressions but ranks #{baseline_pos:.0f}, "
-                f"only generating {baseline_clicks} clicks. No dedicated page targeting this query. "
-                f"AI drafts a focused page → Angela QC → Denver sign-off → Mark publishes to Webflow. "
+                f"only generating {baseline_clicks} clicks. No dedicated page targeting this query.\n\n"
+                f"Deliverable — {artifact_type.replace('-', ' ')}: {deliverable_desc}\n\n"
+                f"Flow: AI drafts → Brand Manager QC → publish to Webflow. "
                 f"Target: rank top 10 within 4 weeks."
             ),
             owner="AI",
@@ -227,9 +327,11 @@ def _emit_protect(queries: list, week: str, start_serial: int) -> tuple[List[Wor
             source_run_at=ts,
             title=f"Protect '{keyword}' — currently #{baseline_pos:.1f} with {baseline_clicks} clicks/wk",
             description=(
-                f"This keyword ranks #{baseline_pos:.1f} and generates {baseline_clicks} clicks per week. "
-                f"Defensive work: build 1-2 new internal links from related content, monitor for position decay, "
-                f"refresh the page date stamp if not updated in 90 days. "
+                f"This keyword ranks #{baseline_pos:.1f} and generates {baseline_clicks} clicks per week.\n\n"
+                f"Deliverable — defensive work (no new artifact): build 1–2 new internal links from related "
+                f"content, monitor for position decay, refresh the page date stamp if it hasn't been updated "
+                f"in 90 days.\n\n"
+                f"Flow: SEO Specialist runs the maintenance, no QC required for an internal-link tweak.\n\n"
                 f"Target: hold position #{baseline_pos:.1f} ± 1."
             ),
             owner="John",

@@ -14204,6 +14204,9 @@ function _classifyActionKind(action) {
 
   // ── Content — member-facing copy production ──────────────────────────
   if (/^build\s+new\s+content/.test(t))             return 'content';
+  if (/^build\s+(service|landing)\s+page/.test(t))  return 'content';   // SEO emitter (11 Jun 2026)
+  if (/^post\s+blog\b/.test(t))                     return 'content';   // SEO emitter (11 Jun 2026)
+  if (/^publish\s+(landing|service|blog|page)/.test(t)) return 'content';
   if (/^optimise\s+on-page/.test(t))                return 'content';
   if (/^improve\s+organic\s+content/.test(t))       return 'content';
   if (/^write\s/.test(t))                           return 'content';
@@ -14242,9 +14245,11 @@ function _findExistingDraft(action) {
   let kw = null;
   const m = t.match(/['"`]([^'"`]+)['"`]/);
   if (m) kw = m[1];
-  // Fallback: take the part after common verbs
+  // Fallback: take the part after common verbs. New verbs added 11 Jun 2026
+  // when seo_emitter.py started naming the artifact (blog / service page /
+  // landing page) explicitly in the title.
   if (!kw) {
-    const after = t.match(/^(?:improve\s+organic\s+content|build\s+new\s+content|optimise\s+on-page|push|protect)\s+(?:for\s+)?(.+?)(?:\s+[—\-–]\s*|$)/i);
+    const after = t.match(/^(?:improve\s+organic\s+content|build\s+new\s+content|optimise\s+on-page|push|protect|post\s+blog|build\s+(?:service|landing)\s+page|publish\s+(?:landing|service|blog|page))\s*[:\s]\s*(?:for\s+)?(.+?)(?:\s+[—\-–]\s*|$)/i);
     if (after) kw = after[1].replace(/['"`]/g, '').trim();
   }
   if (!kw) return '';
@@ -18294,6 +18299,25 @@ function _renderProposedActionBriefHTML(row) {
   const effort = esc(row.effort_hours || '');
   const aid = esc(row.id || '');
 
+  // Wave 2.16 (11 Jun 2026): Pull the "Deliverable" sentence out of the
+  // description and surface it as its own section above Instructions. The
+  // emitter writes a line like "Deliverable — service page: Build a
+  // dedicated service page for 'X' ...". Brand Manager shouldn't have to
+  // hunt for the artifact type — it's the most important thing in the brief.
+  const rawDesc = String(row.description || '');
+  let deliverableHTML = '';
+  const _delMatch = rawDesc.match(/Deliverable\s*[—\-–:]\s*([^:]+?):\s*([^\n]+)/i);
+  if (_delMatch) {
+    const _artifact = _delMatch[1].trim();
+    const _what     = _delMatch[2].trim();
+    deliverableHTML =
+      `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Deliverable</div>` +
+      `<div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">` +
+      `<span style="background:${CB247_TEAL};color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:99px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">${esc(_artifact)}</span>` +
+      `<div style="font-size:13px;color:${CB247_DARK};line-height:1.6;flex:1;min-width:200px">${esc(_what)}</div>` +
+      `</div></div>`;
+  }
+
   const pks = row.projected_kpis || [];
   const primary = pks[0] || {};
   const kpiMetric = esc(primary.metric || '');
@@ -18370,6 +18394,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <span class="meta-chip" style="background:${prioColor};color:#fff">${priority}</span>
 ${effort ? `<span class="meta-chip" style="background:#f3f4f6;color:#374151">Effort: ${effort}h</span>` : ''}
 </div>
+${deliverableHTML}
 <div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
 <div class="section"><div class="label">Primary Projected KPI</div><div class="caption-box">${captionHTML}</div></div>
 ${allKpisHTML}
