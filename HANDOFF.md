@@ -317,6 +317,75 @@ NEVER commit. Currently in `.claudeignore` + `.gitignore`.
 
 ---
 
+## 8.5 Dev cycle (Wave A · 11 Jun 2026)
+
+The dev cycle is 4 scripts + a wrapper that catch the bug classes we kept
+hitting (schema drift, stale workflow vocab, strategist regressions,
+vulnerable deps) BEFORE they ship to the live dashboard.
+
+### When the dev cycle runs
+
+| Trigger | Mode | What it runs | Total time |
+|---|---|---|---|
+| Monday cron pipeline (auto) | `--pre-flight` | All 4 checks incl. live Supabase probe + dep audit | ~30-60s |
+| Before any commit (manual) | `--pre-commit` | 3 fast checks (no live probe, no dep audit) | <10s |
+
+The wrapper is `scripts/dev-cycle.sh`. It's wired into `weekly-report.sh`
+as Phase 0 — runs before Phase 1 data pulls so we fail fast on schema
+drift instead of crashing partway through a sync.
+
+### Manual invocation
+
+```bash
+# Quick check before commit (recommended habit):
+bash scripts/dev-cycle.sh --pre-commit
+
+# Full check before Monday's pipeline (the cron already does this):
+bash scripts/dev-cycle.sh --pre-flight
+
+# Strict mode — exit 1 on findings (use sparingly until rules are tuned):
+bash scripts/dev-cycle.sh --pre-commit --strict
+```
+
+### What each script catches
+
+| Script | Catches | Source of truth | Log file |
+|---|---|---|---|
+| `scripts/scan_brand_voice.py` | Stale workflow vocab (Angela QC / Denver / Mark publishes), banned ACL claims ("only gym with..."), TGA therapeutic claims, AI buzz words, $11.95 in editorial copy | `scripts/work_queue/compliance.py` CB247_BANNED_PATTERNS | `logs/scan-brand-voice-YYYY-MM-DD.json` |
+| `scripts/check_supabase_schema_drift.py` | Python `VALID_STAGE`/`VALID_*` enums declaring values that Supabase CHECK constraints reject. Optional `--live` flag probes real DB. | `scripts/work_queue/schema.py` + `db/schema.sql` | `logs/schema-drift-YYYY-MM-DD.json` |
+| `scripts/test_strategist_chain.py` | Regressions in strategist → normalise → schema-validate chain. Fixture-driven, no Claude/Supabase. | Fixture inline in the script | `logs/strategist-chain-test-YYYY-MM-DD.json` |
+| `scripts/audit_dependencies.py` | Known CVEs in `scripts/requirements.txt` via pip-audit | `scripts/requirements.txt` | `logs/dep-audit-YYYY-MM-DD.json` |
+
+### Warn-only by default
+
+All 4 scripts exit 0 even when findings exist — they print warnings and
+move on. The pipeline never blocks. This is intentional: it lets you see
+what's drifting before you have to fix it.
+
+**Promote a check to blocking** by adding `--strict` to that check's
+invocation in `scripts/dev-cycle.sh`. Example:
+
+```bash
+# In scripts/dev-cycle.sh, change:
+run_check "Schema drift" \
+    "$PYTHON scripts/check_supabase_schema_drift.py --log $STRICT_FLAG"
+# to:
+run_check "Schema drift" \
+    "$PYTHON scripts/check_supabase_schema_drift.py --log --strict"
+```
+
+### What the checks WON'T catch (yet)
+
+These are in Wave B (next session) — agents that exercise the dashboard
+and watch for regressions in rendered output:
+
+- Layout regressions on the dashboard (wrong list, wrong column, wrong order)
+- Brand voice issues that need LLM judgement (e.g. "this paragraph sounds passive-aggressive")
+- Visual changes (font, color, spacing) — needs screenshot diffing
+- RLS policy regressions on Supabase
+
+---
+
 ## 9. Common failure modes + fixes
 
 | Symptom | Likely cause | Fix |

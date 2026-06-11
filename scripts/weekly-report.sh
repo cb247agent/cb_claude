@@ -91,6 +91,26 @@ cd "$BASE_DIR"
 
 
 # ══════════════════════════════════════════════════════════════════
+# PHASE 0 — DEV CYCLE PRE-FLIGHT  (~30-60s)
+# ══════════════════════════════════════════════════════════════════
+# Added 11 Jun 2026 (Wave A). Runs brand voice + schema drift + integration
+# test + dep audit BEFORE any data pulls or agent runs. Catches the class
+# of bugs we kept hitting:
+#   - Schema drift between schema.py and Supabase CHECK constraints
+#     (e.g. 'Proposed' rejected silently because SQL still had 'Idea')
+#   - Stale workflow vocab in emitter descriptions
+#   - Strategist chain regressions (KPI shape, missing metrics)
+#   - Vulnerable dependencies in requirements.txt
+# Warn-only by default — pipeline continues even if findings are reported.
+# Promote any individual check to blocking by editing scripts/dev-cycle.sh.
+log ""
+log "─── PHASE 0: DEV CYCLE PRE-FLIGHT ───"
+bash "$BASE_DIR/scripts/dev-cycle.sh" --pre-flight >> "$LOG" 2>&1 \
+    || log "  ⚠️  dev-cycle pre-flight had blocking errors — check $LOG"
+log "Phase 0 complete."
+
+
+# ══════════════════════════════════════════════════════════════════
 # PHASE 1 — DATA PULL  (~20 min)
 # ══════════════════════════════════════════════════════════════════
 log ""
