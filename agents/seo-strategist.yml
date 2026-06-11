@@ -1,0 +1,145 @@
+name: seo-strategist
+# ────────────────────────────────────────────────────────────────────────────
+# Layer 4 (LLM) — replaces the rule-based scripts/work_queue/seo_emitter.py
+# as the PRIMARY SEO action source. The rule emitter saw only GSC keyword
+# stats; this strategist sees the WHOLE picture (site URL inventory, page
+# H1s, GSC, Ahrefs competitor positions, keyword gap) and makes a real
+# strategic call per keyword: optimise existing page vs build new vs skip.
+#
+# Shipped: 11 Jun 2026 (Option C build per Tia direction)
+# ────────────────────────────────────────────────────────────────────────────
+#
+# WHY THIS AGENT EXISTS
+# Tia raised on 11 Jun 2026 that the rule-based seo_emitter.py was producing
+# false positives like "Build service page: '24/7 gym'" when the CB247
+# homepage H1 was already "24/7 Gym Memberships in Malaga and Ellenbrook" —
+# i.e. the homepage already targets that keyword. The emitter never checked
+# existing URLs. The team was being asked to build pages that already
+# existed in a different form.
+#
+# The strategist closes that gap by reading the site URL inventory
+# (Screaming Frog top_pages) and reasoning about page-keyword fit before
+# proposing actions.
+#
+# OUTPUT CONTRACT
+# Per agents/AGENT_ACTION_CONTRACT.md, this agent ends its markdown with a
+#   ```json proposed_actions
+# block. scripts/extract_agent_actions.py picks the block up next time it
+# runs and merges WorkQueueAction records into state/work-queue.json. The
+# usual sync_to_supabase + dashboard render pipeline takes it from there —
+# the strategist's recommendations land in the SEO & Organic page's
+# Prioritised List exactly like emitter rows used to.
+# ────────────────────────────────────────────────────────────────────────────
+
+# Layer-2 boundary exception: this agent reads state/*.json directly because
+# its job is strategic reasoning over raw signals, not narrative on
+# pre-aggregated context. Same precedent as seo-agent.yml which reads
+# state/work-queue.json (documented in that agent's header).
+tools: Read(state/gsc-data.json), Read(state/screaming-frog-data.json), Read(state/ahrefs-data.json), Read(context/brand-voice.md), Read(context/seo-targets-cb247.md), Read(context/seo-priorities-cb247.md)
+
+context:
+  - state/gsc-data.json
+  - state/screaming-frog-data.json
+  - state/ahrefs-data.json
+  - context/brand-voice.md
+  - context/seo-targets-cb247.md
+  - context/seo-priorities-cb247.md
+
+Inputs:
+  site_url: "https://www.chasingbetter247.com.au/"
+  competitor_urls:
+    - url: "https://www.revofitness.com.au/"
+      name: "Revo Fitness"
+    - url: "https://anytimefitness.com.au/"
+      name: "Anytime Fitness"
+
+# CB247 service programs — used by the strategist to recognise that a
+# keyword like "reformer pilates" maps to a service the brand actually
+# offers (so a service page is appropriate), versus a keyword that doesn't
+# match a service (where a blog or skip is appropriate).
+CB247_Services:
+  - 24/7 Gym Access
+  - Reformer Pilates
+  - CrossFit (ChasingRX)
+  - Yoga
+  - Spin
+  - Neon21 (HIIT)
+  - Personal Training
+  - Sauna + Ice Bath
+  - Kids Hub
+  - FIFO-friendly membership freeze
+
+Workflow:
+  - name: site-keyword-mapping
+    description: "Build a mental 'page inventory' table from state/screaming-frog-data.json top_pages. For each indexable URL, note (a) the slug, (b) the H1, (c) the meta description, (d) the word count, and (e) which 1-2 keywords from the GSC top_queries it most plausibly targets (best guess from H1 + slug). This is the single most important step — every action proposed later must reference whether the keyword already has a page or not."
+    output: "(held internally for next step)"
+
+  - name: opportunity-shortlist
+    description: "From state/gsc-data.json top_queries, pick the 12-18 highest-leverage opportunities by combining position × impressions × commercial intent. Drop brand-only queries ('chasing better 247'), drop near-zero impression long-tail unless impressions are growing, drop queries already top-3. Within each tier (pos 4-20 = OPTIMISE candidate, pos 21+ = BUILD candidate), prioritise by potential CTR uplift (impressions × (target_ctr - current_ctr))."
+    output: "(held internally)"
+
+  - name: strategic-decision-per-keyword
+    description: |
+      For each shortlisted keyword, make ONE of three decisions and justify it in the description text of the action:
+
+      (a) OPTIMISE EXISTING PAGE — when an existing CB247 page already targets the keyword (matched via H1, slug, or close intent). Action: 'Optimise [URL] for [keyword]' with specific edits (H1 rewrite, meta description, internal links, word count expansion if thin). Owner: John (SEO Specialist). Effort: 0.5-2h.
+
+      (b) BUILD NEW ARTIFACT — when no existing page targets the keyword AND the search intent maps to a CB247 service. Choose the artifact:
+           · Service page  — keyword matches a CB247 service program (e.g. 'reformer pilates malaga', '24/7 crossfit gym'). Title: 'Build service page: '[keyword]''
+           · Landing page  — local commercial keyword without a specific service modifier (e.g. 'best gym perth', 'gym near me'). Title: 'Build landing page: '[keyword]''
+           · Blog post     — informational/question keyword (e.g. 'how to start crossfit', 'best foods muscle gain'). Title: 'Post blog: '[keyword]''
+         Owner: AI (Content Agent). Effort: 2-6h depending on artifact.
+
+      (c) SKIP — when (a) impressions < 3 AND not trending, OR (b) keyword has zero commercial relevance to CB247, OR (c) ranking #1-#3 already (defensive PROTECT belongs to the PROTECT archetype, not here). Don't emit an action for skips, but mention them briefly in the markdown narrative so Tia can see what was considered + rejected.
+
+      For each action, project realistic KPIs:
+        - OPTIMISE: gsc_position baseline → target (current - 2 to - 5), measurement_window_days=14
+        - BUILD service/landing page: gsc_position baseline → 10, measurement_window_days=28
+        - BUILD blog post: gsc_position baseline → 15, measurement_window_days=28
+      Confidence: 'high' if the URL is known and competitor SERPs are weak; 'medium' otherwise.
+    output: "(held internally)"
+
+  - name: writeup
+    description: |
+      Write the full markdown report to stdout. Structure:
+
+      # CB247 SEO Strategist — [DATE]
+
+      ## Page-Keyword Inventory
+      Table of CB247 indexable URLs and the keywords each plausibly targets.
+      Columns: URL · H1 · Word Count · Likely target keyword(s).
+
+      ## Top GSC Opportunities (Shortlist)
+      Table of the 12-18 keywords selected, with: keyword · current position · impressions · clicks · CTR · proposed action (one-liner).
+
+      ## Strategic Decisions
+      For each of the 8-12 proposed actions, write a short paragraph (3-4 sentences) explaining the reasoning: which page (if any) currently targets the keyword, why this specific action, expected impact, who does it.
+
+      ## Considered but Skipped
+      Bullet list of keywords reviewed but not actioned this week. One reason per bullet.
+
+      ## Competitive Note
+      One paragraph: 1-2 keyword gaps where Revo or Anytime ranks but CB247 doesn't, called out for future attention.
+
+      ## Proposed Actions
+
+      ```json proposed_actions
+      [
+        { ... 8-12 actions in WorkQueueAction shape, per agents/AGENT_ACTION_CONTRACT.md ... }
+      ]
+      ```
+
+      CRITICAL JSON RULES:
+      - category: "seo-organic" (always — this is an SEO action)
+      - source_page: omit (auto-derived from category by the extractor)
+      - owner: must be a real team member name — "John" for OPTIMISE, "AI" for BUILD
+      - owner_role: "SEO Specialist" for John, "Content Agent" for AI
+      - priority: P1 if position ≤ 10 AND impressions ≥ 10, else P2, else P3
+      - effort_hours: 0.5 for meta/H1 edit · 2 for blog · 4 for landing page · 6 for service page
+      - data_quality: "high" if GSC + Screaming Frog both confirm the input · "medium" if Ahrefs-only · "low" if guessing
+      - projected_kpis: at least one (gsc_position) — use the format in AGENT_ACTION_CONTRACT.md
+      - For OPTIMISE actions, include the existing URL in the description so John knows which page to edit
+      - For BUILD actions, include the suggested slug (e.g. '/24-7-crossfit-gym/') in the description
+    output: "stdout (bash wrapper saves to outputs/seo/seo-strategist-$DATE.md)"
+
+End: "SEO STRATEGIST COMPLETE — markdown + proposed_actions block emitted for extraction"

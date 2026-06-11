@@ -153,8 +153,23 @@ log "Step 1g — Parse Membership XLSX exports..."
 # into Supabase so the dashboard displays them as Work Queue cards.
 # See: CB_Brain/wiki/Work-Queue-Architecture.md
 log "Step 1h — Emit Work Queue actions (SEO)..."
-"$PYTHON" "$BASE_DIR/scripts/work_queue/seo_emitter.py" >> "$LOG" 2>&1 \
-    || log "  ⚠️  SEO emitter had issues — check $LOG"
+# DISABLED 11 Jun 2026 (Option C build, Tia direction):
+# The rule-based seo_emitter.py produced false positives like "Build service
+# page: '24/7 gym'" when the CB247 homepage H1 already targeted that
+# keyword. It saw only GSC stats (no site URL inventory, no SERP intent
+# check, no competitor read), so it couldn't tell whether a page already
+# existed for a query. Replaced by agents/seo-strategist.yml — an LLM-driven
+# strategic agent that reads the full picture (site map + GSC + Ahrefs)
+# and proposes actions via the Agent Action Contract.
+# The strategist runs in Step 1h0 below; its proposed_actions block is
+# extracted by Step 1h'''''''''' (extract_agent_actions.py) and synced via
+# Step 1i (sync_to_supabase.py). Same destination — work_queue_actions
+# table — different (smarter) producer.
+# Re-enable this line ONLY if the strategist is down for an extended period
+# and you need rule-based SEO actions as a safety net.
+# "$PYTHON" "$BASE_DIR/scripts/work_queue/seo_emitter.py" >> "$LOG" 2>&1 \
+#     || log "  ⚠️  SEO emitter had issues — check $LOG"
+log "  ⏭️  Rule-based SEO emitter disabled — strategist agent owns SEO action emission (Step 1h0)"
 
 log "Step 1h' — Emit Work Queue actions (Meta Ads)..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/meta_emitter.py" >> "$LOG" 2>&1 \
@@ -208,6 +223,98 @@ log "Step 1h''''''''' — Inject promo pipeline into dashboard..."
 "$PYTHON" "$BASE_DIR/scripts/inject-promo-pipeline.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Promo pipeline injector had issues — check $LOG"
 
+# ── Step 1h0 — SEO Strategist (LLM, replaces rule-based seo_emitter) ──
+# Shipped 11 Jun 2026 as Option C per Tia direction. Strategist reads the
+# raw GSC + Screaming Frog + Ahrefs state files and reasons about
+# page-keyword fit (does an existing CB247 URL already target this query?
+# does this keyword map to a CB247 service?) before proposing actions. Its
+# output ends with a ```json proposed_actions block consumed by Step
+# 1h'''''''''' (extract_agent_actions). The strategist runs HERE — in
+# Phase 1, before extraction — so its actions land in the dashboard in the
+# same weekly run, not next week's. See agents/seo-strategist.yml.
+log "Step 1h0 — SEO Strategist (LLM, replaces rule-based emitter)..."
+run_agent "seo-strategist" \
+"You are the CB247 SEO Strategist. Today is $DATE.
+
+Your job is to look at the WHOLE picture — GSC keyword stats, the actual
+CB247 URL inventory (Screaming Frog), and competitor positions (Ahrefs) —
+and propose 8-12 SEO actions for this week with REAL strategic reasoning,
+not rule-based aggregation.
+
+Read these files:
+- state/gsc-data.json              (top_queries: keyword, position, impressions, clicks, ctr)
+- state/screaming-frog-data.json   (top_pages: url, h1, meta_description, word_count, h2s)
+- state/ahrefs-data.json           (CB247 domain rating, competitor positions)
+- context/brand-voice.md           (tone)
+- context/seo-targets-cb247.md     (priority keyword list)
+- context/seo-priorities-cb247.md  (strategic priorities)
+
+Workflow (do all four steps before writing anything):
+1. PAGE-KEYWORD INVENTORY — for each CB247 URL in top_pages, note the slug,
+   H1, word count, and 1-2 GSC keywords it most plausibly targets.
+2. OPPORTUNITY SHORTLIST — pick 12-18 high-leverage GSC queries
+   (position × impressions × commercial intent). Drop brand queries
+   ('chasing better 247'), drop queries already top-3 (defensive PROTECT
+   isn't in scope here), drop near-zero impression long-tail.
+3. STRATEGIC DECISION PER KEYWORD — for each, choose ONE of:
+     (a) OPTIMISE EXISTING — page exists, edit it. Specify the URL +
+         exact edits (H1, meta, internal links).
+     (b) BUILD NEW — no existing page. Choose artifact:
+           service-page  if keyword matches a CB247 service program
+                         (crossfit, reformer pilates, sauna, kids hub,
+                         personal training, 24/7, neon21, yoga, spin,
+                         chasingrx) — title prefix 'Build service page: '
+           landing-page  if local commercial without specific service
+                         (e.g. 'gym near me', 'best gym perth') —
+                         title prefix 'Build landing page: '
+           blog          if informational/question intent ('how to',
+                         'best foods', 'tips for') — title prefix
+                         'Post blog: '
+     (c) SKIP — low impressions + not trending OR no commercial fit.
+         Mention in narrative, don't emit an action.
+
+4. WRITE THE REPORT — markdown with these sections (in order):
+   # CB247 SEO Strategist — $DATE
+   ## Page-Keyword Inventory  (table)
+   ## Top GSC Opportunities (Shortlist)  (table)
+   ## Strategic Decisions  (one paragraph per proposed action)
+   ## Considered but Skipped  (bullets)
+   ## Competitive Note  (1 paragraph re Revo/Anytime gaps)
+   ## Proposed Actions
+   \`\`\`json proposed_actions
+   [ ... 8-12 actions per agents/AGENT_ACTION_CONTRACT.md ... ]
+   \`\`\`
+
+JSON RULES (CRITICAL):
+- category: \"seo-organic\" always
+- owner: \"John\" + owner_role: \"SEO Specialist\" for OPTIMISE
+- owner: \"AI\"   + owner_role: \"Content Agent\" for BUILD
+- priority: P1 if position ≤ 10 AND impressions ≥ 10, else P2, else P3
+- effort_hours: 0.5 for meta/H1 edit · 2 for blog · 4 for landing page · 6 for service page
+- data_quality: 'high' if Screaming Frog + GSC both confirm, else 'medium'
+- projected_kpis: at least one (always gsc_position), with realistic targets
+- description: 200-400 chars — include the existing URL (for OPTIMISE) or
+  suggested slug (for BUILD), the keyword, the baseline + target position,
+  and the SPECIFIC edits or page structure expected.
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT the entire markdown
+report directly to stdout. The bash wrapper saves your stdout to
+outputs/seo/seo-strategist-$DATE.md. Do NOT summarise — emit the full
+report including the proposed_actions JSON block at the end." \
+"$OUTPUTS/seo/seo-strategist-$DATE.md" \
+"Read(state/gsc-data.json),Read(state/screaming-frog-data.json),Read(state/ahrefs-data.json),Read(context/brand-voice.md),Read(context/seo-targets-cb247.md),Read(context/seo-priorities-cb247.md)" \
+"$MODEL_OPUS"
+
+# ── Step 1h0a — Normalise strategist JSON output ──
+# The LLM sometimes outputs projected_kpis as a dict ({"gsc_position":{...}})
+# instead of the required list-of-objects shape, or uses metrics not in
+# VALID_METRICS (pages_4xx, schema_implemented). This script cleans up the
+# proposed_actions JSON block in the strategist's markdown so extraction
+# downstream just works. Idempotent — re-running on clean JSON is a no-op.
+log "Step 1h0a — Normalise strategist JSON output..."
+"$PYTHON" "$BASE_DIR/scripts/work_queue/normalize_strategist_output.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Strategist normalisation had issues — check $LOG (non-fatal)"
+
 # ── Step 1h'''''''''' — Extract Agent Action Proposals (Agent Action Contract) ──
 # Layer 3 (Agents): when CB247 agents produce markdown output ending with a
 # ```json proposed_actions block, extract them as WorkQueueAction objects
@@ -215,6 +322,10 @@ log "Step 1h''''''''' — Inject promo pipeline into dashboard..."
 # Graceful no-op if no agents have produced output yet (early days for the
 # new contract). Must run BEFORE sync_to_supabase so extracted actions get
 # pushed up.
+#
+# As of 11 Jun 2026 (Option C), the seo-strategist's output at
+# outputs/seo/seo-strategist-$DATE.md is the primary SEO action source —
+# extraction here pulls those into the queue.
 log "Step 1h'''''''''' — Extract Agent action proposals (Agent Action Contract)..."
 "$PYTHON" "$BASE_DIR/scripts/extract_agent_actions.py" --business cb247 >> "$LOG" 2>&1 \
     || log "  ⚠️  Agent action extraction had issues — check $LOG (non-fatal)"
