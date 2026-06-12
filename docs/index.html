@@ -18485,11 +18485,22 @@ function _renderProposedActionBriefHTML(row) {
   // Trusted-input pattern: all action sources are internal (strategist
   // YAMLs + dashboard hand-coded actions).
   const rawDescStr = String(row.description || '(No description)');
-  const desc = rawDescStr.replace(/\n/g, '<br>');
+  // 12 Jun 2026 — blob:// fix: relative <a href="lists/..."> and
+  // outputs/playbooks/X.md references inside the description break inside
+  // a blob URL. Rewrite to absolute URLs using baseHref (defined below).
+  // Done after baseHref is computed.
+  let desc = rawDescStr.replace(/\n/g, '<br>');
   // The brief opens via blob:// URL so all relative paths break. Capture
   // the absolute dashboard URL at brief generation time so the Back to
   // Marketing OS button can navigate cleanly back to the dashboard.
   const baseHref = window.location.href.replace(/[#?].*$/, '').replace(/\/[^\/]*\.html?$/, '/') || window.location.origin + '/';
+
+  // Now that baseHref is known, rewrite any RELATIVE URLs embedded in the
+  // description so they survive the blob:// context the brief opens in:
+  //   <a href="lists/X.html">…</a>       → href="${baseHref}lists/X.html"
+  //   outputs/playbooks/X.md  (any form) → ${baseHref}playbooks/X.html
+  desc = desc.replace(/href=(["'])(lists\/[^"']+\.html)\1/gi, `href=$1${baseHref}$2$1`);
+  desc = desc.replace(/outputs\/playbooks\/([\w\-.]+)\.md/gi, `${baseHref}playbooks/$1.html`);
   const owner = esc(row.owner || 'Team');
   const role  = esc(row.owner_role || '');
   const priority = row.priority || 'P2';
@@ -18504,7 +18515,10 @@ function _renderProposedActionBriefHTML(row) {
   let attachedListHTML = '';
   const _listMatch = rawDescStr.match(/href=["'](lists\/[^"']+\.html)["']/i);
   if (_listMatch) {
-    const _listUrl = _listMatch[1];
+    // 12 Jun 2026 — Tia: Safari "address is invalid" — the brief opens
+    // via blob:// so relative paths like "lists/X.html" resolve against
+    // blob: and break. Prefix with the absolute baseHref captured above.
+    const _listUrl = baseHref + _listMatch[1];
     const _listLabel = _listUrl.includes('future-cancellations')
       ? 'View the save-call list'
       : 'View the attached list';
@@ -18522,7 +18536,8 @@ function _renderProposedActionBriefHTML(row) {
   const _playbookMatch = rawDescStr.match(/outputs\/playbooks\/([\w\-.]+)\.md/i);
   if (_playbookMatch) {
     const _pbSlug = _playbookMatch[1];
-    const _pbUrl = `playbooks/${_pbSlug}.html`;
+    // Same blob:// fix as the list above — absolute URL required.
+    const _pbUrl = baseHref + `playbooks/${_pbSlug}.html`;
     attachedPlaybookHTML =
       `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Attached playbook</div>` +
       `<a href="${esc(_pbUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">View the playbook →</a>` +
