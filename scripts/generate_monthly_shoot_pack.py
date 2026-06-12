@@ -36,7 +36,11 @@ from pathlib import Path
 
 BASE_DIR  = Path(__file__).resolve().parent.parent
 STATE_DIR = BASE_DIR / "state"
-OUTPUT_DIR = BASE_DIR / "outputs" / "asset-library"
+# Write into docs/ so GitHub Pages serves it. The dashboard's Asset
+# Library card links to asset-library/shoot-pack-YYYY-MM.md relative
+# to docs/index.html. Earlier write to outputs/asset-library/ 404'd
+# because Pages only serves files inside docs/.
+OUTPUT_DIR = BASE_DIR / "docs" / "asset-library"
 
 sys.path.insert(0, str(BASE_DIR / "scripts"))
 from work_queue.build_creative_brief_context import build_context  # noqa: E402

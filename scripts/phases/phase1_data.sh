@@ -460,7 +460,7 @@ TODAY_DOM=$(date +%d)   # day of month
 if [[ "$TODAY_DOW" == "1" && "$TODAY_DOM" -le "07" ]]; then
     log "Step 1j-bis — First Monday of month detected, generating Shauna's monthly shoot pack..."
     "$PYTHON" "$BASE_DIR/scripts/generate_monthly_shoot_pack.py" >> "$LOG" 2>&1 \
-        && log "  ✓ Monthly shoot pack written to outputs/asset-library/" \
+        && log "  ✓ Monthly shoot pack written to docs/asset-library/" \
         || log "  ⚠️  Monthly shoot pack generation had issues — check $LOG"
 else
     log "Step 1j-bis — Skipping monthly shoot pack (only fires on first Mon of month)"
