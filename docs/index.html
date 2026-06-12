@@ -14299,6 +14299,27 @@ function _renderActionList(actions, opts = {}) {
   actions = actions.filter(a => !_isDoneStatus(_statusByItem[a.id]));
   if (actions.length === 0) return '';
 
+  // 12 Jun 2026 — Tia: "prioritised actions must be short by priority
+  // and effort." Sort P1 → P2 → P3 → ∅, then S → M → L within each
+  // priority so the quickest highest-priority wins surface first.
+  // Numeric effort_hours from strategists: ≤2h=S, ≤6h=M, >6h=L.
+  // String effort 'S'/'M'/'L' from hand-coded actions is honoured.
+  const _prioRank = {P1:0, P2:1, P3:2};
+  const _effortRank = (e) => {
+    if (e == null || e === '') return 9;
+    let label = e;
+    if (typeof e === 'number') label = e <= 2 ? 'S' : e <= 6 ? 'M' : 'L';
+    return {S:0, M:1, L:2}[label] ?? 9;
+  };
+  actions = [...actions].sort((a, b) => {
+    const ap = _prioRank[a.priority] ?? 9;
+    const bp = _prioRank[b.priority] ?? 9;
+    if (ap !== bp) return ap - bp;
+    const ae = _effortRank(a.effort_hours ?? a.effort);
+    const be = _effortRank(b.effort_hours ?? b.effort);
+    return ae - be;
+  });
+
   const items = actions.slice(0, limit);
 
   // Effort badge
