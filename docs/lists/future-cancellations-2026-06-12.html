@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1.0'>
+<title>CB247 Save-Call List · 2026-06-12</title>
+<style>
+  :root {
+    --teal: #3FA69A;
+    --teal-deep: #2d7d72;
+    --teal-mist: #f0fdf4;
+    --dark: #1a1a2e;
+    --muted: #6b7280;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:var(--dark);line-height:1.55}
+  .page{max-width:1200px;margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 0 32px rgba(0,0,0,.05)}
+  .hero{background:linear-gradient(135deg,var(--dark) 0%,#2a2a4e 100%);color:#fff;padding:28px 36px}
+  .hero-tag{display:inline-block;font-size:11px;color:var(--teal);font-weight:700;letter-spacing:2px;text-transform:uppercase;background:rgba(63,166,154,.15);padding:5px 12px;border-radius:99px;margin-bottom:8px}
+  .hero h1{font-size:28px;font-weight:800;margin-bottom:8px}
+  .hero-sub{font-size:13px;color:rgba(255,255,255,.7);margin-bottom:18px}
+  .hero-stats{display:flex;gap:24px;flex-wrap:wrap}
+  .hero-stat{display:flex;flex-direction:column}
+  .hero-stat .label{font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:3px}
+  .hero-stat .value{font-size:22px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+  .controls{padding:18px 36px;border-bottom:1px solid #f0f2f5;background:#fafbfc;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .controls input{padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;font-family:inherit;min-width:240px}
+  .controls input:focus{outline:none;border-color:var(--teal)}
+  .controls select{padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;font-family:inherit}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead tr{background:var(--teal-mist);border-bottom:2px solid #d1fae5}
+  thead th{padding:11px 8px;text-align:left;font-size:10.5px;letter-spacing:.06em;color:var(--teal-deep);text-transform:uppercase;font-weight:700}
+  tbody tr:hover{background:#fafbfc}
+  tbody tr.outcome-saved{background:#dcfce7 !important}
+  tbody tr.outcome-lost{background:#fef2f2 !important;opacity:.7}
+  tbody tr.outcome-freeze, tbody tr.outcome-downgrade{background:#fef9c3 !important}
+  .footer{padding:20px 36px;background:#fafbfc;border-top:1px solid #f0f2f5;font-size:11px;color:var(--muted)}
+  .footer code{background:#e5e7eb;padding:2px 6px;border-radius:3px}
+  @media print{
+    body{background:#fff}
+    .controls{display:none}
+    .hero{background:var(--dark) !important;-webkit-print-color-adjust:exact}
+    table{font-size:10.5px}
+  }
+</style>
+</head>
+<body>
+<div class='page'>
+  <header class='hero'>
+    <div class='hero-tag'>CB247 Save-Call List</div>
+    <h1>Future-Cancellation Pipeline — 3 people</h1>
+    <div class='hero-sub'>Generated 2026-06-12 from future-cancellations-2026-06-12.csv · sorted by urgency (soonest cancel first)</div>
+    <div class='hero-stats'>
+      <div class='hero-stat'><div class='label'>Total to call</div><div class='value'>3</div></div>
+      <div class='hero-stat'><div class='label'>Per club</div><div class='value' style='font-size:14px;padding-top:6px'><b>Malaga</b> 2 · <b>Ellenbrook</b> 1</div></div>
+      <div class='hero-stat'><div class='label'>Save-rate target</div><div class='value'>30%</div></div>
+      <div class='hero-stat'><div class='label'>Expected saves</div><div class='value'>~1</div></div>
+    </div>
+  </header>
+
+  <div class='controls'>
+    <input id='search' type='text' placeholder='Search name, phone, member ID, reason…' oninput='filterTable()'>
+    <select id='clubFilter' onchange='filterTable()'>
+      <option value=''>All clubs</option>
+      <option value='Malaga'>Malaga (2)</option><option value='Ellenbrook'>Ellenbrook (1)</option>
+    </select>
+    <button onclick='window.print()' style='padding:8px 14px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit'>Print</button>
+    <div style='margin-left:auto;font-size:11px;color:var(--muted)'>Outcomes save to localStorage so you can resume later</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style='width:36px;text-align:center'>#</th>
+        <th>Member</th>
+        <th style='width:130px'>Phone</th>
+        <th style='width:120px'>Cancel</th>
+        <th style='width:160px'>Reason</th>
+        <th>Suggested Approach</th>
+        <th style='width:110px;text-align:center'>Outcome</th>
+      </tr>
+    </thead>
+    <tbody id='rows'>
+      
+        <tr id='row-1' style='border-bottom:1px solid #f0f2f5'>
+          <td style='padding:10px 6px;color:var(--muted);font-size:11px;text-align:center'>1</td>
+          <td style='padding:10px 8px'>
+            <div style='font-size:13px;font-weight:700;color:#1a1a2e'>SAMPLE — Jane Smith</div>
+            <div style='font-size:10.5px;color:#6b7280;margin-top:2px'>
+              M12345 · Malaga
+            </div>
+            <div style='font-size:10.5px;color:#92400e;margin-top:3px'><b>Add-ons:</b> Recovery</div>
+          </td>
+          <td style='padding:10px 8px;font-size:12px;white-space:nowrap'><a href='tel:+61412345678' style='color:#2d7d72;font-weight:600;text-decoration:none;font-variant-numeric:tabular-nums'>+61 412 345 678</a></td>
+          <td style='padding:10px 8px;font-size:11.5px;white-space:nowrap'>
+            <div>2026-07-10</div>
+            <div style='margin-top:4px'><span style='background:#dcfce7;color:#166534;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:.02em;white-space:nowrap'>28d</span></div>
+          </td>
+          <td style='padding:10px 8px;font-size:12px;color:#374151'>Not Using the membership enough</td>
+          <td style='padding:10px 8px;font-size:11.5px;color:#374151;line-height:1.5;max-width:280px'>
+            Habit-build: offer free 1:1 program review + class re-introduction. Highlight 24/7 access.
+            <div style='margin-top:6px;color:#6b7280;font-style:italic;font-size:10.5px'>PGM note: Mentioned distance from work</div>
+          </td>
+          <td style='padding:10px 8px;text-align:center'>
+            <select onchange='markOutcome(this,1)' style='font-size:11px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;font-family:inherit'>
+              <option value=''>—</option>
+              <option value='saved'>Saved</option>
+              <option value='freeze'>Froze</option>
+              <option value='downgrade'>Downgraded</option>
+              <option value='lost'>Lost</option>
+              <option value='noanswer'>No answer</option>
+              <option value='callback'>Callback</option>
+            </select>
+          </td>
+        </tr>
+        <tr id='row-2' style='border-bottom:1px solid #f0f2f5'>
+          <td style='padding:10px 6px;color:var(--muted);font-size:11px;text-align:center'>2</td>
+          <td style='padding:10px 8px'>
+            <div style='font-size:13px;font-weight:700;color:#1a1a2e'>SAMPLE — John Doe</div>
+            <div style='font-size:10.5px;color:#6b7280;margin-top:2px'>
+              M67890 · Ellenbrook
+            </div>
+            
+          </td>
+          <td style='padding:10px 8px;font-size:12px;white-space:nowrap'><a href='tel:+61423456789' style='color:#2d7d72;font-weight:600;text-decoration:none;font-variant-numeric:tabular-nums'>+61 423 456 789</a></td>
+          <td style='padding:10px 8px;font-size:11.5px;white-space:nowrap'>
+            <div>2026-07-15</div>
+            <div style='margin-top:4px'><span style='background:#dcfce7;color:#166534;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:.02em;white-space:nowrap'>33d</span></div>
+          </td>
+          <td style='padding:10px 8px;font-size:12px;color:#374151'>Unsure</td>
+          <td style='padding:10px 8px;font-size:11.5px;color:#374151;line-height:1.5;max-width:280px'>
+            Discovery: what would tip the decision? Offer freeze (FIFO-friendly, no contract) before downgrade.
+            
+          </td>
+          <td style='padding:10px 8px;text-align:center'>
+            <select onchange='markOutcome(this,2)' style='font-size:11px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;font-family:inherit'>
+              <option value=''>—</option>
+              <option value='saved'>Saved</option>
+              <option value='freeze'>Froze</option>
+              <option value='downgrade'>Downgraded</option>
+              <option value='lost'>Lost</option>
+              <option value='noanswer'>No answer</option>
+              <option value='callback'>Callback</option>
+            </select>
+          </td>
+        </tr>
+        <tr id='row-3' style='border-bottom:1px solid #f0f2f5'>
+          <td style='padding:10px 6px;color:var(--muted);font-size:11px;text-align:center'>3</td>
+          <td style='padding:10px 8px'>
+            <div style='font-size:13px;font-weight:700;color:#1a1a2e'>SAMPLE — Sarah Lee</div>
+            <div style='font-size:10.5px;color:#6b7280;margin-top:2px'>
+              M11122 · Malaga
+            </div>
+            <div style='font-size:10.5px;color:#92400e;margin-top:3px'><b>Add-ons:</b> Reformer Pilates</div>
+          </td>
+          <td style='padding:10px 8px;font-size:12px;white-space:nowrap'><a href='tel:+61434567890' style='color:#2d7d72;font-weight:600;text-decoration:none;font-variant-numeric:tabular-nums'>+61 434 567 890</a></td>
+          <td style='padding:10px 8px;font-size:11.5px;white-space:nowrap'>
+            <div>2026-07-20</div>
+            <div style='margin-top:4px'><span style='background:#dcfce7;color:#166534;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:.02em;white-space:nowrap'>38d</span></div>
+          </td>
+          <td style='padding:10px 8px;font-size:12px;color:#374151'>Relocating</td>
+          <td style='padding:10px 8px;font-size:11.5px;color:#374151;line-height:1.5;max-width:280px'>
+            Confirm move date + suburb. If still in Perth, transfer to nearest CB247. If leaving Perth, polite close.
+            <div style='margin-top:6px;color:#6b7280;font-style:italic;font-size:10.5px'>PGM note: Moving to Joondalup</div>
+          </td>
+          <td style='padding:10px 8px;text-align:center'>
+            <select onchange='markOutcome(this,3)' style='font-size:11px;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;font-family:inherit'>
+              <option value=''>—</option>
+              <option value='saved'>Saved</option>
+              <option value='freeze'>Froze</option>
+              <option value='downgrade'>Downgraded</option>
+              <option value='lost'>Lost</option>
+              <option value='noanswer'>No answer</option>
+              <option value='callback'>Callback</option>
+            </select>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <div class='footer'>
+    Source CSV: <code>cb247-inbox/future-cancellations-2026-06-12.csv</code> · Generated by <code>scripts/parse_future_cancellations.py</code> ·
+    Drop a fresh CSV at <code>cb247-inbox/future-cancellations-YYYY-MM-DD.csv</code> any time and re-run to refresh.
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'cb247-save-call-outcomes-2026-06-12';
+  const outcomes = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+
+  // Restore prior outcomes
+  Object.entries(outcomes).forEach(([idx, val]) => {
+    const row = document.getElementById('row-' + idx);
+    if (!row) return;
+    const sel = row.querySelector('select');
+    if (sel) sel.value = val;
+    if (val) row.classList.add('outcome-' + val);
+  });
+
+  function markOutcome(sel, idx) {
+    const row = document.getElementById('row-' + idx);
+    if (!row) return;
+    // Strip old outcome classes
+    Array.from(row.classList).forEach(c => { if (c.startsWith('outcome-')) row.classList.remove(c); });
+    if (sel.value) row.classList.add('outcome-' + sel.value);
+    outcomes[idx] = sel.value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(outcomes));
+  }
+
+  function filterTable() {
+    const q = (document.getElementById('search').value || '').toLowerCase();
+    const club = document.getElementById('clubFilter').value;
+    document.querySelectorAll('#rows tr').forEach(tr => {
+      const text = tr.innerText.toLowerCase();
+      const matchesQ = !q || text.includes(q);
+      const matchesClub = !club || text.includes(club.toLowerCase());
+      tr.style.display = (matchesQ && matchesClub) ? '' : 'none';
+    });
+  }
+</script>
+</body>
+</html>

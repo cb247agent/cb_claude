@@ -653,6 +653,17 @@ else
     log "Step 1j-bis — Skipping monthly shoot pack (only fires on first Mon of month)"
 fi
 
+# ── Step 1j-tris: Parse future-cancellations CSV → callable list (12 Jun 2026)
+# Tia drops a fresh CSV at cb247-inbox/future-cancellations-YYYY-MM-DD.csv
+# any time she pulls the export from PGM. This step renders the latest CSV
+# into a styled docs/lists/future-cancellations-*.html and updates the
+# state/future-cancellations-manifest.json so the Membership page's
+# Save-call action surfaces a working link. Idempotent — re-running the
+# same CSV is a no-op overwrite.
+log "Step 1j-tris — Parse future-cancellations CSV (if present)..."
+"$PYTHON" "$BASE_DIR/scripts/parse_future_cancellations.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Future cancellations parser had issues — check $LOG"
+
 # ── Step 1k: Re-index blog drafts (Wave 2.15 · 11 Jun 2026) ──
 # Scans docs/blog-drafts/*.html and writes the slug list into
 # docs/index.html as window.BLOG_DRAFTS_INDEX. The dashboard's

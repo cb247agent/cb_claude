@@ -1,0 +1,4 @@
+name,phone,email,club,cancel_effective_date,join_date,cancel_reason,member_id,addons_active,notes
+SAMPLE — Jane Smith,+61 412 345 678,jane@example.com,Malaga,2026-07-10,2024-03-15,Not Using the membership enough,M12345,Recovery,Mentioned distance from work
+SAMPLE — John Doe,+61 423 456 789,jdoe@example.com,Ellenbrook,2026-07-15,2025-08-20,Unsure,M67890,,
+SAMPLE — Sarah Lee,+61 434 567 890,sarah.l@example.com,Malaga,2026-07-20,2023-11-05,Relocating,M11122,Reformer Pilates,Moving to Joondalup

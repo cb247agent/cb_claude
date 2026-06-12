@@ -14378,9 +14378,14 @@ function _renderActionList(actions, opts = {}) {
         desc:     a.description || '',
         owner:    a.owner || '—',
         owner_role: a.owner_role || '',
-        effort:   a.effort_hours,
+        // Tolerate both effort_hours (numeric — strategist shape) and the
+        // CB247 short-form 'effort: S/M/L' string when both are present
+        // (e.g. hand-coded membership actions that opted into _renderActionList).
+        effort:   a.effort_hours !== undefined ? a.effort_hours : a.effort,
         priority: a.priority || null,
-        impact:   _projectedKpiText(a.projected_kpis) || a.expected_impact || '—',
+        // Same tolerance for impact — strategist actions use expected_impact /
+        // projected_kpis, hand-coded actions use impact directly.
+        impact:   _projectedKpiText(a.projected_kpis) || a.expected_impact || a.impact || '—',
       };
     }
     // CB247 shape
@@ -24174,13 +24179,34 @@ function renderCb247Membership() {
   // same as every other channel page; (b) owners fixed to the 12 Jun
   // roster (no more phantom "Member Experience" / "Save Team"); (c) every
   // action now carries EXECUTION-READY step-by-step instructions in the
-  // description so opening View Details gives the team a clear playbook.
+  // description so opening View Details gives the team a clear playbook;
+  // (d) the save-call action links to docs/lists/future-cancellations-*.html
+  // when scripts/parse_future_cancellations.py has rendered the list.
   const _membershipActions = [];
 
+  // Fetch the future-cancellations manifest (auto-written by the parse
+  // script) so we know whether the list is ready to link to.
+  const _saveCallToday = new Date().toISOString().slice(0,10);
+  const _saveCallListPath = `lists/future-cancellations-${_saveCallToday}.html`;
+  const _saveCallCsvPath = `cb247-inbox/future-cancellations-${_saveCallToday}.csv`;
+
   if (futurePpl > 100) {
+    // Description includes an inline <a href> to the generated list. If the
+    // list HTML doesn't exist yet (Tia hasn't dropped the CSV + run the
+    // parser), the link 404s with a clear note in the description telling
+    // her exactly what to do. Either way the action is unblocked.
     _membershipActions.push({
       title: `Run save-call programme for ${futurePpl} future-cancellation pipeline`,
-      description: `${futurePpl} unique members are queued to cancel (${futVsNew.toFixed(1)}× this week's ${newPpl} new joins). At a 30% save rate that's ~${Math.round(futurePpl*0.3)} retained = ~$${Math.round(futurePpl*0.3*48)}/wk preserved revenue. EXECUTION STEPS: (1) Tia exports the future-cancellation list from PGM — Members > Reports > Future Cancellations — filter to next 30 days, include name + phone + cancel-effective-date + reason — save CSV to cb247-inbox/future-cancellations-${new Date().toISOString().slice(0,10)}.csv. (2) Angela briefs Reception with the "Unsure" objection playbook (action #2 below). (3) Reception call each member; log outcome (saved / freeze / downgrade / lost) in PGM notes. (4) Verdict day-14: re-pull future-cancellation count — expect drop of ~${Math.round(futurePpl*0.3)}.`,
+      description: `${futurePpl} unique members are queued to cancel (${futVsNew.toFixed(1)}× this week's ${newPpl} new joins). At a 30% save rate that's ~${Math.round(futurePpl*0.3)} retained = ~$${Math.round(futurePpl*0.3*48)}/wk preserved revenue.
+
+📋 <b>VIEW THE CALL LIST →</b> <a href="${_saveCallListPath}" target="_blank" style="color:#2d7d72;text-decoration:underline;font-weight:700">${_saveCallListPath}</a> · (if 404 → list not generated yet, follow Step 1 below)
+
+EXECUTION STEPS:
+(1) <b>Tia</b> exports the future-cancellation list from PGM — Members > Reports > Future Cancellations — filter to next 30 days, include name + phone + cancel-effective-date + reason + member_id + addons_active + notes. Save CSV to <code>${_saveCallCsvPath}</code>. Use the template at <code>cb247-inbox/future-cancellations-template.csv</code> for the column format.
+(2) <b>Tia</b> runs <code>python scripts/parse_future_cancellations.py</code> → produces a styled, callable list at <code>${_saveCallListPath}</code> with phone-click-to-dial, suggested approach per cancel reason, and outcome dropdown per row (Saved / Froze / Downgraded / Lost / No answer / Callback).
+(3) <b>Angela</b> briefs Reception with the "Unsure" objection playbook (action #2 below).
+(4) <b>Reception</b> calls each member; outcome saves to browser localStorage on the list page so progress persists across sessions.
+(5) <b>Verdict day-14:</b> re-pull future-cancellation count from PGM — expect drop of ~${Math.round(futurePpl*0.3)} from the calls.`,
       owner: 'Angela',
       owner_role: 'Brand Manager (Reception briefing + outcome QC)',
       effort: 'L',
