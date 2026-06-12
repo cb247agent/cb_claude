@@ -18281,13 +18281,40 @@ function _renderProposedActionBriefHTML(row) {
   const PRIO_COLOR = { P1:'#ef4444', P2:'#f59e0b', P3:CB247_TEAL };
 
   const title = esc(row.title || 'Untitled action');
-  const desc  = esc(row.description || '(No description)');
+  // 12 Jun 2026 — Tia: stop escaping description so HTML markup
+  // (<b><a><code>) embedded by action authors renders properly. Convert
+  // newlines to <br> so multi-step EXECUTION STEPS render readably.
+  // Trusted-input pattern: all action sources are internal (strategist
+  // YAMLs + dashboard hand-coded actions).
+  const rawDescStr = String(row.description || '(No description)');
+  const desc = rawDescStr.replace(/\n/g, '<br>');
+  // The brief opens via blob:// URL so all relative paths break. Capture
+  // the absolute dashboard URL at brief generation time so the Back to
+  // Marketing OS button can navigate cleanly back to the dashboard.
+  const baseHref = window.location.href.replace(/[#?].*$/, '').replace(/\/[^\/]*\.html?$/, '/') || window.location.origin + '/';
   const owner = esc(row.owner || 'Team');
   const role  = esc(row.owner_role || '');
   const priority = row.priority || 'P2';
   const source = row.source_page || row.category || '';
   const effort = esc(row.effort_hours || '');
   const aid = esc(row.id || '');
+
+  // 12 Jun 2026 — Tia: surface any docs/lists/*.html URL embedded in the
+  // description as a prominent action button at the top of the brief.
+  // Pattern matches the Save-Call list (lists/future-cancellations-*.html)
+  // but is generic enough to surface any future attached list.
+  let attachedListHTML = '';
+  const _listMatch = rawDescStr.match(/href=["'](lists\/[^"']+\.html)["']/i);
+  if (_listMatch) {
+    const _listUrl = _listMatch[1];
+    const _listLabel = _listUrl.includes('future-cancellations')
+      ? 'View the save-call list'
+      : 'View the attached list';
+    attachedListHTML =
+      `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Attached list</div>` +
+      `<a href="${esc(_listUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">📋 ${_listLabel} →</a>` +
+      `<div style="font-size:11px;color:#6b7280;margin-top:8px">If the page 404s, follow the Execution Steps below to drop the CSV in <code style="background:#fff;padding:1px 6px;border-radius:3px">cb247-inbox/</code> and run the parser.</div></div>`;
+  }
 
   // Wave 2.16 (11 Jun 2026): Pull the "Deliverable" sentence out of the
   // description and surface it as its own section above Instructions. The
@@ -18384,13 +18411,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <span class="meta-chip" style="background:${prioColor};color:#fff">${priority}</span>
 ${effort ? `<span class="meta-chip" style="background:#f3f4f6;color:#374151">Effort: ${effort}h</span>` : ''}
 </div>
+${attachedListHTML}
 ${deliverableHTML}
 <div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
 <div class="section"><div class="label">Primary Projected KPI</div><div class="caption-box">${captionHTML}</div></div>
 ${allKpisHTML}
 <div class="section"><div class="label">Source Page · Action ID</div><span class="src">${esc(source || '–')}</span><code style="background:#f3f4f6;padding:3px 8px;border-radius:3px;font-size:11px;color:#6b7280;margin-left:8px">${aid}</code></div>
 ${promoBlock}
-<div class="footer">CB247 Marketing OS · Action Brief · Generated ${today}</div>
+<div style="padding:18px 28px;background:#fafbfc;border-top:1px solid #f0f2f5;text-align:center">
+  <a href="${baseHref}" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 24px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">← Back to Marketing OS</a>
+  <div style="font-size:10.5px;color:#9ca3af;margin-top:10px">CB247 Marketing OS · Action Brief · Generated ${today}</div>
+</div>
 </div></body></html>`;
 }
 
