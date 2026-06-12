@@ -14759,10 +14759,26 @@ function renderOverview() {
         return ta.localeCompare(tb);
       });
 
-    const p1 = mine.filter(a => a.priority === 'P1');
-    const shortlist = (p1.length >= 3 ? p1 : mine).slice(0, 3);
-    const totalMine = mine.length;
+    // De-duplicate by title (12 Jun 2026): emitters re-fire the same
+    // recommendation across weeks (e.g. "Close GBP rating gap at Ellenbrook"
+    // shows up in w23 AND w24). Keep the OLDEST entry per normalised title
+    // so the most-stuck instance surfaces, then we're not showing the team
+    // two rows for the same thing.
+    const _normTitle = (t) => (t || '').toLowerCase().replace(/\s+/g,' ').trim();
+    const _seenTitles = new Set();
+    const dedupedMine = [];
+    for (const a of mine) {
+      const k = _normTitle(a.title);
+      if (_seenTitles.has(k)) continue;
+      _seenTitles.add(k);
+      dedupedMine.push(a);
+    }
+
+    const p1 = dedupedMine.filter(a => a.priority === 'P1');
+    const shortlist = (p1.length >= 3 ? p1 : dedupedMine).slice(0, 3);
+    const totalMine = dedupedMine.length;
     const p1Count = p1.length;
+    const totalRaw = mine.length;     // BEFORE dedup — surfaces volume noise
 
     const _daysAgo = (iso) => {
       if (!iso) return null;
