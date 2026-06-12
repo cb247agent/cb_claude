@@ -24169,35 +24169,47 @@ function renderCb247Membership() {
   }
 
   // ── 6. Next 2 Weeks action list ────────────────────────────────────────
+  // 12 Jun 2026: rewritten to (a) flow through _renderActionList so View
+  // Details, priority pill, stuck chip + Denver-approval chip all work the
+  // same as every other channel page; (b) owners fixed to the 12 Jun
+  // roster (no more phantom "Member Experience" / "Save Team"); (c) every
+  // action now carries EXECUTION-READY step-by-step instructions in the
+  // description so opening View Details gives the team a clear playbook.
   const _membershipActions = [];
 
   if (futurePpl > 100) {
     _membershipActions.push({
-      title: `Save-call programme — ${futurePpl} future-cancellation pipeline (people)`,
-      why: `Pipeline at <b>${futurePpl} unique people</b> queued for cancellation (${futVsNew.toFixed(1)}× this week's ${newPpl} new joins). Saving 30% = <b>~${Math.round(futurePpl*0.3)} people retained</b> = ~$${Math.round(futurePpl*0.3*48)}/week in saved revenue (at $48/month avg base membership). Single highest-leverage retention action — and your future-cancellation list is already a known target set, not a marketing prospect list.`,
-      owner: 'Member Experience (Reception + Save Team)',
+      title: `Run save-call programme for ${futurePpl} future-cancellation pipeline`,
+      description: `${futurePpl} unique members are queued to cancel (${futVsNew.toFixed(1)}× this week's ${newPpl} new joins). At a 30% save rate that's ~${Math.round(futurePpl*0.3)} retained = ~$${Math.round(futurePpl*0.3*48)}/wk preserved revenue. EXECUTION STEPS: (1) Tia exports the future-cancellation list from PGM — Members > Reports > Future Cancellations — filter to next 30 days, include name + phone + cancel-effective-date + reason — save CSV to cb247-inbox/future-cancellations-${new Date().toISOString().slice(0,10)}.csv. (2) Angela briefs Reception with the "Unsure" objection playbook (action #2 below). (3) Reception call each member; log outcome (saved / freeze / downgrade / lost) in PGM notes. (4) Verdict day-14: re-pull future-cancellation count — expect drop of ~${Math.round(futurePpl*0.3)}.`,
+      owner: 'Angela',
+      owner_role: 'Brand Manager (Reception briefing + outcome QC)',
       effort: 'L',
-      impact: `+${Math.round(futurePpl*0.3)} retained people · ~$${Math.round(futurePpl*0.3*48)}/wk preserved revenue`,
+      priority: 'P1',
+      impact: `+${Math.round(futurePpl*0.3)} retained · ~$${Math.round(futurePpl*0.3*48)}/wk preserved revenue`,
     });
   }
 
   if (cw.available && topReason) {
     _membershipActions.push({
-      title: `Build playbook for "${topReason}" objection`,
-      why: `Current #1 cancellation reason (${reasons[topReason]||0} of ${cw.total_responses||0} responses · ${Math.round((reasons[topReason]||0)/(cw.total_responses||1)*100)}%). Specific objection-handling script + concession menu (freeze · downgrade · transfer) directly addresses what's driving people out the door.`,
-      owner: 'Brand Manager + Member Experience',
+      title: `Refresh "${topReason}" objection playbook for Reception`,
+      description: `Current #1 cancel reason is "${topReason}" (${reasons[topReason]||0} of ${cw.total_responses||0} responses, ${Math.round((reasons[topReason]||0)/(cw.total_responses||1)*100)}%). EXECUTION STEPS: (1) Angela drafts a 1-page playbook: opener script + 3-tier concession menu (freeze / downgrade / transfer) + closing script + "no save" exit script. (2) Save to outputs/playbooks/${(topReason||'').toLowerCase().replace(/\\s+/g,'-')}-playbook-${new Date().toISOString().slice(0,10)}.md. (3) Brief Reception in Monday huddle — 15 min role-play. (4) Verdict day-14: cancellations citing "${topReason}" should drop by 20%+ in next week's data.`,
+      owner: 'Angela',
+      owner_role: 'Brand Manager',
       effort: 'M',
-      impact: `Address ${Math.round((reasons[topReason]||0)/(cw.total_responses||1)*100)}% of current cancellations with one playbook`,
+      priority: 'P1',
+      impact: `Address ${Math.round((reasons[topReason]||0)/(cw.total_responses||1)*100)}% of cancellations with one playbook`,
     });
   }
 
   if (winBack > 30) {
     _membershipActions.push({
-      title: `Win-back campaign for ${winBack} warm leavers`,
-      why: `${wouldReturn.Yes||0} said "Yes — would return" and ${wouldReturn.Unsure||0} said "Unsure" in cancel surveys. Combined ${winBack} people who explicitly indicated openness. Yes pool needs immediate outreach (within 7 days of cancel · 50%+ conversion possible); Unsure pool needs 30-day drip.`,
-      owner: 'Marketing (email) + Save Team (phone)',
+      title: `Run win-back campaign for ${winBack} warm leavers`,
+      description: `${wouldReturn.Yes||0} said "Yes — would return" and ${wouldReturn.Unsure||0} said "Unsure" in cancel surveys (Cleverwaiver). EXECUTION STEPS: (1) Tia exports the "would_return=Yes/Unsure" list from Cleverwaiver — include name + phone + email + cancel-effective-date + reason — save to cb247-inbox/win-back-list-${new Date().toISOString().slice(0,10)}.csv. (2) Angela drafts email + SMS sequence (Yes pool: immediate within 7d of cancel; Unsure pool: 30-day drip with offer ramp). (3) Joanne sends from Klaviyo / SMS platform. (4) Verdict day-14: count rejoins from this list.`,
+      owner: 'Angela',
+      owner_role: 'Brand Manager (copy) + Joanne send',
       effort: 'M',
-      impact: `Convert ${Math.round((wouldReturn.Yes||0)*0.5 + (wouldReturn.Unsure||0)*0.15)} ex-members back · $${Math.round(((wouldReturn.Yes||0)*0.5 + (wouldReturn.Unsure||0)*0.15)*48)}/wk recovered revenue`,
+      priority: 'P2',
+      impact: `Convert ~${Math.round((wouldReturn.Yes||0)*0.5 + (wouldReturn.Unsure||0)*0.15)} ex-members back · $${Math.round(((wouldReturn.Yes||0)*0.5 + (wouldReturn.Unsure||0)*0.15)*48)}/wk recovered`,
     });
   }
 
@@ -24208,10 +24220,12 @@ function renderCb247Membership() {
     const betterNet = Math.max(malNetPpl, ellNetPpl);
     _membershipActions.push({
       title: `Investigate ${worse} vs ${better} people-net gap (${Math.abs(malNetPpl-ellNetPpl)} spread)`,
-      why: `${worse} net ${worseNet} people vs ${better} net ${betterNet} people. Check whether the gap is acquisition (paid + organic driving new joins) or retention (cancel-reason breakdown by club). Different fixes for each: acquisition lift goes to marketing, retention lift goes to club ops.`,
-      owner: 'Tia + Club Managers',
+      description: `${worse} net ${worseNet} people vs ${better} net ${betterNet}. EXECUTION STEPS: (1) Tia pulls cancel-reason breakdown per club from PGM (Members > Reports > Cancellation Reasons, filter by Home Club). (2) Compare top-3 reasons — if reasons differ, it's a club-ops issue (turnover, complaints). If reasons are the same, it's acquisition (paid + organic feeding more leads to better club). (3) If retention gap → brief ${worse} Club Manager to investigate. If acquisition gap → Tia raises Google Ads / Meta spend at ${worse}. (4) Verdict day-28: ${worse} net should narrow gap by 50%+.`,
+      owner: 'Tia',
+      owner_role: 'OS Owner',
       effort: 'M',
-      impact: 'Identifies club-specific intervention before the gap compounds',
+      priority: 'P2',
+      impact: 'Club-specific intervention before the gap compounds',
     });
   }
 
@@ -24219,48 +24233,48 @@ function renderCb247Membership() {
     const recovery = ctx.addon_active['Recovery (Sauna + Ice Bath)'];
     _membershipActions.push({
       title: `Scale Recovery add-on — currently ${recovery} active`,
-      why: `Recovery (Sauna + Ice Bath) is the strongest add-on signal. At $20/fortnight, each new conversion = $40/month recurring revenue with zero CAC. Promote to existing base members via in-app prompts + reception pitch on every check-in this week.`,
-      owner: 'Brand Manager + Reception',
+      description: `Recovery (Sauna + Ice Bath) is your strongest add-on — $20/fortnight = $40/month recurring per conversion, zero CAC. EXECUTION STEPS: (1) Angela drafts 1 IG Story arc + 1 Reception talking point ("ask every check-in"). (2) Joanne posts the Story Tues + Thurs this week + next. (3) Reception team has the talking point printed at desk. (4) Tia tracks active-Recovery count weekly in PGM. (5) Verdict day-14: target ${recovery+10} active (+10 vs current ${recovery}).`,
+      owner: 'Angela',
+      owner_role: 'Brand Manager (copy) + Joanne (Story post)',
       effort: 'S',
-      impact: `Target +10 conversions/wk = +$200/wk recurring add-on revenue`,
+      priority: 'P2',
+      impact: `+10 conversions/wk = +$200/wk recurring add-on revenue`,
     });
   }
 
   _membershipActions.push({
     title: 'Import meeting decisions into Action Tracker',
-    why: 'After Monday meeting, run `python scripts/import-meeting-minutes.py` to push approved actions into state/action-tracker.json. Decisions then become visible on the Action Tracker tab.',
+    description: 'EXECUTION STEPS: (1) After Monday meeting, summarise approved actions into outputs/meeting-minutes-${new Date().toISOString().slice(0,10)}.md with explicit owner per action. (2) Run `python scripts/import-meeting-minutes.py` to push approved actions into state/action-tracker.json. (3) Verify on Work Queue page that all approved actions appear with correct owners. (4) Slack the team a summary linking to the dashboard.',
     owner: 'Tia',
+    owner_role: 'OS Owner',
     effort: 'S',
+    priority: 'P3',
     impact: 'Closes the loop between meeting agreement and execution tracking',
   });
 
-  const _effortBadge_mem = e => {
-    const c = e === 'S' ? '#10b981' : e === 'M' ? '#f59e0b' : '#ef4444';
-    return `<span style="font-size:9px;background:${c};color:#fff;padding:2px 7px;border-radius:3px;font-weight:700">${e}</span>`;
-  };
+  // Wave 2.14 pattern: merge emitter/strategist actions from work queue too.
+  // Once the membership-strategist runs Monday, its 5-9 strategic actions
+  // will appear alongside the hand-coded staples above.
+  try {
+    const wq = window.cbState?.workQueue?.getAll?.() || [];
+    const existing = new Set(_membershipActions.map(a => (a.title || '').trim().toLowerCase()));
+    wq.filter(a =>
+      a.source_page === 'membership' &&
+      !(a.id || '').startsWith('prop-') &&
+      !existing.has((a.title || '').trim().toLowerCase())
+    ).forEach(a => _membershipActions.push(a));
+  } catch (e) { console.warn('[renderCb247Membership] could not merge strategist actions:', e); }
 
-  html += sectionTitle('Next 2 Weeks — Prioritised Action List');
-  html += `<div class="card mb"><table>
-    <thead><tr>
-      <th style="width:24px">#</th>
-      <th>Action</th>
-      <th>Owner</th>
-      <th style="width:50px">Effort</th>
-      <th style="font-size:10px">Expected Impact</th>
-    </tr></thead><tbody>
-    ${_membershipActions.map((a,i) => `<tr>
-      <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
-      <td>
-        <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${a.title}</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.5">${a.why}</div>
-      </td>
-      <td style="font-size:11px"><b>${a.owner}</b></td>
-      <td>${_effortBadge_mem(a.effort)}</td>
-      <td style="font-size:11px;color:var(--text-2)">${a.impact}</td>
-    </tr>`).join('')}
-    </tbody></table>
-    <p style="font-size:10px;color:var(--muted);padding:8px 14px 4px">Auto-generated from this week's data. Reviewed + reassigned in Monday meeting · agreed actions imported to Action Tracker via <code>import-meeting-minutes.py</code>.</p>
-  </div>`;
+  // Render via _renderActionList — same path as every other channel page.
+  // Now produces: priority pill, View Details button, ⚠ Stuck chip when
+  // applicable, ⏳ Denver approval counter at section title.
+  html += _renderActionList(_membershipActions, {
+    title: 'Next 2 Weeks — Prioritised Action List',
+    sourcePage: 'membership',
+    limit: 30,
+    workQueueLink: { page: 'content-planner' },
+    footer: 'Click View Details on any row to see the full execution playbook + approval decision. Strategist actions auto-flow in every Monday after membership-strategist runs.',
+  });
 
   el.innerHTML = html;
 }
