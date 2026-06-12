@@ -446,6 +446,26 @@ log "Step 1j — Regenerate per-action briefs..."
 "$PYTHON" "$BASE_DIR/scripts/generate_briefs.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Brief generation had issues — check $LOG"
 
+# ── Step 1j-bis: Monthly shoot pack for Shauna (12 Jun 2026) ─────────────
+# Shauna (CB247 Assets Creator) works ONE shoot day per month. She needs
+# a single document covering all creative actions due in the next 30 days,
+# bucketed by location with viral references and Higgsfield fallbacks.
+#
+# Trigger: only generate on first Monday of the month so we don't spam
+# the asset-library directory with overwrites every weekly run. The
+# generator is idempotent — safe to re-run manually mid-month if Tia
+# wants a refreshed pack mid-cycle.
+TODAY_DOW=$(date +%u)   # 1=Mon, 7=Sun
+TODAY_DOM=$(date +%d)   # day of month
+if [[ "$TODAY_DOW" == "1" && "$TODAY_DOM" -le "07" ]]; then
+    log "Step 1j-bis — First Monday of month detected, generating Shauna's monthly shoot pack..."
+    "$PYTHON" "$BASE_DIR/scripts/generate_monthly_shoot_pack.py" >> "$LOG" 2>&1 \
+        && log "  ✓ Monthly shoot pack written to outputs/asset-library/" \
+        || log "  ⚠️  Monthly shoot pack generation had issues — check $LOG"
+else
+    log "Step 1j-bis — Skipping monthly shoot pack (only fires on first Mon of month)"
+fi
+
 # ── Step 1k: Re-index blog drafts (Wave 2.15 · 11 Jun 2026) ──
 # Scans docs/blog-drafts/*.html and writes the slug list into
 # docs/index.html as window.BLOG_DRAFTS_INDEX. The dashboard's

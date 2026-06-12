@@ -19589,6 +19589,82 @@ function renderAssetLibrary() {
     </div>
   </div>`;
 
+  // ── Auto-generated Monthly Shoot Pack (12 Jun 2026) ──────────────────
+  // Hybrid brief system: per-action briefs (in dashboard modals) + ONE
+  // monthly markdown shoot pack at outputs/asset-library/shoot-pack-YYYY-MM.md.
+  // The pack aggregates every pending creative action for Shauna in one place
+  // with viral references, past winners, compliance reminders, and Higgsfield
+  // fallback prompts. Generated automatically on first Monday of each month
+  // by scripts/generate_monthly_shoot_pack.py (wired into phase1_data.sh).
+  const _wqAll = (window.cbState && window.cbState.workQueue && window.cbState.workQueue.getAll()) || [];
+  const _isShauna = (a) => {
+    const role = ((a.owner_role || '') + '').toLowerCase();
+    const owner = ((a.owner || '') + '').toLowerCase();
+    if (role.includes('asset creator') || role.includes('assets creator')) return true;
+    if (owner.includes('shauna')) return true;
+    return false;
+  };
+  const _pendingShauna = _wqAll.filter(a => {
+    if (!_isShauna(a)) return false;
+    const status = ((a.planner_status || a.status || '') + '').toLowerCase();
+    return !['published', 'rejected', 'scheduled'].includes(status);
+  });
+  const _ym = new Date().toISOString().slice(0, 7);
+  const _packPath = `../outputs/asset-library/shoot-pack-${_ym}.md`;
+  // Compute last Friday of current month (matches Python _shoot_day_for_month)
+  const _now = new Date();
+  const _lastDay = new Date(_now.getFullYear(), _now.getMonth() + 1, 0);
+  while (_lastDay.getDay() !== 5) _lastDay.setDate(_lastDay.getDate() - 1);
+  const _shootDayStr = _lastDay.toISOString().slice(0, 10);
+  const _msUntilShoot = _lastDay.getTime() - _now.getTime();
+  const _daysUntilShoot = Math.ceil(_msUntilShoot / (1000 * 60 * 60 * 24));
+  let _packCountdownTone = 'green';
+  if (_daysUntilShoot < 0)      _packCountdownTone = 'red';
+  else if (_daysUntilShoot <= 3) _packCountdownTone = 'red';
+  else if (_daysUntilShoot <= 7) _packCountdownTone = 'amber';
+  const _packCountdownText = _daysUntilShoot < 0
+    ? `${Math.abs(_daysUntilShoot)} days overdue`
+    : _daysUntilShoot === 0
+      ? 'TODAY'
+      : `${_daysUntilShoot} days away`;
+
+  html += `<div class="card mb" style="padding:18px 20px;border-left:4px solid var(--brand-accent)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:280px">
+        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--brand-accent-deep);margin-bottom:3px">Monthly Shoot Pack · ${_ym}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">Shauna's batch brief — last Friday of the month</div>
+        <div style="font-size:12px;color:var(--text-2);line-height:1.6">
+          One markdown document covers every creative action due in the next 30 days, grouped by location with viral references, past winners, and Higgsfield fallbacks for shots she can't capture in-club.
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">
+          Auto-regenerated on the first Monday of each month · <code style="background:var(--gray-1);padding:1px 5px;border-radius:3px;font-size:10.5px">scripts/generate_monthly_shoot_pack.py</code>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;min-width:220px">
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700">Recommended Shoot Day</div>
+          <div style="font-size:18px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">${_shootDayStr}</div>
+          <div style="font-size:11px;font-weight:700;color:${_packCountdownTone==='red'?'#dc2626':_packCountdownTone==='amber'?'#d97706':'var(--brand-accent-deep)'};margin-top:2px">${_packCountdownText}</div>
+        </div>
+        <a href="${_packPath}" target="_blank" style="background:var(--brand-accent);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-size:11.5px;font-weight:700;text-decoration:none;font-family:inherit;letter-spacing:.02em">Open Shoot Pack →</a>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px">
+      <div style="background:var(--gray-0);border-radius:6px;padding:10px 12px">
+        <div style="font-size:22px;font-weight:700;color:var(--brand-accent-deep);font-variant-numeric:tabular-nums;line-height:1">${_pendingShauna.length}</div>
+        <div style="font-size:10px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-top:4px">Pending creative actions</div>
+      </div>
+      <div style="background:var(--gray-0);border-radius:6px;padding:10px 12px">
+        <div style="font-size:22px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1">${_pendingShauna.filter(a=>(((a.title||'')+'').toLowerCase().match(/malaga/))).length}</div>
+        <div style="font-size:10px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-top:4px">Malaga shots</div>
+      </div>
+      <div style="background:var(--gray-0);border-radius:6px;padding:10px 12px">
+        <div style="font-size:22px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;line-height:1">${_pendingShauna.filter(a=>(((a.title||'')+'').toLowerCase().match(/ellenbrook/))).length}</div>
+        <div style="font-size:10px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-top:4px">Ellenbrook shots</div>
+      </div>
+    </div>
+  </div>`;
+
   // ── KPI strip ─────────────────────────────────────────────────────────
   html += `<div class="kpi-grid cols-4 mb">
     ${kpiCard('','Next Shoot', nextShoot ? nextShoot.date.slice(5) : '—', null, nextShoot ? nextShoot.location : 'No shoot scheduled', countdownStatus)}

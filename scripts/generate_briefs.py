@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -28,6 +29,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATE_FILE = BASE_DIR / "state" / "work-queue.json"
 PROMO_FILE = BASE_DIR / "state" / "promo-pipeline.json"
 BRIEFS_DIR = BASE_DIR / "docs" / "briefs"
+
+# Shared creative context (12 Jun 2026 — hybrid brief generator).
+# Per-action briefs for Shauna AND the monthly shoot pack both pull
+# context from build_creative_brief_context.py so they stay aligned.
+sys.path.insert(0, str(BASE_DIR / "scripts"))
+try:
+    from work_queue.build_creative_brief_context import build_context as _build_creative_context
+except Exception as _e:    # pragma: no cover — keep brief gen resilient
+    print(f"[cb247-briefs] WARN — creative context helper unavailable: {_e}")
+    _build_creative_context = None
 
 # CB247 teal palette (matches docs/index.html CSS vars)
 CB247_TEAL = "#3FA69A"
@@ -129,6 +140,159 @@ def _promo_block(action, promos):
       <b>Offer:</b> {_escape((p.get('offer') or {}).get('headline',''))}<br>
       <b>Audience:</b> {_escape(p.get('target_audience',''))} · <b>Stage:</b> {_escape(p.get('stage',''))}
     </div>
+  </div>"""
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# CREATIVE ACTION DETECTION + SECTION RENDERER (12 Jun 2026)
+# Shauna only works one shoot day per month. Per-action briefs for her
+# need the SHOT, the ANGLE, the VIRAL REFERENCE, and a Higgsfield AI
+# fallback — far richer than a standard CTA-tweak brief.
+# ─────────────────────────────────────────────────────────────────────────
+
+# Trigger words in the title that imply a creative deliverable
+_CREATIVE_TITLE_VERBS = ("refresh", "add", "test", "swap", "shoot", "capture", "produce")
+_CREATIVE_TITLE_NOUNS = (
+    "reel", "photo", "image", "video", "carousel", "creative",
+    "shoot", "asset", "story", "vlog", "tiktok",
+)
+
+
+def _is_creative_action(action: dict) -> bool:
+    """True if this action belongs in Shauna's shoot pack.
+
+    Heuristic mirrors what _classifyActionKind() does on the dashboard
+    side, plus an owner_role check so Shauna's GBP photo refresh + social
+    trend-rides ALL surface as creative even when the title doesn't say
+    'reel' or 'photo' explicitly.
+    """
+    role  = (action.get("owner_role") or "").lower()
+    owner = (action.get("owner") or "").lower()
+    title = (action.get("title") or "").lower()
+    if "assets creator" in role or "asset creator" in role:
+        return True
+    if "shauna" in owner:
+        return True
+    # Title-based — verb + creative noun, e.g. "Refresh Deep Heat reel"
+    if any(v in title for v in _CREATIVE_TITLE_VERBS) and any(
+        n in title for n in _CREATIVE_TITLE_NOUNS
+    ):
+        return True
+    return False
+
+
+def _render_winners_html(winners: list) -> str:
+    if not winners:
+        return "<i style='color:#9ca3af;font-size:12px'>No standout winners last week.</i>"
+    rows = []
+    for w in winners:
+        rows.append(
+            f"<tr><td style='padding:6px 8px;border-bottom:1px solid #f0f2f5'>{_escape(w['name'])}</td>"
+            f"<td style='padding:6px 8px;border-bottom:1px solid #f0f2f5;color:#6b7280'>{_escape(w['location'])}</td>"
+            f"<td style='padding:6px 8px;border-bottom:1px solid #f0f2f5;text-align:right'>"
+            f"<b>{w['ctr']}%</b></td>"
+            f"<td style='padding:6px 8px;border-bottom:1px solid #f0f2f5;text-align:right;color:#6b7280'>"
+            f"${w['spend']}</td></tr>"
+        )
+    return (
+        "<table style='width:100%;border-collapse:collapse;font-size:12px;margin-top:6px'>"
+        "<thead><tr style='border-bottom:2px solid #e5e7eb'>"
+        "<th style='padding:6px 8px;text-align:left;font-size:10px;color:#6b7280;text-transform:uppercase'>Ad name</th>"
+        "<th style='padding:6px 8px;text-align:left;font-size:10px;color:#6b7280;text-transform:uppercase'>Loc</th>"
+        "<th style='padding:6px 8px;text-align:right;font-size:10px;color:#6b7280;text-transform:uppercase'>CTR</th>"
+        "<th style='padding:6px 8px;text-align:right;font-size:10px;color:#6b7280;text-transform:uppercase'>Spend</th>"
+        "</tr></thead><tbody>" + "".join(rows) + "</tbody></table>"
+    )
+
+
+def _render_viral_html(viral: dict) -> str:
+    parts = []
+    hashtags = viral.get("trending_hashtags") or []
+    if hashtags:
+        chips = " ".join(
+            f"<span style='display:inline-block;background:#f3f4f6;color:#374151;border-radius:99px;padding:3px 10px;font-size:11px;margin:2px 4px 2px 0'>"
+            f"#{_escape(h.get('hashtag'))} <span style='color:#9ca3af'>·{h.get('count')}</span></span>"
+            for h in hashtags
+        )
+        parts.append(f"<div style='margin-bottom:10px'><b style='font-size:11px;color:#6b7280'>TRENDING HASHTAGS</b><br>{chips}</div>")
+    posts = viral.get("top_posts") or []
+    if posts:
+        bullets = []
+        for p in posts[:3]:
+            txt = _escape((p.get("text") or "")[:160])
+            eng = p.get("engagement") or p.get("plays") or p.get("likes") or 0
+            plat = _escape(p.get("platform") or "—")
+            bullets.append(f"<li style='margin-bottom:6px;line-height:1.5'><b>[{plat}]</b> {txt}… <span style='color:#9ca3af;font-size:11px'>({eng:,} eng)</span></li>")
+        parts.append(f"<div><b style='font-size:11px;color:#6b7280'>VIRAL POSTS WORTH MIRRORING</b><ul style='margin:6px 0 0 18px;font-size:12px;color:#374151'>{''.join(bullets)}</ul></div>")
+    fb = viral.get("competitor_fb_ads") or []
+    if fb:
+        bullets = []
+        for ad in fb[:3]:
+            body = _escape((ad.get("body") or "")[:150])
+            page = _escape(ad.get("page") or "—")
+            bullets.append(f"<li style='margin-bottom:6px;line-height:1.5'><b>{page}:</b> {body}…</li>")
+        parts.append(f"<div style='margin-top:10px'><b style='font-size:11px;color:#6b7280'>COMPETITOR ADS RUNNING (defensive watch)</b><ul style='margin:6px 0 0 18px;font-size:12px;color:#374151'>{''.join(bullets)}</ul></div>")
+    return "".join(parts) if parts else "<i style='color:#9ca3af;font-size:12px'>No viral signals captured this week.</i>"
+
+
+def _render_higgsfield_html(suggestions: list) -> str:
+    if not suggestions:
+        return ""
+    rows = []
+    for s in suggestions:
+        rows.append(
+            f"<div style='border:1px dashed #d1d5db;border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fafafa'>"
+            f"<div style='font-size:12px;font-weight:700;color:{CB247_DARK};margin-bottom:4px'>"
+            f"{_escape(s.get('shot'))}</div>"
+            f"<div style='font-family:Menlo,Monaco,monospace;font-size:11px;color:#374151;line-height:1.5;background:#fff;padding:8px;border-radius:4px;border:1px solid #f0f2f5'>"
+            f"{_escape(s.get('prompt'))}</div>"
+            f"</div>"
+        )
+    return (
+        f"<div style='margin-top:10px'>"
+        f"<div style='font-size:11px;color:#6b7280;margin-bottom:6px'>"
+        f"<b>FALLBACK</b> — if this shot can't be captured in-club, use Higgsfield with:</div>"
+        + "".join(rows) + "</div>"
+    )
+
+
+def _render_compliance_html(reminders: list) -> str:
+    items = "".join(f"<li style='margin-bottom:4px;line-height:1.5'>{_escape(r)}</li>" for r in reminders)
+    return (
+        f"<ul style='margin:6px 0 0 18px;font-size:12px;color:#7f1d1d;line-height:1.5'>{items}</ul>"
+    )
+
+
+def _creative_section(action: dict) -> str:
+    """The extra section appended to Shauna's per-action brief."""
+    if _build_creative_context is None:
+        return ""
+    try:
+        ctx = _build_creative_context(action)
+    except Exception as e:
+        return f"<div class='section'><div class='label'>Creative Context</div><i style='color:#9ca3af;font-size:12px'>Context unavailable: {_escape(str(e))}</i></div>"
+
+    winners   = ctx.get("past_winners") or []
+    viral     = ctx.get("viral") or {}
+    higgs     = ctx.get("higgsfield_suggestions") or []
+    compliance = ctx.get("compliance_reminders") or []
+
+    return f"""<div class="section" style="background:#fafbfc">
+    <div class="label" style="color:{CB247_TEAL_DEEP}">Shauna's Creative Context — Past Winners</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:8px">Top Meta ads from last week. Mirror the angle / hook / location split.</div>
+    {_render_winners_html(winners)}
+  </div>
+  <div class="section">
+    <div class="label" style="color:{CB247_TEAL_DEEP}">Viral Signals — What's Hot This Week</div>
+    {_render_viral_html(viral)}
+  </div>
+  <div class="section" style="background:#fef2f2">
+    <div class="label" style="color:#991b1b">Compliance — Read Before Shooting</div>
+    {_render_compliance_html(compliance)}
+  </div>
+  <div class="section">
+    <div class="label" style="color:{CB247_TEAL_DEEP}">Higgsfield AI Fallback</div>
+    {_render_higgsfield_html(higgs) or "<i style='color:#9ca3af;font-size:12px'>No specific Higgsfield prompts for this action — try to capture in-club.</i>"}
   </div>"""
 
 
@@ -263,6 +427,7 @@ def render_brief(action, promos):
 
   {_promo_block(action, promos)}
   {_draft_block(action)}
+  {_creative_section(action) if _is_creative_action(action) else ""}
 
   <div class="approval-section">
     <div class="label">Review — {priority}</div>
