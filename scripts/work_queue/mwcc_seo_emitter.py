@@ -176,8 +176,8 @@ def _emit_build(queries: list, week: str, start_serial: int) -> Tuple[List[WorkQ
             title=f"Build new content for '{keyword}' — {impressions} impressions, ranking #{position:.0f}",
             description=(
                 f"'{keyword}' has {impressions} weekly impressions but ranks #{position:.0f}, "
-                f"only generating {clicks} clicks. MWCC has no dedicated page targeting this query. "
-                f"AI drafts a focused page → Kelley QC → Denver sign-off → Mark publishes to Webflow. "
+                f"only generating {clicks} clicks. MWCC has no dedicated page targeting this query.\n\n"
+                f"Flow: AI drafts → Brand Manager QC → publish to Webflow. "
                 f"Jordan provides centre-specific copy + photos if the query targets a specific suburb. "
                 f"Target: rank top 10 within 4 weeks."
             ),

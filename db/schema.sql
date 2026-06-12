@@ -102,6 +102,8 @@ CREATE TABLE IF NOT EXISTS public.work_queue_actions (
                          'gbp',
                          'organic-social',
                          'membership',
+                         'enrolment',     -- MWCC childcare equivalent of membership (added 09 Jun 2026)
+                         'opportunity',   -- paid→organic switch tracking (added 09 Jun 2026)
                          'overview'
                      )),
     source_run_at    timestamptz NOT NULL,
