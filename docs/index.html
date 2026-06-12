@@ -18274,11 +18274,114 @@ function _structureWhyText(rawDesc) {
   };
 }
 
+// 12 Jun 2026 — Tia: Denver (COO approver) needs analyst-grade context
+// to approve/reject in 30 seconds. Auto-compute it from existing fields:
+//
+//   What changed → first sentence of description (the snapshot the
+//                   strategist saw this week)
+//   Stakes       → projected_kpis baseline + target × per-metric
+//                  revenue multiplier (math shown so Denver can override)
+//   Confidence   → data_quality field + source_agent hit-rate computed
+//                  live from cbState.workQueue measured verdicts
+//   If rejected  → counterfactual: baseline × multiplier × 4 weeks
+//                  continues if action is declined
+//
+// Per-metric revenue multipliers (best-effort defaults — override after
+// Denver disputes a number; the math is shown inline so disputes are
+// quick). Values in AUD per unit per applicable window.
+const _ANALYSIS_REVENUE_PER_UNIT = {
+  membership_signups_weekly:       48,
+  membership_cancellations_weekly: 48,
+  membership_future_cancellations: 48,
+  membership_addon_active_count:   10,
+  google_ads_conversions_weekly:   25,
+  google_ads_clicks_weekly:         0.40,
+  google_ads_spend_weekly:          1,
+  google_ads_cpa:                   1,
+  meta_results_weekly:             25,
+  meta_ad_clicks_weekly:            0.30,
+  meta_ad_reach_weekly:             0.001,
+  gsc_clicks_weekly:                0.40,
+  gbp_reviews_count:               15,
+  ads_spend_saved_monthly:          1,
+  cumulative_ads_savings_monthly:   1,
+};
+
+function _buildAnalysisSection(action) {
+  if (!action) return '';
+  const desc = String(action.description || action.why || '');
+  const firstSent = (desc.split(/(?<=[.!?])\s+(?=[A-Z])/)[0] || desc).replace(/<br>/g, ' ').slice(0, 220);
+
+  const kpis = action.projected_kpis || [];
+  const k = kpis.find(x => x?.baseline != null && x?.target != null) || kpis[0] || {};
+  const metric = k.metric || '';
+  const baseline = parseFloat(k.baseline);
+  const target   = parseFloat(k.target);
+  const delta    = Number.isFinite(baseline) && Number.isFinite(target) ? Math.abs(target - baseline) : 0;
+  const win      = k.measurement_window_days || 14;
+  const fmt$     = (n) => '$' + Math.round(n).toLocaleString();
+
+  // Stakes line + open math
+  const $per = _ANALYSIS_REVENUE_PER_UNIT[metric];
+  let stakesLine = '';
+  let stakesMath = '';
+  if ($per != null && delta > 0) {
+    const $delta = delta * $per;
+    const $monthly = $delta * 4;
+    stakesLine = `Δ ${delta.toLocaleString()} × ${fmt$($per).replace('$', '$')} per unit ≈ <b>${fmt$($delta)} over the ${win}d window</b>`;
+    stakesMath = `${baseline} → ${target} · multiplier ${fmt$($per)}/unit · monthly run-rate ≈ ${fmt$($monthly)}`;
+  } else if (metric === 'qualitative_assessment') {
+    stakesLine = 'Qualitative — verdict captured by team after the 14-day window';
+  }
+
+  // Confidence — data_quality + strategist hit-rate
+  const dq = (action.data_quality || 'medium').toUpperCase();
+  const dqClr = dq === 'HIGH' ? 'var(--brand-accent-deep)' : dq === 'LOW' ? '#374151' : '#6b7280';
+  let hitRate = '';
+  const src = action.source_agent || '';
+  if (src && window.cbState?.workQueue?.getAll) {
+    const measured = (window.cbState.workQueue.getAll() || [])
+      .filter(a => a.source_agent === src && a.overall_verdict && a.overall_verdict !== 'pending');
+    if (measured.length > 0) {
+      const wins = measured.filter(a => a.overall_verdict === 'winner' || a.overall_verdict === 'partial_win').length;
+      const pct = Math.round(100 * wins / measured.length);
+      const tidySrc = src.replace(/-strategist$/, '').replace(/-emitter$/, '');
+      hitRate = ` · ${tidySrc} hit rate ${pct}% (${wins} of ${measured.length} measured)`;
+    }
+  }
+
+  // If rejected — counterfactual baseline persistence
+  let rejectedLine = '';
+  if ($per != null && Number.isFinite(baseline) && baseline > 0) {
+    const $monthlyContinue = baseline * $per * 4;
+    rejectedLine = `Baseline persists at ${baseline.toLocaleString()} units · ~${fmt$($monthlyContinue)} per month continues unaddressed`;
+  } else if (metric === 'qualitative_assessment') {
+    rejectedLine = 'No measurable signal collected · gap stays unobserved';
+  }
+
+  // Don't render at all if we have nothing useful
+  if (!firstSent && !stakesLine && !hitRate && !rejectedLine) return '';
+
+  const ROW = (label, body) => body
+    ? `<div style="display:flex;gap:12px;margin-bottom:7px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;flex-shrink:0;width:96px;padding-top:2px">${label}</div><div style="flex:1;line-height:1.55;font-size:12.5px;color:var(--text)">${body}</div></div>`
+    : '';
+
+  return `<div style="background:#fafbfc;border-left:3px solid var(--brand-accent);padding:12px 14px;margin-bottom:14px;border-radius:0 4px 4px 0">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--brand-accent-deep);margin-bottom:10px">Analysis · for approver</div>
+    ${ROW('What changed', firstSent)}
+    ${ROW('Stakes', stakesLine)}
+    ${stakesMath ? `<div style="font-size:10.5px;color:#9ca3af;margin:0 0 8px 108px;font-family:Menlo,Monaco,monospace;line-height:1.5">${stakesMath}</div>` : ''}
+    ${ROW('Confidence', `<span style="background:#f3f4f6;color:${dqClr};font-weight:700;padding:1px 7px;border-radius:3px;font-size:11px;letter-spacing:.03em">${dq}</span>${hitRate}`)}
+    ${ROW('If rejected', rejectedLine)}
+  </div>`;
+}
+
 function _buildWhyText(action, normalised, sourcePage) {
   const whyRaw = action?.why || action?.description || normalised.desc || '';
+  const analysisHTML = _buildAnalysisSection(action);
   if (whyRaw) {
     const parts = _structureWhyText(whyRaw);
-    if (!parts) return whyRaw;
+    if (!parts) return analysisHTML + whyRaw;
     const reasonHTML = parts.reason
       ? `<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:6px">Reason</div><div style="margin-bottom:14px;line-height:1.7">${parts.reason}</div></div>`
       : '';
@@ -18288,8 +18391,8 @@ function _buildWhyText(action, normalised, sourcePage) {
     const actionHTML = parts.actions.length
       ? `<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--brand-accent-deep);margin-bottom:6px">Action</div><ol style="margin:0;padding-left:22px;line-height:1.7">${parts.actions.map(s => `<li style="margin-bottom:6px">${s}</li>`).join('')}</ol></div>`
       : '';
-    const combined = `${reasonHTML}${stratHTML}${actionHTML}`.trim();
-    return combined || whyRaw;
+    const combined = `${analysisHTML}${reasonHTML}${stratHTML}${actionHTML}`.trim();
+    return combined || (analysisHTML + whyRaw);
   }
   // Last-resort fallback
   const friendly = (sourcePage || 'team').replace(/-/g, ' ');
