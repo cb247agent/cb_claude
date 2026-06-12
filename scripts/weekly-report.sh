@@ -495,6 +495,16 @@ outputs/qa/qa-agent-$DATE.md." \
 "Read(state/work-queue.json),Read(state/promo-pipeline.json),Read(docs/index.html),Read(docs/briefs/**),Read(docs/blog-drafts/**),Bash(curl)" \
 "$MODEL_SONNET"
 
+# ── Step 1m: Visual regression (Wave C · 12 Jun 2026) ────────────────────
+# Screenshots every dashboard page via headless Chromium, image-diffs
+# against docs/baselines/. Catches the class of UI bugs Wave A + B can't
+# see (wrong column, broken spacing, accent shift). Runs against the LIVE
+# deployed dashboard so it sees the same thing the team sees. Warn-only.
+log ""
+log "─── Step 1m: VISUAL REGRESSION (Wave C) ───"
+"$PYTHON" "$BASE_DIR/scripts/visual_regression.py" --source live --log >> "$LOG" 2>&1 \
+    || log "  ⚠️  Visual regression had blocking errors — check $LOG"
+
 log "Phase 1 complete."
 
 

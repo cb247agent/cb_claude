@@ -450,6 +450,74 @@ DATE=$(date '+%Y-%m-%d') && claude --print --model claude-sonnet-4-5 \
 .venv/bin/python3.13 scripts/work_queue/sync_to_supabase.py
 ```
 
+### Wave C — Visual regression + `/qa` (12 Jun 2026)
+
+The deterministic Wave A scripts catch logic bugs; Wave B agents catch
+data/render mismatches; Wave C catches **purely visual** bugs that nothing
+else can see.
+
+#### `scripts/visual_regression.py`
+
+Headless Chromium screenshots every CB247 dashboard page (11 total),
+image-diffs against `docs/baselines/{page}.png`, flags any diff above
+`DIFF_THRESHOLD_PCT` (currently 2%).
+
+Pages baselined:
+overview · membership · seo · google-ads · organic-social · meta-ads ·
+gbp · promo-pipeline · asset-library · work-queue · performance-review
+
+```bash
+# Run a check against the live deployed dashboard
+.venv/bin/python3.13 scripts/visual_regression.py --source live --log
+
+# Run against your local docs/index.html (faster, useful pre-push)
+.venv/bin/python3.13 scripts/visual_regression.py --source local --log
+
+# After an INTENTIONAL UI change, refresh baselines + commit them
+.venv/bin/python3.13 scripts/visual_regression.py --update-baselines
+git add docs/baselines/ && git commit -m "chore: refresh dashboard baselines after UI change"
+
+# Strict — exit 1 on any diff over threshold
+.venv/bin/python3.13 scripts/visual_regression.py --strict
+```
+
+Output goes to:
+- `logs/visual-regression-current/{page}.png` — what was captured this run
+- `logs/visual-regression-diff/{page}.png` — side-by-side baseline | current | diff (red highlight)
+- `logs/visual-regression-YYYY-MM-DD.json` — structured findings
+
+Auto-runs as **Step 1m** of `weekly-report.sh` against the live deployed
+dashboard. Catches drift after the Monday data sync but before Tia/team
+sees a stale UI.
+
+#### `/qa` — one-shot pre-push check (`scripts/qa.sh`)
+
+Single command that bundles Wave A pre-commit checks + Wave C visual
+regression. Use it before pushing any UI change.
+
+```bash
+bash scripts/qa.sh                 # warn-only (recommended)
+bash scripts/qa.sh --strict        # exit 1 on any error finding
+bash scripts/qa.sh --no-visual     # skip Playwright (saves ~30s)
+```
+
+Does NOT call the Wave B Claude agents (qa-agent, security-agent) — those
+cost tokens and only run in the weekly cron.
+
+#### When to refresh baselines
+
+After ANY intentional UI change you can identify ahead of time:
+- Adding a new sidebar page
+- Changing the kanban column layout
+- Renaming a button or label
+- Adjusting card spacing or colors
+
+If `--strict` mode reports a finding you didn't expect, open the side-by-side
+`logs/visual-regression-diff/{page}.png` — the third panel highlights the
+exact pixels that changed in red.
+
+---
+
 ### Agent shape robustness (Wave B fix)
 
 `scripts/extract_agent_actions.py` was hardened on 11 Jun 2026 to handle
