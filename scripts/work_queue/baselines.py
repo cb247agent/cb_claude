@@ -291,6 +291,138 @@ def google_ads_metric_from_field(metric: str) -> Optional[str]:
     }.get(metric)
 
 
+# ── Opportunity savings (closed-loop, 12 Jun 2026) ───────────────────────────
+
+
+def google_ads_search_term_weekly_spend(search_term: str) -> Optional[float]:
+    """Latest weekly spend on a Google Ads SEARCH TERM (not campaign).
+
+    Used by `_fetch_actual("ads_spend_saved_monthly")` — when the team pauses
+    a wasteful search term per opportunity_emitter's recommendation, this
+    function returns the current weekly spend on that term. The verdict
+    layer multiplies by 4.3 to get monthly equivalent and compares to the
+    projected $0 (PAUSE) or 50%-cut target (REDUCE).
+
+    Returns 0.0 if the search term has fully dropped out of the latest pull
+    (paused successfully). Returns None only when the data file is missing —
+    that's a data-quality problem, not a verdict signal.
+    """
+    ads = _load("google-ads-data.json")
+    if not ads:
+        return None
+    needle = (search_term or "").strip().lower()
+    if not needle:
+        return None
+    terms = ads.get("search_terms") or ads.get("topSearchTerms") or []
+    for t in terms:
+        term = (t.get("search_term") or t.get("term") or t.get("query") or "").strip().lower()
+        if term == needle:
+            spend = t.get("cost") or t.get("spend") or 0
+            return float(spend)
+    # Search term has dropped out — the pause worked, current weekly spend = 0
+    return 0.0
+
+
+def ads_spend_saved_monthly_for(search_term: str) -> Optional[float]:
+    """Monthly-equivalent spend STILL going to a search term we tried to cut.
+
+    This is the metric measurement_runner uses to verdict an
+    ads_spend_saved_monthly action. Returns weekly_spend × 4.3 (i.e., what
+    we're still spending). If we projected target=0 and actual=0, perfect
+    save. If actual is much lower than baseline but not 0, partial save.
+    """
+    weekly = google_ads_search_term_weekly_spend(search_term)
+    if weekly is None:
+        return None
+    return round(weekly * 4.3, 2)
+
+
+def cumulative_ads_savings_monthly() -> Optional[float]:
+    """Account-level rolling monthly-equivalent paid spend.
+
+    For the cumulative-savings projection, the "actual" is the account's
+    total monthly spend at verdict time. Compared against the baseline
+    snapshot at action-emit time, the delta IS the realised cumulative
+    savings. We deliberately don't try to compute the delta here —
+    measurement_runner has both numbers and can compute it cleanly.
+    """
+    wk = google_ads_latest_week()
+    if not wk:
+        return None
+    spend = wk.get("spend")
+    if spend is None:
+        return None
+    return round(float(spend) * 4.3, 2)
+
+
+# ── Technical SEO ops (Screaming Frog crawl, 12 Jun 2026) ────────────────────
+
+
+def _screaming_frog_blob() -> Optional[dict]:
+    return _load("screaming-frog-data.json")
+
+
+def pages_4xx_count() -> Optional[int]:
+    """Current count of pages returning 4xx/5xx status.
+
+    Closed-loop pairing: opportunity emitters that propose "fix HTTP errors"
+    project this metric with target=0. measurement_runner reads this
+    function 7d later and verdicts.
+    """
+    sf = _screaming_frog_blob()
+    if not sf:
+        return None
+    summary = sf.get("summary") or {}
+    v = summary.get("pages_4xx_5xx")
+    return int(v) if v is not None else None
+
+
+def _sf_issue_count(issue_name_lower: str) -> Optional[int]:
+    """Helper — pull a specific issue's count from the issues list. Returns
+    0 if the issue isn't listed at all (Screaming Frog only emits issues
+    that have at least one occurrence, so 'not listed' = 'all clean')."""
+    sf = _screaming_frog_blob()
+    if not sf:
+        return None
+    for issue in sf.get("issues") or []:
+        name = (issue.get("name") or "").strip().lower()
+        if issue_name_lower in name:
+            return int(issue.get("count") or 0)
+    return 0
+
+
+def schema_implemented_count() -> Optional[int]:
+    """Pages with structured-data schema markup detected.
+
+    Computed as: total_crawled - pages_missing_schema. Strategist projects
+    target=N (some growth from baseline). Used by 'add LocalBusiness
+    schema' actions.
+    """
+    sf = _screaming_frog_blob()
+    if not sf:
+        return None
+    summary = sf.get("summary") or {}
+    total = summary.get("total_pages_crawled")
+    missing = _sf_issue_count("no schema markup")
+    if total is None or missing is None:
+        return None
+    return max(int(total) - int(missing), 0)
+
+
+def duplicate_metas_count() -> Optional[int]:
+    """Sum of pages with duplicate meta descriptions OR duplicate titles.
+
+    Strategist projects target=0 on dedup actions. Combining duplicate
+    descriptions + duplicate titles mirrors how the SEO strategist scopes
+    'dedup metadata' tasks (it treats them as one workstream).
+    """
+    desc_dupes = _sf_issue_count("duplicate meta description")
+    title_dupes = _sf_issue_count("duplicate title")
+    if desc_dupes is None and title_dupes is None:
+        return None
+    return (desc_dupes or 0) + (title_dupes or 0)
+
+
 # ── GBP (Google Business Profile) ────────────────────────────────────────────
 
 

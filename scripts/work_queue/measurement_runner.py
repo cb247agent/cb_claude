@@ -58,6 +58,13 @@ from work_queue.baselines import (  # noqa: E402
     membership_cancellations_for,
     membership_future_cancellations_for,
     membership_addon_count_for,
+    # Closed-loop completion (12 Jun 2026) — 5 metric handlers strategists
+    # project but measurement couldn't fetch before this commit.
+    ads_spend_saved_monthly_for,
+    cumulative_ads_savings_monthly,
+    pages_4xx_count,
+    schema_implemented_count,
+    duplicate_metas_count,
 )
 from work_queue.measurement import (  # noqa: E402
     compute_kpi_status,
@@ -193,6 +200,29 @@ def _fetch_actual(metric: str, keyword: Optional[str], pattern: Optional[str]) -
         return float(v) if v is not None else None
     if metric == "membership_addon_active_count" and keyword:
         v = membership_addon_count_for(keyword)
+        return float(v) if v is not None else None
+
+    # ── Opportunity savings (closed-loop completion, 12 Jun 2026) ──
+    # keyword = the paused/reduced search term. Returns current monthly
+    # spend; verdict-layer compares to projected target (often 0 for full pause).
+    if metric == "ads_spend_saved_monthly" and keyword:
+        v = ads_spend_saved_monthly_for(keyword)
+        return float(v) if v is not None else None
+    # No keyword → account-level rolling savings tracker.
+    if metric == "cumulative_ads_savings_monthly":
+        v = cumulative_ads_savings_monthly()
+        return float(v) if v is not None else None
+
+    # ── Technical SEO ops (Screaming Frog, 12 Jun 2026) ──
+    # No keyword needed — these are site-wide counts.
+    if metric == "pages_4xx":
+        v = pages_4xx_count()
+        return float(v) if v is not None else None
+    if metric == "schema_implemented":
+        v = schema_implemented_count()
+        return float(v) if v is not None else None
+    if metric == "duplicate_metas":
+        v = duplicate_metas_count()
         return float(v) if v is not None else None
 
     # Session 5f+: ig_engagement_rate, ig_followers (when account APIs wired)

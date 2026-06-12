@@ -256,6 +256,58 @@ def make_action_id(source_prefix: str, week: Optional[str] = None, serial: int =
     return f"{source_prefix}-act-{wk}-{serial:03d}"
 
 
+# Closed-loop safety net (12 Jun 2026): every action MUST be attributable
+# to a source agent for per-agent hit-rate tracking. The 6 rule emitters
+# historically forgot to set source_agent; this mapping derives it from
+# the id prefix so we never end up with None/?/orphan rows again. Any new
+# emitter adding a new id prefix MUST extend this map.
+_ID_PREFIX_TO_SOURCE_AGENT = {
+    "gbp-act":  "gbp-emitter",
+    "mem-act":  "membership-emitter",
+    "soc-act":  "social-emitter",
+    "seo-act":  "seo-emitter",            # legacy (now LLM strategist)
+    "gads-act": "google-ads-emitter",     # legacy (now LLM strategist)
+    "meta-act": "meta-emitter",           # legacy (now LLM strategist)
+    "opp-act":  "opportunity-emitter",
+    "attr-act": "attribution-emitter",
+    "prop":     "promo-concept-emitter",  # 'prop-<source>-<week>-<hash>'
+}
+
+
+def derive_source_agent(action_id: str) -> Optional[str]:
+    """Infer source_agent from an action id's prefix when the field is empty.
+
+    e.g. 'gbp-act-2026w23-001' → 'gbp-emitter'.
+         'prop-seo-organic-2026w23-1a2b' → 'promo-concept-emitter'.
+         'seo-strategist-act-2026w24-007' → None  (must be set explicitly
+         by the agent extractor, since 'seo-strategist' shares the
+         'seo-' prefix but isn't a rule emitter)
+    """
+    if not action_id:
+        return None
+    if action_id.startswith("prop-"):
+        return _ID_PREFIX_TO_SOURCE_AGENT["prop"]
+    # 'seo-strategist-act-*' must NOT match 'seo-act' — check more specific
+    # prefixes first
+    aid = action_id
+    parts = aid.split("-")
+    if len(parts) >= 2:
+        head_2 = "-".join(parts[:2])    # e.g. "gbp-act", "seo-act"
+        if head_2 in _ID_PREFIX_TO_SOURCE_AGENT:
+            return _ID_PREFIX_TO_SOURCE_AGENT[head_2]
+    return None
+
+
 def to_jsonable(action: WorkQueueAction) -> dict:
-    """Convert dataclass to JSON-serializable dict."""
-    return asdict(action)
+    """Convert dataclass to JSON-serializable dict.
+
+    Safety net (12 Jun 2026): if source_agent is unset, derive it from
+    the id prefix. Keeps existing emitters working without per-emitter
+    edits while preventing new orphans.
+    """
+    d = asdict(action)
+    if not d.get("source_agent"):
+        derived = derive_source_agent(d.get("id", ""))
+        if derived:
+            d["source_agent"] = derived
+    return d

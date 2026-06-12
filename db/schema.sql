@@ -148,6 +148,13 @@ CREATE TABLE IF NOT EXISTS public.work_queue_actions (
     -- ── Human input ──────────────────────────────────────────────────────
     notes_human      text NOT NULL DEFAULT '',
 
+    -- ── Attribution (closed-loop completion, 12 Jun 2026) ────────────────
+    -- Which emitter or LLM agent produced this action. Required for the
+    -- Performance Review hit-rate-by-agent breakdown. Migration:
+    -- db/migrations/2026-06-12-add-source-agent.sql
+    source_agent     text,
+    parent_promo_id  text,    -- Wave 5 linkage (promo concept → child action)
+
     -- ── Audit ────────────────────────────────────────────────────────────
     updated_at       timestamptz NOT NULL DEFAULT now()
 );
@@ -155,9 +162,10 @@ CREATE TABLE IF NOT EXISTS public.work_queue_actions (
 ALTER TABLE public.work_queue_actions REPLICA IDENTITY FULL;
 
 -- Indexes for the common query shapes
-CREATE INDEX IF NOT EXISTS idx_wqa_source_page ON public.work_queue_actions (source_page);
-CREATE INDEX IF NOT EXISTS idx_wqa_priority    ON public.work_queue_actions (priority);
-CREATE INDEX IF NOT EXISTS idx_wqa_unmeasured  ON public.work_queue_actions (id)
+CREATE INDEX IF NOT EXISTS idx_wqa_source_page  ON public.work_queue_actions (source_page);
+CREATE INDEX IF NOT EXISTS idx_wqa_priority     ON public.work_queue_actions (priority);
+CREATE INDEX IF NOT EXISTS idx_wqa_source_agent ON public.work_queue_actions (source_agent);
+CREATE INDEX IF NOT EXISTS idx_wqa_unmeasured   ON public.work_queue_actions (id)
     WHERE actual_kpis IS NULL;
 
 COMMENT ON TABLE public.work_queue_actions IS

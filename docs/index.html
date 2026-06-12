@@ -14596,15 +14596,76 @@ function renderOverview() {
     $('overview-period').innerHTML = `${g.period||'7-day window'} · last data refresh ${D.refresh_ts||D.generated||'unknown'}`;
   }
 
-  // ── Data freshness banner ──────────────────────────────────────────────
+  // ── Data Health widget (12 Jun 2026 — closed-loop completion) ──────────
+  // Replaces the simple timestamp banner with a traffic-light grid.
+  // Pipeline freshness in days + blocked-state pills make data-quality
+  // problems visible at a glance. Tia asked "outcomes accurate" — accuracy
+  // requires fresh inputs.
   const ts = D.timestamps || {};
-  $('overview-freshness').innerHTML = `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:6px 14px;margin-bottom:14px;font-size:10.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:14px">
-    <span><b style="color:var(--text-2)">GA4</b> ${ts.ga4||'–'}</span>
-    <span><b style="color:var(--text-2)">GSC</b> ${ts.gsc||'–'}</span>
-    <span><b style="color:var(--text-2)">Google Ads</b> ${ts.google_ads||'–'}</span>
-    <span><b style="color:var(--text-2)">Meta</b> ${ts.meta_ads||'–'}</span>
-    <span><b style="color:var(--text-2)">GBP</b> ${ts.gbp||'–'}</span>
-    <span><b style="color:var(--text-2)">Ahrefs</b> ${ts.ahrefs||'–'}</span>
+
+  // External blockers — surfaced from MEMORY notes (12 Jun 2026).
+  // When Tia clears one, just blank the value here (or wire it to a live
+  // env check in future).
+  const PIPELINE_BLOCKERS = {
+    'gbp':        'GBP API quota=0 — submit increase via GCP Console',
+    'google_ads': 'Google Ads API standard access pending review',
+    'apify':      '4 Apify actors broken — subscription due',
+  };
+
+  const PIPELINES = [
+    {key:'ga4',         label:'GA4'},
+    {key:'gsc',         label:'GSC'},
+    {key:'google_ads',  label:'Google Ads'},
+    {key:'meta_ads',    label:'Meta Ads'},
+    {key:'gbp',         label:'GBP'},
+    {key:'ahrefs',      label:'Ahrefs'},
+    {key:'apify',       label:'Apify'},
+    {key:'metricool',   label:'Metricool'},
+  ];
+  const _ageDays = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return Math.round((Date.now() - d.getTime()) / 86400000);
+  };
+  const _toneFor = (age, blocked) => {
+    if (blocked) return {dot:'#6b7280', bg:'#f3f4f6', fg:'#374151', label:'BLOCKED'};
+    if (age == null) return {dot:'#9ca3af', bg:'#f9fafb', fg:'#6b7280', label:'NO DATA'};
+    if (age > 14) return {dot:'#ef4444', bg:'#fee2e2', fg:'#991b1b', label:`${age}d`};
+    if (age > 7)  return {dot:'#f59e0b', bg:'#fef3c7', fg:'#92400e', label:`${age}d`};
+    return {dot:'#3FA69A', bg:'#f0fdf4', fg:'#2d7d72', label:`${age}d`};
+  };
+  const cells = PIPELINES.map(p => {
+    const stamp = ts[p.key];
+    const age = _ageDays(stamp);
+    const blocked = PIPELINE_BLOCKERS[p.key];
+    const tone = _toneFor(age, blocked);
+    const titleTip = blocked
+      ? blocked
+      : (stamp ? `Last pull: ${stamp}` : 'No timestamp recorded');
+    return `<div class="dh-cell" title="${titleTip.replace(/"/g,'&quot;')}" style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:11px;min-width:120px">
+      <span style="width:8px;height:8px;border-radius:50%;background:${tone.dot};flex-shrink:0"></span>
+      <span style="flex:1;color:var(--text-2);font-weight:600;letter-spacing:.02em">${p.label}</span>
+      <span style="background:${tone.bg};color:${tone.fg};font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap;letter-spacing:.03em">${tone.label}</span>
+    </div>`;
+  }).join('');
+
+  const blockedRows = Object.entries(PIPELINE_BLOCKERS)
+    .map(([k, msg]) => `<div style="font-size:11px;color:#92400e;background:#fef9c3;border-radius:4px;padding:6px 10px;border-left:3px solid #d97706"><b>${k.toUpperCase().replace('_',' ')}:</b> ${msg}</div>`)
+    .join('');
+
+  $('overview-freshness').innerHTML = `<div style="margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:12px;flex-wrap:wrap">
+      <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted)">Data Health · Pipeline Freshness</div>
+      <div style="font-size:10.5px;color:var(--muted)">
+        <span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px"><span style="width:7px;height:7px;border-radius:50%;background:#3FA69A;display:inline-block"></span>≤7d</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px"><span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block"></span>7-14d</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px"><span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block"></span>&gt;14d</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:#6b7280;display:inline-block"></span>blocked</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">${cells}</div>
+    ${blockedRows ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:6px;margin-top:10px">${blockedRows}</div>` : ''}
   </div>`;
 
   // ── Executive Verdict (audit recommendation: verdict before data) ───────
