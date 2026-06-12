@@ -58,10 +58,53 @@ if _DOT_ENV.exists():
 SUPABASE_KEY = os.environ.get("SUPABASE_SECRET_KEY") or "sb_publishable_3giOfPJ92JW7DN8w9jPvoQ_cFo4rd0s"
 
 
+def _patch_to_supabase(rows: list) -> int:
+    """PATCH source_agent (and parent_promo_id if present) on each row.
+    Returns 0 if all succeeded, 1 if any failed."""
+    headers = {
+        "apikey":        SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type":  "application/json",
+        "Prefer":        "return=minimal",
+    }
+    success, fail = 0, 0
+    for a in rows:
+        aid = a.get("id")
+        if not aid:
+            fail += 1
+            continue
+        body = {}
+        if a.get("source_agent"):
+            body["source_agent"] = a["source_agent"]
+        if a.get("parent_promo_id"):
+            body["parent_promo_id"] = a["parent_promo_id"]
+        if not body:
+            continue
+        url = f"{SUPABASE_URL}/rest/v1/work_queue_actions?id=eq.{aid}"
+        try:
+            r = requests.patch(url, headers=headers, json=body, timeout=10)
+            if r.status_code in (200, 204):
+                success += 1
+            else:
+                fail += 1
+                print(f"  ✗ {aid}: HTTP {r.status_code} — {r.text[:120]}")
+        except Exception as e:
+            fail += 1
+            print(f"  ✗ {aid}: {e}")
+
+    print(f"[backfill] Supabase: {success} updated, {fail} failed")
+    return 0 if fail == 0 else 1
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--dry-run", action="store_true",
                    help="Show what would change without writing state or Supabase.")
+    p.add_argument("--push-all", action="store_true",
+                   help="PATCH every action's source_agent in Supabase, not just "
+                        "state-file orphans. Use this after applying the SQL "
+                        "migration when state is already clean but Supabase rows "
+                        "are still missing source_agent.")
     args = p.parse_args()
 
     if not STATE_FILE.exists():
@@ -71,6 +114,17 @@ def main() -> int:
     wq = json.loads(STATE_FILE.read_text())
     actions = wq.get("actions") or []
 
+    if args.push_all:
+        # Push every action that HAS a source_agent in state to Supabase. No
+        # derivation needed — state is already clean — we're just pushing the
+        # known values to columns that didn't exist on prior sync attempts.
+        orphans = [a for a in actions if a.get("source_agent")]
+        print(f"[backfill] --push-all set — will PATCH all {len(orphans)} actions")
+        if args.dry_run:
+            print("[backfill] --dry-run set — exiting before PATCH")
+            return 0
+        return _patch_to_supabase(orphans)
+
     orphans = []
     for a in actions:
         cur = a.get("source_agent")
@@ -79,6 +133,8 @@ def main() -> int:
 
     if not orphans:
         print("[backfill] No orphans found — nothing to do.")
+        print("[backfill] Hint: state may already be clean while Supabase isn't.")
+        print("[backfill] Run with --push-all to PATCH Supabase from state.")
         return 0
 
     print(f"[backfill] Found {len(orphans)} actions with missing source_agent")
@@ -114,33 +170,7 @@ def main() -> int:
 
     # 2) PATCH each row in Supabase
     print(f"[backfill] PATCHing {fixed} rows in Supabase...")
-    headers = {
-        "apikey":        SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type":  "application/json",
-        "Prefer":        "return=minimal",
-    }
-    success = 0
-    fail = 0
-    for a in orphans:
-        if a.get("source_agent") in (None, "", "?"):
-            continue   # unresolved
-        aid = a["id"]
-        url = f"{SUPABASE_URL}/rest/v1/work_queue_actions?id=eq.{aid}"
-        body = {"source_agent": a["source_agent"]}
-        try:
-            r = requests.patch(url, headers=headers, json=body, timeout=10)
-            if r.status_code in (200, 204):
-                success += 1
-            else:
-                fail += 1
-                print(f"  ✗ {aid}: HTTP {r.status_code} — {r.text[:120]}")
-        except Exception as e:
-            fail += 1
-            print(f"  ✗ {aid}: {e}")
-
-    print(f"[backfill] Supabase: {success} updated, {fail} failed")
-    return 0 if fail == 0 else 1
+    return _patch_to_supabase(orphans)
 
 
 if __name__ == "__main__":
