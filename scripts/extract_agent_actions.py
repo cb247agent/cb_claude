@@ -53,8 +53,11 @@ AGENT_OUTPUT_PATHS = {
         OUTPUTS_DIR / "security",
         # Option C #3 (12 Jun 2026) — channel strategists
         OUTPUTS_DIR / "google-ads",
-        OUTPUTS_DIR / "meta-ads",    # ready for next session
-        OUTPUTS_DIR / "gbp",         # ready for future
+        OUTPUTS_DIR / "meta-ads",
+        OUTPUTS_DIR / "gbp",          # ready for future
+        # Option C #4-5 (12 Jun 2026) — revenue + organic
+        OUTPUTS_DIR / "membership",
+        OUTPUTS_DIR / "organic-social",
     ],
     "mwcc": [
         OUTPUTS_DIR / "mwcc",

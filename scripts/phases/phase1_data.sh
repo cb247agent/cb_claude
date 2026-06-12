@@ -128,13 +128,21 @@ log "Step 1h''' — Emit Work Queue actions (GBP)..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/gbp_emitter.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  GBP emitter had issues — check $LOG"
 
-log "Step 1h'''' — Emit Work Queue actions (Organic Social)..."
-"$PYTHON" "$BASE_DIR/scripts/work_queue/social_emitter.py" >> "$LOG" 2>&1 \
-    || log "  ⚠️  Social emitter had issues — check $LOG"
+log "Step 1h'''' — Organic Social: rule emitter DISABLED 12 Jun 2026 — replaced by LLM strategist below"
+# Rule-based social_emitter mechanically emitted one action per Apify
+# hashtag + one per top viral post (noisy). Replaced by
+# agents/social-strategist.yml which produces 4-7 archetyped strategic
+# moves per week instead. See Step 1h0social.
+# "$PYTHON" "$BASE_DIR/scripts/work_queue/social_emitter.py" >> "$LOG" 2>&1 \
+#     || log "  ⚠️  Social emitter had issues — check $LOG"
 
-log "Step 1h''''' — Emit Work Queue actions (Membership)..."
-"$PYTHON" "$BASE_DIR/scripts/work_queue/membership_emitter.py" >> "$LOG" 2>&1 \
-    || log "  ⚠️  Membership emitter had issues — check $LOG"
+log "Step 1h''''' — Membership: rule emitter DISABLED 12 Jun 2026 — replaced by LLM strategist below"
+# Rule-based membership_emitter saw only save-call queue size + 'not using
+# enough' counts. Replaced by agents/membership-strategist.yml which reads
+# the FULL retention picture (capture-rate, addon uptake, reactivation,
+# promo attribution, per-club cancel reasons). See Step 1h0mem.
+# "$PYTHON" "$BASE_DIR/scripts/work_queue/membership_emitter.py" >> "$LOG" 2>&1 \
+#     || log "  ⚠️  Membership emitter had issues — check $LOG"
 
 # ── ROI BLOCK (added 09 Jun 2026) — runs AFTER all data-source emitters ──
 # opportunity_emitter joins Google Ads search-terms ↔ GSC queries to identify
@@ -402,6 +410,185 @@ markdown directly to stdout. The bash wrapper saves your stdout to
 outputs/meta-ads/meta-strategist-$DATE.md." \
 "$OUTPUTS/meta-ads/meta-strategist-$DATE.md" \
 "Read(state/ads-data.json),Read(state/metricool-data.json),Read(state/apify-data.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(context/utm-convention.md)" \
+"$MODEL_OPUS"
+
+# ── Step 1h0mem — Membership Strategist (LLM · revenue side) ─────────────
+# Option C #4 (12 Jun 2026 — Tia direction). Replaces rule-based
+# membership_emitter.py which only saw save-call queue size + 'not using
+# enough' counts. The LLM strategist sees the FULL retention picture and
+# produces archetyped actions: SAVE / DEFEND / CONVERT / UPSELL / REACTIVATE.
+log "Step 1h0mem — Membership Strategist (LLM, replaces rule-based emitter)..."
+mkdir -p "$OUTPUTS/membership"
+run_agent "membership-strategist" \
+"You are the CB247 Membership Strategist. Today is $DATE. Membership
+is the revenue spine — net new members minus churn is the bottom line.
+
+Read:
+- state/membership-data.json    (this week PGM + Cleverwaiver per-club,
+                                 cancel reasons, addon active counts,
+                                 suspended pool, promo tracking)
+- state/membership-history.json (prior weeks for trend computation)
+- state/promo-pipeline.json     (active promo concepts to attribute to)
+- state/work-queue.json         (past membership actions — avoid duplicate emits)
+- context/brand-voice.md        (tone, USPs, compliance lines)
+- context/seasonal-calendar.md  (winter retention, FIFO swap cycles)
+
+Workflow (do all six steps before writing):
+1. WEEKLY SNAPSHOT — total signups vs ended vs suspended (unique members
+   only — use summary.unique_base). Per-club split. NET change. WoW trend.
+   Flag NEGATIVE 2 weeks in a row as urgent retention crisis.
+2. CANCEL REASON DEEP-DIVE — summary.cancel_reasons_pgm vs
+   submitted_cancellation_truth (Cleverwaiver). For each top reason:
+     EndOfContract / Relocating / Not Using enough / TurnedOff / Switched.
+     What's getting better / worse vs last week.
+3. CAPTURE RATE AUDIT — submitted_cancellation_truth.capture_rate_pct
+   per club vs 70% target. If a club is below, propose a SAVE action
+   targeting that club specifically (not generic).
+4. ADDON UPTAKE — contracts.addon_active per club. Compute % of base.
+   If Recovery < 8% in winter season, UPSELL. If Reformer < 8%, UPSELL
+   via Meta paid (Joanne).
+5. REACTIVATION OPPORTUNITY — suspended contracts pool. Recent vs aging.
+   If aging out without return signal, REACTIVATE archetype (Angela copy
+   + Joanne send).
+6. PROMO ATTRIBUTION — promo_tracking active promos. Accelerating
+   promos → propose EXTEND (handoff to Tia/Joanne for budget lift).
+   Decelerating → REFRESH angle.
+
+Decision archetypes — one per action:
+  (a) SAVE      — fix capture rate, reception training, save-call refresh
+  (b) DEFEND    — outbound campaign rebutting a specific cancel reason
+  (c) CONVERT   — extend/accelerate a winning promo
+  (d) UPSELL    — add-on uptake push (Recovery / Reformer / ChasingRX)
+  (e) REACTIVATE — nudge suspended pool back
+
+Output markdown to stdout with sections:
+  # CB247 Membership Strategist — $DATE
+  ## This Week — Net Movement
+  ## Cancel Reason Deep-Dive       (table — reason/count/per-club/trend/recoverable)
+  ## Capture Rate Audit            (paragraph)
+  ## Add-on Uptake                 (table)
+  ## Reactivation Opportunity      (paragraph)
+  ## Promo Attribution             (paragraph)
+  ## Considered but Skipped        (bullets)
+  ## Proposed Actions
+
+  Then a BARE JSON ARRAY [...] of 5-9 actions.
+
+JSON RULES (CRITICAL):
+- category: 'membership' always.
+- title MUST start with an Ops verb (Run/Brief/Refresh/Push/Extend/Reactivate/Train).
+- owner + owner_role MUST come from this exact roster:
+    'Tia'    + 'OS Owner' or 'OS Owner / Paid Ads' — system/data + Google Ads paid
+    'Joanne' + 'Meta Ads Specialist' — Meta paid retention/acquisition
+    'Joanne' + 'Organic Social' — organic posts about save offers
+    'Angela' + 'Brand Manager' — save-call training, retention copy, reception scripts
+  Denver is NEVER an owner. NEVER use bare role labels (no 'Brand Manager'
+  alone).
+- priority: P1 if revenue-immediate, P2 trend, P3 cosmetic.
+- effort_hours: 0.5 budget · 1-2 copy · 3+ training rollout.
+- data_quality: 'high' if PGM+Cleverwaiver confirm, else 'medium'.
+- projected_kpis: list of {metric, baseline, target, measurement_window_days,
+  confidence}. Allowed metrics ONLY (Projection Guard enforces):
+    membership_signups_weekly · membership_cancellations_weekly ·
+    membership_future_cancellations · membership_addon_active_count ·
+    qualitative_assessment
+  Realistic targets, 14d window for tactical, 28d for training.
+- description: 200-400 chars. Specific club, baseline number, target,
+  cancel reason or addon being addressed, SPECIFIC action.
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT the full
+markdown directly to stdout. The bash wrapper saves your stdout to
+outputs/membership/membership-strategist-$DATE.md." \
+"$OUTPUTS/membership/membership-strategist-$DATE.md" \
+"Read(state/membership-data.json),Read(state/membership-history.json),Read(state/promo-pipeline.json),Read(state/work-queue.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md)" \
+"$MODEL_OPUS"
+
+# ── Step 1h0social — Social Strategist (LLM · organic channels) ──────────
+# Option C #5 (12 Jun 2026 — Tia direction). Replaces noisy rule-based
+# social_emitter.py which mechanically emitted one action per hashtag.
+# This strategist produces 4-7 archetyped strategic moves per week:
+# TREND-RIDE / AMPLIFY / GAP-FILL / FORMAT-MIX / REDUCE / SHOOT-DEPEND.
+log "Step 1h0social — Social Strategist (LLM, replaces rule-based emitter)..."
+mkdir -p "$OUTPUTS/organic-social"
+run_agent "social-strategist" \
+"You are the CB247 Social Strategist. Today is $DATE. Organic social is
+CB247's primary brand-awareness lever — IG Reels especially. Joanne owns
+all posting/scheduling; Shauna only if a NEW shoot is required.
+
+Read:
+- state/apify-data.json         (hashtags + viral posts + competitor IG)
+- state/metricool-data.json     (CB247 fb + ig own-performance)
+- state/work-queue.json         (past social actions — avoid duplicate emits)
+- context/brand-voice.md
+- context/seasonal-calendar.md
+
+Workflow (do all six steps before writing):
+1. CB247 OWN PERFORMANCE — Metricool ig + fb blocks. Posts this week,
+   reach + engagement + WoW deltas, engagement rate. Format wins.
+2. HASHTAG RELEVANCE FILTER — Apify trending_hashtags. Reject generic
+   (#fitness #gym alone). Prioritise local-SEO (#malagagym
+   #ellenbrookgym #perthgym) and niche-aligned (#coldplunge #icebath
+   #contrasttherapy — CB247 has those facilities, direct match).
+   Output: 2-4 hashtags worth a TREND-RIDE this week (NOT 8).
+3. VIRAL POST ANGLE MINING — Apify top_posts. Extract WINNING ANGLE
+   (POV / transformation / day-in-life), match to a CB247 scene.
+   Output: 1-2 worth an AMPLIFY action.
+4. COMPETITOR WATCH — Apify instagram_profiles.competitors. Follower
+   delta, posting frequency, standout posts. If a competitor has a
+   viral hit CB247 has a better asset for → GAP-FILL action. NEVER
+   name competitors in proposed copy.
+5. FACEBOOK ORGANIC REVIEW — If FB engagement rate < 1.0% AND IG is
+   healthy, propose REDUCE FB to 1-2 posts/wk (minimum for GBP/SEO
+   signal). Don't close FB entirely.
+6. DECISIONS — pick ONE archetype per action, AIM for 4-7 actions
+   total (not one per hashtag).
+
+Decision archetypes:
+  (a) TREND-RIDE — 1-2 high-relevance hashtags, CB247-branded Reel
+  (b) AMPLIFY    — recreate winning viral angle with CB247 scene
+  (c) GAP-FILL   — counter competitor viral hit with CB247 differentiator
+                   (NEVER name competitor in copy)
+  (d) FORMAT-MIX — shift posting mix to winning format (Reels usually win)
+  (e) REDUCE     — cut output on dying channel/format
+  (f) SHOOT-DEPEND — Reel needs NEW capture (Shauna owns, post queued for Joanne)
+
+Output markdown to stdout with sections:
+  # CB247 Social Strategist — $DATE
+  ## CB247 Own Performance
+  ## Viral Hashtag Shortlist     (table — hashtag/count/relevance/action)
+  ## Viral Post Angles           (bullets — angle + CB247 scene)
+  ## Competitor Watch            (paragraph, no names in proposed copy)
+  ## FB Organic Health           (paragraph + recommendation)
+  ## Considered but Skipped      (bullets with reason)
+  ## Proposed Actions
+
+  Then a BARE JSON ARRAY [...] of 4-7 actions.
+
+JSON RULES (CRITICAL):
+- category: 'organic-social' always.
+- title MUST start with an Ops verb (Post / Adapt / Shift / Reduce /
+  Counter / Test / Schedule).
+- owner + owner_role MUST come from this exact roster:
+    'Joanne' + 'Organic Social'       — DEFAULT for all posting/scheduling
+    'Joanne' + 'Meta Ads Specialist'  — only if action crosses into paid Meta
+    'Angela' + 'Brand Manager'        — concept review on sensitive content
+    'Shauna' + 'Asset Creator'        — ONLY when new shoot capture needed
+  NEVER 'Content', 'Tia', or 'Reception' for social actions.
+- priority: P1 if viral window closing <7d, P2 trend-rides, P3 cadence.
+- effort_hours: 0.25 cadence · 1-2 reuse-asset · 3 shoot-dependent.
+- data_quality: 'high' if Apify+Metricool confirm, else 'medium'.
+- projected_kpis: at least one. Allowed metrics ONLY (Guard enforces):
+    qualitative_assessment (default — organic mostly qualitative).
+  Use measurement_window_days=14.
+- description: 200-400 chars. Specific hashtag/angle/scene, which asset
+  (existing or shoot needed), brand-compliance reminder, verdict
+  criterion (e.g. 'beat weekly median engagement on IG').
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT the full
+markdown directly to stdout. The bash wrapper saves your stdout to
+outputs/organic-social/social-strategist-$DATE.md." \
+"$OUTPUTS/organic-social/social-strategist-$DATE.md" \
+"Read(state/apify-data.json),Read(state/metricool-data.json),Read(state/work-queue.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md)" \
 "$MODEL_OPUS"
 
 # ── Step 1h0a — Normalise strategist JSON output ──

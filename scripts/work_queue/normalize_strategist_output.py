@@ -46,6 +46,57 @@ sys.path.insert(0, str(_HERE.parent))
 # Import VALID_METRICS so we filter the same set the schema validates.
 from work_queue.schema import VALID_METRICS  # noqa: E402
 
+# Strategist Projection Guard (12 Jun 2026) — Tia direction:
+# "stops future strategists from inventing unmeasurable KPIs."
+#
+# VALID_METRICS is the SCHEMA whitelist (what the DB accepts). MEASURABLE_METRICS
+# is the RUNNER whitelist (what measurement_runner._fetch_actual() actually
+# handles). The difference matters: a strategist can project a metric that's
+# in VALID_METRICS but has NO handler — the action lands, lives, gets
+# Published, runs out the 14-day window, and silently returns no verdict.
+#
+# We mirror the runner's coverage explicitly here so the build breaks loudly
+# if measurement adds a handler without us promoting it (catch via the
+# weekly QA agent) or vice versa.
+MEASURABLE_METRICS = {
+    # GSC
+    "gsc_position",
+    "gsc_clicks_weekly",
+    "gsc_impressions_weekly",
+    # Meta Ads (routed via meta_metric_from_field in baselines.py)
+    "meta_ctr",
+    "meta_cpc",
+    "meta_cpm",
+    "meta_results_weekly",
+    "meta_ad_clicks_weekly",
+    "meta_ad_reach_weekly",
+    # Google Ads (routed via google_ads_metric_from_field)
+    "google_ads_cpa",
+    "google_ads_cpc",
+    "google_ads_ctr",
+    "google_ads_conversions_weekly",
+    "google_ads_clicks_weekly",
+    "google_ads_spend_weekly",
+    # Opportunity savings (12 Jun 2026 — closed-loop completion)
+    "ads_spend_saved_monthly",
+    "cumulative_ads_savings_monthly",
+    # Technical SEO ops (12 Jun 2026)
+    "pages_4xx",
+    "schema_implemented",
+    "duplicate_metas",
+    # GBP
+    "gbp_reviews_count",
+    "gbp_photos_count",
+    "gbp_rating",
+    # Membership
+    "membership_signups_weekly",
+    "membership_cancellations_weekly",
+    "membership_future_cancellations",
+    "membership_addon_active_count",
+    # Qualitative — human picks verdict via the Verdict Inbox
+    "qualitative_assessment",
+}
+
 BASE_DIR = _HERE.parent.parent
 OUTPUTS_DIR = BASE_DIR / "outputs"
 
@@ -119,6 +170,15 @@ def _normalise_projected_kpis(kpis, action_title: str) -> list:
         metric = k.get("metric")
         if not metric or metric not in VALID_METRICS:
             print(f"  · drop invalid KPI metric '{metric}' on action '{action_title[:50]}'")
+            continue
+        # Projection Guard (12 Jun 2026): even valid metrics must have a
+        # _fetch_actual() handler in measurement_runner.py — otherwise the
+        # action will silently never verdict at day 14. Drop unmeasurable
+        # projections explicitly here so the strategist sees the warning
+        # in logs and the team isn't waiting on a verdict that won't come.
+        if metric not in MEASURABLE_METRICS:
+            print(f"  ⚠ GUARD: drop unmeasurable metric '{metric}' on '{action_title[:50]}' "
+                  f"— add a handler to measurement_runner._fetch_actual or pick a different metric")
             continue
         k.setdefault("measurement_window_days", DEFAULT_WINDOW_DAYS.get(metric, 14))
         # Strip nulls — schema wants either target OR (delta_min + delta_max)
