@@ -14816,7 +14816,18 @@ function renderOverview() {
     }
 
     const p1 = dedupedMine.filter(a => a.priority === 'P1');
-    const shortlist = (p1.length >= 3 ? p1 : dedupedMine).slice(0, 3);
+    // 12 Jun 2026 — Tia: show ALL pending actions in a scrollable list,
+    // not just top 3. Sort by priority (P1 first, then P2, P3, then
+    // unknown), then by age (oldest first within each priority bucket).
+    const _priOrder = {P1: 0, P2: 1, P3: 2};
+    const shortlist = [...dedupedMine].sort((a, b) => {
+      const ap = _priOrder[a.priority] ?? 9;
+      const bp = _priOrder[b.priority] ?? 9;
+      if (ap !== bp) return ap - bp;
+      const at = a.source_run_at || a.created_at || '';
+      const bt = b.source_run_at || b.created_at || '';
+      return at.localeCompare(bt);
+    });
     const totalMine = dedupedMine.length;
     const p1Count = p1.length;
     const totalRaw = mine.length;     // BEFORE dedup — surfaces volume noise
@@ -14857,18 +14868,23 @@ function renderOverview() {
       </div>`;
     }).join('');
 
+    // Scroll cap — 5 rows visible at ~60px each (~340px) before scroll.
+    // Anything more would dominate the Overview page; team can scroll
+    // through the full backlog without leaving the page.
+    const _needScroll = shortlist.length > 5;
+
     slot.innerHTML = `<div class="card mb" style="padding:14px 18px;border-left:4px solid var(--brand-accent);background:#fdfefd">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px;flex-wrap:wrap">
         <div>
           <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--brand-accent-deep);margin-bottom:3px">Your Queue · ${_escapeHtml(me)}</div>
-          <div style="font-size:13px;color:var(--text-2)">Top ${shortlist.length} unstarted action${shortlist.length===1?'':'s'} ${p1.length >= 3 ? '(P1 priority)' : '(by age)'} — open the brief, decide, mark stage on Work Queue page.</div>
+          <div style="font-size:13px;color:var(--text-2)">${shortlist.length} unstarted action${shortlist.length===1?'':'s'} sorted P1 → P3, oldest first${_needScroll?' · scroll for more':''} — open the brief, decide, mark stage on Work Queue page.</div>
         </div>
         <div style="font-size:11px;color:var(--muted);text-align:right">
           <div><b>${totalMine}</b> total assigned</div>
           <div style="color:#991b1b">${p1Count} P1 outstanding</div>
         </div>
       </div>
-      ${rows}
+      <div style="${_needScroll ? 'max-height:340px;overflow-y:auto;padding-right:6px;' : ''}">${rows}</div>
     </div>`;
   })();
 
