@@ -167,32 +167,25 @@ These tags flow into `promo_tracking.dont-quit-winter-2026` in `state/membership
 
 ## 8. Daily Cadence (during 4-week launch window)
 
-**Monday 09:00** — Brand Manager pulls fresh future-cancel list from PGM. Hands lists to reception (Malaga + Ellenbrook).
-**Mon–Fri 11:00–14:00** — Reception runs save calls. 2 calls every 15 minutes during quiet front-desk windows.
-**Daily EOD** — Reception logs outcomes in PGM with both tags from §6.
-**Friday 16:00** — Brand Manager runs save-rate report (manual export until automated). Posts headline in team channel: "Week N: X reached, Y saved, Z rate."
-**Monday meeting** — Performance Review page auto-promotes save-call action card at 14 days (Wave 6). Verdict it with the actual rate. Feeds back into next month's Promo Concept Generator (Wave 5).
+- **Monday 09:00** — Brand Manager pulls fresh future-cancel list from PGM. Hands lists to reception (Malaga + Ellenbrook).
+- **Mon–Fri 11:00–14:00** — Reception runs save calls. 2 calls every 15 minutes during quiet front-desk windows.
+- **Daily EOD** — Reception logs outcomes in PGM with both tags from §6.
+- **Friday 16:00** — Brand Manager runs save-rate report (manual export until automated). Posts headline in team channel: *"Week N: X reached, Y saved, Z rate."*
+- **Monday meeting** — Performance Review page auto-promotes save-call action card at 14 days (Wave 6). Verdict it with the actual rate. Feeds back into next month's Promo Concept Generator (Wave 5).
 
 ---
 
 ## 9. Quick-Reference Card (print + tape to reception desk)
 
-```
-┌─────────────────────────────────────────────────────────┐
-│ SAVE CALL — Don't Quit Winter                            │
-│                                                          │
-│ OFFER: Freeze + free Recovery month (Sauna + Ice Bath)   │
-│         No charges during freeze · 4-week minimum        │
-│                                                          │
-│ ASK SECOND:  "What changed since you joined?"            │
-│                                                          │
-│ NEVER:       Offer rate discounts. Free months. Waivers. │
-│                                                          │
-│ ESCALATE:    Hardship cases → Brand Manager, 8-wk follow │
-│                                                          │
-│ LOG:         SAVE-DONTQUIT-2026-* + REASON-* in PGM      │
-└─────────────────────────────────────────────────────────┘
-```
+> **SAVE CALL — Don't Quit Winter**
+
+| Cue | What to do / say |
+|---|---|
+| **OFFER** | Freeze + free Recovery month (Sauna + Ice Bath) · no charges during freeze · 4-week minimum |
+| **ASK SECOND** | *"What changed since you joined?"* |
+| **NEVER** | Offer rate discounts. Offer free months. Waive future fees. |
+| **ESCALATE** | Hardship cases → Brand Manager · 8-week follow-up |
+| **LOG** | `SAVE-DONTQUIT-2026-*` + `REASON-*` in PGM |
 
 ---
 
