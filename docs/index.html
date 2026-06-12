@@ -14642,13 +14642,19 @@ function renderOverview() {
   // requires fresh inputs.
   const ts = D.timestamps || {};
 
-  // External blockers — surfaced from MEMORY notes (12 Jun 2026).
-  // When Tia clears one, just blank the value here (or wire it to a live
-  // env check in future).
+  // External blockers — full-stop blockers where the pipeline produces
+  // NO data at all (gray "BLOCKED" tile). When Tia clears one, blank it.
   const PIPELINE_BLOCKERS = {
     'gbp':        'GBP API quota=0 — submit increase via GCP Console',
     'google_ads': 'Google Ads API standard access pending review',
-    'apify':      '4 Apify actors broken — subscription due',
+  };
+  // Soft warnings — pipeline IS producing data but some actors are
+  // degraded. Tile shows age (green/amber/red) but has a yellow warning
+  // strip beneath the grid noting what's degraded. Verified 12 Jun 2026
+  // via /v2/users/me — Apify auth + credit healthy, only 3 of 7 actors
+  // null. Self-guards to Monday-only at pull_apify.py:1281.
+  const PIPELINE_WARNINGS = {
+    'apify':      '3 of 7 actors return null (reddit_intel · google_trends · facebook_ads) — actor config, NOT a credit issue. Auth + credit healthy. Pull self-guards to Mondays.',
   };
 
   const PIPELINES = [
@@ -14678,19 +14684,32 @@ function renderOverview() {
     const stamp = ts[p.key];
     const age = _ageDays(stamp);
     const blocked = PIPELINE_BLOCKERS[p.key];
+    const warning = PIPELINE_WARNINGS[p.key];
     const tone = _toneFor(age, blocked);
+    // If degraded (warning, not blocker), badge the cell with a small ⚠
+    // chip but keep the age-based color so the freshness signal stays
+    // honest. Apify has data flowing — it shouldn't masquerade as BLOCKED.
+    const warningBadge = (!blocked && warning)
+      ? `<span title="${warning.replace(/"/g,'&quot;')}" style="font-size:10px;color:#92400e;background:#fef3c7;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.04em">⚠</span>`
+      : '';
     const titleTip = blocked
       ? blocked
-      : (stamp ? `Last pull: ${stamp}` : 'No timestamp recorded');
+      : warning
+        ? `${warning} · Last pull: ${stamp || 'unknown'}`
+        : (stamp ? `Last pull: ${stamp}` : 'No timestamp recorded');
     return `<div class="dh-cell" title="${titleTip.replace(/"/g,'&quot;')}" style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:11px;min-width:120px">
       <span style="width:8px;height:8px;border-radius:50%;background:${tone.dot};flex-shrink:0"></span>
       <span style="flex:1;color:var(--text-2);font-weight:600;letter-spacing:.02em">${p.label}</span>
+      ${warningBadge}
       <span style="background:${tone.bg};color:${tone.fg};font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap;letter-spacing:.03em">${tone.label}</span>
     </div>`;
   }).join('');
 
   const blockedRows = Object.entries(PIPELINE_BLOCKERS)
     .map(([k, msg]) => `<div style="font-size:11px;color:#92400e;background:#fef9c3;border-radius:4px;padding:6px 10px;border-left:3px solid #d97706"><b>${k.toUpperCase().replace('_',' ')}:</b> ${msg}</div>`)
+    .join('');
+  const warningRows = Object.entries(PIPELINE_WARNINGS)
+    .map(([k, msg]) => `<div style="font-size:11px;color:#854d0e;background:#fffbeb;border-radius:4px;padding:6px 10px;border-left:3px solid #ca8a04"><b>${k.toUpperCase().replace('_',' ')} (degraded):</b> ${msg}</div>`)
     .join('');
 
   $('overview-freshness').innerHTML = `<div style="margin-bottom:14px">
@@ -14705,6 +14724,7 @@ function renderOverview() {
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">${cells}</div>
     ${blockedRows ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:6px;margin-top:10px">${blockedRows}</div>` : ''}
+    ${warningRows ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:6px;margin-top:6px">${warningRows}</div>` : ''}
   </div>`;
 
   // ── Executive Verdict (audit recommendation: verdict before data) ───────
