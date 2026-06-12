@@ -14480,8 +14480,12 @@ function _renderActionList(actions, opts = {}) {
         return `<tr>
           <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
           <td>
-            <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${n.title}${_stuckChip}</div>
-            ${n.desc ? `<div style="font-size:11px;color:var(--muted);line-height:1.6">${n.desc}</div>` : ''}
+            <div style="font-weight:600;font-size:12.5px;line-height:1.4">${n.title}${_stuckChip}</div>
+            <!-- 12 Jun 2026 — Tia: descriptions removed from Prioritised
+                 List rows. They were too long (Membership had a multi-step
+                 execution playbook embedded). Full description lives in
+                 the View Details popup + per-action brief at
+                 docs/briefs/{id}.html. The row stays compact + scannable. -->
           </td>
           <td style="font-size:11px"><b>${n.owner}</b>${n.owner_role ? `<div style="font-size:10px;color:var(--muted)">${n.owner_role}</div>` : ''}</td>
           <td>${effortBadge(n.effort)}</td>

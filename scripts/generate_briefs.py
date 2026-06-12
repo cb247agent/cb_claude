@@ -299,7 +299,15 @@ def _creative_section(action: dict) -> str:
 def render_brief(action, promos):
     aid       = action.get("id", "")
     title     = _escape(action.get("title", "Untitled action"))
-    desc      = _escape(action.get("description", "(No description)"))
+    # Description is rendered RAW (not _escape'd) so action authors can
+    # embed clickable links, bold person names, and <code> for filenames.
+    # 12 Jun 2026 — Tia: HTML tags were leaking as text in the brief.
+    # The trade-off: action authors must produce trusted markup. All
+    # current authors (strategist YAMLs + dashboard hand-coded actions)
+    # are internal, so this is safe. Bold/code/anchor/br only — no
+    # external sources feed this field.
+    desc_raw = action.get("description", "(No description)")
+    desc     = desc_raw.replace("\n", "<br>") if desc_raw else "(No description)"
     owner     = _escape(action.get("owner", "Team"))
     role      = _escape(action.get("owner_role", ""))
     priority  = action.get("priority", "P3")
@@ -442,7 +450,10 @@ def render_brief(action, promos):
     <button class="save-btn" onclick="saveApproval()">Save Review</button>
     <div class="saved-notice" id="saved-notice">Saved locally</div>
   </div>
-  <div class="footer">CB247 Marketing OS · Action Brief · Generated {datetime.now():%d %b %Y}</div>
+  <div style="padding:16px 28px;background:#fafbfc;border-top:1px solid #f0f2f5;text-align:center">
+    <a href="../index.html" style="display:inline-block;background:{CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:10px 22px;border-radius:6px;font-size:12.5px;font-weight:700;font-family:inherit">← Back to Marketing OS</a>
+    <div style="font-size:10.5px;color:#9ca3af;margin-top:10px">CB247 Marketing OS · Action Brief · Generated {datetime.now():%d %b %Y}</div>
+  </div>
 </div>
 <script>
 const KEY = 'cb247-brief-{aid}';
