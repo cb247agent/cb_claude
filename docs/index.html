@@ -18510,8 +18510,23 @@ function _renderProposedActionBriefHTML(row) {
       : 'View the attached list';
     attachedListHTML =
       `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Attached list</div>` +
-      `<a href="${esc(_listUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">📋 ${_listLabel} →</a>` +
+      `<a href="${esc(_listUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">${_listLabel} →</a>` +
       `<div style="font-size:11px;color:#6b7280;margin-top:8px">If the page 404s, follow the Execution Steps below to drop the CSV in <code style="background:#fff;padding:1px 6px;border-radius:3px">cb247-inbox/</code> and run the parser.</div></div>`;
+  }
+
+  // 12 Jun 2026 — Tia: surface any outputs/playbooks/*.md reference as a
+  // clickable "View the playbook" button. The agent that generates the
+  // .md (agents/playbook-writer.yml) pairs with render_playbook_html.py
+  // which writes the .html version under docs/playbooks/.
+  let attachedPlaybookHTML = '';
+  const _playbookMatch = rawDescStr.match(/outputs\/playbooks\/([\w\-.]+)\.md/i);
+  if (_playbookMatch) {
+    const _pbSlug = _playbookMatch[1];
+    const _pbUrl = `playbooks/${_pbSlug}.html`;
+    attachedPlaybookHTML =
+      `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Attached playbook</div>` +
+      `<a href="${esc(_pbUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">View the playbook →</a>` +
+      `<div style="font-size:11px;color:#6b7280;margin-top:8px">If the page 404s, the playbook-writer agent hasn't generated the content yet (runs Mondays). Source markdown will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/playbooks/${esc(_pbSlug)}.md</code> after the run.</div></div>`;
   }
 
   // Wave 2.16 (11 Jun 2026): Pull the "Deliverable" sentence out of the
@@ -18610,6 +18625,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 ${effort ? `<span class="meta-chip" style="background:#f3f4f6;color:#374151">Effort: ${effort}h</span>` : ''}
 </div>
 ${attachedListHTML}
+${attachedPlaybookHTML}
 ${deliverableHTML}
 <div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
 <div class="section"><div class="label">Primary Projected KPI</div><div class="caption-box">${captionHTML}</div></div>

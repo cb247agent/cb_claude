@@ -623,6 +623,57 @@ log "Step 1i — Sync Work Queue to Supabase..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/sync_to_supabase.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Work Queue sync had issues — check $LOG"
 
+# ── Step 1i-bis: Playbook writer + HTML renderer (12 Jun 2026) ──────────
+# Angela can't draft .md playbooks and can't open them either. When the
+# membership-strategist proposes "Refresh Unsure-objection playbook · save
+# to outputs/playbooks/X.md", the playbook-writer agent generates the
+# content (using Don't Quit Winter playbook as the quality bar) and
+# render_playbook_html.py converts it to a CB247-styled HTML page Angela
+# can view via the brief's "View the playbook" button.
+log ""
+log "─── Step 1i-bis: PLAYBOOK WRITER (auto-generate .md content) ───"
+mkdir -p "$OUTPUTS/playbooks"
+run_agent "playbook-writer" \
+"You are the CB247 Playbook Writer. Today is $DATE.
+
+Read state/work-queue.json. Find every action whose description references
+'outputs/playbooks/{slug}.md'. For each candidate where the target file
+does NOT already exist (idempotent — never overwrite human edits):
+
+1. Read the gold-standard template: outputs/playbooks/dont-quit-winter-save-call.md
+2. Read context/brand-voice.md + context/seasonal-calendar.md
+3. Write a complete playbook to outputs/playbooks/{slug}.md using the
+   structure: Top matter · The Offer (blockquote) · Eligibility ·
+   Scripts in fenced code blocks · Do / Don't pairs · PGM tracking +
+   Day-14 verdict · Footer.
+
+Length: 1200-2200 words.
+
+Brand-voice CRITICAL:
+- \$11.95/wk price anchor
+- CB247 differentiators: Kids Hub · 24/7 access · Traditional Sauna +
+  Ice Bath · FIFO-friendly freeze
+- NEVER name competitors (Revo / Anytime / Snap / Ryderwear)
+- NEVER 'only gym with' (ACL risk — Ryderwear has sauna + reformer)
+- NEVER therapeutic claims (heals / cures / treats / burns fat — TGA)
+- Recovery + Reformer + ChasingRX are PAID add-ons, not bundled in \$11.95/wk
+
+After writing all playbooks, output a SHORT markdown summary to stdout
+listing each playbook written + skipped + any compliance flags.
+
+CRITICAL OUTPUT INSTRUCTION: Use the Write tool to save each playbook
+to outputs/playbooks/{slug}.md. Then output the markdown summary to
+stdout. The bash wrapper saves your stdout to
+outputs/playbooks/playbook-writer-\$DATE.md." \
+"$OUTPUTS/playbooks/playbook-writer-$DATE.md" \
+"Read(state/work-queue.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(outputs/playbooks/dont-quit-winter-save-call.md),Read(outputs/playbooks/dont-quit-winter-training-brief.md),Write(outputs/playbooks/**)" \
+"$MODEL_OPUS"
+
+log "Step 1i-bis.2 — Render playbooks .md → docs/playbooks/*.html..."
+"$PYTHON" "$BASE_DIR/scripts/render_playbook_html.py" >> "$LOG" 2>&1 \
+    && log "  ✓ Playbook HTML rendered" \
+    || log "  ⚠️  Playbook HTML render had issues — check $LOG"
+
 # ── Step 1j: Regenerate per-action HTML briefs (Fix 10 Jun 2026) ──
 # CB247 mirror of generate_mwcc_briefs.py. The dashboard modal's "View Brief"
 # link opens docs/briefs/{action_id}.html — these files must exist for every
