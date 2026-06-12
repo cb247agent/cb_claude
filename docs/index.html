@@ -14221,8 +14221,11 @@ function _classifyActionKind(action) {
   // ── Action — operational fixes, no brand voice ───────────────────────
   if (/^(fix|setup|set up|connect|verify|test|audit|investigate|migrate)\s/.test(t)) return 'action';
   if (/^(scale|lift|pause|reduce|stop|switch|cap|increase|decrease)\s/.test(t))     return 'action';
+  if (/^(remove|delete|clean|rotate|archive)\s/.test(t))     return 'action';   // QA/security agent verbs (Wave B)
   if (/^list\s+cb247\s+on/.test(t))                 return 'action';
   if (/^add\s+(internal\s+link|negative\s+keyword)/.test(t)) return 'action';
+  if (/^add\s+.*\s+schema\b/.test(t))               return 'action';   // "Add LocalBusiness schema", "Add FAQ schema" — JSON-LD = ops
+  if (/^add\s+(redirect|301|robots|sitemap|canonical|alt\s+text|meta\s+description)/.test(t)) return 'action';   // tech-SEO ops
 
   // ── Source-page defaults when title gives no signal ──────────────────
   if (sp === 'organic-social' || sp === 'gbp' || sp === 'seo-organic') return 'content';
@@ -14278,6 +14281,21 @@ function _renderActionList(actions, opts = {}) {
   if (!Array.isArray(actions) || actions.length === 0) return '';
   const limit  = opts.limit  || 8;
   const titleStr = opts.title || 'Next 2 Weeks — Prioritised Action List';
+
+  // Wave 2.16 (12 Jun 2026): filter out items already promoted to
+  // Published / Scheduled / Rejected. The Prioritised List shows what's
+  // still TO BE DONE — done items belong to Performance Review.
+  // Status comes from localStorage cache (synced from planner_status).
+  // Empty / 'Proposed' / 'In Progress' / 'Brand Manager QC' are KEPT.
+  const _PLANNER_STATUS_KEY = 'cb247-planner-status';
+  let _statusByItem = {};
+  try {
+    _statusByItem = JSON.parse(localStorage.getItem(_PLANNER_STATUS_KEY) || '{}');
+  } catch { _statusByItem = {}; }
+  const _isDoneStatus = (s) => s === 'Published' || s === 'Scheduled' || s === 'Rejected';
+  actions = actions.filter(a => !_isDoneStatus(_statusByItem[a.id]));
+  if (actions.length === 0) return '';
+
   const items = actions.slice(0, limit);
 
   // Effort badge
