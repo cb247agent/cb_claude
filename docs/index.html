@@ -18195,7 +18195,19 @@ function _buildWhyText(action, normalised, sourcePage) {
   // MWCC-shape: a.description (plain text)
   // Fallback: normalised.desc
   const whyRaw = action?.why || action?.description || normalised.desc || '';
-  if (whyRaw) return whyRaw;
+  if (whyRaw) {
+    // 12 Jun 2026 — Tia: the modal popup is a SUMMARY, not the full
+    // brief. Strip out everything from the first "EXECUTION STEPS:" or
+    // "📋 VIEW THE CALL LIST" marker onwards — those belong only in
+    // the full brief (View Brief opens it in a new tab). Keep just the
+    // "why this matters" rationale and trailing whitespace cleanup.
+    const cutAt = whyRaw.search(/EXECUTION\s*STEPS\s*[:\-—]|📋\s*(<b>\s*)?VIEW\s+THE/i);
+    const trimmed = (cutAt > 0 ? whyRaw.slice(0, cutAt) : whyRaw)
+      .replace(/<br>\s*<br>\s*$/g, '')   // drop trailing double-<br>
+      .replace(/\n{2,}$/g, '')           // drop trailing blank lines
+      .trim();
+    return trimmed || whyRaw;
+  }
   // Last-resort fallback: synthesise from sourcePage + title
   const friendly = (sourcePage || 'team').replace(/-/g, ' ');
   return `This action came out of this week's ${friendly} performance review. The Brand Manager flagged it as a P${normalised.priority?.replace(/P/g,'') || '2'} priority worth executing inside the next two weeks. Full rationale and source data live on the ${friendly} page above.`;
