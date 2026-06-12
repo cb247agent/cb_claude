@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>CB247 Shoot Pack · June 2026</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e;line-height:1.6}
+  .page{max-width:980px;margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 0 32px rgba(0,0,0,.06)}
+
+  /* HERO */
+  .hero{background:linear-gradient(135deg,#1a1a2e 0%,#2a2a4e 100%);color:#fff;padding:36px 48px}
+  .hero-tag{display:inline-block;font-size:11px;color:#3FA69A;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;background:rgba(63,166,154,.15);padding:5px 12px;border-radius:99px}
+  .hero h1{font-size:34px;font-weight:800;margin-bottom:8px}
+  .hero-sub{font-size:14px;color:rgba(255,255,255,.7);margin-bottom:24px}
+  .hero-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .hero-stat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:16px 18px}
+  .hero-stat-label{font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:6px}
+  .hero-stat-value{font-size:24px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+  .hero-stat-sub{font-size:12px;margin-top:6px}
+  .hero-stat-sub span{display:inline-block;padding:3px 10px;border-radius:99px;font-weight:600;font-size:11px}
+
+  /* SECTIONS */
+  section{padding:32px 48px;border-bottom:1px solid #f0f2f5}
+  section:last-child{border-bottom:none}
+  h2{font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:16px;padding-bottom:8px;border-bottom:3px solid #3FA69A;display:inline-block}
+  .subsection-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#2d7d72;font-weight:700;margin:16px 0 10px}
+
+  /* SUMMARY TABLE */
+  .summary-table{width:100%;border-collapse:collapse;font-size:14px}
+  .summary-table th{text-align:left;font-size:10px;letter-spacing:.08em;color:#6b7280;text-transform:uppercase;padding:10px 8px;border-bottom:2px solid #e5e7eb}
+  .summary-table td{padding:12px 8px;border-bottom:1px solid #f0f2f5}
+  .summary-table .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+
+  /* CHIPS */
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:#f0fdf4;color:#2d7d72;border-radius:99px;padding:5px 12px;font-size:12px;font-weight:600}
+  .chip-count{color:#9ca3af;font-weight:400}
+  .chip-mini{display:inline-block;background:#f3f4f6;color:#374151;border-radius:3px;padding:2px 7px;font-size:10.5px;margin-right:4px}
+
+  /* WINNER CARDS */
+  .winner-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .winner-card{background:#f0fdf4;border-left:4px solid #3FA69A;padding:14px 16px;border-radius:6px}
+  .winner-name{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .winner-loc{font-size:11px;color:#6b7280;margin-bottom:10px}
+  .winner-stats{display:flex;gap:14px;font-size:13px}
+  .winner-ctr{font-weight:800;color:#2d7d72;font-size:18px;font-variant-numeric:tabular-nums}
+  .winner-spend{font-weight:700;color:#374151;font-variant-numeric:tabular-nums}
+  .unit{font-size:10px;color:#9ca3af;font-weight:400}
+
+  /* VIRAL */
+  .post-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .post-card{background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:12px 14px}
+  .post-platform{display:inline-block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;background:#1a1a2e;color:#fff;padding:2px 8px;border-radius:3px;font-weight:700;margin-bottom:6px}
+  .post-text{font-size:12px;color:#374151;line-height:1.5;margin-bottom:6px}
+  .post-eng{font-size:11px;color:#9ca3af;font-weight:600}
+  .ad-list{margin:0;padding-left:20px;font-size:13px;color:#374151}
+  .ad-list li{margin-bottom:8px;line-height:1.55}
+  .ad-body{color:#6b7280}
+
+  /* COMPLIANCE */
+  .compliance-section{background:#fef2f2}
+  .compliance-section h2{border-bottom-color:#991b1b}
+  .compliance-list{list-style:none;padding:0;margin:0}
+  .compliance-list li{padding:10px 12px;background:#fff;border-left:4px solid #991b1b;margin-bottom:8px;font-size:13px;color:#7f1d1d;border-radius:0 4px 4px 0}
+
+  /* INVENTORY */
+  .inventory{width:100%;border-collapse:collapse;font-size:12.5px;background:#fafbfc;border-radius:6px;overflow:hidden}
+  .inventory td{padding:8px 12px;border-bottom:1px solid #f0f2f5}
+  .inventory code{font-family:Menlo,monospace;font-size:11.5px;color:#2d7d72}
+
+  /* LOCATION BLOCKS */
+  .location-block{margin-bottom:32px}
+  .loc-head{font-size:22px;font-weight:800;color:#1a1a2e;margin-bottom:14px;padding:12px 18px;background:linear-gradient(90deg,#f0fdf4 0%,#fff 100%);border-left:6px solid #3FA69A;border-radius:0 6px 6px 0;display:flex;align-items:center;gap:10px}
+  .loc-pin{color:#3FA69A;font-size:26px;line-height:0}
+  .loc-count{margin-left:auto;font-size:13px;color:#6b7280;font-weight:600;background:#fff;padding:4px 12px;border-radius:99px;border:1px solid rgba(63,166,154,.15)}
+
+  .cat-block{margin-bottom:18px;margin-left:14px}
+  .cat-head{font-size:13px;font-weight:700;color:#2d7d72;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px dashed #e5e7eb}
+  .cat-count{color:#9ca3af;font-weight:400}
+
+  /* ACTION CARD */
+  .action-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:10px;transition:box-shadow .15s}
+  .action-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.05);border-color:rgba(63,166,154,.15)}
+  .action-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .pri-badge{color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:3px;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+  .action-title{font-size:14px;font-weight:700;color:#1a1a2e;flex:1}
+  .action-meta{font-size:10.5px;color:#9ca3af;margin-bottom:8px}
+  .action-meta code{background:#f3f4f6;padding:1px 6px;border-radius:3px;font-size:10.5px}
+  .action-desc{font-size:12.5px;color:#374151;line-height:1.6;margin-bottom:8px}
+  .kpi-line{background:#f0fdf4;border-left:3px solid #3FA69A;padding:6px 10px;font-size:12px;color:#1a1a2e;border-radius:0 4px 4px 0;margin-bottom:8px}
+  .kpi-line .metric{font-family:Menlo,monospace;font-size:11px;color:#2d7d72}
+
+  /* HIGGSFIELD */
+  .higgs-block{background:#fafbfc;border:1px dashed #d1d5db;border-radius:6px;padding:10px 12px;margin-top:8px}
+  .higgs-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;font-weight:700;margin-bottom:8px}
+  .higgs-card{background:#fff;border:1px solid #f0f2f5;border-radius:4px;padding:8px 10px;margin-bottom:6px}
+  .higgs-shot{font-size:12px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .higgs-prompt{font-family:Menlo,monospace;font-size:10.5px;color:#374151;line-height:1.5;background:#fafbfc;padding:6px 8px;border-radius:3px}
+
+  /* AFTER */
+  .after-section{background:#f0fdf4}
+  .after-list{counter-reset:step;list-style:none;padding:0}
+  .after-list li{counter-increment:step;position:relative;padding:8px 0 8px 36px;font-size:13px;line-height:1.6;color:#374151}
+  .after-list li::before{content:counter(step);position:absolute;left:0;top:8px;width:24px;height:24px;background:#3FA69A;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px}
+
+  /* MISC */
+  .muted{color:#9ca3af;font-size:12px}
+  .footer{padding:24px 48px;text-align:center;font-size:11px;color:#9ca3af;background:#fafbfc;border-top:1px solid #f0f2f5}
+
+  /* PRINT */
+  @media print{
+    body{background:#fff}
+    .page{box-shadow:none;max-width:none}
+    .hero{background:#1a1a2e !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    section{padding:20px 32px;page-break-inside:avoid}
+    .action-card{page-break-inside:avoid}
+  }
+
+  /* MOBILE */
+  @media (max-width:640px){
+    .hero{padding:24px}
+    .hero h1{font-size:24px}
+    .hero-grid{grid-template-columns:1fr}
+    section{padding:20px 24px}
+  }
+</style>
+</head>
+<body>
+<div class='page'>
+  
+    <header class='hero'>
+      <div class='hero-tag'>Monthly Shoot Pack · 2026-06</div>
+      <h1>Shauna's Shoot Day — June 2026</h1>
+      <div class='hero-sub'>Brief generated 2026-06-12 · Account Meta CTR baseline: <b>2.37%</b></div>
+      <div class='hero-grid'>
+        <div class='hero-stat'>
+          <div class='hero-stat-label'>Recommended Shoot Day</div>
+          <div class='hero-stat-value'>2026-06-26</div>
+          <div class='hero-stat-sub'><span style='background:#f0fdf4;color:#2d7d72'>14 days away</span></div>
+        </div>
+        <div class='hero-stat'>
+          <div class='hero-stat-label'>Pending Creative Actions</div>
+          <div class='hero-stat-value'>20</div>
+          <div class='hero-stat-sub' style='color:rgba(255,255,255,.6)'>across 3 locations</div>
+        </div>
+        <div class='hero-stat'>
+          <div class='hero-stat-label'>Locations</div>
+          <div class='hero-stat-value' style='font-size:16px;line-height:1.4;padding-top:4px'>Malaga, Ellenbrook, Both / Either</div>
+        </div>
+      </div>
+    </header>
+  <section>
+            <h2>Shoot Day Summary</h2>
+            <p class='muted' style='margin-bottom:14px'>Plan: morning at Malaga (heavier load), Ellenbrook after lunch. Start with GBP photos — highest ROI per minute (5 fresh photos lift GBP rank measurably). Then Meta ad creative, then social trend-rides.</p>
+            <table class='summary-table'><thead><tr><th>Location</th><th class='num'>Shots</th><th>Categories</th></tr></thead><tbody><tr><td><b>Malaga</b></td><td class='num'>10</td><td><span class='chip-mini'>GBP Photos</span><span class='chip-mini'>Meta Ad Creative</span><span class='chip-mini'>Organic Social</span></td></tr><tr><td><b>Ellenbrook</b></td><td class='num'>2</td><td><span class='chip-mini'>GBP Photos</span></td></tr><tr><td><b>Both / Either</b></td><td class='num'>8</td><td><span class='chip-mini'>Organic Social</span></td></tr></tbody></table>
+        </section><section>
+            <h2>What's Working — Past Winners (Last Week)</h2>
+            <p class='muted' style='margin-bottom:14px'>Top Meta ads. Mirror the angle / hook / location split.</p>
+            <div class='winner-grid'>
+        <div class='winner-card'>
+          <div class='winner-name'>Push the Tempo (2)</div>
+          <div class='winner-loc'>Ellenbrook · Unknown</div>
+          <div class='winner-stats'>
+            <span class='winner-ctr'>3.09%<span class='unit'> CTR</span></span>
+            <span class='winner-spend'>$113.67<span class='unit'> spent</span></span>
+          </div>
+        </div></div>
+        </section><section>
+            <h2>Viral Signals — What to Mirror This Month</h2>
+            <div class='subsection-label'>Trending hashtags</div><div class='chip-row'><span class='chip'>#coldplunge <span class='chip-count'>·10</span></span><span class='chip'>#perth <span class='chip-count'>·7</span></span><span class='chip'>#gym <span class='chip-count'>·7</span></span><span class='chip'>#fitness <span class='chip-count'>·6</span></span><span class='chip'>#perthfitness <span class='chip-count'>·5</span></span><span class='chip'>#gymperth <span class='chip-count'>·5</span></span><span class='chip'>#perthgym <span class='chip-count'>·4</span></span><span class='chip'>#contrasttherapy <span class='chip-count'>·3</span></span></div>
+<div class='subsection-label'>Top viral posts — worth mirroring</div><div class='post-grid'>
+        <div class='post-card'>
+          <div class='post-platform'>tiktok</div>
+          <div class='post-text'>I’ve never seen a gym membership like this before 😭 Not just classes… but coffee, juice cleanses and dinners at places like Gibney and Long Chim. 
+Perth gyms are on another level apparently.
+Would you ever pay this?? #perth #perthlife #pert…</div>
+          <div class='post-eng'>46,701 engagement</div>
+        </div>
+        <div class='post-card'>
+          <div class='post-platform'>tiktok</div>
+          <div class='post-text'>@sweathouz #coldplunge #contrasttherapy #recovery #viral…</div>
+          <div class='post-eng'>43,211 engagement</div>
+        </div>
+        <div class='post-card'>
+          <div class='post-platform'>tiktok</div>
+          <div class='post-text'>Trying Every Gym In Perth Part 2 | @revofitness Joondalup #gym #gymtok #revofitness #perth #fyp…</div>
+          <div class='post-eng'>2,901 engagement</div>
+        </div>
+        <div class='post-card'>
+          <div class='post-platform'>tiktok</div>
+          <div class='post-text'>#coldplunge #sauna #sweathouz #recovery @sweathouz…</div>
+          <div class='post-eng'>2,549 engagement</div>
+        </div>
+        <div class='post-card'>
+          <div class='post-platform'>tiktok</div>
+          <div class='post-text'>From what was once a dream, to now a reality.                                                                                     #perth #personaltrainer #gym #coach…</div>
+          <div class='post-eng'>1,494 engagement</div>
+        </div></div>
+        </section><section class='compliance-section'>
+            <h2>Compliance — Read Before Every Shot</h2>
+            <ul class='compliance-list'><li>NEVER say 'only gym with' — Ryderwear also has sauna + reformer (ACL risk).</li><li>NEVER claim therapeutic benefit (heals/cures/treats/burns fat) — TGA breach.</li><li>NEVER name a competitor (Revo / Anytime / Snap / Ryderwear) in copy.</li><li>NEVER show alcohol, smoking, or anything that conflicts with health-club positioning.</li><li>Add-ons (Reformer, ChasingRX, Sauna+Ice) are PAID extras — never imply included in $11.95/wk.</li><li>Brand voice: confident, no buzz words (leverage/synergy/utilize/facilitate).</li><li>Cite price as '$11.95/week' in promotional copy only — body copy keeps numbers off.</li></ul>
+        </section><section>
+            <h2>On-Hand Image Inventory</h2>
+            <p class='muted' style='margin-bottom:14px'>Reuse before reshooting — saves a setup.</p>
+            <table class='inventory'><tbody><tr><td><code>097A3839.jpg</code></td><td class='num muted'>14076.4 KB</td></tr><tr><td><code>ChasingBetterGym_1.jpeg</code></td><td class='num muted'>140.0 KB</td></tr><tr><td><code>ChasingBetterGym_2.jpg</code></td><td class='num muted'>687.2 KB</td></tr><tr><td><code>ChasingBetterGym_large_logo.jpeg</code></td><td class='num muted'>40.5 KB</td></tr><tr><td><code>ChasingBetterGym_small_logo.jpeg</code></td><td class='num muted'>18.3 KB</td></tr><tr><td><code>P1033719-SA.jpg</code></td><td class='num muted'>3061.9 KB</td></tr></tbody></table>
+        </section><section>
+            <h2>Shot List — Per Location</h2>
+            
+    <div class='location-block'>
+      <h2 class='loc-head'>
+        <span class='loc-pin'>•</span> Both / Either
+        <span class='loc-count'>8 shots</span>
+      </h2>
+      <div class='cat-block'><h3 class='cat-head'>Organic Social <span class='cat-count'>(8)</span></h3>
+    <div class='action-card' id='soc-act-2026w23-004'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#3FA69A'>P3</span>
+        <span class='action-title'>Adapt high-engagement Instagram format — 186 engagement (141 likes, 15 comments)</span>
+      </div>
+      <div class='action-meta'>
+        <code>soc-act-2026w23-004</code> · 3.0h effort
+      </div>
+      <div class='action-desc'>Top-performing fitness-niche post this week (URL: https://www.instagram.com/p/DY-iceuCQiM/). Engagement: 141 likes, 15 comments, 0 plays. Caption excerpt: &quot;Tive a satisfação de participar desse evento ímpar em Goiânia, compartilhando reflexões sobre um tema que considero essencial para o sucess…&quot;. Tags used: #aulascoletivas, #gestãofitness, #fitnesstrends, #coletivasbt. Adapt the FORMAT/ANGLE for CB247, not the content. If it's a POV reel, do CB247's version of that POV. If it's a transformation hook, frame a CB247 member's transformation. Don't replicate the exact caption — use the engagement structure. After 14 days, write a 1-sentence learning: did our adapted version match or beat the source post's engagement rate? Yes / no / partial — that's the verdict.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b></b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='soc-act-2026w23-005'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#3FA69A'>P3</span>
+        <span class='action-title'>Adapt high-engagement Instagram format — 49 engagement (31 likes, 6 comments)</span>
+      </div>
+      <div class='action-meta'>
+        <code>soc-act-2026w23-005</code> · 3.0h effort
+      </div>
+      <div class='action-desc'>Top-performing fitness-niche post this week (URL: https://www.instagram.com/p/DZEC7TPEQjW/). Engagement: 31 likes, 6 comments, 0 plays. Caption excerpt: &quot;Hearts on fire ❤️‍🔥.   #gymbro #iowacity #mensphysique #benchpressing #fypfitness&quot;. Tags used: #gymbro, #iowacity, #mensphysique, #benchpressing, #fypfitness. Adapt the FORMAT/ANGLE for CB247, not the content. If it's a POV reel, do CB247's version of that POV. If it's a transformation hook, frame a CB247 member's transformation. Don't replicate the exact caption — use the engagement structure. After 14 days, write a 1-sentence learning: did our adapted version match or beat the source post's engagement rate? Yes / no / partial — that's the verdict.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b></b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='soc-act-2026w24-002'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#3FA69A'>P3</span>
+        <span class='action-title'>Adapt high-engagement Tiktok format — 46701 engagement (17800 likes, 671 comments)</span>
+      </div>
+      <div class='action-meta'>
+        <code>soc-act-2026w24-002</code> · 3.0h effort
+      </div>
+      <div class='action-desc'>Top-performing fitness-niche post this week (URL: https://www.tiktok.com/@hannahnorthcott/video/7617840831935974677). Engagement: 17800 likes, 671 comments, 411300 plays. Caption excerpt: &quot;I’ve never seen a gym membership like this before 😭 Not just classes… but coffee, juice cleanses and dinners at places like Gibney and Long…&quot;. Tags used: #perth, #perthlife, #perthgym, #perthcreators, #greenscreenvideo. Adapt the FORMAT/ANGLE for CB247, not the content. If it's a POV reel, do CB247's version of that POV. If it's a transformation hook, frame a CB247 member's transformation. Don't replicate the exact caption — use the engagement structure. After 14 days, write a 1-sentence learning: did our adapted version match or beat the source post's engagement rate? Yes / no / partial — that's the verdict.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b></b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='soc-act-2026w24-003'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#3FA69A'>P3</span>
+        <span class='action-title'>Adapt high-engagement Tiktok format — 43211 engagement (23900 likes, 134 comments)</span>
+      </div>
+      <div class='action-meta'>
+        <code>soc-act-2026w24-003</code> · 3.0h effort
+      </div>
+      <div class='action-desc'>Top-performing fitness-niche post this week (URL: https://www.tiktok.com/@jeannettestagg/video/7602974082497269006). Engagement: 23900 likes, 134 comments, 406400 plays. Caption excerpt: &quot;@sweathouz #coldplunge #contrasttherapy #recovery #viral&quot;. Tags used: #coldplunge, #contrasttherapy, #recovery, #viral. Adapt the FORMAT/ANGLE for CB247, not the content. If it's a POV reel, do CB247's version of that POV. If it's a transformation hook, frame a CB247 member's transformation. Don't replicate the exact caption — use the engagement structure. After 14 days, write a 1-sentence learning: did our adapted version match or beat the source post's engagement rate? Yes / no / partial — that's the verdict.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b></b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='promo-ree-act-2026w24-004'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Capture + post 3× reels for 'Don't Quit — Save Call Offer'</span>
+      </div>
+      <div class='action-meta'>
+        <code>promo-ree-act-2026w24-004</code> · 1.5h effort
+      </div>
+      <div class='action-desc'>Child work item of promo 'Don't Quit — Save Call Offer' (promo-dont-quit-save-call-2026-06). Capture 3× reels on next monthly shoot day. Assets land in the promo's GDrive folder once Asset Creator processes them. Tone: Community-focused / supportive / 'we've got you' — quieter than acquisition.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b>1.0</b> <span class='muted'>(14d)</span></div>
+      <div class='higgs-block'><div class='higgs-label'>Higgsfield fallback if not shootable in-club</div>
+        <div class='higgs-card'>
+          <div class='higgs-shot'>Winter motivation scene — Perth context</div>
+          <div class='higgs-prompt'>Perth winter morning, person in athleisure walking toward gym entrance, low sun, breath visible, contemplative mood, tagline-friendly negative space top-left</div>
+        </div></div>
+    </div>
+    <div class='action-card' id='promo-ree-act-2026w24-008'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Capture + post 3× reels for 'Stay With Us — Community Defence'</span>
+      </div>
+      <div class='action-meta'>
+        <code>promo-ree-act-2026w24-008</code> · 1.5h effort
+      </div>
+      <div class='action-desc'>Child work item of promo 'Stay With Us — Community Defence' (promo-stay-with-us-2026-06). Capture 3× reels on next monthly shoot day. Assets land in the promo's GDrive folder once Asset Creator processes them. Tone: Community / 'this isn't a transaction, it's a club' / strong on what they get HERE that they won't get THERE.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b>1.0</b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='promo-ree-act-2026w24-011'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Capture + post 2× reels for 'Try Recovery (Sauna + Ice Bath) — Free Month'</span>
+      </div>
+      <div class='action-meta'>
+        <code>promo-ree-act-2026w24-011</code> · 1.0h effort
+      </div>
+      <div class='action-desc'>Child work item of promo 'Try Recovery (Sauna + Ice Bath) — Free Month' (promo-addon-trial-2026-06). Capture 2× reels on next monthly shoot day. Assets land in the promo's GDrive folder once Asset Creator processes them. Tone: Educational + genuine · 'this changes how you recover/train'.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b>1.0</b> <span class='muted'>(14d)</span></div>
+      <div class='higgs-block'><div class='higgs-label'>Higgsfield fallback if not shootable in-club</div>
+        <div class='higgs-card'>
+          <div class='higgs-shot'>Traditional sauna or ice bath scene — recovery zone hero</div>
+          <div class='higgs-prompt'>Steamy traditional Finnish sauna interior at golden hour, warm cedar wood, single person silhouette towel-wrapped, premium spa-grade lighting, Perth wellness studio</div>
+        </div></div>
+    </div>
+    <div class='action-card' id='promo-ree-act-2026w24-014'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Capture + post 2× reels for 'Welcome Back — Check-In Series'</span>
+      </div>
+      <div class='action-meta'>
+        <code>promo-ree-act-2026w24-014</code> · 1.0h effort
+      </div>
+      <div class='action-desc'>Child work item of promo 'Welcome Back — Check-In Series' (promo-welcome-back-2026-06). Capture 2× reels on next monthly shoot day. Assets land in the promo's GDrive folder once Asset Creator processes them. Tone: Caring / non-judgmental / supportive · 'we noticed you're missing and we want to help'.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b>1.0</b> <span class='muted'>(14d)</span></div>
+      
+    </div></div>
+    </div>
+    <div class='location-block'>
+      <h2 class='loc-head'>
+        <span class='loc-pin'>•</span> Ellenbrook
+        <span class='loc-count'>2 shots</span>
+      </h2>
+      <div class='cat-block'><h3 class='cat-head'>GBP Photos <span class='cat-count'>(2)</span></h3>
+    <div class='action-card' id='gbp-act-2026w23-004'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#3FA69A'>P3</span>
+        <span class='action-title'>Refresh GBP photos at Ellenbrook — 68 photos, +5 target</span>
+      </div>
+      <div class='action-meta'>
+        <code>gbp-act-2026w23-004</code> · 1.5h effort
+      </div>
+      <div class='action-desc'>Ellenbrook GBP currently shows 68 photos. Fresh photo uploads signal an active business to Google and lift listing engagement. Capture and upload 5 new shots — facility detail (sauna, ice bath, Kids Hub), a class in session, a recent transformation, and one exterior daytime shot for fresh map-pin imagery. Upload via the Google Business Profile app. Target: 73 photos in 14 days.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>gbp_photos_count</span> 68 → <b>73.0</b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='gbp-act-2026w24-004'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#3FA69A'>P3</span>
+        <span class='action-title'>Refresh GBP photos at Ellenbrook — 68 photos, +5 target</span>
+      </div>
+      <div class='action-meta'>
+        <code>gbp-act-2026w24-004</code> · 1.5h effort
+      </div>
+      <div class='action-desc'>Ellenbrook GBP currently shows 68 photos. Fresh photo uploads signal an active business to Google and lift listing engagement. Capture and upload 5 new shots — facility detail (sauna, ice bath, Kids Hub), a class in session, a recent transformation, and one exterior daytime shot for fresh map-pin imagery. Upload via the Google Business Profile app. Target: 73 photos in 14 days.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>gbp_photos_count</span> 68 → <b>73.0</b> <span class='muted'>(14d)</span></div>
+      
+    </div></div>
+    </div>
+    <div class='location-block'>
+      <h2 class='loc-head'>
+        <span class='loc-pin'>•</span> Malaga
+        <span class='loc-count'>10 shots</span>
+      </h2>
+      <div class='cat-block'><h3 class='cat-head'>GBP Photos <span class='cat-count'>(2)</span></h3>
+    <div class='action-card' id='gbp-act-2026w23-002'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#3FA69A'>P3</span>
+        <span class='action-title'>Refresh GBP photos at Malaga — 65 photos, +5 target</span>
+      </div>
+      <div class='action-meta'>
+        <code>gbp-act-2026w23-002</code> · 1.5h effort
+      </div>
+      <div class='action-desc'>Malaga GBP currently shows 65 photos. Fresh photo uploads signal an active business to Google and lift listing engagement. Capture and upload 5 new shots — facility detail (sauna, ice bath, Kids Hub), a class in session, a recent transformation, and one exterior daytime shot for fresh map-pin imagery. Upload via the Google Business Profile app. Target: 70 photos in 14 days.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>gbp_photos_count</span> 65 → <b>70.0</b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='gbp-act-2026w24-002'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#3FA69A'>P3</span>
+        <span class='action-title'>Refresh GBP photos at Malaga — 65 photos, +5 target</span>
+      </div>
+      <div class='action-meta'>
+        <code>gbp-act-2026w24-002</code> · 1.5h effort
+      </div>
+      <div class='action-desc'>Malaga GBP currently shows 65 photos. Fresh photo uploads signal an active business to Google and lift listing engagement. Capture and upload 5 new shots — facility detail (sauna, ice bath, Kids Hub), a class in session, a recent transformation, and one exterior daytime shot for fresh map-pin imagery. Upload via the Google Business Profile app. Target: 70 photos in 14 days.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>gbp_photos_count</span> 65 → <b>70.0</b> <span class='muted'>(14d)</span></div>
+      
+    </div></div><div class='cat-block'><h3 class='cat-head'>Meta Ad Creative <span class='cat-count'>(3)</span></h3>
+    <div class='action-card' id='meta-strategist-act-2026w24-879'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Refresh 'Deep heat' Malaga creative — swap sauna image for ice bath action</span>
+      </div>
+      <div class='action-meta'>
+        <code>meta-strategist-act-2026w24-879</code> · 1.5h effort
+      </div>
+      <div class='action-desc'>Static 'Deep heat. Deep recovery' (Malaga) CTR at 1.40% on $34.44 spend, below 1.84% account average. Winter campaign angle is correct but static format underperforming. Create new Reel showing ice bath plunge + sauna sequence. Use member footage, high-contrast/neon aesthetic per brand guidelines. Due by 19 Jun for winter push.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>meta_ctr</span> 1.4 → <b>2.2</b> <span class='muted'>(14d)</span></div>
+      <div class='higgs-block'><div class='higgs-label'>Higgsfield fallback if not shootable in-club</div>
+        <div class='higgs-card'>
+          <div class='higgs-shot'>Traditional sauna or ice bath scene — recovery zone hero</div>
+          <div class='higgs-prompt'>Steamy traditional Finnish sauna interior at golden hour, warm cedar wood, single person silhouette towel-wrapped, premium spa-grade lighting, Perth wellness studio</div>
+        </div></div>
+    </div>
+    <div class='action-card' id='meta-strategist-act-2026w24-382'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Test organic 'THURSDAY' reel as paid creative (Malaga + Ellenbrook)</span>
+      </div>
+      <div class='action-meta'>
+        <code>meta-strategist-act-2026w24-382</code> · 0.5h effort
+      </div>
+      <div class='action-desc'>Organic 'THURSDAY' reel achieved 4,639 views, 2,859 reach, 1.64% engagement — strongest organic performer. Convert to paid ad with $50/week test budget split across both locations. Monitor for 7 days. If CTR exceeds 2.0%, scale to full rotation. Organic→paid handoff proven effective with 'Push the Tempo' pattern.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>meta_ctr</span> 0 → <b>2.0</b> <span class='muted'>(7d)</span></div>
+      
+    </div>
+    <div class='action-card' id='meta-strategist-act-2026w24-831'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Add Kids Hub creative for school holidays (launch 21 Jun, holidays start 04 Jul)</span>
+      </div>
+      <div class='action-meta'>
+        <code>meta-strategist-act-2026w24-831</code> · 2.0h effort
+      </div>
+      <div class='action-desc'>WA school holidays 04-17 Jul — Kids Hub spotlight per seasonal calendar. Need 1 Reel (15-30 sec) showing Kids Hub activity + parent training simultaneously. Messaging: 'Kids play. You train.' Target: Malaga Families + Ellenbrook Locals ICP. Capture footage by 18 Jun, creative ready by 21 Jun for 2-week pre-holiday warm-up. Per brand voice: show the experience, not facility list.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>meta_results_weekly</span> 0 → <b>15</b> <span class='muted'>(21d)</span></div>
+      <div class='higgs-block'><div class='higgs-label'>Higgsfield fallback if not shootable in-club</div>
+        <div class='higgs-card'>
+          <div class='higgs-shot'>Kids Hub interior — kids playing while parent trains in background</div>
+          <div class='higgs-prompt'>Bright modern gym kids zone, 5-10 year olds playing safely, blurred parent on treadmill in distance, warm natural light, Australian aesthetic, no faces visible, lifestyle photo</div>
+        </div></div>
+    </div></div><div class='cat-block'><h3 class='cat-head'>Organic Social <span class='cat-count'>(5)</span></h3>
+    <div class='action-card' id='soc-act-2026w23-001'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Trend-ride #gymmotivation on CB247 socials — 24 hits in this week's scrape</span>
+      </div>
+      <div class='action-meta'>
+        <code>soc-act-2026w23-001</code> · 2.5h effort
+      </div>
+      <div class='action-desc'>Hashtag #gymmotivation appeared 24 times across this week's fitness-niche scrape — high-signal trending content with a typical 14-day half-life. Concept a CB247-branded post (Reel preferred) that authentically rides this trend: connect it to a real CB247 member or moment, NOT a stock-feeling overlay. Shoot, edit, post within 5 days. Post should use #gymmotivation as primary tag + 4–6 supporting tags (#chasingbetter247, #malaga, #ellenbrook). After 14 days, write a 1-sentence learning in Performance Review: did engagement beat your weekly median? Yes / no / partial — that's the verdict.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b></b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='soc-act-2026w23-002'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Trend-ride #gymtok on CB247 socials — 19 hits in this week's scrape</span>
+      </div>
+      <div class='action-meta'>
+        <code>soc-act-2026w23-002</code> · 2.5h effort
+      </div>
+      <div class='action-desc'>Hashtag #gymtok appeared 19 times across this week's fitness-niche scrape — high-signal trending content with a typical 14-day half-life. Concept a CB247-branded post (Reel preferred) that authentically rides this trend: connect it to a real CB247 member or moment, NOT a stock-feeling overlay. Shoot, edit, post within 5 days. Post should use #gymtok as primary tag + 4–6 supporting tags (#chasingbetter247, #malaga, #ellenbrook). After 14 days, write a 1-sentence learning in Performance Review: did engagement beat your weekly median? Yes / no / partial — that's the verdict.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b></b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='soc-act-2026w23-003'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Trend-ride #fitnessjourney on CB247 socials — 17 hits in this week's scrape</span>
+      </div>
+      <div class='action-meta'>
+        <code>soc-act-2026w23-003</code> · 2.5h effort
+      </div>
+      <div class='action-desc'>Hashtag #fitnessjourney appeared 17 times across this week's fitness-niche scrape — high-signal trending content with a typical 14-day half-life. Concept a CB247-branded post (Reel preferred) that authentically rides this trend: connect it to a real CB247 member or moment, NOT a stock-feeling overlay. Shoot, edit, post within 5 days. Post should use #fitnessjourney as primary tag + 4–6 supporting tags (#chasingbetter247, #malaga, #ellenbrook). After 14 days, write a 1-sentence learning in Performance Review: did engagement beat your weekly median? Yes / no / partial — that's the verdict.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b></b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='soc-act-2026w24-001'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#f59e0b'>P2</span>
+        <span class='action-title'>Trend-ride #coldplunge on CB247 socials — 10 hits in this week's scrape</span>
+      </div>
+      <div class='action-meta'>
+        <code>soc-act-2026w24-001</code> · 2.5h effort
+      </div>
+      <div class='action-desc'>Hashtag #coldplunge appeared 10 times across this week's fitness-niche scrape — high-signal trending content with a typical 14-day half-life. Concept a CB247-branded post (Reel preferred) that authentically rides this trend: connect it to a real CB247 member or moment, NOT a stock-feeling overlay. Shoot, edit, post within 5 days. Post should use #coldplunge as primary tag + 4–6 supporting tags (#chasingbetter247, #malaga, #ellenbrook). After 14 days, write a 1-sentence learning in Performance Review: did engagement beat your weekly median? Yes / no / partial — that's the verdict.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b></b> <span class='muted'>(14d)</span></div>
+      
+    </div>
+    <div class='action-card' id='promo-ree-act-2026w24-001'>
+      <div class='action-head'>
+        <span class='pri-badge' style='background:#ef4444'>P1</span>
+        <span class='action-title'>Capture + post 4× reels for 'Kids Hub Holiday Spotlight'</span>
+      </div>
+      <div class='action-meta'>
+        <code>promo-ree-act-2026w24-001</code> · 2.0h effort
+      </div>
+      <div class='action-desc'>Child work item of promo 'Kids Hub Holiday Spotlight' (promo-kids-hub-2026-06). Capture 4× reels on next monthly shoot day. Assets land in the promo's GDrive folder once Asset Creator processes them. Tone: Warm / family / 'the gym that gets school routines'. ICP: Malaga Families + Ellenbrook Locals.</div>
+      <div class='kpi-line'><b>Target:</b> <span class='metric'>qualitative_assessment</span>  → <b>1.0</b> <span class='muted'>(14d)</span></div>
+      <div class='higgs-block'><div class='higgs-label'>Higgsfield fallback if not shootable in-club</div>
+        <div class='higgs-card'>
+          <div class='higgs-shot'>Kids Hub interior — kids playing while parent trains in background</div>
+          <div class='higgs-prompt'>Bright modern gym kids zone, 5-10 year olds playing safely, blurred parent on treadmill in distance, warm natural light, Australian aesthetic, no faces visible, lifestyle photo</div>
+        </div></div>
+    </div></div>
+    </div>
+        </section><section class='after-section'>
+        <h2>After the Shoot</h2>
+        <ol class='after-list'>
+          <li>Drop captured assets into <code>Image/</code> with descriptive filenames (<code>&lt;location&gt;_&lt;scene&gt;_&lt;date&gt;.jpg</code>)</li>
+          <li>Tag Tia in Slack with the asset folder link</li>
+          <li>Tia uses the per-action briefs in the dashboard (View Brief) to match raw assets to action IDs</li>
+          <li>Brand Manager QCs the deliverables in the Work Queue kanban</li>
+          <li>Measurement runner auto-checks the projected KPI on day 14 — verdict (Win / Mixed / Loss) appears on Performance Review</li>
+        </ol>
+    </section>
+  <div class='footer'>
+        Generated by <code>scripts/generate_monthly_shoot_pack.py</code> · CB247 Marketing OS · 2026-06-12
+    </div>
+</div>
+</body>
+</html>

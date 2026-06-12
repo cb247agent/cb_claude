@@ -19610,9 +19610,9 @@ function renderAssetLibrary() {
     return !['published', 'rejected', 'scheduled'].includes(status);
   });
   const _ym = new Date().toISOString().slice(0, 7);
-  // docs/asset-library/ is inside the GitHub Pages root; ../outputs/ was
-  // outside it and 404'd (fix: 12 Jun 2026).
-  const _packPath = `asset-library/shoot-pack-${_ym}.md`;
+  // docs/asset-library/shoot-pack-YYYY-MM.html — styled CB247 brief
+  // (fix 12 Jun 2026 — was .md raw, now rendered as page).
+  const _packPath = `asset-library/shoot-pack-${_ym}.html`;
   // Compute last Friday of current month (matches Python _shoot_day_for_month)
   const _now = new Date();
   const _lastDay = new Date(_now.getFullYear(), _now.getMonth() + 1, 0);
