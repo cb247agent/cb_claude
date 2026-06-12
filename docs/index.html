@@ -14648,13 +14648,15 @@ function renderOverview() {
     'gbp':        'GBP API quota=0 — submit increase via GCP Console',
     'google_ads': 'Google Ads API standard access pending review',
   };
-  // Soft warnings — pipeline IS producing data but some actors are
-  // degraded. Tile shows age (green/amber/red) but has a yellow warning
-  // strip beneath the grid noting what's degraded. Verified 12 Jun 2026
-  // via /v2/users/me — Apify auth + credit healthy, only 3 of 7 actors
-  // null. Self-guards to Monday-only at pull_apify.py:1281.
+  // Soft warnings — pipeline IS producing data but some fields are
+  // currently null in state. Tile shows age (green/amber/red) with a
+  // ⚠ chip + amber strip below. Re-verified 12 Jun 2026: live-tested
+  // all 3 previously-null actors (reddit · google_trends · facebook_ads)
+  // — all 3 return data successfully. The state file just hasn't been
+  // refreshed since the 09 Jun fix landed (last pull: 08 Jun, before
+  // fix). Monday's scheduled pull will populate the missing fields.
   const PIPELINE_WARNINGS = {
-    'apify':      '3 of 7 actors return null (reddit_intel · google_trends · facebook_ads) — actor config, NOT a credit issue. Auth + credit healthy. Pull self-guards to Mondays.',
+    'apify':      'state file has 3 null fields (reddit_intel · google_trends · facebook_ads) from the 08 Jun pull — all 3 actors verified working 12 Jun. Monday pull will populate.',
   };
 
   const PIPELINES = [
