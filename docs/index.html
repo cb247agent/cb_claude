@@ -16562,59 +16562,15 @@ function renderOrgSocial() {
     </div>
   </div>`;
 
-  // ── Next 2 Weeks — structured action list (replaces free-text agentBrief) ─
-  const _socialActions = [
-    {
-      title: 'Batch-film 4–6 original branded reels (Sunday session)',
-      why: 'All top 5 reels this week were reposts — zero original CB247 branded content. One Sunday session = 4–6 reels: sauna · ice bath · class moment · member story · facility walkthrough. Lead each with bold on-screen text within 0.5 sec (pattern interrupt = longer retention = more distribution).',
-      owner: 'Content (Tia + Brand Manager)',
-      effort: 'M',
-      impact: 'Fixes the "0 originals" gap. Each branded reel that beats the 15s watch threshold gets 3–5× the distribution of reposts.',
-    },
-    {
-      title: 'Stories: lift to 80–90/week (currently 67)',
-      why: 'Stories delivered ' + fmt(_vStoryImp, 'n') + ' impressions (' + (_vStoryChg>0?'+':'') + _vStoryChg + '% WoW) — dominant format by reach. Keep under 7 frames per arc to maximise tap-through rate. Use for time-sensitive offers, class reminders, behind-the-scenes.',
-      owner: 'Content',
-      effort: 'S',
-      impact: 'Direct +20–30% story impressions if cadence sustained. Highest-reach format with lowest production cost.',
-    },
-    {
-      title: 'Stop Facebook organic — drop to 1–2 posts/week',
-      why: 'Only ' + _vFbInter + ' interactions from ' + fmt(fb.impressions||0,'n') + ' impressions this week. CB247 5.3K followers vs Revo 49.6K (9.4× gap). Organic FB cannot close this. Keep 1–2 posts/week for GBP/SEO signal only — redirect all content effort to IG Reels.',
-      owner: 'Content',
-      effort: 'S',
-      impact: 'Frees ~2 hours/week of production time. No measurable downside (FB organic already near-zero engagement).',
-    },
-    {
-      title: 'Respond to all GBP reviews within 24 hours',
-      why: gbp.reviews_week + ' reviews this week across Malaga + Ellenbrook. Average rating ' + (gbp.star_rating||'–') + '. Professional, on-brand replies are visible to every prospective member. Acknowledge specifics in critical reviews — never argue.',
-      owner: 'Brand Manager (Angela)',
-      effort: 'S',
-      impact: 'Lifts perceived responsiveness · reduces review-driven churn · directly boosts local-pack ranking signal',
-    },
-    {
-      title: 'Post 1 GBP update per week per location',
-      why: 'GBP posts decay after 7 days. Use for class highlights, member milestones, suburb mentions. Each post is a free local SEO signal for "gym malaga" / "gym ellenbrook" local pack.',
-      owner: 'Content',
-      effort: 'S',
-      impact: '+5–10% local pack impressions per location · sustains GBP freshness signal',
-    },
-    {
-      title: 'A/B test reel hooks — 2 variants per topic',
-      why: 'Watch time 4–8s (benchmark 15s+). Hooks aren\'t stopping the scroll. Film 2 versions per topic: (A) bold text overlay in 0–0.5s · (B) action-frame opener (jumping into ice bath / starting a lift). Run both, kill the loser after 48h.',
-      owner: 'Content',
-      effort: 'M',
-      impact: 'Doubling watch time from 8s → 15s+ historically triples Reach via Instagram\'s distribution algorithm',
-    },
-  ];
+  // ── Next 2 Weeks — strategist + emitter actions only (12 Jun 2026) ──────
+  // Hand-coded actions REMOVED. They had stale owners like "Content" and
+  // "Brand Manager (Angela)" that produced bad UI (the "Content" string
+  // landed in the Owner column). All Organic Social actions now come from
+  // social_emitter.py (owned by Joanne — Organic Social) merged from the
+  // work queue below. Pattern mirrors the earlier renderGAds + renderMeta
+  // cleanup (commit c0a31a4, 12 Jun 2026).
+  const _socialActions = [];
 
-  // Assign priorities (P1 = highest-leverage actions)
-  _socialActions[0].priority = 'P1'; // batch-film original reels — highest leverage
-  _socialActions[1].priority = 'P2'; // stories cadence
-  _socialActions[2].priority = 'P3'; // stop FB
-  _socialActions[3].priority = 'P2'; // GBP review responses
-  _socialActions[4].priority = 'P3'; // GBP posts
-  _socialActions[5].priority = 'P2'; // A/B test reel hooks
   // Wave 2.14: merge emitter rows + split into Content + Ops.
   try {
     const wq = window.cbState?.workQueue?.getAll?.() || [];
@@ -17448,79 +17404,13 @@ function renderGBP() {
     </p>
   </div>`;
 
-  // ── 8. NEXT 2 WEEKS — structured action list (audit recommendation) ─────
+  // ── 8. NEXT 2 WEEKS — strategist + emitter actions only (12 Jun 2026) ──
+  // Hand-coded actions REMOVED. They had stale owners like "Content",
+  // "Reception (Joanne)", "Web Dev (Mark)" — names not on the current
+  // roster, and one ("Content") was rendering literally in the Owner
+  // column. All GBP actions now come from gbp_emitter.py (owned by Angela
+  // — Brand Manager) merged from the work queue below.
   const _gbpActions = [];
-
-  // 1. Always — photo upload (highest leverage)
-  if ((mal.photos||0) < 80 || (ell.photos||0) < 80) {
-    _gbpActions.push({
-      title: `Upload 10 priority photos per location (Malaga ${mal.photos}, Ellenbrook ${ell.photos})`,
-      why: 'Listings with 100+ photos get ~5× more direction requests and ~3× more website clicks. Single highest-leverage GBP action per hour invested. Priority shots: sauna, ice bath, Kids Hub, gym floor, reception, Reformer Pilates studio, classes in progress, members training.',
-      owner: 'Brand Manager (Angela) + Web Dev (Mark)',
-      effort: 'M',
-      impact: `Move both locations from ${malPhotoPct}%/${ellPhotoPct}% toward 80%+ photo coverage in 2 weeks · estimated +15–25% calls within 4 weeks`,
-    });
-  }
-
-  // 2. Reputation defence if competitor has higher rating
-  if (ratingThreat) {
-    _gbpActions.push({
-      title: `Counter ${topCompetitor.name} reputation gap`,
-      why: `${topCompetitor.name} at ${topCompetitor.rating}★ (${topCompetitor.reviews} reviews) is rated higher than CB247 ${topCompetitor.location}. Mitigation: increase review velocity to widen absolute count gap. CB247 has ${fmt((mal.reviews||0)+(ell.reviews||0),'n')} combined vs their ${topCompetitor.reviews} — social proof depth is on your side.`,
-      owner: 'Reception (Joanne) + Brand Manager (Angela)',
-      effort: 'M',
-      impact: 'Defend local pack click share within 4 weeks · sustain +200 review count lead per quarter',
-    });
-  }
-
-  // 3. Always — review response protocol
-  _gbpActions.push({
-    title: 'Respond to all reviews within 24 hours',
-    why: 'Every prospective member reads recent review replies. Critical reviews need acknowledgment + invite offline ("please contact reception@chasingbetter247.com.au"). Never argue. Professional replies double-down on positive perception even when the review itself is negative.',
-    owner: 'Brand Manager (Angela)',
-    effort: 'S',
-    impact: 'Reduces review-driven churn signal · boosts local pack ranking signal',
-  });
-
-  // 4. Always — weekly GBP post
-  _gbpActions.push({
-    title: 'Post 1 GBP update per location every Tuesday',
-    why: 'GBP posts have a 7-day half-life — fresh content signals an active listing. Use facility highlights, member milestones, suburb mentions. Each post = free local SEO signal for "gym malaga" / "gym ellenbrook" local pack.',
-    owner: 'Content + Brand Manager',
-    effort: 'S',
-    impact: 'Sustains GBP freshness signal · +5–10% local pack impressions per location',
-  });
-
-  // 5. Always — Q&A pre-population
-  _gbpActions.push({
-    title: 'Add 3 Q&A entries per location',
-    why: 'Pre-answered Q&As appear directly in Google search results. Add: (1) "Do you have a kids area?" (2) "Can I freeze my membership for FIFO?" (3) "What\'s the price?" Owners can post both the question and the answer.',
-    owner: 'Brand Manager',
-    effort: 'S',
-    impact: 'Captures purchase-intent traffic before competitors · reduces phone enquiries · adds rich result coverage',
-  });
-
-  // 6. Weekly review-request protocol
-  _gbpActions.push({
-    title: 'Weekly review-request protocol — 5+ reviews per location',
-    why: 'Review velocity = #1 local pack ranking signal (Google emphasises recency over total volume). Ask every new member sign-up verbally + QR code on reception desk linking direct to the GBP review form. Pre-write SMS template for follow-up 48h after first visit.',
-    owner: 'Reception (Joanne)',
-    effort: 'S',
-    impact: 'Lift weekly review velocity from current ad-hoc to 5+/week/location · widen the count lead vs all competitors',
-  });
-
-  // 7. Enable GBP Performance API
-  if (!sxGbp) {
-    _gbpActions.push({
-      title: 'Enable Google Business Profile Performance API (3 clicks in GCP)',
-      why: 'pull_gbp_performance.py is ready but blocked on 3 free APIs not yet enabled in GCP project 359818033415. Once enabled and location IDs added to .env, the dashboard shows proper per-location calls/directions/website clicks split instead of relying on Metricool aggregate.',
-      owner: 'Web Dev (Mark) — 5-minute job',
-      effort: 'S',
-      impact: 'Unlocks per-location attribution · removes stale Metricool fallback · sets up review velocity tracker',
-    });
-  }
-
-  _gbpActions.forEach((a, i) => { if (!a.priority) a.priority = i < 2 ? 'P1' : i < 4 ? 'P2' : 'P3'; });
 
   // Wave 2.14: merge emitter rows + split into Content + Ops.
   try {
