@@ -18211,25 +18211,87 @@ function _projectedKpiTextForModal(action) {
   return `${name} (${window})`;
 }
 
+// 12 Jun 2026 — Tia: split action description into structured
+// Reason / Strategy / Action blocks so the modal is scannable instead
+// of a wall of prose. Strategist YAMLs + emitters write free-form prose;
+// this parser recognises the common patterns each produces:
+//   - "📋 VIEW THE CALL LIST..." sentence  → dropped (already a button)
+//   - "EXECUTION STEPS: (1) ... (2) ..."   → ordered Action bullets
+//   - "Tone:" / "ICP:" / "Audience:" / "Channel:" / "Context:" /
+//     "Child work item of promo"           → Strategy bullets
+//   - Everything else                      → Reason paragraph
+function _structureWhyText(rawDesc) {
+  if (!rawDesc) return null;
+  let s = String(rawDesc);
+  // 1. Drop the "📋 VIEW THE CALL LIST" inline link — same content as
+  //    the prominent Attached List button at the top of the brief.
+  s = s.replace(/📋[\s\S]*?\(if\s*404[^)]*\)/gi, '').trim();
+  s = s.replace(/<br>\s*<br>/g, '<br>').trim();
+
+  // 2. Extract numbered EXECUTION STEPS if present
+  const stepBlock = s.match(/EXECUTION\s*STEPS\s*[:\-—]?\s*([\s\S]*)$/i);
+  let actionBullets = [];
+  let mainText = s;
+  if (stepBlock) {
+    mainText = s.slice(0, stepBlock.index).trim();
+    const stepsBody = stepBlock[1];
+    actionBullets = stepsBody
+      .split(/\(\s*\d+\s*\)/)
+      .map(t => t.replace(/<br>/g, ' ').replace(/\s+/g, ' ').trim())
+      .filter(t => t.length > 5);
+  }
+
+  // 3. Split remaining text into sentences (handle <br> as soft sep too)
+  const sentences = mainText
+    .replace(/<br>/g, '\n')
+    .split(/(?<=[.!?])\s+(?=[A-Z📋•])|\n+/)
+    .map(t => t.trim())
+    .filter(t => t.length > 3);
+
+  // 4. Classify sentences as Strategy / Action / Reason. When there's no
+  //    explicit EXECUTION STEPS block, imperative-verb sentences land in
+  //    the Action bullets (e.g. "Capture 1× edm assets", "Post Reel on
+  //    #coldplunge"). This mirrors the action-verb vocabulary the
+  //    strategist YAMLs are constrained to.
+  const strategy = [];
+  const reasonLines = [];
+  const STRATEGY_RE = /^(Tone\s*:|ICP\s*:|Audience\s*:|Channel\s*:|Context\s*:|Format\s*:|Setup\s*:|Child work item of promo|Assets land in)/i;
+  const ACTION_VERBS = /^(Capture|Post|Refresh|Run|Pause|Scale|Add|Test|Swap|Reduce|Lift|Adapt|Shift|Counter|Schedule|Brief|Reactivate|Train|Push|Extend|Investigate|Build|Trend-ride|Drive|Upload|Respond|Stop|Batch-film|Enable)/i;
+  for (const sent of sentences) {
+    if (STRATEGY_RE.test(sent)) {
+      strategy.push(sent.replace(/^[•·]\s*/, ''));
+    } else if (ACTION_VERBS.test(sent)) {
+      actionBullets.push(sent.replace(/^[•·]\s*/, ''));
+    } else {
+      reasonLines.push(sent);
+    }
+  }
+
+  return {
+    reason: reasonLines.join(' ').trim(),
+    strategy,
+    actions: actionBullets,
+  };
+}
+
 function _buildWhyText(action, normalised, sourcePage) {
-  // CB247-shape: a.why (rich HTML strings sometimes used)
-  // MWCC-shape: a.description (plain text)
-  // Fallback: normalised.desc
   const whyRaw = action?.why || action?.description || normalised.desc || '';
   if (whyRaw) {
-    // 12 Jun 2026 — Tia: the modal popup is a SUMMARY, not the full
-    // brief. Strip out everything from the first "EXECUTION STEPS:" or
-    // "📋 VIEW THE CALL LIST" marker onwards — those belong only in
-    // the full brief (View Brief opens it in a new tab). Keep just the
-    // "why this matters" rationale and trailing whitespace cleanup.
-    const cutAt = whyRaw.search(/EXECUTION\s*STEPS\s*[:\-—]|📋\s*(<b>\s*)?VIEW\s+THE/i);
-    const trimmed = (cutAt > 0 ? whyRaw.slice(0, cutAt) : whyRaw)
-      .replace(/<br>\s*<br>\s*$/g, '')   // drop trailing double-<br>
-      .replace(/\n{2,}$/g, '')           // drop trailing blank lines
-      .trim();
-    return trimmed || whyRaw;
+    const parts = _structureWhyText(whyRaw);
+    if (!parts) return whyRaw;
+    const reasonHTML = parts.reason
+      ? `<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:6px">Reason</div><div style="margin-bottom:14px;line-height:1.7">${parts.reason}</div></div>`
+      : '';
+    const stratHTML = parts.strategy.length
+      ? `<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:6px">Strategy plan</div><ul style="margin:0 0 14px 0;padding-left:20px;line-height:1.7">${parts.strategy.map(s => `<li style="margin-bottom:4px">${s}</li>`).join('')}</ul></div>`
+      : '';
+    const actionHTML = parts.actions.length
+      ? `<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--brand-accent-deep);margin-bottom:6px">Action</div><ol style="margin:0;padding-left:22px;line-height:1.7">${parts.actions.map(s => `<li style="margin-bottom:6px">${s}</li>`).join('')}</ol></div>`
+      : '';
+    const combined = `${reasonHTML}${stratHTML}${actionHTML}`.trim();
+    return combined || whyRaw;
   }
-  // Last-resort fallback: synthesise from sourcePage + title
+  // Last-resort fallback
   const friendly = (sourcePage || 'team').replace(/-/g, ' ');
   return `This action came out of this week's ${friendly} performance review. The Brand Manager flagged it as a P${normalised.priority?.replace(/P/g,'') || '2'} priority worth executing inside the next two weeks. Full rationale and source data live on the ${friendly} page above.`;
 }
