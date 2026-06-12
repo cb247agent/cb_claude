@@ -1,0 +1,151 @@
+name: qa-agent
+# ────────────────────────────────────────────────────────────────────────────
+# Wave B (11 Jun 2026) — Quality Assurance agent for the CB247 dashboard.
+# Runs after the weekly data sync. Reads the live Supabase rows and the
+# rendered dashboard HTML, cross-checks them, and emits actions for any
+# rendering bug it finds.
+#
+# WHY THIS AGENT EXISTS
+# Tia 11 Jun 2026: "we always have bugs, we need tester." This agent is
+# the closest thing to an automated dashboard QA engineer. It catches the
+# bug classes that hit us live this week:
+#   - Items appearing in wrong list (e.g. "Add LocalBusiness schema"
+#     wrongly classified as Content instead of Ops — the C5 bug)
+#   - Hand-coded JS items leaking into strategist output (the 6 stale
+#     renderSEO actions that survived the first cleanup pass)
+#   - Stale rule-emitter rows still surfacing after the strategist took
+#     over (the seo-act-* prop-* drift Tia spotted)
+#   - Count mismatches between Supabase row count and dashboard render
+#   - Broken View Brief links / orphan briefs in docs/briefs/
+#   - Missing drafts that should auto-attach via BLOG_DRAFTS_INDEX
+#
+# OUTPUT CONTRACT
+# Per agents/AGENT_ACTION_CONTRACT.md, the agent ends its markdown with
+#   ```json proposed_actions
+# block. scripts/extract_agent_actions.py picks up the block and merges
+# QA findings into state/work-queue.json. Critical bugs are P1; cosmetic
+# issues are P3. The findings show up as ops actions in the dashboard's
+# Operational list, so the team can triage them just like any other
+# emitter output.
+# ────────────────────────────────────────────────────────────────────────────
+
+tools: Read(docs/index.html), Read(state/work-queue.json), Read(state/promo-pipeline.json), Read(docs/briefs/**), Read(docs/blog-drafts/**), Bash(curl https://ckjwzwktuiavyfuolbgx.supabase.co/rest/v1/*)
+
+context:
+  - docs/index.html
+  - state/work-queue.json
+  - state/promo-pipeline.json
+  - agents/AGENT_ACTION_CONTRACT.md
+
+Inputs:
+  dashboard_url: "https://cb247agent.github.io/cb_claude/"
+  supabase_rest:  "https://ckjwzwktuiavyfuolbgx.supabase.co/rest/v1"
+  supabase_key:   "sb_publishable_3giOfPJ92JW7DN8w9jPvoQ_cFo4rd0s"
+
+Workflow:
+  - name: load-truth
+    description: |
+      Read state/work-queue.json (the authoritative local file) AND
+      curl Supabase to list all work_queue_actions rows. These are the
+      two sources of truth — both should match. Note the count per
+      source_page (seo-organic, meta-ads, google-ads, gbp, organic-social,
+      membership, opportunity).
+    output: "(held internally)"
+
+  - name: load-rendered
+    description: |
+      Read docs/index.html. Find every hand-coded action array in render
+      functions (renderSEO, renderMeta, renderGAds, renderGBP,
+      renderOrgSocial, renderMembership, renderOpportunity). Note any
+      items that pre-date the LLM strategist era (commits before 11 Jun
+      2026 may have hardcoded actions that still leak).
+    output: "(held internally)"
+
+  - name: cross-check
+    description: |
+      For EACH source_page, verify:
+        (a) Supabase row count == state/work-queue.json row count for that
+            source_page. Mismatches mean a stale sync.
+        (b) No row has an ID starting with 'seo-act-' (those are deprecated
+            rule-emitter IDs — should have been deleted Wave A.6).
+        (c) No row has an ID starting with 'prop-' (client-side duplicates).
+        (d) Every row with an action title matching a known artifact
+            ("Add LocalBusiness schema", "Fix * URLs", etc.) is in the
+            correct Ops/Content bucket per docs/index.html line 14200
+            _classifyActionKind regex rules.
+        (e) Every row with category='seo-organic' has a projected_kpis
+            entry with metric in {gsc_position, gsc_clicks_weekly,
+            pages_4xx, schema_implemented, duplicate_metas, ...}.
+        (f) Every row with status='Published' has a published_at
+            timestamp (cross-check via state/work-queue.json planner_status).
+    output: "(held internally)"
+
+  - name: brief-integrity
+    description: |
+      For every work_queue row, check whether docs/briefs/{id}.html exists.
+      Missing files mean View Brief returns 404. Skip prop-* IDs (those
+      render inline via blob URL — no static file expected).
+    output: "(held internally)"
+
+  - name: draft-attachment
+    description: |
+      Read docs/index.html to find BLOG_DRAFTS_INDEX. For every content
+      action with a slug that matches an index entry, verify the action's
+      draft_link column in Supabase is populated. If a draft EXISTS in
+      docs/blog-drafts/ but NO action is attached to it, flag for human
+      review (might be an orphan or needs manual linking).
+    output: "(held internally)"
+
+  - name: writeup
+    description: |
+      Output markdown to stdout in this structure:
+
+      # CB247 QA Agent — $DATE
+
+      ## Source-of-truth counts
+      Table: source_page · Supabase rows · state file rows · dashboard
+      hand-coded · total expected · DELTA. Flag any row where DELTA != 0.
+
+      ## Classification mismatches
+      List any action whose title matches an Ops verb (Fix*, Add * schema,
+      etc.) but is bucketed as Content, or vice versa.
+
+      ## Stale-ID survivors
+      Any 'seo-act-*' or 'prop-seo-organic-*' rows still in Supabase
+      (should be zero after Wave A.6 cleanup).
+
+      ## Brief file integrity
+      Any row whose docs/briefs/{id}.html is missing (excluding prop-*).
+
+      ## Draft attachment gaps
+      Content actions whose title slug matches a draft in
+      docs/blog-drafts/ but whose draft_link is empty in Supabase.
+
+      ## Orphan drafts
+      Files in docs/blog-drafts/ with no matching content action.
+
+      ## Proposed Actions
+
+      ```json proposed_actions
+      [
+        { ... one entry per real issue ... }
+      ]
+      ```
+
+      JSON rules:
+      - category: "seo-organic" (most QA issues touch SEO actions)
+      - owner: "John" + owner_role: "SEO Specialist" for content-related
+        issues, or "Tia" + "OS Owner" for infra/sync issues
+      - priority: P1 if the issue currently misleads the team, P2 if it
+        creates risk in the next 7d, P3 if cosmetic
+      - effort_hours: 0.25-1.0 for typical fixes
+      - data_quality: "high" (cross-check is deterministic)
+      - projected_kpis: at least one. Acceptable metrics:
+          gsc_position (if the QA flag affects an SEO action's tracking)
+          qualitative_assessment (catch-all for "is the bug fixed yes/no")
+      - If no real issues found, output `proposed_actions: []` and a
+        narrative explaining what was checked.
+
+    output: "stdout (bash wrapper saves to outputs/qa/qa-agent-$DATE.md)"
+
+End: "QA AGENT COMPLETE — markdown + proposed_actions block emitted for extraction"

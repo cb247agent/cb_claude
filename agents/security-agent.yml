@@ -1,0 +1,193 @@
+name: security-agent
+# ────────────────────────────────────────────────────────────────────────────
+# Wave B (11 Jun 2026) — Security audit agent for the CB247 system.
+# Runs Sunday night before Monday's data pipeline. Walks recent commits,
+# tests RLS coverage on Supabase, verifies realtime publication membership,
+# and audits .gitignore strength.
+#
+# WHY THIS AGENT EXISTS
+# We hold live credentials for: Supabase, GA4 service account, GSC, Google
+# Ads, Meta Marketing API, GBP, Apify, Anthropic. Any of them leaking via
+# commit, weakened .gitignore, or RLS regression would be a significant
+# incident. This agent catches the warning signs proactively.
+#
+# CRITICAL SAFETY RULE
+# The agent must NEVER print actual secret values. When it finds a leaked
+# value, it prints:
+#   - the file:line where the leak is
+#   - the first 4 and last 4 chars of the secret (so the operator can
+#     identify which key it is)
+#   - the platform the key belongs to (so the operator can rotate it)
+# It must NOT print the full value, even to a private outputs/ file.
+#
+# OUTPUT CONTRACT
+# Per agents/AGENT_ACTION_CONTRACT.md, ends with a ```json proposed_actions
+# block. Critical findings (leaked secrets, RLS gap) are P1 ops actions
+# with owner=Tia. Cosmetic findings (weak .gitignore patterns) are P3.
+# ────────────────────────────────────────────────────────────────────────────
+
+tools: Read(.gitignore), Read(.claudeignore), Read(db/policies.sql), Read(db/schema.sql), Read(.claude/settings.json), Bash(git log --since=*), Bash(git show *), Bash(grep -rn * --include=*), Bash(curl https://ckjwzwktuiavyfuolbgx.supabase.co/rest/v1/*)
+
+context:
+  - .gitignore
+  - .claudeignore
+  - db/policies.sql
+  - db/schema.sql
+  - agents/AGENT_ACTION_CONTRACT.md
+
+Inputs:
+  supabase_rest:  "https://ckjwzwktuiavyfuolbgx.supabase.co/rest/v1"
+  supabase_key:   "sb_publishable_3giOfPJ92JW7DN8w9jPvoQ_cFo4rd0s"
+  scan_window_days: 7   # check commits in the last 7 days
+
+Workflow:
+  - name: secret-leak-scan
+    description: |
+      Use grep on the working tree + last 7 days of git history (git log
+      --since="7 days ago" --name-only --pretty=format:"%H") for patterns:
+        - sk-ant-[0-9a-zA-Z\-_]+               (Anthropic API key)
+        - sk-or-v1-[0-9a-f]{64}                (OpenRouter key — note: ours
+                                                is intentionally in .env,
+                                                but flag if it shows up in
+                                                any committed file)
+        - apify_api_[0-9a-zA-Z]+               (Apify token)
+        - sb_secret_[0-9a-zA-Z_]+              (Supabase service-role —
+                                                MUST NEVER appear in repo)
+        - "BEGIN PRIVATE KEY|BEGIN RSA PRIVATE KEY"
+        - "AKIA[0-9A-Z]{16}"                   (AWS access key)
+        - "-----BEGIN CERTIFICATE-----"        (cert leak)
+        - "GOCSPX-[a-zA-Z0-9_-]+"              (Google OAuth client secret)
+      Cross-reference each hit against .gitignore — if the file containing
+      the secret IS gitignored, the secret is safe locally but the rule
+      is: "we don't keep secrets in tracked files at all."
+
+      For each hit, output: file:line, first 4 + last 4 chars of the
+      secret, platform name, severity. NEVER print the full value.
+    output: "(held internally)"
+
+  - name: gitignore-strength
+    description: |
+      Read .gitignore + .claudeignore. Verify these patterns are present
+      (REQUIRED, per CLAUDE.md security boundaries):
+        .env
+        .env.*
+        secrets/
+        state/*.json
+        .claude/settings.json
+        *.pem
+        *.key
+      Flag any missing pattern as P1 — these omissions would let a future
+      commit leak credentials silently.
+
+      Bonus check: any of the REQUIRED files actually tracked by git
+      right now? Run `git ls-files .env secrets/ state/*.json` — anything
+      that returns a result is already leaked (was committed at some
+      point). Recommend immediate rotation + history rewrite.
+    output: "(held internally)"
+
+  - name: rls-coverage
+    description: |
+      Read db/policies.sql to find the expected list of RLS policies. Then
+      curl the Supabase information_schema (via PostgREST RPC if exposed)
+      OR perform a probe by attempting an anon SELECT and DELETE on each
+      table — if anon DELETE succeeds on a table that should be locked,
+      RLS has regressed.
+
+      Tables to verify: planner_status, planner_approval,
+      work_queue_actions, mwcc_work_queue_actions.
+      Expected: anon can READ + UPSERT but cannot DELETE without auth.
+
+      Note: the probe leaves no artifact behind (rolled back / nothing
+      to delete on empty test row). If RLS is solid, the agent reports
+      "all 4 tables protected." If a regression is detected, the agent
+      proposes a P1 action assigned to Tia.
+    output: "(held internally)"
+
+  - name: realtime-publication
+    description: |
+      Realtime broadcasts require each table to be IN the supabase_realtime
+      publication AND have REPLICA IDENTITY FULL. Forgetting either one
+      causes the dashboard's cross-browser sync to silently break.
+
+      Verification via SQL function: query
+        SELECT schemaname, tablename
+        FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime';
+      using the Supabase REST RPC (if a 'list_realtime_tables' function
+      exists). If no such RPC exists, document this limitation in the
+      finding and recommend a one-off SQL check via the Supabase SQL
+      editor.
+
+      Expected tables in the publication: planner_status,
+      planner_approval, work_queue_actions, mwcc_work_queue_actions.
+    output: "(held internally)"
+
+  - name: settings-audit
+    description: |
+      Read .claude/settings.json. Confirm none of the following appear in
+      a committed copy:
+        ANTHROPIC_AUTH_TOKEN with a non-empty value
+        ANTHROPIC_API_KEY with a value starting with sk-ant
+        SUPABASE_SERVICE_KEY (any value)
+      .claude/settings.json IS gitignored, but operators sometimes commit
+      it by accident via `git add -A`. Verify via `git log --all --
+      .claude/settings.json` — if the file appears in any commit, flag
+      as P1 with rotation instructions.
+    output: "(held internally)"
+
+  - name: writeup
+    description: |
+      Output markdown to stdout in this structure:
+
+      # CB247 Security Agent — $DATE
+
+      ## Secret leak scan
+      Table: pattern · hits · files · severity. Each row should ideally
+      say "0 hits." Any hit needs immediate rotation guidance.
+
+      ## .gitignore + .claudeignore strength
+      Bullet list of REQUIRED patterns; mark each ✓ present or ✗ MISSING.
+      List any REQUIRED file currently tracked by git (= leaked).
+
+      ## RLS coverage
+      Per-table: planner_status | planner_approval | work_queue_actions |
+      mwcc_work_queue_actions. For each: PROTECTED ✓ / VULNERABLE ✗.
+      Explain the probe used.
+
+      ## Realtime publication
+      Per-table: IN PUBLICATION ✓ / MISSING ✗. If the agent can't probe,
+      output the SQL the operator needs to run + the expected result.
+
+      ## Settings audit
+      Two checks: (1) .claude/settings.json contains non-empty
+      AUTH/API keys, (2) the file appears in any git commit. Pass/fail
+      each.
+
+      ## Proposed Actions
+
+      ```json proposed_actions
+      [
+        { ... one P1 entry per critical finding ... }
+      ]
+      ```
+
+      JSON rules:
+      - category: "seo-organic" (default — we have no security_ops
+        category yet; until added, use seo-organic which routes to the
+        Ops list via title-prefix classifier)
+      - title: MUST start with "Fix" or "Audit" or "Rotate" so the JS
+        classifier (_classifyActionKind) sends it to the Ops bucket.
+      - owner: "Tia" + owner_role: "OS Owner" — security findings are
+        always Tia's call (rotation, RLS migration, history rewrite).
+      - priority: P1 for leaked secret / RLS regression / missing
+        gitignore. P2 for realtime publication gap. P3 for cosmetic.
+      - data_quality: "high"
+      - projected_kpis: at least one. Acceptable metrics:
+          qualitative_assessment (most security findings are qualitative)
+
+      If everything is clean, output `proposed_actions: []` and write a
+      one-paragraph "Security clean as of $DATE" summary.
+
+    output: "stdout (bash wrapper saves to outputs/security/security-agent-$DATE.md)"
+
+End: "SECURITY AGENT COMPLETE — markdown + proposed_actions block emitted for extraction"

@@ -48,6 +48,9 @@ AGENT_OUTPUT_PATHS = {
         OUTPUTS_DIR / "blueprints",
         OUTPUTS_DIR / "seo",
         OUTPUTS_DIR / "creatives",
+        # Wave B (11 Jun 2026) — dev-cycle agents produce proposed_actions too
+        OUTPUTS_DIR / "qa",
+        OUTPUTS_DIR / "security",
     ],
     "mwcc": [
         OUTPUTS_DIR / "mwcc",
@@ -112,9 +115,13 @@ def _extract_from_markdown(md_path: Path) -> list[dict]:
         if isinstance(parsed, list):
             actions.extend(parsed)
         elif isinstance(parsed, dict):
-            # Allow either a list or a wrapper {"actions": [...]}
+            # Allow either a list or a wrapper {"actions": [...]} or
+            # {"proposed_actions": [...]} (Wave B agents sometimes wrap the
+            # key explicitly — 11 Jun 2026)
             if "actions" in parsed and isinstance(parsed["actions"], list):
                 actions.extend(parsed["actions"])
+            elif "proposed_actions" in parsed and isinstance(parsed["proposed_actions"], list):
+                actions.extend(parsed["proposed_actions"])
             else:
                 actions.append(parsed)
 
@@ -168,9 +175,38 @@ def _validate_action(a: dict, source_agent: str, business: str) -> tuple[dict | 
     a.setdefault("effort_hours", 2.0)
     a.setdefault("category", a["source_page"])
     a.setdefault("owner_role", "")
+    # Wave B (11 Jun 2026) — agents sometimes use 'brief' instead of
+    # 'description'; promote it so the rest of the pipeline sees the
+    # canonical field name.
+    if not a.get("description") and a.get("brief"):
+        a["description"] = a.pop("brief")
     a.setdefault("description", "")
     a.setdefault("urgent", False)
     a.setdefault("related_actions", [])
+
+    # Wave B (11 Jun 2026) — coerce projected_kpis dict-shape → list-shape.
+    # Mirrors the logic in normalize_strategist_output.py so QA / security
+    # agents that emit dict-shape KPIs get auto-cleaned too. Drop entries
+    # with no usable target.
+    kpis_in = a.get("projected_kpis")
+    if isinstance(kpis_in, dict):
+        coerced = []
+        for metric_name, body in kpis_in.items():
+            if isinstance(body, dict):
+                # Ensure the metric name is set even if body doesn't include it
+                body = {**body}
+                body.setdefault("metric", metric_name)
+                coerced.append(body)
+            else:
+                coerced.append({"metric": metric_name, "target": body})
+        a["projected_kpis"] = coerced
+    elif not isinstance(kpis_in, list):
+        a["projected_kpis"] = []
+    # Default measurement_window_days on any KPI missing it (extractor is
+    # lenient here; sync-time validation is strict)
+    for k in a.get("projected_kpis") or []:
+        if isinstance(k, dict) and not k.get("measurement_window_days"):
+            k["measurement_window_days"] = 14   # safe default
 
     # Ensure projected_kpis exists (can be empty for narrative-only actions,
     # though the contract document says it SHOULD have at least one)

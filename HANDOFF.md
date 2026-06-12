@@ -376,13 +376,91 @@ run_check "Schema drift" \
 
 ### What the checks WON'T catch (yet)
 
-These are in Wave B (next session) — agents that exercise the dashboard
-and watch for regressions in rendered output:
+These are in Wave C (later session) — visual regression with screenshot
+diffing:
 
-- Layout regressions on the dashboard (wrong list, wrong column, wrong order)
-- Brand voice issues that need LLM judgement (e.g. "this paragraph sounds passive-aggressive")
-- Visual changes (font, color, spacing) — needs screenshot diffing
-- RLS policy regressions on Supabase
+- Visual changes (font, color, spacing)
+- Subtle layout reflows that don't change DOM structure
+
+---
+
+## 8.6 Wave B agents (11 Jun 2026) — QA + Security
+
+Two LLM-driven dev-cycle agents that complement Wave A's deterministic
+checks with judgement-based audits.
+
+### QA Agent (`agents/qa-agent.yml`)
+
+Runs as Step 1l of `weekly-report.sh` — AFTER all data pulls + emitters
++ sync, so it can cross-check the live Supabase rows against the local
+state file and the rendered dashboard.
+
+| What it catches | First-run example |
+|---|---|
+| Stale `seo-act-*` / `prop-*` rows still in Supabase | Found 18 orphaned `seo-act-*.html` brief files in `docs/briefs/` |
+| Count mismatch: Supabase vs state file per source_page | Flagged need to cross-check |
+| Hand-coded items leaking into render functions | Scanned renderSEO/Meta/GAds/etc. |
+| Wrong classification (Ops verb but bucketed Content) | The C5 schema bug class |
+| Missing brief files (View Brief 404) | Cross-referenced 268 brief files vs work-queue |
+| Draft attachment gaps (matching slug but draft_link empty) | Cross-referenced blog-drafts/ |
+| Orphan drafts (no matching action) | Catches stale drafts |
+
+Output → `outputs/qa/qa-agent-YYYY-MM-DD.md` → extracted by
+`scripts/extract_agent_actions.py` → merged into `state/work-queue.json`
+→ synced to Supabase. Findings appear in the dashboard's **Ops** list
+next time it loads.
+
+### Security Agent (`agents/security-agent.yml`)
+
+Runs as Phase 0b of `weekly-report.sh` — BEFORE any data work, so a
+detected credential leak or RLS regression doesn't have time to compound.
+
+| What it catches | First-run example |
+|---|---|
+| Leaked secrets in working tree + recent commits | Scanned 226 commits, 0 leaks |
+| Missing `.gitignore` patterns | `.env`, `secrets/`, `*.pem`, `.claude/settings.json` |
+| Required files tracked by git (= already leaked) | None |
+| Supabase RLS regression (anon DELETE succeeds) | RLS intentionally permissive (documented choice) |
+| Realtime publication gaps (table missing from publication) | (probe runs but full SQL check is operator-side) |
+| `.claude/settings.json` committed | None |
+
+**Critical safety rule:** the security agent NEVER prints actual secret
+values. When a leak is found, it redacts to `first4...last4` and names
+the platform so you can rotate.
+
+### Pre-commit additions
+
+You can also run them ad-hoc:
+
+```bash
+# Run QA agent against current state
+DATE=$(date '+%Y-%m-%d') && claude --print --model claude-sonnet-4-5 \
+  --allowedTools "Read(state/work-queue.json),Read(docs/index.html),Bash(curl)" \
+  "[QA agent prompt — see scripts/weekly-report.sh Step 1l]" \
+  > outputs/qa/qa-agent-$DATE.md
+
+# Run Security agent
+DATE=$(date '+%Y-%m-%d') && claude --print --model claude-sonnet-4-5 \
+  --allowedTools "Read(.gitignore),Read(.claudeignore),Bash(grep),Bash(git log),Bash(curl)" \
+  "[Security agent prompt — see scripts/weekly-report.sh Phase 0b]" \
+  > outputs/security/security-agent-$DATE.md
+
+# Then extract any findings into the work queue:
+.venv/bin/python3.13 scripts/extract_agent_actions.py --business cb247
+.venv/bin/python3.13 scripts/work_queue/sync_to_supabase.py
+```
+
+### Agent shape robustness (Wave B fix)
+
+`scripts/extract_agent_actions.py` was hardened on 11 Jun 2026 to handle
+multiple agent output shapes:
+- `{"proposed_actions": [...]}` wrapper (Wave B agents)
+- `brief` field promoted to `description` (some agents use brief)
+- Dict-shape `projected_kpis` coerced to list-shape (mirrors strategist
+  normaliser)
+- Missing `measurement_window_days` defaulted to 14
+
+This means new agents can output naturalish JSON and the pipeline self-heals.
 
 ---
 

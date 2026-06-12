@@ -107,6 +107,52 @@ log ""
 log "─── PHASE 0: DEV CYCLE PRE-FLIGHT ───"
 bash "$BASE_DIR/scripts/dev-cycle.sh" --pre-flight >> "$LOG" 2>&1 \
     || log "  ⚠️  dev-cycle pre-flight had blocking errors — check $LOG"
+log "Phase 0a complete."
+
+# ── Phase 0b: Security audit (Wave B) ────────────────────────────────────
+# Runs before any data work. If a secret has leaked or RLS has regressed,
+# we want to know BEFORE we touch live data with the suspect credentials.
+# Warn-only — pipeline continues but findings are surfaced as P1 ops
+# actions via the Agent Action Contract.
+log ""
+log "─── PHASE 0b: SECURITY AGENT ───"
+mkdir -p "$OUTPUTS/security"
+run_agent "security-agent" \
+"You are the CB247 Security Agent. Today is $DATE.
+
+Walk the last 7 days of commits + the working tree for leaked credentials,
+verify .gitignore strength, probe Supabase RLS coverage on the 4 critical
+tables, and audit .claude/settings.json.
+
+Read these files:
+- .gitignore
+- .claudeignore
+- db/policies.sql
+- db/schema.sql
+
+Critical safety rule: NEVER print actual secret values. When you find a
+leaked secret, redact the middle (first 4 chars + '...' + last 4 chars)
+and name the platform the key belongs to.
+
+Use grep against the working tree + git log --since=\"7 days ago\" for
+known credential patterns (sk-ant-, sk-or-v1-, apify_api_, sb_secret_,
+AKIA, GOCSPX-, BEGIN PRIVATE KEY).
+
+Probe Supabase RLS via curl: anon DELETE on each table should fail with
+401/403. anon SELECT + UPSERT should succeed.
+
+Output structured markdown ending with a json proposed_actions block.
+Each P1 finding (leaked secret, missing gitignore pattern, RLS gap)
+becomes an ops action assigned to Tia. Title must start with 'Fix',
+'Audit', or 'Rotate' so the classifier puts it in the Ops bucket.
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. Output the
+markdown directly to stdout. The bash wrapper saves your stdout to
+outputs/security/security-agent-$DATE.md." \
+"$OUTPUTS/security/security-agent-$DATE.md" \
+"Read(.gitignore),Read(.claudeignore),Read(db/policies.sql),Read(db/schema.sql),Bash(grep),Bash(git log),Bash(git ls-files),Bash(curl)" \
+"$MODEL_SONNET"
+
 log "Phase 0 complete."
 
 
@@ -376,6 +422,78 @@ log "Step 1j — Regenerate per-action briefs..."
 log "Step 1k — Inject blog-drafts index..."
 "$PYTHON" "$BASE_DIR/scripts/inject-blog-drafts-index.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Blog drafts index injection had issues — check $LOG"
+
+# ── Step 1l: QA agent (Wave B · 11 Jun 2026) ─────────────────────────────
+# Runs AFTER all data + emitter + sync + brief generation steps so it can
+# cross-check the live Supabase state against the rendered dashboard and
+# local state. Output is a markdown report with a proposed_actions block;
+# findings get extracted by the existing Agent Action Contract pipeline
+# on the NEXT weekly run (or you can re-run extract_agent_actions manually
+# this same run if you want findings to surface immediately).
+log ""
+log "─── Step 1l: QA AGENT (post-sync dashboard cross-check) ───"
+mkdir -p "$OUTPUTS/qa"
+run_agent "qa-agent" \
+"You are the CB247 QA Agent. Today is $DATE.
+
+Cross-check three sources of truth that should all agree:
+  1. state/work-queue.json (local authoritative file)
+  2. Live Supabase work_queue_actions rows (via curl)
+  3. docs/index.html render functions (renderSEO etc.) + hand-coded items
+
+Read these files:
+- state/work-queue.json
+- state/promo-pipeline.json
+- docs/index.html
+- agents/AGENT_ACTION_CONTRACT.md (for your own output contract)
+
+Pull live Supabase rows via:
+  curl https://ckjwzwktuiavyfuolbgx.supabase.co/rest/v1/work_queue_actions?select=id,source_page,title,priority,owner -H 'apikey: sb_publishable_3giOfPJ92JW7DN8w9jPvoQ_cFo4rd0s'
+
+Catch these bug classes:
+  - Stale 'seo-act-*' or 'prop-*' rows still in Supabase (should be 0
+    after the Wave A.6 cleanup)
+  - Count mismatch: Supabase rows per source_page vs state file rows
+  - Hand-coded items in renderSEO/renderMeta/renderGAds/etc. that
+    pre-date the LLM strategist (look for inline 'actions.push({...})'
+    blocks; modern flow merges from cbState.workQueue only)
+  - Wrong classification: title starts with 'Fix'/'Add * schema'/etc.
+    but bucketed as Content instead of Ops per _classifyActionKind
+  - Missing brief files: every non-prop-* row should have a
+    docs/briefs/{id}.html
+  - Draft attachment gaps: content actions whose slug matches a
+    docs/blog-drafts/ file but draft_link is empty in Supabase
+
+Output markdown to stdout with sections:
+  ## Source-of-truth counts
+  ## Classification mismatches
+  ## Stale-ID survivors
+  ## Brief file integrity
+  ## Draft attachment gaps
+  ## Orphan drafts
+  ## Proposed Actions   (with \`\`\`json proposed_actions block)
+
+JSON rules per agents/AGENT_ACTION_CONTRACT.md:
+- title must start with a verb that classifies to Ops (Fix/Audit/Rotate/
+  Clean/Remove) so QA findings appear in the Ops list, not Content
+- category: 'seo-organic' (default Ops routing)
+- owner: 'John' (SEO Specialist) for content/data issues, 'Tia'
+  (OS Owner) for infrastructure/sync issues
+- priority: P1 if misleading the team today, P2 if risk in 7d, P3 cosmetic
+- effort_hours: 0.25-1.0
+- data_quality: 'high'
+- projected_kpis: at least one — use 'qualitative_assessment' for QA
+  findings (a yes/no the team verifies after fixing)
+
+If everything is clean, emit proposed_actions: [] and a one-paragraph
+'Dashboard healthy as of $DATE' summary.
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. Output the
+markdown directly to stdout. The bash wrapper saves your stdout to
+outputs/qa/qa-agent-$DATE.md." \
+"$OUTPUTS/qa/qa-agent-$DATE.md" \
+"Read(state/work-queue.json),Read(state/promo-pipeline.json),Read(docs/index.html),Read(docs/briefs/**),Read(docs/blog-drafts/**),Bash(curl)" \
+"$MODEL_SONNET"
 
 log "Phase 1 complete."
 
