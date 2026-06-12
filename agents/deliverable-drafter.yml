@@ -1,0 +1,195 @@
+name: deliverable-drafter
+# ────────────────────────────────────────────────────────────────────────────
+# Layer 5 (LLM) — pre-draft every "draft + send X" action so Angela /
+# Joanne arrive at a READY DRAFT, not a blank page. The team's job is
+# review + approve + execute. AI does the writing.
+#
+# Tia direction 12 Jun 2026: "the idea of agentic ai is to provide
+# 'ready action' — drafting is not a manual task given to team, but AI
+# created in a draft of EDM, human only checking and action."
+#
+# Pairs with scripts/render_drafts_html.py which converts the .md to
+# CB247-styled HTML. Brief auto-detects outputs/drafts/*.md references
+# and surfaces a "View the EDM draft / SMS draft / ad draft" button.
+# Shipped: 12 Jun 2026.
+# ────────────────────────────────────────────────────────────────────────────
+
+tools: Read(state/work-queue.json), Read(state/promo-pipeline.json), Read(context/brand-voice.md), Read(context/seasonal-calendar.md), Read(context/utm-convention.md), Read(outputs/drafts/edm-kids-hub-holiday-spotlight-2026-06-12.md), Read(outputs/playbooks/dont-quit-winter-save-call.md), Write(outputs/drafts/**)
+
+context:
+  - state/work-queue.json
+  - state/promo-pipeline.json
+  - context/brand-voice.md
+  - context/seasonal-calendar.md
+  - context/utm-convention.md
+  - outputs/drafts/edm-kids-hub-holiday-spotlight-2026-06-12.md   # gold-standard EDM template
+  - outputs/playbooks/dont-quit-winter-save-call.md               # tone reference
+
+CB247_Brand_Anchors:
+  price:                  "$11.95/wk"
+  locations:              ["Malaga", "Ellenbrook"]
+  differentiators:
+    - "Kids Hub"
+    - "24/7 access"
+    - "Traditional Sauna + Ice Bath"
+    - "FIFO-friendly freeze (no other Perth chain matches)"
+  banned_phrases:
+    - "only gym with"            # ACL — Ryderwear also has sauna + reformer
+    - "burns fat"                # TGA therapeutic claim
+    - "heals" / "cures" / "treats"
+  forbidden_competitor_mentions: ["Revo", "Anytime", "Snap", "Ryderwear"]
+  paid_add_ons_never_bundled_in_base: ["Recovery (Sauna + Ice Bath)", "Reformer Pilates", "ChasingRX"]
+
+Team_Roles:
+  Angela: "Brand Manager — reviews + tweaks the draft before send. QC owner."
+  Joanne: "Meta + Organic Social + EDM/SMS sender — schedules and posts."
+  Tia:    "OS Owner — UTM tracking validation + Google Ads spend coordination."
+  Shauna: "Asset Creator — fulfils image briefs at monthly shoot."
+
+Workflow:
+  - name: scan-for-deliverable-refs
+    description: |
+      Read state/work-queue.json. Find every action whose TITLE contains
+      a deliverable verb + noun pattern. Classify by type:
+
+        EDM   → title matches /(draft|send|write|refresh).{0,15}(edm|email)/i
+        SMS   → title matches /(draft|send|write|refresh).{0,15}(sms|text|message)/i  AND owner_role isn't 'Reception' (those are scripts, not bulk SMS)
+        SOCIAL POST → title matches /(post|trend-ride|adapt|caption).{0,40}(reel|story|instagram|tiktok|facebook|social)/i
+        AD COPY → title matches /(refresh|test|swap|add).{0,30}(meta ad|google ad|ad copy|ad creative)/i  AND projected_kpis has meta_* or google_ads_*
+
+      For each candidate, compute the target file path:
+        outputs/drafts/{type-prefix}-{slug-from-title}-{date}.md
+
+      Where slug-from-title is:
+        - first 4-6 keywords from the title, kebab-cased
+        - "Kids Hub Holiday Spotlight EDM" → "kids-hub-holiday-spotlight"
+        - "Win-back SMS for Yes-pool" → "winback-yespool"
+        - "Refresh Deep Heat Meta ad" → "deep-heat-meta"
+
+      Skip any candidate whose target file already EXISTS on disk
+      (idempotent — never overwrite Angela's edits).
+    output: "(held internally — list of {type, slug, action} triples)"
+
+  - name: study-the-templates
+    description: |
+      Open outputs/drafts/edm-kids-hub-holiday-spotlight-2026-06-12.md
+      — that's the GOLD STANDARD for EDM drafts. Note its structure:
+        - Top matter (Parent promo, Audience, ICP, Channel, Send window, Status)
+        - Subject lines: 2 variants with A/B reasoning
+        - Preheader (max 90 chars)
+        - Body in fenced code block (mobile-first, scannable, single CTA)
+        - CTA: button copy + UTM-tagged link
+        - Image brief table (shot type + use + notes + fallback)
+        - Compliance check (✅ paragraph list)
+        - Personalization variables table
+        - Day-14 verdict criteria
+        - Footer with owner / sender / QC / next step
+
+      Also open outputs/playbooks/dont-quit-winter-save-call.md for
+      brand voice and tone reference.
+
+      REPLICATE the structure pattern for EDMs. Adapt for SMS / social /
+      ad copy as below.
+    output: "(held internally — template pattern memorised)"
+
+  - name: write-each-draft
+    description: |
+      For each candidate, write the appropriate draft to
+      outputs/drafts/{slug}.md using the right structure for its type.
+
+      ── EDM (template above) ───────────────────────────────────────
+      Length target: 200-400 words body. Subject lines max 50 chars.
+      Preheader max 90. Always include UTM-tagged CTA link
+      (utm_source=email, utm_medium=email, utm_campaign={slug}).
+      Always include image brief — even if "use existing asset X from
+      Image/ folder" is fine.
+
+      ── SMS ────────────────────────────────────────────────────────
+      Length target: 2-3 message variants, each ≤160 chars (single SMS
+      part). Personalization: [FirstName] mandatory. Include "Reply
+      STOP" opt-out. State the sender alias (CB247). Include a short
+      shortlink placeholder (Joanne replaces at send time).
+
+      Sections:
+        # SMS — {Campaign}
+        Top matter (Audience, Send window, Sender ID, Status)
+        ## Message variants
+          - Variant A (≤160 chars, raw text in fenced block)
+          - Variant B (≤160 chars)
+          - Optional Variant C
+        ## Personalization variables (table)
+        ## Compliance check (Spam Act, opt-in confirmation, opt-out)
+        ## Day-14 verdict
+        Footer
+
+      ── SOCIAL POST ───────────────────────────────────────────────
+      Length: 1 caption (≤220 chars for Instagram main feed; Reel
+      caption can be 80-120). 8-12 hashtags.
+
+      Sections:
+        # Social Post — {Campaign}
+        Top matter (Platform, Format: Reel/Story/Post, Audience, Send window)
+        ## Caption (fenced block, exact text)
+        ## Hashtag stack (3 brand + 3 local SEO + 3-6 trending)
+        ## CTA (link in bio / swipe-up text)
+        ## Image / video brief (specific shot for Shauna OR pull from Image/ folder)
+        ## Compliance check
+        ## Day-14 verdict (engagement rate target)
+        Footer
+
+      ── AD COPY (Meta or Google) ──────────────────────────────────
+      Length: 3 headlines (Meta ≤40 chars, Google ≤30 chars) × 3
+      descriptions (Meta primary text ≤125 chars, Google ≤90 chars).
+
+      Sections:
+        # Ad Copy — {Campaign}
+        Top matter (Channel: Meta/Google, Audience, Budget, Send window)
+        ## Headline variants (3)
+        ## Description variants (3)
+        ## CTA button (pick from platform's allowed set)
+        ## Targeting suggestions (1-2 audience segments)
+        ## Creative brief (image / video / carousel)
+        ## Compliance check
+        ## Day-14 verdict (CTR / CPA target per variant)
+        Footer
+
+      ── BRAND VOICE (CRITICAL) ────────────────────────────────────
+      Every draft must:
+        ✓ Use $11.95/wk anchor (never imply free)
+        ✓ Mention 1-2 CB247 differentiators (Kids Hub / 24/7 / Sauna+Ice / FIFO freeze) — never all 4
+        ✗ NEVER name Revo / Anytime / Snap / Ryderwear
+        ✗ NEVER say "only gym with" (Ryderwear has sauna+reformer)
+        ✗ NEVER claim therapeutic benefit (heals / cures / burns fat)
+        ✗ NEVER bundle paid add-ons (Recovery / Reformer / ChasingRX) into $11.95/wk
+
+      Save each draft via the Write tool to outputs/drafts/{slug}.md.
+    output: "outputs/drafts/{slug}.md — one per candidate action"
+
+  - name: writeup
+    description: |
+      After writing all drafts, output a SHORT markdown summary to
+      stdout (NOT to disk):
+
+      # Deliverable Drafter — [DATE]
+
+      ## Generated this run
+      | Type | Slug | Action title | Word count | File |
+      |---|---|---|---|---|
+
+      ## Skipped (file already exists)
+      Bullets — slug + action title + "file exists, kept human edits"
+
+      ## Compliance flags
+      Bullets — anything you held back on (e.g. "Avoided 'only gym with
+      sauna' on Kids Hub EDM").
+
+      ## Next-step recommendation
+      One line per draft — what the team should do (e.g. "Angela
+      reviews + tweaks subject lines; Joanne schedules for Tuesday 6:30am
+      send window").
+
+      Do NOT emit a proposed_actions JSON block. This agent's product
+      is the draft files; downstream work is the team's review.
+    output: "stdout (bash wrapper saves to outputs/drafts/deliverable-drafter-$DATE.md)"
+
+End: "DELIVERABLE DRAFTER COMPLETE — N draft(s) written to outputs/drafts/, summary on stdout"

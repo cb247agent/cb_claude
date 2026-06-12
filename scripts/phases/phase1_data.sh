@@ -674,6 +674,66 @@ log "Step 1i-bis.2 — Render playbooks .md → docs/playbooks/*.html..."
     && log "  ✓ Playbook HTML rendered" \
     || log "  ⚠️  Playbook HTML render had issues — check $LOG"
 
+# ── Step 1i-tris: Deliverable drafter (12 Jun 2026) ─────────────────────
+# Tia principle: "agentic AI = ready action, not blank-page work for team."
+# Every action whose title says "Draft + send EDM / SMS / social post / ad
+# copy" should arrive at Angela / Joanne with the copy already written.
+# This agent generates the draft .md, then render_drafts_html.py converts
+# to a CB247-styled HTML page the brief links to via "View the draft" button.
+log ""
+log "─── Step 1i-tris: DELIVERABLE DRAFTER (EDM / SMS / social / ad copy) ───"
+mkdir -p "$OUTPUTS/drafts"
+run_agent "deliverable-drafter" \
+"You are the CB247 Deliverable Drafter. Today is $DATE.
+
+Tia's principle: agentic AI must produce READY DRAFTS, not blank-page work.
+When a proposed action's title says 'Draft + send EDM' / 'Send SMS' / 'Post
+trend-ride' / 'Refresh Meta ad copy', the team must arrive at a pre-drafted
+artefact they review and approve — never write from scratch.
+
+Read state/work-queue.json. Find every action whose title indicates a
+deliverable to draft. Classify by type using these patterns (case-insensitive):
+
+  EDM       — title matches (draft|send|write|refresh).{0,15}(edm|email)
+  SMS       — title matches (draft|send|write|refresh).{0,15}(sms|text|message)
+  SOCIAL    — title matches (post|trend-ride|adapt|caption).{0,40}(reel|story|instagram|tiktok|facebook|social)
+  AD COPY   — title matches (refresh|test|swap|add).{0,30}(meta ad|google ad|ad copy|ad creative) AND projected_kpis has meta_* or google_ads_*
+
+For each candidate, compute target file:
+  outputs/drafts/{type-prefix}-{slug-from-title-keywords}-$DATE.md
+
+Skip if file already exists (idempotent — keep human edits).
+
+Read outputs/drafts/edm-kids-hub-holiday-spotlight-2026-06-12.md as the
+GOLD STANDARD for EDM structure. Read context/brand-voice.md +
+context/seasonal-calendar.md + context/utm-convention.md.
+
+For each candidate, write the draft using the type-specific structure
+(detailed in agents/deliverable-drafter.yml). Each draft must include:
+- Top matter (audience, send window, status)
+- The copy itself in fenced code blocks for easy copy-paste
+- Image / video brief if visual asset needed
+- Compliance check (\$11.95/wk anchor, NO competitor names, NO 'only gym
+  with', NO TGA claims, paid add-ons never bundled)
+- Day-14 verdict criteria
+- Footer with owner / sender / QC / next step
+
+Save each via Write tool to outputs/drafts/{slug}.md.
+
+After all drafts written, output a SHORT markdown summary to stdout listing
+generated + skipped + compliance flags + per-draft next-step recommendation.
+
+CRITICAL: Do NOT emit a proposed_actions JSON block. This agent's product
+is the draft files — downstream work is team review." \
+"$OUTPUTS/drafts/deliverable-drafter-$DATE.md" \
+"Read(state/work-queue.json),Read(state/promo-pipeline.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(context/utm-convention.md),Read(outputs/drafts/edm-kids-hub-holiday-spotlight-2026-06-12.md),Read(outputs/playbooks/dont-quit-winter-save-call.md),Write(outputs/drafts/**)" \
+"$MODEL_OPUS"
+
+log "Step 1i-tris.2 — Render drafts .md → docs/drafts/*.html..."
+"$PYTHON" "$BASE_DIR/scripts/render_drafts_html.py" >> "$LOG" 2>&1 \
+    && log "  ✓ Drafts HTML rendered" \
+    || log "  ⚠️  Drafts HTML render had issues — check $LOG"
+
 # ── Step 1j: Regenerate per-action HTML briefs (Fix 10 Jun 2026) ──
 # CB247 mirror of generate_mwcc_briefs.py. The dashboard modal's "View Brief"
 # link opens docs/briefs/{action_id}.html — these files must exist for every

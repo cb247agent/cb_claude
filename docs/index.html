@@ -18501,6 +18501,7 @@ function _renderProposedActionBriefHTML(row) {
   //   outputs/playbooks/X.md  (any form) → ${baseHref}playbooks/X.html
   desc = desc.replace(/href=(["'])(lists\/[^"']+\.html)\1/gi, `href=$1${baseHref}$2$1`);
   desc = desc.replace(/outputs\/playbooks\/([\w\-.]+)\.md/gi, `${baseHref}playbooks/$1.html`);
+  desc = desc.replace(/outputs\/drafts\/([\w\-.]+)\.md/gi, `${baseHref}drafts/$1.html`);
   const owner = esc(row.owner || 'Team');
   const role  = esc(row.owner_role || '');
   const priority = row.priority || 'P2';
@@ -18542,6 +18543,26 @@ function _renderProposedActionBriefHTML(row) {
       `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Attached playbook</div>` +
       `<a href="${esc(_pbUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">View the playbook →</a>` +
       `<div style="font-size:11px;color:#6b7280;margin-top:8px">If the page 404s, the playbook-writer agent hasn't generated the content yet (runs Mondays). Source markdown will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/playbooks/${esc(_pbSlug)}.md</code> after the run.</div></div>`;
+  }
+
+  // 12 Jun 2026 — Tia: surface any outputs/drafts/*.md reference as a
+  // prominent "View the draft" button. Pairs with deliverable-drafter
+  // agent (EDM / SMS / social / ad copy) + render_drafts_html.py.
+  // Auto-labels button by slug prefix.
+  let attachedDraftHTML = '';
+  const _draftMatch = rawDescStr.match(/outputs\/drafts\/([\w\-.]+)\.md/i);
+  if (_draftMatch) {
+    const _dSlug = _draftMatch[1];
+    const _dUrl = baseHref + `drafts/${_dSlug}.html`;
+    const _dLabel = _dSlug.startsWith('edm-')    ? 'View the EDM draft'
+                  : _dSlug.startsWith('sms-')    ? 'View the SMS draft'
+                  : _dSlug.startsWith('social-') ? 'View the social post draft'
+                  : _dSlug.startsWith('ad-')     ? 'View the ad copy draft'
+                  : 'View the draft';
+    attachedDraftHTML =
+      `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Attached draft · ready for review</div>` +
+      `<a href="${esc(_dUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">${_dLabel} →</a>` +
+      `<div style="font-size:11px;color:#6b7280;margin-top:8px">Pre-written by AI. Your job: read, tweak, approve, send. If the page 404s, the deliverable-drafter agent hasn't run yet (Mondays) — source will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/drafts/${esc(_dSlug)}.md</code> after the run.</div></div>`;
   }
 
   // Wave 2.16 (11 Jun 2026): Pull the "Deliverable" sentence out of the
@@ -18641,6 +18662,7 @@ ${effort ? `<span class="meta-chip" style="background:#f3f4f6;color:#374151">Eff
 </div>
 ${attachedListHTML}
 ${attachedPlaybookHTML}
+${attachedDraftHTML}
 ${deliverableHTML}
 <div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
 <div class="section"><div class="label">Primary Projected KPI</div><div class="caption-box">${captionHTML}</div></div>
