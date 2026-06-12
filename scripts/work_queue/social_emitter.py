@@ -130,8 +130,12 @@ def _emit_trend_ride(week: str, start_serial: int) -> Tuple[List[WorkQueueAction
                 f"After 14 days, write a 1-sentence learning in Performance Review: did engagement beat "
                 f"your weekly median? Yes / no / partial — that's the verdict."
             ),
-            owner="Shauna",
-            owner_role="Asset Creator (CB247)",
+            # Joanne owns Organic Social (posting/scheduling/captions).
+            # Shauna provides reusable assets via the monthly shoot day —
+            # Joanne picks from the asset library and adapts copy/format.
+            # (12 Jun 2026 — team role clarification, Tia direction)
+            owner="Joanne",
+            owner_role="Organic Social",
             priority="P2",
             effort_hours=2.5,
             category="organic-social",
@@ -193,8 +197,12 @@ def _emit_creative_inspo(week: str, start_serial: int) -> Tuple[List[WorkQueueAc
                 f"After 14 days, write a 1-sentence learning: did our adapted version match or beat "
                 f"the source post's engagement rate? Yes / no / partial — that's the verdict."
             ),
-            owner="Shauna",
-            owner_role="Asset Creator (CB247)",
+            # Joanne owns Organic Social (posting/scheduling/captions).
+            # Shauna provides reusable assets via the monthly shoot day —
+            # Joanne picks from the asset library and adapts copy/format.
+            # (12 Jun 2026 — team role clarification, Tia direction)
+            owner="Joanne",
+            owner_role="Organic Social",
             priority="P3",
             effort_hours=3.0,
             category="organic-social",

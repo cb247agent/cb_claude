@@ -611,7 +611,10 @@ def _emit_child_work_queue_items(concepts: list[dict], week: str) -> list[WorkQu
                     f"Assets land in the promo's GDrive folder once Asset Creator processes them. "
                     f"Tone: {concept.get('tone', '—')}"
                 ),
-                owner="Brand Manager",
+                # 12 Jun 2026 — consolidated owner. Angela IS the Brand
+                # Manager. Keep owner=name + owner_role=function so the
+                # picker, kanban and Performance Review all agree.
+                owner="Angela",
                 owner_role="Brand Manager",
                 priority="P2" if concept["track"] == "retention" else "P1",
                 effort_hours=0.5 * n,

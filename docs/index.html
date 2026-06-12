@@ -14401,7 +14401,21 @@ function _renderActionList(actions, opts = {}) {
   // for the View Details button to work.
   const sourcePage = opts.sourcePage || 'unknown';
 
-  let html = sectionTitle(titleStr);
+  // ── Denver review chip (12 Jun 2026, team-role clarification) ────────
+  // Denver = COO who approves Proposed Action Lists before they progress
+  // from Proposed → In Progress. Surface the count of items still
+  // awaiting his decision so the team can ping him.
+  const _denverApprovalMap = JSON.parse(localStorage.getItem(PLANNER_APPROVAL_KEY) || '{}');
+  const _pendingDenverCount = actions.filter(a => {
+    const st = (_statusByItem[a.id] || '').toString();
+    if (st === 'Published' || st === 'Scheduled' || st === 'Rejected' || st === 'In Progress') return false;
+    return !_denverApprovalMap[a.id] || !_denverApprovalMap[a.id].status;
+  }).length;
+  const denverChip = _pendingDenverCount > 0
+    ? `<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:99px;margin-left:10px;letter-spacing:.03em;vertical-align:middle">⏳ ${_pendingDenverCount} pending Denver approval</span>`
+    : '';
+
+  let html = sectionTitle(titleStr + denverChip);
   html += `<div class="card mb"><table>
     <thead><tr>
       <th style="width:24px">#</th>

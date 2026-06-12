@@ -197,10 +197,13 @@ Workflow:
       - title MUST start with an Ops verb (Pause / Scale / Refresh /
         Test / Add / Lift / Reduce / Swap) so the dashboard classifier
         puts it in the Ops list. Meta strategist findings are ALL ops.
-      - owner: 'Tia' + owner_role: 'OS Owner / Paid Ads' for budget/bid/
-        ad-state moves
+      - owner: 'Joanne' + owner_role: 'Meta Ads Specialist' for ALL Meta
+        budget/bid/ad-state/audience moves. Joanne owns Meta + Organic
+        Social + QA. Tia handles Google Ads only — never assign Meta
+        actions to Tia.
       - owner: 'Shauna' + owner_role: 'Assets Creator' for new photo/
-        video assets (cross-link to Asset Library)
+        video assets that need a shoot day (cross-link to Asset Library).
+        Joanne posts/schedules but Shauna captures the asset.
       - priority: P1 if cost-saving / fatigue intervention, P2 if
         scale / format test, P3 if hygiene
       - effort_hours: 0.25 budget/state · 0.5 audience tweak · 1-2 new

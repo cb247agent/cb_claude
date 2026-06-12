@@ -134,8 +134,11 @@ Workflow:
 
       JSON rules:
       - category: "seo-organic" (most QA issues touch SEO actions)
-      - owner: "John" + owner_role: "SEO Specialist" for content-related
-        issues, or "Tia" + "OS Owner" for infra/sync issues
+      - owner: "Joanne" + owner_role: "QA Specialist" for ALL QA findings.
+        Joanne is the QA triage point — she decides whether to fix herself
+        (Meta + Social issues), delegate to John (SEO content), or escalate
+        to Tia (infra / sync / data pipeline issues). Never auto-assign
+        John or Tia from the QA agent itself — flag-and-triage workflow.
       - priority: P1 if the issue currently misleads the team, P2 if it
         creates risk in the next 7d, P3 if cosmetic
       - effort_hours: 0.25-1.0 for typical fixes
