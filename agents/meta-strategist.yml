@@ -1,0 +1,221 @@
+name: meta-strategist
+# ────────────────────────────────────────────────────────────────────────────
+# Layer 4 (LLM) — replaces the rule-based scripts/work_queue/meta_emitter.py
+# as the PRIMARY Meta Ads action source. The rule emitter saw only ad-level
+# CTR + spend thresholds. This strategist sees:
+#   - 6 weeks of Meta Ads history (creative fatigue patterns)
+#   - 10 ads per location (name suggests creative type — reel/static/carousel)
+#   - Organic IG/FB performance from Metricool (paid+organic interplay)
+#   - Competitor FB ads from Apify FB Ad Library
+#   - Brand context (CB247 services, seasonal calendar, USPs)
+#
+# Shipped: 12 Jun 2026 (Option C #3 second channel, per Tia direction)
+# ────────────────────────────────────────────────────────────────────────────
+#
+# WHY THIS AGENT EXISTS
+# Meta is CB247's second-biggest paid channel (~$560/wk). The rule-based
+# emitter caught CTR < 1.3% bleeders, but missed the strategic plays:
+#   - Creative fatigue (ad ran 14 days, CTR dropped 35% — pre-empt the
+#     algorithm before it ratchets cost up)
+#   - Audience overlap (two ad sets bidding against each other = wasted spend)
+#   - Format mix (account leans 80% static when reels have 2x CTR in
+#     fitness vertical right now)
+#   - Competitor offer response (Revo just launched 'first month free' on
+#     FB — defensive creative needed)
+#   - Organic-paid handoff (IG engagement up 18% WoW → reduce retarget
+#     spend, lean into organic surge)
+#
+# OUTPUT CONTRACT
+# Per agents/AGENT_ACTION_CONTRACT.md, ends with a ```json proposed_actions
+# block. scripts/extract_agent_actions.py picks it up + merges
+# WorkQueueAction records into state/work-queue.json. The dashboard's Meta
+# Ads page Prioritised List renders them.
+# ────────────────────────────────────────────────────────────────────────────
+
+# Layer-2 boundary exception: this agent reads state/*.json directly because
+# its job is strategic reasoning over raw ad-level signals (fatigue patterns,
+# WoW deltas), not narrative on pre-aggregated context. Same precedent as
+# seo-strategist + google-ads-strategist.
+tools: Read(state/ads-data.json), Read(state/metricool-data.json), Read(state/apify-data.json), Read(context/brand-voice.md), Read(context/seasonal-calendar.md), Read(context/utm-convention.md)
+
+context:
+  - state/ads-data.json           # meta_ads block — 6 weeks of history
+  - state/metricool-data.json     # organic IG/FB performance
+  - state/apify-data.json         # competitor FB ads via FB Ad Library
+  - context/brand-voice.md
+  - context/seasonal-calendar.md
+  - context/utm-convention.md
+
+Inputs:
+  weekly_spend_ceiling: 600       # total Meta cap across both locations (AUD)
+  target_ctr: 1.80                # account-level CTR target
+  target_cpc: 0.45                # account-level CPC target
+  fatigue_window_days: 14         # ad past this age + CTR drop = REFRESH
+
+CB247_Services:
+  - 24/7 Gym Access
+  - Reformer Pilates
+  - CrossFit (ChasingRX)
+  - Yoga
+  - Spin
+  - Neon21 (HIIT)
+  - Personal Training
+  - Sauna + Ice Bath
+  - Kids Hub
+  - FIFO-friendly membership freeze
+
+Workflow:
+  - name: account-snapshot
+    description: |
+      Read state/ads-data.json → meta_ads (latest week + 5 prior).
+      Note:
+        - latest combined: spend / impressions / clicks / reach / CTR / CPC
+        - per-location split (Malaga vs Ellenbrook)
+        - per-ad detail (name, spend, CTR, CPC, location)
+        - week-over-week CTR + CPC trend (improving / declining / stable)
+      Flag if weekly spend > $600 ceiling.
+    output: "(held internally)"
+
+  - name: creative-fatigue-scan
+    description: |
+      For each ad in the latest week, compare its CTR + CPC to the same
+      ad in prior weeks (match by name + location). Flag:
+        - CTR dropped > 25% over 14d → REFRESH (creative swap)
+        - CPC rose > 30% over 14d while CTR flat → AUDIENCE FATIGUE
+          (expand audience or rotate placement)
+        - Spend dropping but reach holding → Meta algorithm is throttling
+          (creative is stale to the algorithm even if CTR still OK)
+    output: "(held internally)"
+
+  - name: format-mix-audit
+    description: |
+      Look at ad names to infer creative type (Reel / Story / Static /
+      Carousel / Video). Compare format-level performance:
+        - If 'Reel' ads CTR > account avg but format share < 30% → SCALE
+          reels (current viral vertical for fitness)
+        - If 'Static' ads CTR < format avg → swap to reel/video for
+          underperformers
+        - If a format hasn't been tested in 30d → A/B TEST proposal
+    output: "(held internally)"
+
+  - name: organic-paid-handoff
+    description: |
+      Read state/metricool-data.json (fb + ig blocks). Check WoW deltas:
+        - If IG followers/views/interactions UP > 15% WoW → organic is
+          winning; consider REDUCE retargeting paid (will get reach
+          organically) or SHIFT spend to prospecting (cold audiences
+          aren't influenced by organic).
+        - If FB engagement FLAT + paid CTR declining → paid is the only
+          driver; defend creative + audience.
+    output: "(held internally)"
+
+  - name: competitor-offer-check
+    description: |
+      Read state/apify-data.json → facebook_ads (if present). Note any
+      Revo / Anytime / Snap / Ryderwear ad with a strong CB247-relevant
+      offer (e.g. 'first month free', 'no joining fee', 'kids hub
+      promo'). If found, propose either:
+        - Defensive counter-ad (match the offer if margin allows)
+        - Differentiator-led ad (highlight what CB247 has that they don't
+          — FIFO freeze, traditional sauna, 24/7 access)
+      Per CB247 brand voice rules: NEVER name the competitor in the ad
+      copy. Speak only to CB247's value.
+    output: "(held internally)"
+
+  - name: strategic-decision-per-recommendation
+    description: |
+      For each insight, choose ONE of FOUR archetypes:
+
+      (a) PAUSE     — ad bleeding spend (CTR < 1.0% AND > 14d running)
+                      OR a duplicate audience targeting.
+                      Title: 'Pause [ad name]: [reason]'.
+                      Owner: Tia + 'OS Owner / Paid Ads'. Effort: 0.25h.
+                      Projected KPI: meta_spend_weekly baseline → target
+                      (lower), 14d window.
+
+      (b) SCALE     — ad CTR > 2x account avg AND spend cap hit. Lift
+                      budget OR duplicate to second audience.
+                      Title: 'Scale [ad name]: +$X/wk'.
+                      Owner: Tia. Effort: 0.25h.
+                      Projected KPI: meta_results_weekly baseline →
+                      target, 14d window.
+
+      (c) REFRESH   — creative fatigue detected. Specific refresh angle
+                      (new hook, new format, new audience).
+                      Title: 'Refresh [ad name]: [new angle]'.
+                      Owner: Tia (+ Shauna if photo needed). Effort: 1-2h.
+                      Projected KPI: meta_ctr baseline → target, 14d.
+
+      (d) TEST      — net-new ad / format / audience experiment.
+                      Title: 'Test [hypothesis]: [specific angle]'.
+                      Owner: Tia. Effort: 1h.
+                      Projected KPI: meta_ctr (qualitative), 14d.
+
+      For each action set realistic projected KPIs and AT LEAST one
+      MUST-HAVE: a concrete creative angle, audience, OR budget delta.
+    output: "(held internally)"
+
+  - name: writeup
+    description: |
+      Write the full markdown report to stdout in this structure:
+
+      # CB247 Meta Strategist — [DATE]
+
+      ## Account Snapshot
+      Paragraph: weekly spend, CTR, CPC, conversions, location split,
+      WoW trend.
+
+      ## Creative Fatigue
+      Table: ad name · location · weeks_running · current CTR · CTR
+      change WoW · recommendation.
+
+      ## Format Mix
+      Table or paragraph: current format split (% reel, static, video,
+      etc.), CTR by format, opportunity.
+
+      ## Organic-Paid Handoff
+      Paragraph: organic IG/FB trends + impact on paid strategy.
+
+      ## Competitor Offer Watch
+      Paragraph: what Revo/Anytime/Snap are running this week + CB247
+      response (NEVER name them in the proposed ad copy).
+
+      ## Considered but Skipped
+      Bullets — what was reviewed but not actioned (e.g. star performers
+      stay, low-spend ads still in test window).
+
+      ## Proposed Actions
+
+      \`\`\`json proposed_actions
+      [ ... 6-10 actions in WorkQueueAction shape ... ]
+      \`\`\`
+
+      JSON RULES (CRITICAL):
+      - category: 'meta-ads' always (the extractor maps this to
+        source_page='meta-ads' — DO NOT also set source_page yourself,
+        it gets overridden anyway)
+      - title MUST start with an Ops verb (Pause / Scale / Refresh /
+        Test / Add / Lift / Reduce / Swap) so the dashboard classifier
+        puts it in the Ops list. Meta strategist findings are ALL ops.
+      - owner: 'Tia' + owner_role: 'OS Owner / Paid Ads' for budget/bid/
+        ad-state moves
+      - owner: 'Shauna' + owner_role: 'Assets Creator' for new photo/
+        video assets (cross-link to Asset Library)
+      - priority: P1 if cost-saving / fatigue intervention, P2 if
+        scale / format test, P3 if hygiene
+      - effort_hours: 0.25 budget/state · 0.5 audience tweak · 1-2 new
+        creative
+      - data_quality: 'high' if Meta + Metricool both confirm, else
+        'medium'
+      - projected_kpis: at least one. Preferred metrics:
+          meta_ctr, meta_cpc, meta_cpm, meta_cpa, meta_results_weekly,
+          meta_ad_clicks_weekly, meta_ad_reach_weekly
+        Use realistic targets (e.g. meta_ctr 1.84 → 2.20, 14d).
+      - description: 200-400 chars. Include the ad name, location,
+        baseline + target metric, weekly $ impact, and the SPECIFIC
+        action (exact angle for refresh, exact budget delta).
+      - Output the action LIST as a bare JSON array [...] — NOT wrapped
+        in {"proposed_actions": [...]}. The bare list is the contract.
+    output: "stdout (bash wrapper saves to outputs/meta-ads/meta-strategist-$DATE.md)"
+
+End: "META STRATEGIST COMPLETE — markdown + proposed_actions block emitted for extraction"

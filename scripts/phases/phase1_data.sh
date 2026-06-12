@@ -98,8 +98,18 @@ log "Step 1h — Emit Work Queue actions (SEO)..."
 log "  ⏭️  Rule-based SEO emitter disabled — strategist agent owns SEO action emission (Step 1h0)"
 
 log "Step 1h' — Emit Work Queue actions (Meta Ads)..."
-"$PYTHON" "$BASE_DIR/scripts/work_queue/meta_emitter.py" >> "$LOG" 2>&1 \
-    || log "  ⚠️  Meta emitter had issues — check $LOG"
+# DISABLED 12 Jun 2026 (Option C #3 second channel, Tia direction):
+# The rule-based meta_emitter.py only saw ad-level CTR + spend thresholds.
+# It missed strategic plays: creative fatigue patterns (14d CTR decay),
+# audience overlap (two ad sets bidding against each other), format-mix
+# imbalance (account leans static when reels have 2x CTR in fitness),
+# competitor offer response, and organic-paid handoff (when IG is hot,
+# reduce retargeting). Replaced by agents/meta-strategist.yml — runs in
+# Step 1h0meta below, output extracted by Step 1h'''''''''' downstream.
+# Re-enable this line if the strategist is down for an extended period.
+# "$PYTHON" "$BASE_DIR/scripts/work_queue/meta_emitter.py" >> "$LOG" 2>&1 \
+#     || log "  ⚠️  Meta emitter had issues — check $LOG"
+log "  ⏭️  Rule-based Meta emitter disabled — strategist agent owns Meta action emission (Step 1h0meta)"
 
 log "Step 1h'' — Emit Work Queue actions (Google Ads)..."
 # DISABLED 12 Jun 2026 (Option C #3 build, Tia direction):
@@ -317,6 +327,81 @@ markdown directly to stdout. The bash wrapper saves your stdout to
 outputs/google-ads/google-ads-strategist-$DATE.md." \
 "$OUTPUTS/google-ads/google-ads-strategist-$DATE.md" \
 "Read(state/google-ads-data.json),Read(state/gsc-data.json),Read(state/apify-data.json),Read(context/brand-voice.md),Read(context/seo-targets-cb247.md),Read(context/utm-convention.md)" \
+"$MODEL_OPUS"
+
+# ── Step 1h0meta — Meta Strategist (LLM, replaces rule-based meta_emitter) ──
+# Shipped 12 Jun 2026 as Option C #3 second channel. Reads ad-level
+# performance + 6-week history + organic Metricool data + competitor FB
+# ads. Outputs strategic Ops actions (Pause/Scale/Refresh/Test). Title
+# verbs Ops-classify so they land in Meta Ads Operational Prioritised List.
+log "Step 1h0meta — Meta Strategist (LLM, replaces rule-based emitter)..."
+mkdir -p "$OUTPUTS/meta-ads"
+run_agent "meta-strategist" \
+"You are the CB247 Meta Strategist. Today is $DATE.
+
+Read:
+- state/ads-data.json           (meta_ads block — 6 weeks of history, ads list per week)
+- state/metricool-data.json     (organic FB + IG performance, WoW deltas)
+- state/apify-data.json         (facebook_ads — competitor FB Ad Library)
+- context/brand-voice.md        (tone, USPs, voice rules)
+- context/seasonal-calendar.md  (active campaigns)
+
+Workflow (do all six steps before writing):
+1. ACCOUNT SNAPSHOT — latest week vs prior: spend, CTR, CPC, reach,
+   per-location split. Flag if total > \$600 ceiling.
+2. CREATIVE FATIGUE — for each ad, compare CTR + CPC over 14d:
+     · CTR drop > 25% → REFRESH (creative swap, specify new angle)
+     · CPC rise > 30% flat CTR → AUDIENCE FATIGUE (expand/rotate)
+     · Spend dropping but reach holding → algo throttling (stale)
+3. FORMAT MIX — infer creative type from ad name (Reel/Static/Carousel/
+   Video). Compare format CTR. Propose scaling winners + retiring
+   underperformers. If a format hasn't been tested in 30d, A/B TEST.
+4. ORGANIC-PAID HANDOFF — Metricool fb + ig blocks:
+     · IG/FB WoW UP > 15% → REDUCE retargeting OR shift to prospecting
+     · FB flat + paid CTR declining → defend creative + audience
+5. COMPETITOR OFFER CHECK — facebook_ads. If Revo/Anytime/Snap/Ryderwear
+   running a CB247-relevant offer, propose either defensive counter-ad
+   or differentiator-led ad. NEVER name competitors in proposed ad copy.
+6. DECISIONS:
+   (a) PAUSE   — bleeding spend (CTR < 1.0% AND > 14d running)
+                  OR duplicate audiences
+   (b) SCALE   — CTR > 2x avg + spend cap hit. Lift budget or duplicate
+   (c) REFRESH — fatigue detected. Specify new angle/hook/format
+   (d) TEST    — net-new ad/format/audience experiment
+
+Output markdown to stdout with sections:
+  # CB247 Meta Strategist — $DATE
+  ## Account Snapshot
+  ## Creative Fatigue          (table — ad/loc/weeks_running/CTR/CTR_chg/rec)
+  ## Format Mix                (table or paragraph)
+  ## Organic-Paid Handoff      (paragraph re Metricool trends)
+  ## Competitor Offer Watch    (paragraph, never name competitors in ad copy)
+  ## Considered but Skipped    (bullets)
+  ## Proposed Actions
+
+  Then a BARE JSON ARRAY [...] — NOT wrapped in {\"proposed_actions\": ...}.
+
+JSON RULES (CRITICAL):
+- category: 'meta-ads' always. Do NOT also set source_page (the extractor
+  derives it from category — your source_page would get overridden anyway).
+- title MUST start with an Ops verb (Pause/Scale/Refresh/Test/Add/Lift/
+  Reduce/Swap) so the dashboard classifier sends to Ops list.
+- owner: 'Tia' + 'OS Owner / Paid Ads' for budget/state moves
+- owner: 'Shauna' + 'Assets Creator' if a new photo/video is needed
+- priority: P1 cost-saving / fatigue, P2 scale / format test, P3 hygiene
+- effort_hours: 0.25 budget/state · 0.5 audience · 1-2 new creative
+- data_quality: 'high' if Meta+Metricool confirm, else 'medium'
+- projected_kpis: list of {metric, baseline, target, measurement_window_days, confidence='high'/'medium'/'low'}
+  metrics: meta_ctr, meta_cpc, meta_cpm, meta_cpa, meta_results_weekly,
+           meta_ad_clicks_weekly, meta_ad_reach_weekly
+- description: 200-400 chars. Include ad name + location + baseline metric
+  + target + SPECIFIC angle/budget/audience change.
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT the full
+markdown directly to stdout. The bash wrapper saves your stdout to
+outputs/meta-ads/meta-strategist-$DATE.md." \
+"$OUTPUTS/meta-ads/meta-strategist-$DATE.md" \
+"Read(state/ads-data.json),Read(state/metricool-data.json),Read(state/apify-data.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md),Read(context/utm-convention.md)" \
 "$MODEL_OPUS"
 
 # ── Step 1h0a — Normalise strategist JSON output ──

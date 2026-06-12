@@ -71,6 +71,14 @@ DEFAULT_WINDOW_DAYS = {
     "google_ads_clicks_weekly":   14,
     "ads_spend_saved_monthly":    30,
     "cumulative_ads_savings_monthly": 30,
+    # Meta Ads metrics (added 12 Jun 2026 for meta-strategist)
+    "meta_ctr":                   14,
+    "meta_cpc":                   14,
+    "meta_cpm":                   14,
+    "meta_cpa":                   14,
+    "meta_results_weekly":        14,
+    "meta_ad_clicks_weekly":      14,
+    "meta_ad_reach_weekly":       14,
 }
 
 # Block matcher mirrors extract_agent_actions.py
