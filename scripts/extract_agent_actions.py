@@ -51,6 +51,10 @@ AGENT_OUTPUT_PATHS = {
         # Wave B (11 Jun 2026) — dev-cycle agents produce proposed_actions too
         OUTPUTS_DIR / "qa",
         OUTPUTS_DIR / "security",
+        # Option C #3 (12 Jun 2026) — channel strategists
+        OUTPUTS_DIR / "google-ads",
+        OUTPUTS_DIR / "meta-ads",    # ready for next session
+        OUTPUTS_DIR / "gbp",         # ready for future
     ],
     "mwcc": [
         OUTPUTS_DIR / "mwcc",
@@ -155,20 +159,28 @@ def _validate_action(a: dict, source_agent: str, business: str) -> tuple[dict | 
     a.setdefault("source_run_at", now)
     a["source_agent"] = source_agent
 
-    # source_page is required by schema; default to category if missing
-    if not a.get("source_page"):
-        cat = (a.get("category") or "seo-organic").lower()
-        # Map common category names → valid source_page values
-        cat_map = {
-            "seo": "seo-organic", "seo-organic": "seo-organic",
-            "meta": "meta-ads", "meta-ads": "meta-ads",
-            "google": "google-ads", "google-ads": "google-ads",
-            "gbp": "gbp",
-            "social": "organic-social", "organic-social": "organic-social",
-            "enrolment": "enrolment", "enrollment": "enrolment",
-            "membership": "membership",
-        }
-        a["source_page"] = cat_map.get(cat, cat)
+    # source_page is required by schema. Map common category names → valid
+    # source_page values. If the LLM provided a source_page that DISAGREES
+    # with category (e.g. category='google-ads' but source_page='seo-organic'
+    # — observed 12 Jun 2026 from google-ads-strategist), prefer category
+    # because the agent yml is more authoritative than the LLM's guess.
+    cat_map = {
+        "seo": "seo-organic", "seo-organic": "seo-organic",
+        "meta": "meta-ads", "meta-ads": "meta-ads",
+        "google": "google-ads", "google-ads": "google-ads",
+        "gbp": "gbp",
+        "social": "organic-social", "organic-social": "organic-social",
+        "enrolment": "enrolment", "enrollment": "enrolment",
+        "membership": "membership",
+        "opportunity": "opportunity",
+    }
+    cat = (a.get("category") or "").lower()
+    canonical_from_cat = cat_map.get(cat)
+    if canonical_from_cat:
+        # Trust category over the LLM's source_page guess.
+        a["source_page"] = canonical_from_cat
+    elif not a.get("source_page"):
+        a["source_page"] = "seo-organic"   # safe default
 
     # Default data_quality + effort_hours
     a.setdefault("data_quality", "medium")

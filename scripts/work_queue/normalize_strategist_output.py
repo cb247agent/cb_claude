@@ -62,6 +62,15 @@ DEFAULT_WINDOW_DAYS = {
     "pages_4xx":              7,
     "schema_implemented":     7,
     "duplicate_metas":        7,
+    # Google Ads metrics (added 12 Jun 2026 for google-ads-strategist)
+    "google_ads_cpa":             14,
+    "google_ads_ctr":             14,
+    "google_ads_cpc":             14,
+    "google_ads_spend_weekly":    14,
+    "google_ads_conversions_weekly":  14,
+    "google_ads_clicks_weekly":   14,
+    "ads_spend_saved_monthly":    30,
+    "cumulative_ads_savings_monthly": 30,
 }
 
 # Block matcher mirrors extract_agent_actions.py
@@ -159,8 +168,13 @@ def normalise_markdown(md_path: Path) -> int:
         return 0
 
     if not isinstance(parsed, list):
-        if isinstance(parsed, dict) and "actions" in parsed:
+        if isinstance(parsed, dict) and "actions" in parsed and isinstance(parsed["actions"], list):
             parsed = parsed["actions"]
+        elif isinstance(parsed, dict) and "proposed_actions" in parsed and isinstance(parsed["proposed_actions"], list):
+            # Some strategists (Google Ads, 12 Jun 2026) wrap their block in
+            # {"proposed_actions": [...]} despite the contract calling for a
+            # bare list. Be lenient; silently dropping would lose findings.
+            parsed = parsed["proposed_actions"]
         else:
             parsed = [parsed]
 
@@ -185,8 +199,17 @@ def main() -> int:
                    help="Strategist run date (YYYY-MM-DD). Default: today.")
     args = p.parse_args()
 
-    md = OUTPUTS_DIR / "seo" / f"seo-strategist-{args.date}.md"
-    normalise_markdown(md)
+    # Normalise EVERY strategist output of the form
+    # outputs/{channel}/{channel}-strategist-{DATE}.md.
+    # Channels currently: seo, google-ads (Option C #3, 12 Jun 2026).
+    # Future: meta, gbp, social — auto-picked up by glob.
+    pattern = f"*/*-strategist-{args.date}.md"
+    found = list(OUTPUTS_DIR.glob(pattern))
+    if not found:
+        print(f"[normalize] no strategist outputs matching {pattern}")
+        return 0
+    for md in found:
+        normalise_markdown(md)
     return 0
 
 

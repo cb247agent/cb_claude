@@ -102,8 +102,17 @@ log "Step 1h' — Emit Work Queue actions (Meta Ads)..."
     || log "  ⚠️  Meta emitter had issues — check $LOG"
 
 log "Step 1h'' — Emit Work Queue actions (Google Ads)..."
-"$PYTHON" "$BASE_DIR/scripts/work_queue/google_ads_emitter.py" >> "$LOG" 2>&1 \
-    || log "  ⚠️  Google Ads emitter had issues — check $LOG"
+# DISABLED 12 Jun 2026 (Option C #3 build, Tia direction):
+# The rule-based google_ads_emitter.py only saw campaign-level CPA + spend
+# thresholds. It missed the strategic plays: paid→organic cannibalisation
+# (where we rank #1-3 organically, paid clicks are wasted), Quality Score
+# breakdowns, search-term intent mismatches, competitor auction movement.
+# Replaced by agents/google-ads-strategist.yml — runs in Step 1h0gads
+# below, output extracted by Step 1h'''''''''' (extract_agent_actions).
+# Re-enable this line if the strategist is down for an extended period.
+# "$PYTHON" "$BASE_DIR/scripts/work_queue/google_ads_emitter.py" >> "$LOG" 2>&1 \
+#     || log "  ⚠️  Google Ads emitter had issues — check $LOG"
+log "  ⏭️  Rule-based Google Ads emitter disabled — strategist agent owns Google Ads action emission (Step 1h0gads)"
 
 log "Step 1h''' — Emit Work Queue actions (GBP)..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/gbp_emitter.py" >> "$LOG" 2>&1 \
@@ -229,6 +238,85 @@ outputs/seo/seo-strategist-$DATE.md. Do NOT summarise — emit the full
 report including the proposed_actions JSON block at the end." \
 "$OUTPUTS/seo/seo-strategist-$DATE.md" \
 "Read(state/gsc-data.json),Read(state/screaming-frog-data.json),Read(state/ahrefs-data.json),Read(context/brand-voice.md),Read(context/seo-targets-cb247.md),Read(context/seo-priorities-cb247.md)" \
+"$MODEL_OPUS"
+
+# ── Step 1h0gads — Google Ads Strategist (LLM, replaces rule-based google_ads_emitter) ──
+# Shipped 12 Jun 2026 as Option C #3. Reads campaign performance + search
+# terms + Quality Score breakdowns + organic ranking overlap + competitor
+# auction insights. Outputs strategic Ops actions (Pause/Scale/Optimise/
+# Add negative). Title verbs are Ops-classified so they land in the Google
+# Ads page's Operational Prioritised List.
+log "Step 1h0gads — Google Ads Strategist (LLM, replaces rule-based emitter)..."
+mkdir -p "$OUTPUTS/google-ads"
+run_agent "google-ads-strategist" \
+"You are the CB247 Google Ads Strategist. Today is $DATE.
+
+Read:
+- state/google-ads-data.json   (totals, campaigns[16], search_terms[86], quality_scores[43], conversion_actions, auction_insights)
+- state/gsc-data.json           (organic top_queries — to find paid↔organic overlap)
+- state/apify-data.json         (competitor SERP + Google Ads scrapes)
+- context/brand-voice.md        (tone)
+- context/seo-targets-cb247.md  (which keywords we care about strategically)
+
+Workflow (do all six steps before writing):
+1. ACCOUNT SNAPSHOT — note totals (weekly spend, CPL, conversions) +
+   per-location split (Malaga vs Ellenbrook). Flag if total spend
+   exceeds \$800/wk ceiling.
+2. ORGANIC OVERLAP — for each high-spend Google Ads keyword, check GSC
+   organic position. Flag candidates where:
+     · Organic rank #1-3  → P1 PAUSE/REDUCE (paid is cannibalising)
+     · Rank #4-10         → P2 OPTIMISE landing page (compounds with seo-strategist)
+     · Rank 11+ / unranked → keep paid, monitor CPA
+3. QUALITY SCORE — for each keyword with QS < 6, identify the weakest
+   sub-score (ad_relevance / lp_experience / expected_ctr) and the
+   specific fix.
+4. SEARCH-TERM AUDIT — find high-spend search terms not matching CB247
+   services (negatives), strong-intent local terms not covered
+   (new exact-match keywords), and competitor-comparison search terms.
+5. COMPETITIVE CHECK — auction_insights + Apify competitor data. Has
+   Revo/Anytime/Snap entered any of our auctions with stronger offers?
+6. STRATEGIC DECISIONS — for each insight, choose ONE archetype:
+   (a) PAUSE / REDUCE   — title 'Pause [X]' or 'Reduce bid on [X]'
+   (b) SCALE            — title 'Scale [X]: +\$Y/wk'
+   (c) OPTIMISE         — title 'Optimise [X]: [specific edit]'
+   (d) ADD NEG/KEYWORD  — title 'Add negative keyword: [term]'
+
+Output markdown to stdout with these sections:
+  # CB247 Google Ads Strategist — $DATE
+  ## Account Snapshot          (paragraph)
+  ## Organic Overlap           (table — keyword | CPC | organic rank | recommendation)
+  ## Quality Score Issues      (table — keyword | QS | weakest sub | fix)
+  ## Search-Term Insights      (bullets — negatives, exact-match opportunities, comparisons)
+  ## Competitive Note          (paragraph)
+  ## Considered but Skipped    (bullets)
+  ## Proposed Actions
+
+  \\\`\\\`\\\`json proposed_actions
+  [ ... 6-10 actions per agents/AGENT_ACTION_CONTRACT.md ... ]
+  \\\`\\\`\\\`
+
+JSON RULES (CRITICAL):
+- category: 'google-ads' always
+- title MUST start with an Ops verb (Pause/Scale/Optimise/Add/Lift/Reduce/
+  Switch) so the dashboard classifier puts it in the Ops list
+- owner: 'Tia' + owner_role: 'OS Owner / Paid Ads' for budget/bid changes
+- owner: 'John' + owner_role: 'SEO Specialist' ONLY for landing-page edits
+- priority: P1 cost-saving / cannibalisation, P2 QS fix, P3 search-term hygiene
+- effort_hours: 0.25 budget/bid/negative · 0.5-1 creative/landing-page
+- data_quality: 'high' if Google Ads + GSC both confirm, else 'medium'
+- projected_kpis: at least one. Preferred metrics:
+    google_ads_cpa, google_ads_ctr, google_ads_cpc, google_ads_spend_weekly,
+    google_ads_conversions_weekly, google_ads_clicks_weekly,
+    ads_spend_saved_monthly (for paid→organic switches)
+- description: 200-400 chars. Include campaign/keyword name, baseline +
+  target metric, weekly \$ impact, and the SPECIFIC action (exact term,
+  exact budget delta).
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT the full
+markdown directly to stdout. The bash wrapper saves your stdout to
+outputs/google-ads/google-ads-strategist-$DATE.md." \
+"$OUTPUTS/google-ads/google-ads-strategist-$DATE.md" \
+"Read(state/google-ads-data.json),Read(state/gsc-data.json),Read(state/apify-data.json),Read(context/brand-voice.md),Read(context/seo-targets-cb247.md),Read(context/utm-convention.md)" \
 "$MODEL_OPUS"
 
 # ── Step 1h0a — Normalise strategist JSON output ──
