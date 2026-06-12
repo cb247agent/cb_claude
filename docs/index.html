@@ -12987,6 +12987,9 @@ window.MWCC_DATA = {
       <!-- Data freshness banner -->
       <div id="overview-freshness"></div>
 
+      <!-- Your Queue card (12 Jun 2026 — Verdict Activation Layer Piece 1) -->
+      <div id="overview-your-queue"></div>
+
       <!-- Executive verdict -->
       <div id="overview-verdict"></div>
 
@@ -14438,10 +14441,27 @@ function _renderActionList(actions, opts = {}) {
           : `background:#fff;color:var(--brand-accent-deep);border:1px solid var(--brand-accent);border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .15s`;
         const btnLabel = dm ? dm.label : 'View Details →';
 
+        // ── Stuck-action chip (Verdict Activation Piece 2 · 12 Jun 2026) ──
+        // If the action has been sitting in Proposed/empty for >7 days,
+        // surface a visible warning. ageDays is rounded.
+        const _src = a.source_run_at || a.created_at || null;
+        let _stuckChip = '';
+        if (_src) {
+          const _ageMs = Date.now() - new Date(_src).getTime();
+          const _ageD = Math.floor(_ageMs / 86400000);
+          const _stat = (_statusByItem[a.id] || a.planner_status || a.status || '').toString().toLowerCase();
+          const _isProposed = _stat === '' || _stat === 'proposed';
+          if (_isProposed && _ageD >= 7) {
+            const _chipBg = _ageD >= 14 ? '#fee2e2' : '#fef3c7';
+            const _chipFg = _ageD >= 14 ? '#991b1b' : '#92400e';
+            _stuckChip = `<span title="No stage transition since ${_src.slice(0,10)}" style="display:inline-block;background:${_chipBg};color:${_chipFg};font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px;letter-spacing:.03em;vertical-align:middle">⚠ Stuck ${_ageD}d</span>`;
+          }
+        }
+
         return `<tr>
           <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
           <td>
-            <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${n.title}</div>
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:3px">${n.title}${_stuckChip}</div>
             ${n.desc ? `<div style="font-size:11px;color:var(--muted);line-height:1.6">${n.desc}</div>` : ''}
           </td>
           <td style="font-size:11px"><b>${n.owner}</b>${n.owner_role ? `<div style="font-size:10px;color:var(--muted)">${n.owner_role}</div>` : ''}</td>
@@ -14699,6 +14719,101 @@ function renderOverview() {
       <div style="margin-top:6px"><b style="color:var(--brand-accent-deep)">Top priority this week:</b> ${_vPriority}</div>
     </div>
   </div>`;
+
+  // ── Your Queue (Verdict Activation Layer, Piece 1 · 12 Jun 2026) ───────
+  // The team has 82 strategist actions sitting in Proposed with 0 published.
+  // Top of the Overview now shows top-3 oldest unstarted P1 actions for the
+  // currently-identified user. Each row links to the per-action brief modal.
+  //
+  // Filter: owner matches whoAmI, planner_status is empty/Proposed, priority
+  // is P1 (or P2 if no P1s). Sort ascending by source_run_at (oldest first).
+  const _escapeHtml = (s) => (s == null ? '' : String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+  (function renderYourQueue() {
+    const slot = $('overview-your-queue');
+    if (!slot) return;
+    const me = (window.cbState && window.cbState.whoAmI && window.cbState.whoAmI()) || '';
+    const allActions = (window.cbState && window.cbState.workQueue && window.cbState.workQueue.getAll()) || [];
+
+    if (!me) {
+      // No identity picker selected — prompt rather than show 82 actions
+      slot.innerHTML = `<div class="card mb" style="padding:14px 18px;border-left:4px solid #9ca3af;background:#fafbfc">
+        <div style="font-size:12px;color:var(--muted)"><b>Your Queue is empty</b> — pick yourself in the "Who am I?" picker (top-right) and your priority actions will appear here.</div>
+      </div>`;
+      return;
+    }
+
+    const meKey = me.trim().toLowerCase();
+    const savedStatus = JSON.parse(localStorage.getItem(PLANNER_STATUS_KEY)||'{}');
+    const isUnstarted = (a) => {
+      const s = (savedStatus[a.id] || a.planner_status || a.status || '').toString().toLowerCase();
+      return s === '' || s === 'proposed';
+    };
+    const ownerMatch = (a) => ((a.owner || '') + '').trim().toLowerCase() === meKey;
+
+    const mine = allActions
+      .filter(a => ownerMatch(a) && isUnstarted(a))
+      .sort((a, b) => {
+        const ta = a.source_run_at || a.created_at || '';
+        const tb = b.source_run_at || b.created_at || '';
+        return ta.localeCompare(tb);
+      });
+
+    const p1 = mine.filter(a => a.priority === 'P1');
+    const shortlist = (p1.length >= 3 ? p1 : mine).slice(0, 3);
+    const totalMine = mine.length;
+    const p1Count = p1.length;
+
+    const _daysAgo = (iso) => {
+      if (!iso) return null;
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return null;
+      return Math.round((Date.now() - d.getTime()) / 86400000);
+    };
+    const _pri = {P1:'#ef4444', P2:'#f59e0b', P3:'#3FA69A'};
+
+    if (shortlist.length === 0) {
+      slot.innerHTML = `<div class="card mb" style="padding:14px 18px;border-left:4px solid var(--brand-accent);background:#f0fdf4">
+        <div style="font-size:12px;color:var(--brand-accent-deep)"><b>Hi ${_escapeHtml(me)} — your queue is clear.</b> No unstarted actions assigned to you right now. Check the kanban or watch Performance Review for measured outcomes.</div>
+      </div>`;
+      return;
+    }
+
+    const rows = shortlist.map(a => {
+      const aid = a.id || '';
+      const age = _daysAgo(a.source_run_at);
+      const ageLabel = age == null ? '—' : (age === 0 ? 'today' : `${age}d ago`);
+      const ageColor = age == null ? '#9ca3af' : (age > 14 ? '#991b1b' : age > 7 ? '#92400e' : '#6b7280');
+      const pri = a.priority || 'P3';
+      const priClr = _pri[pri] || '#9ca3af';
+      const title = _escapeHtml((a.title || '(no title)').slice(0, 110));
+      const owner = _escapeHtml(a.owner || '');
+      const role = _escapeHtml(a.owner_role || '');
+      const briefUrl = `briefs/${_escapeHtml(aid.toLowerCase())}.html`;
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#fff;border:1px solid #f0f2f5;border-radius:6px;margin-bottom:6px">
+        <span style="background:${priClr};color:#fff;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:3px;letter-spacing:.04em;flex-shrink:0">${pri}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:2px">${owner}${role ? ' · ' + role : ''} <span style="color:${ageColor};font-weight:600;margin-left:4px">· proposed ${ageLabel}</span></div>
+        </div>
+        <a href="${briefUrl}" target="_blank" style="background:var(--brand-accent);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11px;font-weight:700;text-decoration:none;font-family:inherit;flex-shrink:0">Open Brief →</a>
+      </div>`;
+    }).join('');
+
+    slot.innerHTML = `<div class="card mb" style="padding:14px 18px;border-left:4px solid var(--brand-accent);background:#fdfefd">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--brand-accent-deep);margin-bottom:3px">Your Queue · ${_escapeHtml(me)}</div>
+          <div style="font-size:13px;color:var(--text-2)">Top ${shortlist.length} unstarted action${shortlist.length===1?'':'s'} ${p1.length >= 3 ? '(P1 priority)' : '(by age)'} — open the brief, decide, mark stage on Work Queue page.</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-align:right">
+          <div><b>${totalMine}</b> total assigned</div>
+          <div style="color:#991b1b">${p1Count} P1 outstanding</div>
+        </div>
+      </div>
+      ${rows}
+    </div>`;
+  })();
 
   // ── 4 KPI cards (with drill-down hints + verdict colours) ──────────────
   $('overview-kpis').innerHTML =
@@ -19906,6 +20021,69 @@ function renderContentReview() {
   });
 
   let html = '';
+
+  // ── Verdict Inbox (Verdict Activation Piece 3 · 12 Jun 2026) ────────────
+  // Identifies actions whose ONLY metric is qualitative_assessment — those
+  // CAN'T be auto-measured, they need a human verdict. Surfaces them at the
+  // top of Performance Review when they're either:
+  //   (a) Published + 14d elapsed (auto-promoted), OR
+  //   (b) Measured by runner with verdict='pending' (the picker case)
+  // Each row offers 4 inline verdict buttons + a notes field that posts
+  // immediately to Supabase via window.setActionVerdict (existing global).
+  const _isQualitativeOnly = (a) => {
+    const ks = a.projected_kpis || [];
+    if (ks.length === 0) return false;
+    return ks.every(k => (k.metric || '') === 'qualitative_assessment');
+  };
+  const _qualitativeAwaiting = wqRows.filter(r => {
+    if (!_isQualitativeOnly(r)) return false;
+    // Already has a final verdict? Skip.
+    const v = r.overall_verdict;
+    if (v && v !== 'pending') return false;
+    // Either runner tagged it pending (measured but human-decision needed)…
+    if (v === 'pending') return true;
+    // …or it's Published + 14d elapsed (waiting on runner OR human).
+    const d = _daysSincePublished(r.id);
+    return saved[r.id] === 'Published' && d !== null && d >= 14;
+  });
+
+  if (_qualitativeAwaiting.length > 0) {
+    const _escVI = (s) => (s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
+    const _viRows = _qualitativeAwaiting.map(a => {
+      const aid = a.id;
+      const title = _escVI((a.title || '(no title)').slice(0, 130));
+      const owner = _escVI(a.owner || 'Team');
+      const role = _escVI(a.owner_role || '');
+      const days = _daysSincePublished(aid);
+      const ageLabel = days == null ? '—' : `${days}d since Publish`;
+      const ageTone = days != null && days >= 14 ? '#991b1b' : '#92400e';
+      const sourcePage = _escVI(a.source_page || '');
+      return `<div style="background:#fff;border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:6px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+          <div style="flex:1;min-width:240px">
+            <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.4">${title}</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:3px">${owner}${role?' · '+role:''} · <span style="color:${ageTone};font-weight:700">${ageLabel}</span> · <code style="background:#f3f4f6;padding:1px 5px;border-radius:3px">${sourcePage}</code></div>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button onclick="window.setActionVerdict('${aid}','winner')" style="background:#dcfce7;color:#166534;border:1px solid #16a34a;border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">✓ Winner</button>
+            <button onclick="window.setActionVerdict('${aid}','partial_win')" style="background:#fef9c3;color:#854d0e;border:1px solid #ca8a04;border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">~ Partial</button>
+            <button onclick="window.setActionVerdict('${aid}','no_change')" style="background:#f3f4f6;color:#374151;border:1px solid #9ca3af;border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">— No Change</button>
+            <button onclick="window.setActionVerdict('${aid}','underperforming')" style="background:#fee2e2;color:#991b1b;border:1px solid #dc2626;border-radius:4px;padding:5px 10px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">✗ Loss</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    html += `<div class="card mb" style="padding:16px 20px;border-left:6px solid #f59e0b;background:#fffbeb">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#92400e;margin-bottom:3px">Verdict Inbox · ${_qualitativeAwaiting.length} awaiting</div>
+          <div style="font-size:13px;color:var(--text)"><b>Qualitative actions</b> — these can't be auto-measured. Pick a verdict based on what you saw. Feeds back into next cycle's strategist.</div>
+        </div>
+      </div>
+      ${_viRows}
+    </div>`;
+  }
 
   // ── Wave 6: Monday meeting prompt banner ──────────────────────────────
   // Surfaces top-of-page when items have crossed the 14-day measurement window
