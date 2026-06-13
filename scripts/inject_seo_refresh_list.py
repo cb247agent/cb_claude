@@ -59,10 +59,16 @@ def inject() -> None:
         )
         action = "replaced"
     else:
-        # Insert just before </body> for predictable load order
-        if "</body>" in html:
-            updated = html.replace("</body>", new_block + "\n</body>")
-            action = "inserted"
+        # 13 Jun 2026 — Tia bug fix: the brief renderer JS includes a
+        # template literal containing the literal string `</body>` (the
+        # brief opens as a full HTML doc in a blob:// tab). Using
+        # str.replace("</body>", ...) hits the FIRST occurrence, which is
+        # INSIDE that template literal — corrupting the whole dashboard JS.
+        # Use rfind() to splice at the file's ACTUAL closing </body>.
+        idx = html.rfind("</body>")
+        if idx >= 0:
+            updated = html[:idx] + new_block + "\n" + html[idx:]
+            action = "inserted (at rightmost </body>)"
         else:
             updated = html + "\n" + new_block
             action = "appended"
