@@ -42,12 +42,14 @@ CONTENT_DIRS = [
     ("blogs",          "blog"),
     ("landing-pages",  "landing_page"),
     ("service-pages",  "service_page"),
+    ("seo-refreshes",  "seo_refresh"),    # 13 Jun 2026 — Path D: AI-drafted H1/title/FAQ/internal-link refresh for existing pages
 ]
 
 TAG_LABEL = {
     "blog":         "Blog Draft",
     "landing_page": "Landing Page Draft",
     "service_page": "Service Page Draft",
+    "seo_refresh":  "SEO Refresh Draft",
 }
 
 # Re-use the playbook renderer's markdown engine

@@ -24,7 +24,7 @@ name: membership-strategist
 # is strategic reasoning over raw signals (per-club deltas, capture-rate
 # gaps), not narrative on pre-aggregated context. Same precedent as
 # seo / google-ads / meta strategists.
-tools: Read(state/membership-data.json), Read(state/membership-history.json), Read(state/promo-pipeline.json), Read(state/work-queue.json), Read(context/brand-voice.md), Read(context/seasonal-calendar.md)
+tools: Read(state/membership-data.json), Read(state/membership-history.json), Read(state/promo-pipeline.json), Read(state/work-queue.json), Read(context/brand-voice.md), Read(context/seasonal-calendar.md), Read(context/team-workflow-mapping.md)
 
 context:
   - state/membership-data.json     # this week + per-club + cleverwaiver + addons
@@ -33,6 +33,7 @@ context:
   - state/work-queue.json          # past membership actions (avoid duplicate emits)
   - context/brand-voice.md
   - context/seasonal-calendar.md
+  - context/team-workflow-mapping.md  # 13 Jun 2026 — canonical owner-by-step mapping. MUST follow.
 
 Inputs:
   save_call_capture_target_pct: 70    # Cleverwaiver target — below this triggers SAVE archetype
@@ -162,14 +163,50 @@ Workflow:
                        reactivations count as new signups in the system).
 
       RULES (CRITICAL):
+
+      ATOMIC DECOMPOSITION (13 Jun 2026 — Tia mandate):
+      Each archetype above is a GOAL, not an action. Decompose every
+      goal into 2-4 ATOMIC ACTIONS — one action per workflow step,
+      ONE OWNER per action. Read context/team-workflow-mapping.md for
+      the canonical owner table.
+
+      Decomposition rules:
+      - NEW asset capture (photo/video) → Shauna (Asset Creator).
+        SKIP this step if existing assets in Asset Library work.
+      - Draft copy (Story script, EDM, Reception talking point, blog,
+        landing page) → AI / content-writer agent. DO NOT EMIT as a
+        human action. Path C auto-drafts via phase1c.
+      - QC the AI draft (brand voice, compliance check) → Angela
+        (Brand Manager). Angela does NOT write — she reviews + approves.
+      - Schedule + post (IG/FB/TikTok) → Joanne (Organic Social).
+      - Send EDM / SMS → Joanne (Organic Social).
+      - Webflow page edit (H1, meta, FAQ, internal links) → John
+        (SEO / Web). John pastes the AI draft.
+      - Reception briefing (Monday huddle, print talking points) →
+        Angela (Brand Manager).
+      - Paid Meta ad → Joanne (Meta Ads Specialist).
+      - Paid Google Ads → Tia (OS Owner / Paid Ads).
+      - PGM tracking + verdict → Tia (OS Owner).
+
+      Group all atomic actions of one goal with a shared title prefix:
+        "Recovery push: Shoot Sauna + Ice Bath assets"     (Shauna)
+        "Recovery push: QC Story arc + Reception talking point" (Angela)
+        "Recovery push: Schedule + post IG Story Tues + Thurs"  (Joanne)
+        "Recovery push: Print + brief Reception in Monday huddle" (Angela)
+
+      Add a "parent_goal" field to each atomic action so the dashboard
+      can group them visually (e.g., parent_goal="Recovery push").
+
       - category: "membership" always (extractor maps to source_page)
       - title MUST start with an Ops verb (Run / Brief / Refresh /
-        Push / Extend / Reactivate / Train) — the dashboard classifier
-        puts ops verbs into the Ops list.
+        Push / Extend / Reactivate / Train / Shoot / QC / Schedule /
+        Print) — the dashboard classifier puts ops verbs into the Ops
+        list.
       - owner_role: ALWAYS one of "Brand Manager" (Angela), "Meta Ads
-        Specialist" / "Organic Social" / "QA Specialist" (Joanne),
-        "OS Owner" / "OS Owner / Paid Ads" (Tia), or "SEO Specialist"
-        (John). NEVER use bare role labels — always pair with a name.
+        Specialist" / "Organic Social" (Joanne), "OS Owner" / "OS Owner
+        / Paid Ads" (Tia), "SEO Specialist" / "SEO / Web" (John), or
+        "Asset Creator" (Shauna). NEVER use bare role labels — always
+        pair with a name. NEVER assign multiple owners to one action.
       - priority: P1 if revenue-immediate (negative net week, capture
         rate gap, accelerating promo to extend), P2 if WoW trend, P3
         if cosmetic / steady state.

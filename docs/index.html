@@ -18747,6 +18747,22 @@ function _renderProposedActionBriefHTML(row) {
   // Rewrite content URLs in description so they survive the blob:// context
   desc = desc.replace(/outputs\/(blogs|landing-pages|service-pages)\/([\w\-.]+)\.md/gi, `${baseHref}$1/$2.html`);
 
+  // 13 Jun 2026 — Path D: surface AI-drafted SEO refresh content (new H1, meta,
+  // FAQs, internal link table) for SEO refresh actions. Detected by action.id
+  // matching SEO refresh emitter patterns (opp-act-*, seo-act-*) AND a draft
+  // file existing at outputs/seo-refreshes/{action.id}.md. Surfaced as
+  // "View AI Draft → " button so John copies the H1/title/FAQ directly into
+  // Webflow without writing anything.
+  let attachedSeoRefreshHTML = '';
+  const _seoRefreshId = String(row.id || '');
+  if (/^(opp-act|seo-act)-/i.test(_seoRefreshId)) {
+    const _srUrl = baseHref + `seo-refreshes/${_seoRefreshId}.html`;
+    attachedSeoRefreshHTML =
+      `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">AI-drafted SEO refresh · ready to paste into Webflow</div>` +
+      `<a href="${esc(_srUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">View AI Draft →</a>` +
+      `<div style="font-size:11px;color:#6b7280;margin-top:8px">Contains ready-to-paste new H1, meta title, meta description, FAQs, and internal link table. John opens Webflow → pastes → publishes. No writing needed. If the page 404s, the seo-refresh-drafter agent hasn't generated it yet — source will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/seo-refreshes/${esc(_seoRefreshId)}.md</code> after Monday's run.</div></div>`;
+  }
+
   // 13 Jun 2026 — Path B: surface any outputs/media-plans/*.md reference as a
   // prominent "View the media plan" button. Pairs with campaign-launch-strategist
   // (phase1b_promo_launch.sh) + render_media_plan_html.py. Surfaces the full
@@ -19032,6 +19048,7 @@ ${effort ? `<span class="meta-chip" style="background:#f3f4f6;color:#374151">Eff
 </div>
 ${attachedListHTML}
 ${attachedPlaybookHTML}
+${attachedSeoRefreshHTML}
 ${attachedDraftHTML}
 ${attachedMediaPlanHTML}
 ${attachedContentHTML}
