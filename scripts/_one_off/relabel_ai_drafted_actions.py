@@ -116,14 +116,17 @@ def main() -> int:
         print("[relabel] No changes — work-queue.json untouched")
         return 0
 
-    # Persist
+    # Persist — BUG fix 13 Jun 2026: state/work-queue.json carries BOTH
+    # "items" and "actions" lists (historical schema duplication). The
+    # sync_to_supabase.py reads from "actions". The original write logic
+    # used elif which only updated one key — leaving Supabase stale.
+    # Now we update EVERY list key that's present in the source dict.
     if isinstance(raw, list):
         WORK_QUEUE.write_text(json.dumps(items, indent=2))
     else:
-        if "items" in raw:
-            raw["items"] = items
-        elif "actions" in raw:
-            raw["actions"] = items
+        for k in ("items", "actions"):
+            if k in raw:
+                raw[k] = items
         WORK_QUEUE.write_text(json.dumps(raw, indent=2))
 
     print(f"[relabel] Wrote state/work-queue.json — run scripts/work_queue/sync_to_supabase.py next")
