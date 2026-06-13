@@ -171,6 +171,13 @@ log "Step 3 — Render content .md → docs/{blogs,landing-pages,service-pages,s
 "$PYTHON" "$BASE_DIR/scripts/render_content_html.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Content HTML rendering had issues — check $LOG"
 
+# ── Inject the list of available SEO refresh drafts into the dashboard ──
+# Brief renderer reads window.AI_SEO_REFRESHES; only shows "View AI Draft"
+# button when the slug is in this list. Avoids broken-link buttons.
+log "Step 3b — Inject available SEO refresh slugs → docs/index.html..."
+"$PYTHON" "$BASE_DIR/scripts/inject_seo_refresh_list.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  SEO refresh list injection had issues — check $LOG"
+
 # ── Sync new follow-up actions to Supabase ──
 log "Step 4 — Sync Work Queue → Supabase..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/sync_to_supabase.py" >> "$LOG" 2>&1 \
