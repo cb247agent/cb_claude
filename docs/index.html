@@ -18537,6 +18537,59 @@ function _renderProposedActionBriefHTML(row) {
   // Trusted-input pattern: all action sources are internal (strategist
   // YAMLs + dashboard hand-coded actions).
   const rawDescStr = String(row.description || '(No description)');
+  // 13 Jun 2026 (Tia request) — Convert long-prose Instructions into a
+  // scannable bullet list across ALL channels (was previously just a
+  // dense paragraph). Strategy:
+  //   1. If "EXECUTION STEPS:" marker present → split intro from steps,
+  //      bullet the steps.
+  //   2. If text has numbered patterns like "(1)" / "1." / "Step 1." →
+  //      split on those + bullet each.
+  //   3. Otherwise → split on sentence boundaries (".  Capital" or
+  //      ". Capital") and bullet each.
+  //   4. Skip bulletification if the text is already short (≤1 sentence)
+  //      or if it already starts with a bullet marker.
+  // Returns HTML — either a <ul><li>...</li></ul> block or the raw text.
+  const _bulletifyInstructions = (raw) => {
+    if (!raw || typeof raw !== 'string') return raw || '';
+    let txt = raw.trim();
+    if (txt.length === 0) return '';
+    // Already bulleted? Pass through.
+    if (/^\s*[•\-\*]/.test(txt) || /<ul[>\s]/i.test(txt) || /<ol[>\s]/i.test(txt)) {
+      return txt.replace(/\n/g, '<br>');
+    }
+    // Pull EXECUTION STEPS marker out as intro + steps.
+    let intro = '';
+    const stepsIdx = txt.search(/\bEXECUTION\s+STEPS?\s*:/i);
+    let stepsText = txt;
+    if (stepsIdx >= 0) {
+      intro = txt.slice(0, stepsIdx).trim();
+      stepsText = txt.slice(stepsIdx).replace(/^\s*EXECUTION\s+STEPS?\s*:\s*/i, '');
+    }
+    // Split into items. Try numbered first, then sentence-split.
+    let items = [];
+    // Pattern 1: explicit numbering "(1)" / "(2)" / "1." / "2." / "Step 1." / "Step 2."
+    const numberedRe = /(?:^|\s)(?:\(\d+\)|(?:Step\s+)?\d+\.)\s+/g;
+    if (numberedRe.test(stepsText)) {
+      // Reset regex (it has the global flag) and split
+      stepsText.search(numberedRe); // reset state
+      items = stepsText.split(/(?:^|\s)(?:\(\d+\)|(?:Step\s+)?\d+\.)\s+/).map(s => s.trim()).filter(Boolean);
+    } else {
+      // Pattern 2: sentence boundaries — ". " followed by capital letter.
+      // Don't split on common abbreviations (e.g., "Mr. ", "Dr. ", "U.S. ", "$11.95/wk").
+      items = stepsText
+        .split(/(?<=[.!?])\s+(?=[A-Z])/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+    // Floor: at least 2 items justifies bulletification.
+    if (items.length < 2) {
+      return (intro ? intro + '<br><br>' : '') + stepsText.replace(/\n/g, '<br>');
+    }
+    const listItems = items.map(s => `<li style="margin-bottom:8px;line-height:1.6">${s.replace(/\n/g, '<br>')}</li>`).join('');
+    const introHTML = intro ? `<div style="margin-bottom:10px;line-height:1.7">${intro.replace(/\n/g, '<br>')}</div>` : '';
+    return introHTML + `<ul style="margin:0 0 4px 0;padding-left:20px">${listItems}</ul>`;
+  };
+
   // 12 Jun 2026 — blob:// fix: relative <a href="lists/..."> and
   // outputs/playbooks/X.md references inside the description break inside
   // a blob URL. Rewrite to absolute URLs using baseHref (defined below).
@@ -18728,7 +18781,7 @@ function _renderProposedActionBriefHTML(row) {
             { do: 'Click the "View the blog/landing page/service page draft" button above. Read the full draft.', where: 'The draft was written by AI and lives at outputs/blogs/X.md (linked in the brief)' },
             { do: 'Make any tweaks — fix awkward sentences, swap a word, adjust a CTA. Edit the .md file directly OR copy-paste into your editor.', where: 'Aim for 5-15 min of polish, not a rewrite. AI did the bulk work.' },
             { do: 'Brand Manager (Angela) reads it for compliance: no competitor names, no "only gym with", $11.95/wk anchor present, paid add-ons not bundled.', where: 'If anything fails compliance, fix it before publish' },
-            { do: 'Open your CMS (WordPress / hosting platform). Create the new page at the publish_url from the YAML frontmatter (e.g. /blog/X).', where: 'Paste the H1, body markdown, meta description from the SEO METADATA block in the draft' },
+            { do: 'Open your CMS (Webflow). Create the new page at the publish_url from the YAML frontmatter (e.g. /blog/X).', where: 'Paste the H1, body markdown, meta description from the SEO METADATA block in the draft' },
             { do: 'Hit Publish. Then go to Google Search Console → URL inspection → paste the new URL → Request indexing.', where: 'search.google.com/search-console — usually indexes within 24-48h' },
             { do: 'Back in this dashboard: click this action card → set status to "Done". Come back in 4 weeks to check if Google clicks went up.', where: 'The dashboard will remind you at day 28 — no need to track manually' },
           ];
@@ -18738,7 +18791,7 @@ function _renderProposedActionBriefHTML(row) {
           // 15-60 minute CMS edit
           return [
             { do: 'Read the Instructions below. They tell you EXACTLY what to change and where.', where: 'The instructions are written for this specific page — follow them literally' },
-            { do: 'Open your CMS (WordPress / hosting platform) and navigate to the page in the action title.', where: 'Action title format is "Add/Fix/Update [thing] to [/page-url]"' },
+            { do: 'Open your CMS (Webflow) and navigate to the page in the action title.', where: 'Action title format is "Add/Fix/Update [thing] to [/page-url]"' },
             { do: 'Make the exact change in the Instructions: add the H1, fix the meta description, insert the schema, etc.', where: 'If the Instructions say "Add H1: \'Kids Hub — Gym Childcare in Malaga\'", copy that EXACT text — don\'t rewrite it' },
             { do: 'Save the change. Open the live page in a private/incognito tab. Verify the change is visible.', where: 'Right-click → View Page Source if you need to confirm the H1 tag landed correctly' },
             { do: 'Open Google Search Console → URL inspection → paste the page URL → Request indexing so Google re-crawls it.', where: 'search.google.com/search-console — speeds up Google noticing the change from ~7 days to ~1-2 days' },
@@ -18927,7 +18980,7 @@ ${attachedDraftHTML}
 ${attachedMediaPlanHTML}
 ${attachedContentHTML}
 ${deliverableHTML}
-<div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
+<div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${_bulletifyInstructions(desc)}</div></div>
 ${executionStepsHTML}
 <div class="section"><div class="label">Primary Projected KPI</div><div class="caption-box">${captionHTML}</div></div>
 ${allKpisHTML}
