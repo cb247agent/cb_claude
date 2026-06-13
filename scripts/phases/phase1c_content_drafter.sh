@@ -250,6 +250,60 @@ Then output a SHORT stdout summary." \
     log "  Processed $paid_count paid ad action(s)."
 fi
 
+# ── Step 2d — Path E · GBP Post Drafter (13 Jun 2026) ──────────────────
+# Fires gbp-post-drafter for every NEW-POST GBP action (Post / Create /
+# Write / Draft / Launch / Publish). Skips operational actions like
+# "Refresh photos" / "Drive reviews" / "Respond to reviews" — those need
+# different artefacts. Output → outputs/gbp-posts/{slug}.md → "View GBP
+# Post Draft → " button. Tia opens GBP Manager → pastes → publishes.
+mkdir -p "$OUTPUTS/gbp-posts" "$BASE_DIR/docs/gbp-posts"
+log "Step 2d — Path E · GBP Post Drafter..."
+
+GBP_TARGETS=$("$PYTHON" "$BASE_DIR/scripts/work_queue/find_pending_gbp_posts.py" 2>>"$LOG" || true)
+
+if [[ -z "$GBP_TARGETS" ]]; then
+    log "  No GBP post actions pending a draft. Skipping."
+else
+    gbp_count=0
+    while IFS='|' read -r ACTION_ID SLUG; do
+        [[ -z "$ACTION_ID" ]] && continue
+        gbp_count=$((gbp_count + 1))
+        log "  → ${ACTION_ID} (gbp, slug=${SLUG}) — firing gbp-post-drafter..."
+
+        OUT_PATH="$OUTPUTS/gbp-posts/gbp-post-drafter-${ACTION_ID}-${DATE}.md"
+
+        run_agent "gbp-post-drafter" \
+"You are the CB247 GBP Post Drafter. Today is $DATE.
+
+Your job: draft the FULL GBP post (post type, 2 body variations, CTA
+button + URL, image brief, per-location guidance) for action '$ACTION_ID'
+so Tia can paste straight into GBP Manager — NO writing.
+
+The action is in state/work-queue.json. Inputs.target_action_id is
+'$ACTION_ID'. Follow agents/gbp-post-drafter.yml's Workflow exactly.
+
+Output file: outputs/gbp-posts/${SLUG}.md
+
+Brand compliance is MANDATORY:
+- \$11.95/wk anchor, no lock-in
+- NEVER name Revo / Anytime / Snap / Ryderwear / Fitstop
+- NEVER use 'only gym with', 'best gym', 'burns fat', 'heals', 'cures',
+  'detox', 'guaranteed'
+- Recovery / Reformer / ChasingRX are PAID add-ons, NEVER bundled in \$11.95
+- Per-location: separate posts for Malaga vs Ellenbrook, NEVER cross-post
+  identical body (Google flags duplicates)
+
+CRITICAL: Do NOT emit a proposed_actions JSON block.
+
+Then output a SHORT stdout summary." \
+            "$OUT_PATH" \
+            "Read(state/work-queue.json),Read(state/gbp-data.json),Read(state/gbp-performance.json),Read(state/promo-pipeline.json),Read(state/membership-data.json),Read(context/brand-voice.md),Read(context/icp-profiles.md),Read(context/seasonal-calendar.md),Read(context/team-workflow-mapping.md),Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/CB247-Knowledge-Base.md),Write(outputs/gbp-posts/**)" \
+            "$MODEL_SONNET"
+
+    done <<< "$GBP_TARGETS"
+    log "  Processed $gbp_count GBP post action(s)."
+fi
+
 # ── Render markdown → HTML so team can preview ──
 log "Step 3 — Render content .md → docs/{blogs,landing-pages,service-pages,seo-refreshes,meta-ads,google-ads-rsa}/*.html..."
 "$PYTHON" "$BASE_DIR/scripts/render_content_html.py" >> "$LOG" 2>&1 \
