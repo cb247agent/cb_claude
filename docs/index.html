@@ -14297,6 +14297,30 @@ function _renderActionList(actions, opts = {}) {
   } catch { _statusByItem = {}; }
   const _isDoneStatus = (s) => s === 'Published' || s === 'Scheduled' || s === 'Rejected';
   actions = actions.filter(a => !_isDoneStatus(_statusByItem[a.id]));
+
+  // 13 Jun 2026 (Path C) — Filter out AI-owned actions from the human
+  // prioritised list. Tia's principle: "agentic AI = ready action. Human
+  // role = review + tweak + approve." When seo-strategist proposes
+  // "Build blog: X" with owner=AI, that's a directive to the content-
+  // writer agent (Path C), not to the human team. content-writer runs
+  // weekly on phase1c, drafts the content, and emits a follow-up
+  // "Review + publish blog: X" action assigned to John + Angela — that
+  // follow-up DOES belong on the human list.
+  //
+  // Detection: owner is literally "AI" OR owner_role contains the word
+  // "Content Agent" / "AI" / "Writer" (defensive — agents have varied
+  // historically). Visible to humans only if they explicitly toggle the
+  // hidden "Show AI-owned" filter (not built yet — flag here as future
+  // affordance if needed).
+  const _isAiOwned = (a) => {
+    const owner = (a.owner || '').trim();
+    const role  = (a.owner_role || '').trim();
+    if (owner === 'AI') return true;
+    if (/\b(AI|Content Agent|Content Writer)\b/i.test(role)) return true;
+    return false;
+  };
+  actions = actions.filter(a => !_isAiOwned(a));
+
   if (actions.length === 0) return '';
 
   // 12 Jun 2026 — Tia: "prioritised actions must be short by priority
@@ -18593,6 +18617,27 @@ function _renderProposedActionBriefHTML(row) {
       `<div style="font-size:11px;color:#6b7280;margin-top:8px">Pre-written by AI. Your job: read, tweak, approve, send. If the page 404s, the deliverable-drafter agent hasn't run yet (Mondays) — source will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/drafts/${esc(_dSlug)}.md</code> after the run.</div></div>`;
   }
 
+  // 13 Jun 2026 — Path C: surface any outputs/{blogs,landing-pages,service-pages}/*.md
+  // reference as a "View the draft" button. Pairs with content-writer agent +
+  // render_content_html.py. Auto-labels by source folder.
+  let attachedContentHTML = '';
+  const _contentMatch = rawDescStr.match(/outputs\/(blogs|landing-pages|service-pages)\/([\w\-.]+)\.md/i);
+  if (_contentMatch) {
+    const _cFolder = _contentMatch[1];
+    const _cSlug = _contentMatch[2];
+    const _cUrl = baseHref + `${_cFolder}/${_cSlug}.html`;
+    const _cLabel = _cFolder === 'blogs' ? 'View the blog draft'
+                  : _cFolder === 'landing-pages' ? 'View the landing page draft'
+                  : 'View the service page draft';
+    attachedContentHTML =
+      `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Attached content draft · ready for QC</div>` +
+      `<a href="${esc(_cUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">${_cLabel} →</a>` +
+      `<div style="font-size:11px;color:#6b7280;margin-top:8px">AI-drafted by content-writer. John QCs SEO structure (H1, schema, internal links, meta); Angela QCs brand voice + compliance. If the page 404s, the content-writer agent hasn't run yet — source will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/${esc(_cFolder)}/${esc(_cSlug)}.md</code> after the run.</div></div>`;
+  }
+
+  // Rewrite content URLs in description so they survive the blob:// context
+  desc = desc.replace(/outputs\/(blogs|landing-pages|service-pages)\/([\w\-.]+)\.md/gi, `${baseHref}$1/$2.html`);
+
   // 13 Jun 2026 — Path B: surface any outputs/media-plans/*.md reference as a
   // prominent "View the media plan" button. Pairs with campaign-launch-strategist
   // (phase1b_promo_launch.sh) + render_media_plan_html.py. Surfaces the full
@@ -18806,6 +18851,7 @@ ${attachedListHTML}
 ${attachedPlaybookHTML}
 ${attachedDraftHTML}
 ${attachedMediaPlanHTML}
+${attachedContentHTML}
 ${deliverableHTML}
 <div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
 ${executionStepsHTML}
