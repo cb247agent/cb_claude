@@ -306,14 +306,16 @@ Workflow:
 
         - id: promo-{fmt[:3]}-act-{week_iso}-{serial} (deterministic)
         - title: "{verb} {n}× {fmt} for '{concept_label}'"
-          where verb is from this map:
-            edm_assets       → "Draft + send"
-            sms              → "Draft + send"
-            reels            → "Capture + post"
-            stories          → "Capture + post"
-            landing_page     → "Build + publish"
-            save_call_script → "Write + train team"
-            meta_ad          → "Draft + launch"
+          where verb is from this map (updated 13 Jun 2026 to reflect that
+          AI now drafts the copy via deliverable-drafter + playbook-writer +
+          campaign-launch-strategist — humans review, don't draft from scratch):
+            edm_assets       → "Review + send"           # AI drafts body via deliverable-drafter
+            sms              → "Review + send"           # AI drafts variants
+            reels            → "Caption-review + capture + post"  # AI drafts caption, Shauna shoots video
+            stories          → "Caption-review + capture + post"  # AI drafts caption, Shauna shoots
+            landing_page     → "Build + publish"         # UNCHANGED — John writes the page content
+            save_call_script → "Review + train team"     # AI drafts playbook via playbook-writer
+            meta_ad          → "Review + launch"         # AI drafts copy + media plan
         - description: 200-400 chars, INCLUDING the draft path for AI-
           drafted deliverables (CRITICAL — solves the EDM-link bug):
 
