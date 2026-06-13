@@ -18710,19 +18710,93 @@ function _renderProposedActionBriefHTML(row) {
         { do: 'Reception logs every outcome in PGM with both the outcome tag and the reason tag (playbook §6).', where: 'SAVE-DONTQUIT-2026-{FREEZE,RETAINED,LOST-CONFIRMED,LOST-NOCONTACT} + REASON-*' },
         { do: 'Friday 16:00 — pull the save-rate report. Post the headline in the team channel: "Week N: X reached, Y saved, Z rate."', where: 'Verdict will auto-prompt in 14 days based on the live save-rate KPI on the Membership page' },
       ],
-      'seo-organic': [
-        { do: 'Brief John (SEO Specialist) with this action. Forward the Instructions section + projected KPI.', where: 'John owns the build — Brand Manager owns the copy QC before publish' },
-        { do: 'John builds the page in the CMS (WordPress / hosting platform), pulls headline + body + meta from this brief.', where: 'Use the SEO content brief if attached; otherwise John follows the standard hub-page template' },
-        { do: 'Angela (Brand Manager) reviews the draft for brand voice + compliance BEFORE publish.', where: 'No competitor names, no "only gym with", $11.95/wk anchor, paid add-ons never bundled' },
-        { do: 'Publish + submit URL to Google Search Console for indexing.', where: 'search.google.com/search-console → URL inspection → Request indexing' },
-        { do: 'Return to dashboard, mark "Approved → Done". Verdict prompted at 28 days based on gsc_clicks_weekly.', where: 'GSC click target is the verdict measurement — usually +50% over baseline' },
-      ],
-      'seo': [
-        { do: 'Brief John (SEO Specialist) with this action. Forward the Instructions section.', where: 'John owns the build' },
-        { do: 'Follow the SEO content/audit brief in the Instructions.', where: 'Action might be a hub page, blog post, technical fix, or audit follow-up' },
-        { do: 'Angela QC + publish + submit to GSC for indexing.', where: 'search.google.com/search-console → URL inspection → Request indexing' },
-        { do: 'Mark "Approved → Done". Verdict in 28d based on gsc_clicks_weekly or seo_keyword_count_ranked.', where: '' },
-      ],
+      'seo-organic': (() => {
+        // 13 Jun 2026 — Tia: SEO steps were jargon-heavy and confusing.
+        // Detect the verb in the title and surface action-specific steps
+        // instead of one generic template. Big buckets:
+        //   ADD / FIX / UPDATE  → quick CMS edit (~15-60 min)
+        //   BUILD               → full page build (hours)
+        //   REVIEW + PUBLISH    → take AI-drafted content, review, publish
+        const t = (titleStr || '').toLowerCase();
+        const isQuickFix = /\b(add|fix|update|edit|optimise|optimize|insert|repair|patch|tweak|refresh)\b/.test(t.split(':')[0] || t);
+        const isBuild    = /\bbuild\b/.test(t);
+        const isReview   = /\breview\b.*\b(publish|send)\b/.test(t);
+
+        if (isReview) {
+          // AI already drafted → human just QCs + publishes
+          return [
+            { do: 'Click the "View the blog/landing page/service page draft" button above. Read the full draft.', where: 'The draft was written by AI and lives at outputs/blogs/X.md (linked in the brief)' },
+            { do: 'Make any tweaks — fix awkward sentences, swap a word, adjust a CTA. Edit the .md file directly OR copy-paste into your editor.', where: 'Aim for 5-15 min of polish, not a rewrite. AI did the bulk work.' },
+            { do: 'Brand Manager (Angela) reads it for compliance: no competitor names, no "only gym with", $11.95/wk anchor present, paid add-ons not bundled.', where: 'If anything fails compliance, fix it before publish' },
+            { do: 'Open your CMS (WordPress / hosting platform). Create the new page at the publish_url from the YAML frontmatter (e.g. /blog/X).', where: 'Paste the H1, body markdown, meta description from the SEO METADATA block in the draft' },
+            { do: 'Hit Publish. Then go to Google Search Console → URL inspection → paste the new URL → Request indexing.', where: 'search.google.com/search-console — usually indexes within 24-48h' },
+            { do: 'Back in this dashboard: click this action card → set status to "Done". Come back in 4 weeks to check if Google clicks went up.', where: 'The dashboard will remind you at day 28 — no need to track manually' },
+          ];
+        }
+
+        if (isQuickFix) {
+          // 15-60 minute CMS edit
+          return [
+            { do: 'Read the Instructions below. They tell you EXACTLY what to change and where.', where: 'The instructions are written for this specific page — follow them literally' },
+            { do: 'Open your CMS (WordPress / hosting platform) and navigate to the page in the action title.', where: 'Action title format is "Add/Fix/Update [thing] to [/page-url]"' },
+            { do: 'Make the exact change in the Instructions: add the H1, fix the meta description, insert the schema, etc.', where: 'If the Instructions say "Add H1: \'Kids Hub — Gym Childcare in Malaga\'", copy that EXACT text — don\'t rewrite it' },
+            { do: 'Save the change. Open the live page in a private/incognito tab. Verify the change is visible.', where: 'Right-click → View Page Source if you need to confirm the H1 tag landed correctly' },
+            { do: 'Open Google Search Console → URL inspection → paste the page URL → Request indexing so Google re-crawls it.', where: 'search.google.com/search-console — speeds up Google noticing the change from ~7 days to ~1-2 days' },
+            { do: 'Back in this dashboard: click this action card → set status to "Done". Come back in 4 weeks to check if clicks went up.', where: 'The dashboard auto-prompts a verdict at day 28 based on actual Google click data — no manual tracking needed' },
+          ];
+        }
+
+        if (isBuild) {
+          // Full new page build (4-8 hours of work)
+          return [
+            { do: 'Read the Instructions section. It has the keyword target, the URL slug to use, and the page outline.', where: 'If a Content Brief or AI-written draft is attached, click it — the heavy lifting is done already' },
+            { do: 'Open your CMS. Create a new page at the URL slug from the Instructions.', where: 'Slug format usually /service-page-name or /blog/topic-name' },
+            { do: 'Write the page following the template in the Instructions (or paste the AI draft if attached). Mandatory: H1, meta description (140-155 chars), 2-5 internal links to other CB247 pages, schema markup if specified.', where: 'Hub page template lives at... ask John if you don\'t have the standard template handy' },
+            { do: 'Brand Manager (Angela) reviews the page for voice + compliance BEFORE you hit publish.', where: 'No competitor names, no "only gym with", $11.95/wk anchor present, no banned phrases ("burns fat", "guarantees")' },
+            { do: 'Publish. Submit URL to Google Search Console for indexing.', where: 'search.google.com/search-console → URL inspection → Request indexing' },
+            { do: 'Set this action card to "Done" in the dashboard. Verdict auto-prompts in 4 weeks based on Google click data.', where: 'Usually expect +5 to +20 clicks/week for a well-targeted new page after week 3' },
+          ];
+        }
+
+        // Default fallback — generic SEO work (audits, follow-ups, etc.)
+        return [
+          { do: 'Read the Instructions section carefully. It describes the specific SEO task — could be an audit, a redirect, a sitemap update.', where: 'The Instructions are what matters most — these execution steps are just the channel flow' },
+          { do: 'Do the work as described. Most SEO work happens in the CMS, in Google Search Console, or in a sitemap editor.', where: '' },
+          { do: 'If the work created or changed a page, get Brand Manager (Angela) to brand-QC the copy before going live.', where: 'Skip this step for pure-technical changes (sitemaps, redirects, schema)' },
+          { do: 'If a URL changed or was added, submit it to Google Search Console for re-indexing.', where: 'search.google.com/search-console → URL inspection → Request indexing' },
+          { do: 'Mark this action "Done" in the dashboard. Verdict comes in 4 weeks via Google click data.', where: '' },
+        ];
+      })(),
+      'seo': (() => {
+        // Same dispatcher as seo-organic — the category names are equivalent.
+        // Reuse the same logic by recursing into the seo-organic case via
+        // the parent STEP_TEMPLATES (it's defined just below in this scope).
+        // For simplicity here, mirror the same 4 verb buckets.
+        const t = (titleStr || '').toLowerCase();
+        if (/\breview\b.*\b(publish|send)\b/.test(t)) {
+          return [
+            { do: 'Click the "View the draft" button above and read the AI-written draft.', where: '' },
+            { do: 'Tweak as needed (5-15 min). Brand Manager (Angela) does compliance QC before publish.', where: '' },
+            { do: 'Publish in CMS. Submit URL to Google Search Console for indexing.', where: 'search.google.com/search-console → URL inspection → Request indexing' },
+            { do: 'Mark "Done" in the dashboard. Verdict auto-prompts in 4 weeks.', where: '' },
+          ];
+        }
+        if (/\b(add|fix|update|edit|optimise|optimize|insert|repair|patch|tweak|refresh)\b/.test(t.split(':')[0] || t)) {
+          return [
+            { do: 'Read the Instructions below. Follow them literally — they specify the exact text/change to make.', where: '' },
+            { do: 'Open the CMS and navigate to the page in the action title. Make the change.', where: '' },
+            { do: 'Verify the change went live (view-source on the public page).', where: '' },
+            { do: 'Submit URL to Google Search Console for re-indexing.', where: 'search.google.com/search-console → URL inspection → Request indexing' },
+            { do: 'Mark "Done" in the dashboard. Verdict auto-prompts in 4 weeks.', where: '' },
+          ];
+        }
+        return [
+          { do: 'Read the Instructions section — describes the specific SEO task.', where: '' },
+          { do: 'Do the work in CMS / Google Search Console / sitemap editor as appropriate.', where: '' },
+          { do: 'Angela QC if copy was touched, then publish/submit.', where: 'Skip QC for pure-technical changes' },
+          { do: 'Mark "Done". Verdict in 4 weeks via Google click data.', where: '' },
+        ];
+      })(),
       'gbp': [
         { do: `Open Google Business Profile dashboard${_location ? ' and switch to the ' + _location + ' location' : ''}.`, where: 'business.google.com/locations — location switcher top-left' },
         { do: 'Apply the specific change in the Instructions (respond to review / publish post / upload photo / update Q&A).', where: 'GBP changes are slow to surface — usually 1-2 hours' },
