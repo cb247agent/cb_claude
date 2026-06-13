@@ -18327,10 +18327,30 @@ function _structureWhyText(rawDesc) {
     }
   }
 
+  // 13 Jun 2026 — Tia: strategists often bundle multiple atomic tasks into
+  // one sentence using parentheticals: "improve the landing page (add H1,
+  // expand FAQ, add internal links)". Split these into separate Action
+  // bullets so John can tick each one off independently.
+  const _expandCompound = (items) => {
+    const out = [];
+    for (const a of items) {
+      const m = String(a).match(/^(.+?)\s*\((.+)\)\.?\s*$/);
+      if (m && m[2].includes(',')) {
+        const subs = m[2].split(/,\s*/)
+          .map(s => s.replace(/^and\s+/i, '').trim().replace(/\.$/, ''))
+          .filter(s => s.length > 2);
+        if (subs.length >= 2) { out.push(...subs); continue; }
+      }
+      out.push(a);
+    }
+    return out;
+  };
+  const expandedActions = _expandCompound(actionBullets);
+
   return {
     reason: reasonLines.join(' ').trim(),
     strategy,
-    actions: actionBullets,
+    actions: expandedActions,
   };
 }
 
