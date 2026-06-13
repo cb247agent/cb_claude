@@ -47,3 +47,8 @@ cb247-inbox/*.pdf
 
 # CB247 membership inbox — contains private member data
 cb247-membership-inbox/*.xlsx
+
+# 13 Jun 2026 — housekeeping audit
+backups/
+logs/last-run.json
+logs/data-refresh-archive/
