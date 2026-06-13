@@ -126,7 +126,7 @@ For many people in Malaga, 24/7 access is the difference between consistent trai
 
 CrossFit and ChasingRX both deliver functional training. CrossFit leans into competition, benchmarks, and sport-style intensity. ChasingRX keeps the movements but drops the pressure — scalable, coach-led, community-focused.
 
-If you're in Malaga and want to try ChasingRX without committing, **ChasingBetter247** runs coached sessions as part of the [class timetable](/group-fitness-timetable). Membership is $11.95/week with no lock-in — you can walk away any time. The gym floor is 24/7, so you're not locked to class times.
+If you're in Malaga and want to try ChasingRX without committing, **ChasingBetter247** runs coached sessions as part of the [class timetable](/group-fitness-timetable). Base gym membership starts at $11.95/week with no lock-in — ChasingRX access is an add-on you can bundle in, and you can walk away any time. The gym floor is 24/7, so you're not locked to class times.
 
 [BOOK A FREE TOUR → /book-a-tour]
 [JOIN FOR $11.95/WEEK → /membership]
