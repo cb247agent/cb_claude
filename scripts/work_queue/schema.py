@@ -3,6 +3,19 @@ schema.py — WorkQueueAction dataclass + validation.
 
 Strict, typed schema. Every action must declare at least one KPI projection.
 Validation is manual (no Pydantic dependency) to keep the package stdlib-only.
+
+INTENTIONAL OMISSION — stage / kanban_stage
+    WorkQueueAction does NOT carry a `stage` field. Kanban stage is owned
+    by the Supabase `planner_status` table (one row per item, synced
+    realtime to every open dashboard — see db/schema.sql).
+
+    The JSON snapshot at state/work-queue.json is just the emitter output;
+    stage is layered on by the dashboard's cbState.workQueue.fetchStages()
+    at render time. This split lets multiple users move kanban cards in
+    realtime without conflicting with the weekly strategist re-emit.
+
+    Auditor note (13 Jun 2026): if you see "stage: MISSING" across all 82
+    actions in a JSON dump, that's expected behaviour, NOT a bug.
 """
 
 from __future__ import annotations
