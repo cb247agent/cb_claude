@@ -14795,6 +14795,29 @@ function renderOverview() {
   // is P1 (or P2 if no P1s). Sort ascending by source_run_at (oldest first).
   const _escapeHtml = (s) => (s == null ? '' : String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+
+  // 13 Jun 2026 (Path B fix) — Generic helper for opening the dynamic
+  // client-side brief. Used by Your Queue + anywhere else that previously
+  // linked to the static docs/briefs/{id}.html files. Tries live cbState
+  // first, then localStash, last resort static file. This is the same
+  // logic the prioritised action modal uses inline at line ~17860 — hoisted
+  // here so both call sites use the same fresh renderer.
+  window.openDynamicBrief = (id) => {
+    if (!id) { alert('Missing action ID.'); return; }
+    const row = (window.cbState?.workQueue?._items || []).find(x => x.id === id)
+              || (window._localProposedActions && window._localProposedActions[id]);
+    if (row && typeof _renderProposedActionBriefHTML === 'function') {
+      const html = _renderProposedActionBriefHTML(row);
+      const blob = new Blob([html], { type: 'text/html' });
+      window.open(URL.createObjectURL(blob), '_blank');
+      return;
+    }
+    // Fallback: static pre-baked file (older actions written by Python
+    // generate_briefs.py — no media-plan button, no execution steps).
+    const baseUrl = window.location.href.replace(/\/[^\/]*$/, '');
+    window.open(`${baseUrl}/briefs/${String(id).toLowerCase()}.html`, '_blank');
+  };
+
   (function renderYourQueue() {
     const slot = $('overview-your-queue');
     if (!slot) return;
@@ -14882,14 +14905,19 @@ function renderOverview() {
       const title = _escapeHtml((a.title || '(no title)').slice(0, 110));
       const owner = _escapeHtml(a.owner || '');
       const role = _escapeHtml(a.owner_role || '');
-      const briefUrl = `briefs/${_escapeHtml(aid.toLowerCase())}.html`;
+      // 13 Jun 2026 (Path B fix): Your Queue used to link to static pre-baked
+      // briefs/{id}.html files generated weekly by Python. Those briefs don't
+      // have Path B updates (media-plan button, execution steps, draft button).
+      // Switch to the dynamic blob URL the same way the prioritised action
+      // modal works: try cbState.workQueue first → fallback to localStash →
+      // last-resort static file.
       return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#fff;border:1px solid #f0f2f5;border-radius:6px;margin-bottom:6px">
         <span style="background:${priClr};color:#fff;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:3px;letter-spacing:.04em;flex-shrink:0">${pri}</span>
         <div style="flex:1;min-width:0">
           <div style="font-size:12.5px;font-weight:600;color:var(--text);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${title}</div>
           <div style="font-size:10.5px;color:var(--muted);margin-top:2px">${owner}${role ? ' · ' + role : ''} <span style="color:${ageColor};font-weight:600;margin-left:4px">· proposed ${ageLabel}</span></div>
         </div>
-        <a href="${briefUrl}" target="_blank" style="background:var(--brand-accent);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11px;font-weight:700;text-decoration:none;font-family:inherit;flex-shrink:0">Open Brief →</a>
+        <a href="#" onclick="event.preventDefault(); window.openDynamicBrief('${_escapeHtml(aid)}');" style="background:var(--brand-accent);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11px;font-weight:700;text-decoration:none;font-family:inherit;flex-shrink:0">Open Brief →</a>
       </div>`;
     }).join('');
 
