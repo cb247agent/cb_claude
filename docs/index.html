@@ -20084,10 +20084,13 @@ window.openPromoDetailModal = (id) => {
         'Rejected':                { back: 'Concept',     fwd: null,                    rejectLabel: null },
       };
       const t = TRANSITIONS[CURRENT] || TRANSITIONS['Concept'];
-      const id = esc(p.id);
-      const back  = t.back  ? `<button onclick="window.setPromoStage('${id}', '${t.back}')" style="background:#fff;border:1px solid var(--border);color:var(--text-2);border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">← ${esc(t.back)}</button>` : '';
-      const fwd   = t.fwd   ? `<button onclick="window.setPromoStage('${id}', '${t.fwd}')" style="background:var(--brand-accent);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">${esc(t.fwd)} →</button>` : '';
-      const rej   = t.rejectLabel ? `<button onclick="window.setPromoStage('${id}', 'Rejected', { prompt: true })" style="background:#fff;border:1px solid #fca5a5;color:#b91c1c;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">${esc(t.rejectLabel)}</button>` : '';
+      // Promo IDs + stage names are safe kebab-case / Title Case — no quote
+      // escaping needed. (Earlier draft called esc() which isn't in scope
+      // inside openPromoDetailModal — that broke the modal silently.)
+      const id = p.id;
+      const back  = t.back  ? `<button onclick="window.setPromoStage('${id}', '${t.back}')" style="background:#fff;border:1px solid var(--border);color:var(--text-2);border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">← ${t.back}</button>` : '';
+      const fwd   = t.fwd   ? `<button onclick="window.setPromoStage('${id}', '${t.fwd}')" style="background:var(--brand-accent);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">${t.fwd} →</button>` : '';
+      const rej   = t.rejectLabel ? `<button onclick="window.setPromoStage('${id}', 'Rejected', { prompt: true })" style="background:#fff;border:1px solid #fca5a5;color:#b91c1c;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">${t.rejectLabel}</button>` : '';
       return `<div style="display:flex;gap:8px;justify-content:flex-end;margin:18px 0 8px;flex-wrap:wrap">${back}${rej}${fwd}</div>`;
     })()}
 
