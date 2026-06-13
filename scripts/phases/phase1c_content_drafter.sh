@@ -166,17 +166,104 @@ compliance check, notes for John, notes for Angela." \
     log "  Processed $refresh_count SEO refresh action(s)."
 fi
 
+# ── Step 2c — Path E · Meta Ad + Google RSA Drafters (13 Jun 2026) ────────
+# Fires meta-ad-drafter for every NEW-CREATIVE Meta action (Launch /
+# Create / Build / Draft / Test new). Same for google-ads-rsa-drafter on
+# Google Ads actions. Skips pause/scale/adjust optimization actions.
+# Output → outputs/{meta-ads,google-ads-rsa}/{slug}.md → surfaced in
+# View Brief as "View Meta Ad Draft → " / "View Google RSA Draft → ".
+mkdir -p "$OUTPUTS/meta-ads" "$OUTPUTS/google-ads-rsa" \
+         "$BASE_DIR/docs/meta-ads" "$BASE_DIR/docs/google-ads-rsa"
+log "Step 2c — Path E · Meta Ad + Google RSA Drafters..."
+
+PAID_TARGETS=$("$PYTHON" "$BASE_DIR/scripts/work_queue/find_pending_paid_ad_drafts.py" 2>>"$LOG" || true)
+
+if [[ -z "$PAID_TARGETS" ]]; then
+    log "  No paid ad actions pending a draft. Skipping."
+else
+    paid_count=0
+    while IFS='|' read -r KIND ACTION_ID SLUG; do
+        [[ -z "$ACTION_ID" ]] && continue
+        paid_count=$((paid_count + 1))
+
+        if [[ "$KIND" == "meta" ]]; then
+            log "  → ${ACTION_ID} (meta, slug=${SLUG}) — firing meta-ad-drafter..."
+            OUT_PATH="$OUTPUTS/meta-ads/meta-ad-drafter-${ACTION_ID}-${DATE}.md"
+
+            run_agent "meta-ad-drafter" \
+"You are the CB247 Meta Ad Drafter. Today is $DATE.
+
+Your job: draft the FULL Meta ad creative (5 primary text variations, 5
+headlines, 2-3 descriptions, CTA choice, audience targeting spec, creative
+hook brief for Shauna) for action '$ACTION_ID' so Joanne (Meta Ads
+Specialist) can paste straight into Ads Manager — NO writing.
+
+The action is in state/work-queue.json. Inputs.target_action_id is
+'$ACTION_ID'. Follow agents/meta-ad-drafter.yml's Workflow exactly.
+
+Output file: outputs/meta-ads/${SLUG}.md
+
+Brand compliance is MANDATORY:
+- \$11.95/wk anchor, no lock-in
+- NEVER name Revo / Anytime / Snap / Ryderwear
+- NEVER use 'only gym with', 'best gym', 'burns fat', 'heals', 'cures',
+  'detox', 'guaranteed'
+- Recovery / Reformer / ChasingRX are PAID add-ons, NEVER bundled in \$11.95
+
+CRITICAL: Do NOT emit a proposed_actions JSON block.
+
+Then output a SHORT stdout summary." \
+                "$OUT_PATH" \
+                "Read(state/work-queue.json),Read(state/ads-data.json),Read(state/membership-data.json),Read(state/promo-pipeline.json),Read(context/brand-voice.md),Read(context/icp-profiles.md),Read(context/psychology-triggers.md),Read(context/seasonal-calendar.md),Read(context/team-workflow-mapping.md),Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/CB247-Knowledge-Base.md),Write(outputs/meta-ads/**)" \
+                "$MODEL_SONNET"
+
+        elif [[ "$KIND" == "gads" ]]; then
+            log "  → ${ACTION_ID} (gads, slug=${SLUG}) — firing google-ads-rsa-drafter..."
+            OUT_PATH="$OUTPUTS/google-ads-rsa/google-rsa-drafter-${ACTION_ID}-${DATE}.md"
+
+            run_agent "google-ads-rsa-drafter" \
+"You are the CB247 Google Ads RSA Drafter. Today is $DATE.
+
+Your job: draft the FULL Google RSA (15 headlines, 4 descriptions, 4
+sitelinks, 4 callouts, 4 structured snippets) for action '$ACTION_ID'
+so Tia (Paid Ads) can paste into Google Ads Editor — NO writing.
+
+The action is in state/work-queue.json. Inputs.target_action_id is
+'$ACTION_ID'. Follow agents/google-ads-rsa-drafter.yml's Workflow exactly.
+
+Output file: outputs/google-ads-rsa/${SLUG}.md
+
+Brand compliance is MANDATORY (same list as Meta drafter).
+Spec compliance is MANDATORY:
+- headlines ≤30 chars each (count exactly)
+- descriptions ≤90 chars each
+- 15 headlines + 4 descriptions + 4 sitelinks + 4 callouts + 4 snippets
+
+CRITICAL: Do NOT emit a proposed_actions JSON block.
+
+Then output a SHORT stdout summary." \
+                "$OUT_PATH" \
+                "Read(state/work-queue.json),Read(state/google-ads-data.json),Read(state/gsc-data.json),Read(state/membership-data.json),Read(context/brand-voice.md),Read(context/icp-profiles.md),Read(context/seasonal-calendar.md),Read(context/team-workflow-mapping.md),Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/CB247-Knowledge-Base.md),Write(outputs/google-ads-rsa/**)" \
+                "$MODEL_SONNET"
+        fi
+    done <<< "$PAID_TARGETS"
+    log "  Processed $paid_count paid ad action(s)."
+fi
+
 # ── Render markdown → HTML so team can preview ──
-log "Step 3 — Render content .md → docs/{blogs,landing-pages,service-pages,seo-refreshes}/*.html..."
+log "Step 3 — Render content .md → docs/{blogs,landing-pages,service-pages,seo-refreshes,meta-ads,google-ads-rsa}/*.html..."
 "$PYTHON" "$BASE_DIR/scripts/render_content_html.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Content HTML rendering had issues — check $LOG"
 
 # ── Inject the list of available SEO refresh drafts into the dashboard ──
-# Brief renderer reads window.AI_SEO_REFRESHES; only shows "View AI Draft"
-# button when the slug is in this list. Avoids broken-link buttons.
 log "Step 3b — Inject available SEO refresh slugs → docs/index.html..."
 "$PYTHON" "$BASE_DIR/scripts/inject_seo_refresh_list.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  SEO refresh list injection had issues — check $LOG"
+
+# ── Inject the list of available Meta + Google RSA drafts ──
+log "Step 3c — Inject available Meta + Google RSA slugs → docs/index.html..."
+"$PYTHON" "$BASE_DIR/scripts/inject_paid_ad_lists.py" >> "$LOG" 2>&1 \
+    || log "  ⚠️  Paid ad list injection had issues — check $LOG"
 
 # ── Sync new follow-up actions to Supabase ──
 log "Step 4 — Sync Work Queue → Supabase..."

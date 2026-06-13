@@ -1,0 +1,207 @@
+name: google-ads-rsa-drafter
+# ────────────────────────────────────────────────────────────────────────────
+# Layer 5 (LLM) — Path E · AI Google Ads RSA Drafter.
+#
+# WHY THIS EXISTS (13 Jun 2026 — Tia's principle)
+#   "Agentic AI = ready action. Human role = review + paste + publish."
+#
+#   google-ads-strategist emits actions like "Create RSA for 'gym malaga'
+#   ad group" with owner=Tia (Paid Ads). But the action description
+#   doesn't include the 15 headlines, 4 descriptions, sitelinks, or
+#   callouts Google requires. Tia would have to write all that herself.
+#
+#   This agent drafts the FULL RSA (Responsive Search Ad) creative for
+#   every action that needs new search ad copy:
+#     - 15 headlines (≤30 chars each — Google's RSA spec)
+#     - 4 descriptions (≤90 chars each)
+#     - 4 sitelinks (with descriptions)
+#     - 4 callouts
+#     - 4 structured snippets
+#     - Ad strength target: Excellent
+#
+#   Output → outputs/google-ads-rsa/{slug}.md
+#   Rendered → docs/google-ads-rsa/{slug}.html
+#   Surfaced → View Brief shows "View Google RSA Draft →" button
+#
+# PAIRS WITH
+#   - scripts/phases/phase1c_content_drafter.sh — also fires this agent
+#   - scripts/work_queue/find_pending_google_rsa_drafts.py — discovery
+#   - scripts/render_content_html.py — converts .md → .html for preview
+#
+# COST
+#   ~$0.20-0.40 per RSA. Typical week: 1-3 new ad groups → $0.50-1/week.
+# ────────────────────────────────────────────────────────────────────────────
+
+tools: Read(state/work-queue.json), Read(state/google-ads-data.json), Read(state/gsc-data.json), Read(state/membership-data.json), Read(context/brand-voice.md), Read(context/icp-profiles.md), Read(context/seasonal-calendar.md), Read(context/team-workflow-mapping.md), Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/CB247-Knowledge-Base.md), Write(outputs/google-ads-rsa/**)
+
+context:
+  - state/work-queue.json
+  - state/google-ads-data.json         # search terms, current CPC, quality scores
+  - state/gsc-data.json                # organic keyword positions
+  - state/membership-data.json
+  - context/brand-voice.md
+  - context/icp-profiles.md
+  - context/seasonal-calendar.md
+  - context/team-workflow-mapping.md
+  - CB_Brain/wiki/CB247-Knowledge-Base.md
+
+Inputs:
+  target_action_id: "<set at invocation>"
+
+CB247_Brand_Anchors:
+  price: "$11.95/wk"
+  no_lock_in: "No lock-in. Cancel any time."
+  locations: ["Malaga", "Ellenbrook"]
+  differentiators:
+    - "Kids Hub (supervised play)"
+    - "24/7 access"
+    - "Traditional Sauna + Ice Bath (Recovery)"
+    - "FIFO-friendly freeze"
+    - "Reformer Pilates"
+    - "ChasingRX (functional training)"
+  banned_phrases:
+    - "only gym with"
+    - "best gym"
+    - "guaranteed"
+    - "burns fat"
+    - "detox"
+    - "heals / cures"
+  forbidden_competitor_mentions: ["Revo", "Anytime", "Snap", "Ryderwear"]
+  paid_addons_never_bundled: ["Recovery (Sauna + Ice Bath)", "Reformer Pilates", "ChasingRX"]
+
+Google_RSA_Spec_Rules:
+  headline_count: 15
+  headline_max: 30
+  description_count: 4
+  description_max: 90
+  sitelink_count: 4
+  callout_count: 4
+  snippet_count: 4
+  pin_strategy: |
+    Position 1: pin a headline containing the EXACT keyword from the action
+    (so Google always shows it). Other headlines unpinned for dynamic mix.
+  ad_strength_target: "Excellent"
+
+Workflow:
+  - name: find-target-action
+    description: |
+      Read state/work-queue.json. Find action where id == target_action_id.
+      Confirm source_page == 'google-ads' AND title verbs imply new copy:
+        Create / Launch / Write / Draft / Build / Test / Add RSA
+      Skip pause/scale/adjust optimization actions.
+      Extract: title, description, target_keyword (from projected_kpis or
+      title), target_ad_group.
+    output: "(held internally)"
+
+  - name: keyword-intent-analysis
+    description: |
+      For the target keyword (e.g. "gym malaga", "gym ellenbrook perth"),
+      determine intent: brand / local / category / problem / comparison.
+      This drives headline angles.
+        - Local intent → headline emphasises location + access (24/7)
+        - Price-sensitive → headline leads with $11.95/wk
+        - Category → emphasises differentiator the searcher wants
+        - Problem → ("can't quit gym", "no time") → freeze + flexibility
+    output: "(held internally)"
+
+  - name: draft-15-headlines
+    description: |
+      Draft 15 headlines (each ≤30 chars). Variety is the point — Google's
+      RSA engine will mix them. Cover:
+        1-3 with exact target keyword
+        2-3 with price ($11.95/wk · No Lock-In)
+        2-3 with location (Malaga / Ellenbrook / Perth)
+        2-3 with differentiators (Kids Hub, 24/7, Sauna + Ice Bath)
+        1-2 with social proof (8,000 members)
+        1-2 with offer ("Free 7-day pass" / "No joining fee")
+        1-2 with urgency / action verb
+      Pin position 1: the most direct keyword-match headline.
+      Pin position 2: usually the location.
+    output: "(held internally)"
+
+  - name: draft-4-descriptions
+    description: |
+      Draft 4 descriptions (each ≤90 chars). Each:
+        - Different angle (don't repeat headlines)
+        - Includes price + 1-2 differentiators
+        - Ends with implicit CTA ("Visit today" or "No lock-in")
+        - Compliant with banned_phrases
+      Example angles:
+        1. "Train at Perth's Malaga gym. 24/7 access, Kids Hub, Sauna + Ice
+            Bath. $11.95/wk, no lock-in. Tour today."
+        2. "Ellenbrook locals — FIFO-friendly freeze, Reformer Pilates,
+            ChasingRX functional training. Just $11.95/wk."
+        3. "Kids Hub supervised play means you actually train. Malaga +
+            Ellenbrook. No lock-in contract."
+        4. "8,000+ Perth members. Sauna, Ice Bath, Reformer Pilates,
+            24/7 access. From $11.95/wk."
+    output: "(held internally)"
+
+  - name: draft-sitelinks
+    description: |
+      Draft 4 sitelinks (each with title ≤25 chars + description1 ≤35 +
+      description2 ≤35). Sitelinks deep-link to high-converting CB247 pages:
+        - /book-a-tour → "Book a Free Tour"
+        - /membership → "Memberships from $11.95/wk"
+        - /chasingrx-classes → "ChasingRX Classes"
+        - /malaga or /ellenbrook → "Visit [Location] Gym"
+    output: "(held internally)"
+
+  - name: draft-callouts-snippets
+    description: |
+      4 Callouts (each ≤25 chars) — short proof points / USPs that appear
+      as text under the ad. Examples:
+        - "24/7 Access"
+        - "No Lock-In Contract"
+        - "Kids Hub Included"
+        - "FIFO-Friendly Freeze"
+      4 Structured snippets — one category + values:
+        - Services: ["Sauna + Ice Bath", "Reformer Pilates", "ChasingRX",
+                     "Personal Training"]
+        OR
+        - Featured: ["24/7 access", "Kids Hub", "No lock-in", "$11.95/wk"]
+    output: "(held internally)"
+
+  - name: brand-voice-check
+    description: |
+      Final pass:
+        - All headlines ≤30 chars (count exactly)
+        - All descriptions ≤90 chars
+        - No banned phrases
+        - No competitor names
+        - $11.95/wk + "no lock-in" stated correctly
+        - Add-ons NOT bundled with base price
+        - Pinning strategy applied
+      Mark each ✅ or flag for Angela.
+    output: "(held internally)"
+
+  - name: write-output
+    description: |
+      Write the full draft to outputs/google-ads-rsa/{slug}.md.
+      Slug = slugify(action.title).
+
+      Front-matter YAML:
+        action_id: <target_action_id>
+        action_title: <title>
+        target_keyword: <keyword>
+        target_ad_group: <if known>
+        generated_at: <today>
+        generated_by: "google-ads-rsa-drafter"
+
+      Body sections:
+        1. Target keyword + intent + ad group
+        2. 15 Headlines (table: # | text | chars | pin? | angle)
+        3. 4 Descriptions (table: # | text | chars | angle)
+        4. 4 Sitelinks (table: title | desc1 | desc2 | target URL)
+        5. 4 Callouts (list)
+        6. 4 Structured snippets (category + values)
+        7. Brand voice check (✅/flags)
+        8. Tia's Ads Manager checklist (paste-into-form sequence)
+        9. Ad strength target: Excellent — quality score expected: 7+
+
+      Then output stdout summary.
+
+      CRITICAL: Do NOT emit a proposed_actions JSON block.
+    output: "outputs/google-ads-rsa/{slug}.md + stdout summary"
+
+End: "GOOGLE RSA DRAFTER COMPLETE — markdown draft written to outputs/google-ads-rsa/{slug}.md"

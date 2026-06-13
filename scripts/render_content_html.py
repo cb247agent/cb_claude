@@ -43,6 +43,8 @@ CONTENT_DIRS = [
     ("landing-pages",  "landing_page"),
     ("service-pages",  "service_page"),
     ("seo-refreshes",  "seo_refresh"),    # 13 Jun 2026 — Path D: AI-drafted H1/title/FAQ/internal-link refresh for existing pages
+    ("meta-ads",       "meta_ad"),        # 13 Jun 2026 — Path E: AI-drafted Meta ad copy (primary text, headlines, descriptions, CTA, audience)
+    ("google-ads-rsa", "google_rsa"),     # 13 Jun 2026 — Path E: AI-drafted Google RSA copy (15 headlines, 4 descs, sitelinks, callouts)
 ]
 
 TAG_LABEL = {
@@ -50,6 +52,8 @@ TAG_LABEL = {
     "landing_page": "Landing Page Draft",
     "service_page": "Service Page Draft",
     "seo_refresh":  "SEO Refresh Draft",
+    "meta_ad":      "Meta Ad Draft",
+    "google_rsa":   "Google RSA Draft",
 }
 
 # Re-use the playbook renderer's markdown engine
