@@ -311,8 +311,8 @@ Workflow:
           campaign-launch-strategist — humans review, don't draft from scratch):
             edm_assets       → "Review + send"           # AI drafts body via deliverable-drafter
             sms              → "Review + send"           # AI drafts variants
-            reels            → "Caption-review + capture + post"  # AI drafts caption, Shauna shoots video
-            stories          → "Caption-review + capture + post"  # AI drafts caption, Shauna shoots
+            reels            → "Schedule + post"         # 13 Jun 2026 update: Joanne's atomic step. Capture handled separately by Shauna via Asset Library shoot pack. Brand QC happens via modal pills (Angela). Caption is AI-drafted by deliverable-drafter.
+            stories          → "Schedule + post"         # Same as reels — atomic Joanne action.
             landing_page     → "Build + publish"         # UNCHANGED — John writes the page content
             save_call_script → "Review + train team"     # AI drafts playbook via playbook-writer
             meta_ad          → "Review + launch"         # AI drafts copy + media plan
@@ -335,11 +335,15 @@ Workflow:
               No draft reference — John builds from SEO strategist's brief.
 
         - owner: pick from Team_Roles per fmt:
-            edm_assets/sms      → Angela (Brand Manager) — copy QC
-            reels/stories       → Joanne (Organic Social)
-            landing_page        → John (SEO Specialist)
-            save_call_script    → Angela (Brand Manager)
+            edm_assets/sms      → Joanne (Organic Social) — Angela QCs via modal pill, Joanne sends
+            reels/stories       → Joanne (Organic Social) — atomic post step. Capture (Shauna) handled separately via Asset Library shoot pack. QC happens via modal pills.
+            landing_page        → John (SEO / Web)
+            save_call_script    → Angela (Brand Manager) — Reception training is Angela's atomic step
             meta_ad             → Joanne (Meta Ads Specialist)
+          NEVER assign Angela to any "capture + post" step. Angela's role
+          is brand voice QC via approval pills + Reception briefing only.
+          NEVER assign Shauna to a "post" action — her atomic step is asset
+          capture, surfaced via Asset Library shoot pack (separate flow).
         - owner_role: matches owner — NEVER Denver, NEVER bare role
         - priority: P1 if concept is URGENT (signal above crisis floor),
                     P2 if SEASONAL within 21d, P3 if EXPLORATORY
