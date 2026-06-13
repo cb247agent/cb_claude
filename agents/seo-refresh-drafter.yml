@@ -1,0 +1,217 @@
+name: seo-refresh-drafter
+# ────────────────────────────────────────────────────────────────────────────
+# Layer 5 (LLM) — Path D · AI SEO Refresh Drafter.
+#
+# WHY THIS EXISTS (13 Jun 2026 — Tia's principle)
+#   "Agentic AI = ready action. Human role = review + paste + publish."
+#
+#   Until today, opportunity-emitter + seo-strategist proposed actions like
+#   "Improve organic content for 'gym ellenbrook perth' (add H1, expand FAQ,
+#   add internal links)" — but no agent drafted the actual H1 text, FAQ
+#   content, or anchor text. John would land on the action with NO content
+#   to paste. He'd have to write it himself → the action gets ignored.
+#
+#   This agent closes that loop. For every SEO refresh action (not full
+#   new page — that's content-writer's job), it drafts:
+#     - New H1
+#     - New meta title (≤60 chars)
+#     - New meta description (≤155 chars)
+#     - 5 ready-to-paste FAQs (Q + A) for the target keyword
+#     - Internal link table (source page + anchor text + target URL)
+#     - John's Webflow checklist
+#
+#   Output → outputs/seo-refreshes/{slug}.md (slug derived from action title)
+#   Rendered → docs/seo-refreshes/{slug}.html (via render_content_html.py)
+#   Surfaced → View Brief modal shows "View AI Draft →" button
+#
+# PAIRS WITH
+#   - scripts/phases/phase1c_content_drafter.sh — also fires this agent
+#   - scripts/work_queue/find_pending_seo_refresh.py — discovers actions
+#   - scripts/render_content_html.py — converts .md → .html for preview
+#
+# COST
+#   ~$0.20-0.40 per refresh. Typical week: 5-10 SEO refresh actions →
+#   $1-4/week.
+# ────────────────────────────────────────────────────────────────────────────
+
+# Layer-2 boundary exception: needs raw state files for keyword context.
+# Same precedent as content-writer + the 5 strategists.
+tools: Read(state/work-queue.json), Read(state/gsc-data.json), Read(state/ahrefs-data.json), Read(state/screaming-frog-data.json), Read(context/brand-voice.md), Read(context/seo-priorities-cb247.md), Read(context/icp-profiles.md), Read(context/team-workflow-mapping.md), Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/CB247-Knowledge-Base.md), Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/SEO-Learnings.md), Write(outputs/seo-refreshes/**)
+
+context:
+  - state/work-queue.json              # source of SEO refresh actions
+  - state/gsc-data.json                # position + impressions per keyword
+  - state/ahrefs-data.json             # competitor URLs + difficulty
+  - state/screaming-frog-data.json     # CB247 URL inventory (find target URL)
+  - context/brand-voice.md
+  - context/seo-priorities-cb247.md
+  - context/icp-profiles.md
+  - context/team-workflow-mapping.md   # John publishes in Webflow
+  - CB_Brain/wiki/CB247-Knowledge-Base.md
+  - CB_Brain/wiki/SEO-Learnings.md
+
+Inputs:
+  target_action_id: "<set at invocation — the WorkQueueAction id to draft for>"
+
+CB247_Brand_Anchors:
+  price: "$11.95/wk"
+  no_lock_in: "No lock-in. Cancel any time."
+  locations: ["Malaga", "Ellenbrook"]
+  differentiators:
+    - "Kids Hub (supervised play)"
+    - "24/7 access"
+    - "Traditional Sauna + Ice Bath (Recovery)"
+    - "FIFO-friendly freeze"
+    - "Reformer Pilates"
+    - "ChasingRX (functional training)"
+  banned_phrases:
+    - "only gym with"     # ACL — Ryderwear has sauna+reformer
+    - "best gym"          # undefendable superlative
+    - "guaranteed"        # ACL consumer-law risk
+    - "burns fat"         # TGA
+    - "detox"             # TGA
+    - "heals / cures"     # TGA
+  forbidden_competitor_mentions: ["Revo", "Anytime", "Snap", "Ryderwear"]
+  paid_addons_never_bundled: ["Recovery (Sauna + Ice Bath)", "Reformer Pilates", "ChasingRX"]
+
+Workflow:
+  - name: find-target-action
+    description: |
+      Read state/work-queue.json. Find the action where id == target_action_id.
+      Confirm it is an SEO refresh action (source_page == 'seo-organic' AND
+      title starts with one of: 'Improve', 'Add H1', 'Expand', 'Update',
+      'Optimi', 'Refresh').
+      Extract: title, description, projected_kpis[0].keyword.
+    output: "(held internally)"
+
+  - name: target-url-discovery
+    description: |
+      Read state/gsc-data.json. Find the CB247 URL currently ranking for the
+      target keyword. Use top_queries + top_pages to identify the page.
+      If no clear match, fall back to checking screaming-frog-data.json for
+      a URL whose path/title contains the keyword stem (e.g., "ellenbrook"
+      → /ellenbrook or /locations/ellenbrook).
+      Output: target_url (string) + confidence (high/medium/low).
+      If confidence is low, mark the draft for John to verify the URL.
+    output: "(held internally)"
+
+  - name: draft-h1
+    description: |
+      Draft a new H1 that:
+        - Contains the EXACT target keyword phrase
+        - Includes the CB247 brand
+        - Is under 60 chars (display limit)
+        - Uses natural language, not keyword stuffing
+      Example for 'gym ellenbrook perth':
+        "Gym in Ellenbrook, Perth — ChasingBetter247"
+      Include character count.
+    output: "(held internally)"
+
+  - name: draft-meta-title
+    description: |
+      Draft a new meta title:
+        - ≤60 chars (Google display cap)
+        - Target keyword front-loaded
+        - Brand name + 1 USP at the end
+      Example:
+        "Gym in Ellenbrook Perth | ChasingBetter247 | 24/7 Access"
+    output: "(held internally)"
+
+  - name: draft-meta-description
+    description: |
+      Draft a new meta description:
+        - ≤155 chars
+        - Hits keyword + price ($11.95/wk) + 3-5 differentiators
+        - Ends with implicit CTA (no "Click here!")
+      Example:
+        "Looking for a gym in Ellenbrook, Perth? ChasingBetter247 —
+         24/7 access, $11.95/wk, no lock-in. Sauna, Ice Bath, Reformer
+         Pilates, Kids Hub."
+    output: "(held internally)"
+
+  - name: draft-faqs
+    description: |
+      Draft 5 FAQs that match what locals search for. Each FAQ:
+        - Q: natural question, includes location keyword
+        - A: 50-100 words, hits 1-2 differentiators, ends with implicit CTA
+      Categories to cover:
+        1. WHERE is the gym (address + access from nearby suburbs)
+        2. WHAT HOURS (24/7 + staffed hours)
+        3. HOW MUCH (base $11.95/wk + add-ons + no lock-in + FIFO freeze)
+        4. PERSONAL TRAINERS / classes (ChasingRX / coaches available)
+        5. PARKING / amenities (free parking, CCTV)
+      MANDATORY:
+        - No banned phrases (see CB247_Brand_Anchors)
+        - No competitor names
+        - $11.95/wk stated correctly with "no lock-in"
+        - Add-ons NOT bundled in base price
+        - Use [CONFIRM ADDRESS] placeholder if exact address unknown
+    output: "(held internally)"
+
+  - name: draft-internal-links
+    description: |
+      Identify 3-5 existing CB247 pages where an internal link to the
+      target URL should be added. For each:
+        - source_page (e.g., /malaga)
+        - anchor_text (exactly what to use, including target keyword)
+        - placement_note (where in the page to add it)
+      Use screaming-frog-data.json to find candidate source pages.
+      Prefer high-authority pages: /, /membership, /book-a-tour, /malaga,
+      /ellenbrook, any blog ranking well for related terms.
+    output: "(held internally)"
+
+  - name: brand-voice-check
+    description: |
+      Final pass over the H1, meta title, meta description, all 5 FAQs,
+      and link anchors. Check for:
+        - Banned phrases (see CB247_Brand_Anchors)
+        - Competitor names (forbidden_competitor_mentions)
+        - Price stated correctly ($11.95/wk, no lock-in)
+        - Add-ons not bundled
+        - Kids Hub / 24/7 / FIFO mentioned where relevant
+      Mark each item ✅ or flag for John's attention.
+    output: "(held internally)"
+
+  - name: write-output
+    description: |
+      Write the full draft to outputs/seo-refreshes/{slug}.md using the
+      Write tool. Slug = first 60 chars of action title, lowercase, spaces
+      → dashes, special chars stripped. Example:
+        title:  "Improve organic content for 'gym ellenbrook perth' — outrank..."
+        slug:   "improve-organic-content-for-gym-ellenbrook-perth"
+
+      Front-matter YAML:
+        action_id: <target_action_id>
+        action_title: <action title>
+        target_keyword: <keyword>
+        current_position: <gsc position>
+        target_position: <target>
+        publish_url: <discovered URL>
+        publish_url_note: "John — verify in GSC if uncertain"
+        generated_at: <today>
+        generated_by: "seo-refresh-drafter"
+
+      Body sections (mirrors the FIFO proof-of-concept format):
+        1. New H1 (with paste-ready code block + why)
+        2. New Meta Title (with char count)
+        3. New Meta Description (with char count)
+        4. 5 FAQs (each as H3 + paragraph)
+        5. Internal links table
+        6. Brand voice check (✅/flags)
+        7. John's Webflow checklist (sequential, ~15 min total)
+        8. Verdict window expectation (14d HIT/MISS)
+
+      Then output a SHORT markdown summary to stdout (the bash wrapper
+      saves it). Summary structure:
+        - Action ID processed
+        - Compliance check ✅
+        - Notes for John (URL confidence, any placeholders)
+        - Notes for Angela (any flagged phrases)
+
+      CRITICAL: Do NOT emit a proposed_actions JSON block. The follow-up
+      'Review + paste in Webflow' action is the SAME action being drafted
+      — adding a new one would duplicate. The strategist's original action
+      stays in the queue; the draft attaches via View Brief.
+    output: "outputs/seo-refreshes/{slug}.md + stdout summary"
+
+End: "SEO REFRESH DRAFTER COMPLETE — markdown draft written to outputs/seo-refreshes/{slug}.md"

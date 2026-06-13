@@ -111,8 +111,63 @@ log "Step 2 — Extract follow-up Review + publish actions from new drafts..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/extract_content_writer_output.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Content writer extraction had issues — check $LOG"
 
+# ── Step 2b — Path D · SEO Refresh Drafter (13 Jun 2026) ───────────────────
+# Fires seo-refresh-drafter for every SEO refresh action (edit-an-existing-
+# page actions like "Improve organic content for X"). Output → outputs/
+# seo-refreshes/{slug}.md → rendered to docs/seo-refreshes/{slug}.html →
+# surfaced in View Brief as "View AI Draft → ". John pastes into Webflow.
+mkdir -p "$OUTPUTS/seo-refreshes" "$BASE_DIR/docs/seo-refreshes"
+log "Step 2b — Path D · SEO Refresh Drafter..."
+
+REFRESH_TARGETS=$("$PYTHON" "$BASE_DIR/scripts/work_queue/find_pending_seo_refresh.py" 2>>"$LOG" || true)
+
+if [[ -z "$REFRESH_TARGETS" ]]; then
+    log "  No SEO refresh actions pending a draft. Skipping seo-refresh-drafter."
+else
+    refresh_count=0
+    while IFS='|' read -r ACTION_ID SLUG; do
+        [[ -z "$ACTION_ID" ]] && continue
+        refresh_count=$((refresh_count + 1))
+        log "  → ${ACTION_ID} (slug=${SLUG}) — firing seo-refresh-drafter..."
+
+        OUT_PATH="$OUTPUTS/seo-refreshes/seo-refresh-drafter-${ACTION_ID}-${DATE}.md"
+
+        run_agent "seo-refresh-drafter" \
+"You are the CB247 SEO Refresh Drafter. Today is $DATE.
+
+Your job: draft the SEO refresh content (new H1, meta title, meta description,
+5 FAQs, internal link table) for the action with id '$ACTION_ID' so John
+(SEO / Web) can paste everything directly into Webflow — NO writing.
+
+The action is in state/work-queue.json. Inputs.target_action_id is
+'$ACTION_ID'. Follow agents/seo-refresh-drafter.yml's Workflow exactly.
+
+Output file path: outputs/seo-refreshes/${SLUG}.md
+
+Brand compliance is MANDATORY:
+- \$11.95/wk anchor, no lock-in
+- 1-3 differentiators relevant to the page
+- NEVER name Revo / Anytime / Snap / Ryderwear
+- NEVER use 'only gym with', 'best gym', 'burns fat', 'heals', 'cures',
+  'detox', 'guaranteed'
+- Recovery / Reformer / ChasingRX are PAID add-ons, NEVER bundled in \$11.95
+
+CRITICAL: Do NOT emit a proposed_actions JSON block. The original SEO action
+stays in the queue — your draft attaches via View Brief, not by emitting a
+new follow-up action.
+
+Then output a SHORT markdown summary to stdout: action ID processed,
+compliance check, notes for John, notes for Angela." \
+            "$OUT_PATH" \
+            "Read(state/work-queue.json),Read(state/gsc-data.json),Read(state/ahrefs-data.json),Read(state/screaming-frog-data.json),Read(context/brand-voice.md),Read(context/seo-priorities-cb247.md),Read(context/icp-profiles.md),Read(context/team-workflow-mapping.md),Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/CB247-Knowledge-Base.md),Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/SEO-Learnings.md),Write(outputs/seo-refreshes/**)" \
+            "$MODEL_SONNET"
+
+    done <<< "$REFRESH_TARGETS"
+    log "  Processed $refresh_count SEO refresh action(s)."
+fi
+
 # ── Render markdown → HTML so team can preview ──
-log "Step 3 — Render content .md → docs/{blogs,landing-pages,service-pages}/*.html..."
+log "Step 3 — Render content .md → docs/{blogs,landing-pages,service-pages,seo-refreshes}/*.html..."
 "$PYTHON" "$BASE_DIR/scripts/render_content_html.py" >> "$LOG" 2>&1 \
     || log "  ⚠️  Content HTML rendering had issues — check $LOG"
 
