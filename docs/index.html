@@ -18428,6 +18428,34 @@ function _buildAnalysisSection(action) {
   </div>`;
 }
 
+// 13 Jun 2026 (Tia request) — Same bullet treatment for "Why" / "Reason"
+// text across all prioritised-action surfaces (View Details modal +
+// Promo detail modal). Tia wants Reason to LOOK exactly like Strategy
+// Plan in the Org Social action: STRATEGY PLAN label + bulleted list.
+// Always render as bullets — even 1 sentence → 1 bullet — for visual
+// consistency across every prioritised action.
+// Styling matches Strategy Plan exactly: margin:0 0 14px 0 + line-height:1.7.
+// Global scope so _buildWhyText AND the Promo modal renderer can both call it.
+function _bulletifyReason(raw) {
+  if (!raw || typeof raw !== 'string') return raw || '';
+  let txt = String(raw).trim();
+  if (txt.length === 0) return '';
+  if (/<ul[>\s]/i.test(txt) || /<ol[>\s]/i.test(txt)) {
+    return txt;
+  }
+  // Strip leading bullet markers if present (so they don't double-up)
+  txt = txt.replace(/^[\s•\-\*]+/, '');
+  // Split aggressively: sentence boundary OR <br> OR newline OR " · " separator
+  let items = txt
+    .replace(/<br\s*\/?>/gi, '\n')
+    .split(/(?<=[.!?])\s+(?=[A-Z])|\n+|\s*·\s*/)
+    .map(s => s.trim().replace(/^[•\-\*]\s*/, ''))
+    .filter(s => s.length > 0);
+  if (items.length === 0) items = [txt];
+  const listItems = items.map(s => `<li style="margin-bottom:4px">${s}</li>`).join('');
+  return `<ul style="margin:0 0 14px 0;padding-left:20px;line-height:1.7">${listItems}</ul>`;
+}
+
 function _buildWhyText(action, normalised, sourcePage) {
   const whyRaw = action?.why || action?.description || normalised.desc || '';
   const analysisHTML = _buildAnalysisSection(action);
@@ -18435,7 +18463,7 @@ function _buildWhyText(action, normalised, sourcePage) {
     const parts = _structureWhyText(whyRaw);
     if (!parts) return analysisHTML + whyRaw;
     const reasonHTML = parts.reason
-      ? `<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:6px">Reason</div><div style="margin-bottom:14px;line-height:1.7">${parts.reason}</div></div>`
+      ? `<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:6px">Reason</div>${_bulletifyReason(parts.reason)}</div>`
       : '';
     const stratHTML = parts.strategy.length
       ? `<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:6px">Strategy plan</div><ul style="margin:0 0 14px 0;padding-left:20px;line-height:1.7">${parts.strategy.map(s => `<li style="margin-bottom:4px">${s}</li>`).join('')}</ul></div>`
@@ -20250,7 +20278,7 @@ window.openPromoDetailModal = (id) => {
 
     <div style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:6px">Tone &amp; Rationale</div>
     <p style="font-size:12px;line-height:1.7;color:var(--text-2);margin:0 0 8px"><b style="color:var(--text)">Tone:</b> ${p.tone}</p>
-    <p style="font-size:12px;line-height:1.7;color:var(--text-2);margin:0 0 16px"><b style="color:var(--text)">Why:</b> ${p.rationale}</p>
+    <div style="font-size:12px;line-height:1.7;color:var(--text-2);margin:0 0 16px"><b style="color:var(--text)">Why:</b> ${_bulletifyReason(p.rationale)}</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div>
