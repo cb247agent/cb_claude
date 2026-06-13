@@ -18565,6 +18565,100 @@ function _renderProposedActionBriefHTML(row) {
       `<div style="font-size:11px;color:#6b7280;margin-top:8px">Pre-written by AI. Your job: read, tweak, approve, send. If the page 404s, the deliverable-drafter agent hasn't run yet (Mondays) — source will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/drafts/${esc(_dSlug)}.md</code> after the run.</div></div>`;
   }
 
+  // 13 Jun 2026 — Tia: every brief needs CLICK-BY-CLICK execution steps.
+  // The description tells WHAT to do, not HOW. Joanne / Tia / Angela should
+  // be able to open the brief and execute without asking "where do I do
+  // this?". Channel-aware template, keyed off source_page. The strategist
+  // can override by embedding its own "How to execute:" section, but this
+  // is the floor — every brief has at least the standard channel flow.
+  let executionStepsHTML = '';
+  {
+    const titleStr = String(row.title || '');
+    const descStr  = String(row.description || '');
+    // Extract optional specifics from the title/description for {placeholder}
+    // substitution in the steps. Regex are forgiving — fall back to label
+    // if no match.
+    const _quoted = (titleStr.match(/['"]([^'"]+)['"]/) || [])[1] || '';
+    const _budget = (descStr.match(/\$([\d.]+)\s*\/?\s*(week|day|month|wk|d|mo)/i) || [])[0] || '';
+    const _location = /Malaga/i.test(titleStr + descStr) ? 'Malaga'
+                    : /Ellenbrook/i.test(titleStr + descStr) ? 'Ellenbrook'
+                    : '';
+    const sp = (row.source_page || row.category || '').toLowerCase();
+
+    // Step templates per channel. Each is an array of { do, where } pairs.
+    // `where` is rendered as a small muted hint under the step.
+    const STEP_TEMPLATES = {
+      'meta-ads': [
+        { do: 'Open Meta Ads Manager and select the ChasingBetter247 ad account.', where: 'adsmanager.facebook.com — ad account dropdown top-left' },
+        { do: `Filter by date range "Last 14 days" and find the ad${_quoted ? ' "' + _quoted + '"' : ''}${_location ? ' (' + _location + ' targeting)' : ''}.`, where: 'Use the search bar or sort by Spend descending to find it fast' },
+        { do: 'Make the specific change in the action title (pause / shift budget / swap creative). Read the Instructions below for the exact what.', where: 'For pause: toggle Status to Off. For budget: edit the ad set → Daily budget. For creative: Duplicate the ad → swap image/video → publish, then pause the original.' },
+        { do: _budget ? `Redirect the freed budget (${_budget}) to the top-performing ad named in the Instructions. Convert weekly to daily if needed (÷ 7).` : 'If freeing budget, redirect it to the top-performing ad named in the Instructions.', where: 'Edit the destination ad set → Daily budget → increase by the converted daily amount → Publish' },
+        { do: 'Confirm the change is live: refresh Ads Manager. Old ad shows "Off". New budget shows updated.', where: 'Take a screenshot for the team channel if change is non-trivial' },
+        { do: 'Return to this dashboard and mark this action card "Approved → In Progress" then "Done" in the modal.', where: 'Action will auto-promote to Awaiting Verdict at the measurement window end (7-14d). Performance Review page will prompt you to verdict it.' },
+      ],
+      'google-ads': [
+        { do: 'Open Google Ads and select the ChasingBetter247 account.', where: 'ads.google.com → account selector top-right' },
+        { do: `Find the campaign / ad group / keyword named in the Instructions${_quoted ? ' ("' + _quoted + '")' : ''}.`, where: 'Search the navigation tree on the left, or use the search bar' },
+        { do: 'Apply the specific change (pause keyword / reduce budget by N% / swap headline). The Instructions below give the exact what.', where: 'For pause: status toggle. For budget: campaign settings → Budget. For headline: ad assets → Edit.' },
+        { do: _budget ? `If freeing budget (${_budget}), note it for the Brand Manager's weekly summary — Google Ads doesn't auto-redirect.` : 'If pausing, confirm spend stops within 24 hours.', where: 'Check Reports → Daily spend tomorrow to verify' },
+        { do: 'Return to this dashboard and mark the action "Approved → Done" in the modal.', where: 'Verdict prompted automatically in 7-28 days at the measurement window.' },
+      ],
+      'organic-social': [
+        { do: 'Open the deliverable-drafter draft (button above) and review the caption, hashtags, and image brief.', where: 'Tweak wording, swap hashtags, or request a different image — but stay within brand voice (no competitor mentions, no "only gym with", $11.95/wk anchor).' },
+        { do: `Open the scheduling tool (Meta Business Suite or native ${/instagram/i.test(titleStr+descStr) ? 'Instagram' : /tiktok/i.test(titleStr+descStr) ? 'TikTok' : 'platform'} composer).`, where: 'business.facebook.com for IG + FB · TikTok native app · @chasingbetter247 account' },
+        { do: 'Upload the image/video from the Image/ folder (or wait for Shauna if the brief says so), paste the caption + hashtags, set the send window from the draft.', where: 'Tuesday 6:30am or Thursday 6:30am are CB247 best-performing windows unless the draft says otherwise' },
+        { do: 'Schedule (don\'t publish-now unless the action is urgent).', where: 'Verify the scheduled time + date once published in the scheduler\'s queue' },
+        { do: 'Return to this dashboard and mark "Approved → Done". Watch engagement after 7-14d.', where: 'Verdict at the measurement window — was the engagement rate target hit?' },
+      ],
+      'membership': [
+        { do: 'Read the Attached Playbook (button above) first if this is a save-call / training action.', where: 'Don\'t skip — Reception scripts and 3-branch objection rules are mandatory.' },
+        { do: 'If the action needs a list, follow the parser instructions in the Instructions section (usually: drop CSV in cb247-inbox/, run scripts/parse_*.py).', where: 'List will surface as a "View the list" button when ready' },
+        { do: 'Hand off to Reception (Malaga + Ellenbrook) with the playbook + list. Reception calls Mon-Fri 11:00-14:00 (per playbook §8).', where: 'Brief them at the morning standup — 5 min walkthrough of the script' },
+        { do: 'Reception logs every outcome in PGM with both the outcome tag and the reason tag (playbook §6).', where: 'SAVE-DONTQUIT-2026-{FREEZE,RETAINED,LOST-CONFIRMED,LOST-NOCONTACT} + REASON-*' },
+        { do: 'Friday 16:00 — pull the save-rate report. Post the headline in the team channel: "Week N: X reached, Y saved, Z rate."', where: 'Verdict will auto-prompt in 14 days based on the live save-rate KPI on the Membership page' },
+      ],
+      'seo-organic': [
+        { do: 'Brief John (SEO Specialist) with this action. Forward the Instructions section + projected KPI.', where: 'John owns the build — Brand Manager owns the copy QC before publish' },
+        { do: 'John builds the page in the CMS (WordPress / hosting platform), pulls headline + body + meta from this brief.', where: 'Use the SEO content brief if attached; otherwise John follows the standard hub-page template' },
+        { do: 'Angela (Brand Manager) reviews the draft for brand voice + compliance BEFORE publish.', where: 'No competitor names, no "only gym with", $11.95/wk anchor, paid add-ons never bundled' },
+        { do: 'Publish + submit URL to Google Search Console for indexing.', where: 'search.google.com/search-console → URL inspection → Request indexing' },
+        { do: 'Return to dashboard, mark "Approved → Done". Verdict prompted at 28 days based on gsc_clicks_weekly.', where: 'GSC click target is the verdict measurement — usually +50% over baseline' },
+      ],
+      'seo': [
+        { do: 'Brief John (SEO Specialist) with this action. Forward the Instructions section.', where: 'John owns the build' },
+        { do: 'Follow the SEO content/audit brief in the Instructions.', where: 'Action might be a hub page, blog post, technical fix, or audit follow-up' },
+        { do: 'Angela QC + publish + submit to GSC for indexing.', where: 'search.google.com/search-console → URL inspection → Request indexing' },
+        { do: 'Mark "Approved → Done". Verdict in 28d based on gsc_clicks_weekly or seo_keyword_count_ranked.', where: '' },
+      ],
+      'gbp': [
+        { do: `Open Google Business Profile dashboard${_location ? ' and switch to the ' + _location + ' location' : ''}.`, where: 'business.google.com/locations — location switcher top-left' },
+        { do: 'Apply the specific change in the Instructions (respond to review / publish post / upload photo / update Q&A).', where: 'GBP changes are slow to surface — usually 1-2 hours' },
+        { do: 'Verify the change is live on the public profile (open a new tab, search "ChasingBetter247 Malaga" or "Ellenbrook").', where: 'Map listing → check the change appears' },
+        { do: 'Mark "Approved → Done". Verdict at 14-28d based on gbp_rating or qualitative.', where: 'GBP impact lags — review trend takes weeks to move' },
+      ],
+      'opportunity': [
+        { do: 'Check the archetype in the title: PAUSE/REDUCE → Tia owns the Google Ads change. CLUSTER/ORGANIC → John owns the content build.', where: '' },
+        { do: 'PAUSE/REDUCE: follow the Google Ads steps (open ads.google.com → find keyword → pause or cut budget).', where: 'Confirm spend stops the next day' },
+        { do: 'CLUSTER/ORGANIC: brief John, build the hub page, Angela QC, publish, submit to GSC.', where: 'Build target: 800-1500 word hub page covering 3-5 cluster keywords' },
+        { do: 'Mark "Approved → Done" in the modal. Verdict at 28d.', where: 'PAUSE/REDUCE → ads_spend_saved_monthly. ORGANIC → gsc_clicks_weekly.' },
+      ],
+      'overview': [
+        { do: 'Read the Instructions section carefully — Overview actions are usually system / cross-channel.', where: '' },
+        { do: 'Follow the action. If it references a script or query, run it from the project root.', where: '' },
+        { do: 'Mark "Approved → Done" when complete.', where: '' },
+      ],
+    };
+
+    const steps = STEP_TEMPLATES[sp] || STEP_TEMPLATES['overview'];
+    const stepsListHTML = steps.map((s, i) =>
+      `<li style="margin-bottom:14px;padding-left:6px"><div style="font-size:13px;color:${CB247_DARK};line-height:1.6;font-weight:500">${esc(s.do)}</div>${s.where ? `<div style="font-size:11.5px;color:#6b7280;line-height:1.5;margin-top:4px">${esc(s.where)}</div>` : ''}</li>`
+    ).join('');
+    executionStepsHTML =
+      `<div class="section"><div class="label">How to Execute · Step by Step</div>` +
+      `<ol style="margin:0;padding-left:26px;counter-reset:exec">${stepsListHTML}</ol>` +
+      `<div style="margin-top:14px;padding:10px 12px;background:#f8f9fa;border-radius:6px;font-size:11.5px;color:#6b7280;line-height:1.5"><b style="color:${CB247_DARK}">Standard channel flow.</b> If the Instructions below say something different (specific tool, alternative path, custom logging), follow the Instructions. These steps are the floor, not the ceiling.</div></div>`;
+  }
+
   // Wave 2.16 (11 Jun 2026): Pull the "Deliverable" sentence out of the
   // description and surface it as its own section above Instructions. The
   // emitter writes a line like "Deliverable — service page: Build a
@@ -18665,6 +18759,7 @@ ${attachedPlaybookHTML}
 ${attachedDraftHTML}
 ${deliverableHTML}
 <div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
+${executionStepsHTML}
 <div class="section"><div class="label">Primary Projected KPI</div><div class="caption-box">${captionHTML}</div></div>
 ${allKpisHTML}
 <div class="section"><div class="label">Source Page · Action ID</div><span class="src">${esc(source || '–')}</span><code style="background:#f3f4f6;padding:3px 8px;border-radius:3px;font-size:11px;color:#6b7280;margin-left:8px">${aid}</code></div>
