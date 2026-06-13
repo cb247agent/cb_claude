@@ -18755,7 +18755,15 @@ function _renderProposedActionBriefHTML(row) {
   // Webflow without writing anything.
   let attachedSeoRefreshHTML = '';
   const _seoRefreshId = String(row.id || '');
-  if (/^(opp-act|seo-act)-/i.test(_seoRefreshId)) {
+  // Match BOTH formats:
+  //   prop-seo-organic-* (synthesized planner ID used in client-side briefs)
+  //   opp-act-* / seo-act-* (raw emitter IDs)
+  // Also fires for any row whose source_page is seo-organic — covers future ID shapes.
+  const _isSeoRefresh = /^(opp-act|seo-act)-/i.test(_seoRefreshId)
+                     || /^prop-seo-/i.test(_seoRefreshId)
+                     || (row.source_page === 'seo-organic')
+                     || (row.category === 'opportunity' && /seo|organic|landing|page|h1|meta|faq/i.test(String(row.title || '')));
+  if (_isSeoRefresh) {
     const _srUrl = baseHref + `seo-refreshes/${_seoRefreshId}.html`;
     attachedSeoRefreshHTML =
       `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">AI-drafted SEO refresh · ready to paste into Webflow</div>` +
