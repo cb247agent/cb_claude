@@ -255,7 +255,7 @@ fi
 # Write / Draft / Launch / Publish). Skips operational actions like
 # "Refresh photos" / "Drive reviews" / "Respond to reviews" — those need
 # different artefacts. Output → outputs/gbp-posts/{slug}.md → "View GBP
-# Post Draft → " button. Tia opens GBP Manager → pastes → publishes.
+# Post Draft → " button. Joanne opens GBP Manager → pastes → publishes.
 mkdir -p "$OUTPUTS/gbp-posts" "$BASE_DIR/docs/gbp-posts"
 log "Step 2d — Path E · GBP Post Drafter..."
 
@@ -277,7 +277,7 @@ else
 
 Your job: draft the FULL GBP post (post type, 2 body variations, CTA
 button + URL, image brief, per-location guidance) for action '$ACTION_ID'
-so Tia can paste straight into GBP Manager — NO writing.
+so Joanne can paste straight into GBP Manager — NO writing.
 
 The action is in state/work-queue.json. Inputs.target_action_id is
 '$ACTION_ID'. Follow agents/gbp-post-drafter.yml's Workflow exactly.

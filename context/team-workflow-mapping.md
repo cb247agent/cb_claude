@@ -17,12 +17,13 @@ Each strategic goal that requires multiple workflow steps MUST be decomposed int
 | **Reception briefing / talking points / save-call playbook briefing** | Angela | `Brand Manager` | Angela writes briefs FOR reception, not the post copy itself. |
 | **Schedule + post IG/FB/TikTok content** | Joanne | `Organic Social` | Posts pre-approved drafts to Metricool or direct. |
 | **Send EDM / SMS campaign** | Joanne | `Organic Social` | Sends after Angela QC. |
-| **Schedule + post GBP update** | Tia or Joanne | `OS Owner` / `Organic Social` | Joanne if it's marketing post; Tia if it's hours/structural update. |
+| **Schedule + post GBP marketing post** | Joanne | `Organic Social` | All GBP marketing posts (What's New / Event / Offer / promo tie-in) go to Joanne. She pastes the AI draft into GBP Manager and publishes. |
+| **GBP structural update** (hours, holiday hours, attributes, name, category) | Tia | `OS Owner` | Tia owns the listing-level structural data — NOT marketing posts. |
 | **Paid Meta ad spend / campaign launch** | Joanne | `Meta Ads Specialist` | Owns paid Meta from brief → live. |
 | **Paid Google Ads spend / campaign launch** | Tia | `OS Owner / Paid Ads` | Owns paid Google end-to-end. |
 | **Webflow CMS edit (H1, meta, FAQ, internal links, blog publish)** | John | `SEO Specialist` or `SEO / Web` | Opens Webflow → pastes AI draft → publishes. |
 | **Webflow asset upload (image, PDF)** | John or Mark | `SEO / Web` | John for SEO-pages; Mark for service content if delegated. |
-| **GBP location data (hours, photos, posts)** | Tia | `OS Owner` | Owns the GBP listings. |
+| **GBP photos upload** | Tia or Shauna | `OS Owner` / `Asset Creator` | Shauna shoots; Tia uploads + tags to the right location listing. |
 | **PGM data extract / membership data tracking** | Tia | `OS Owner` | Pulls from Perfect Gym Manager. |
 | **Strategic review / verdict / approve-reject** | Denver | `COO (approver)` | Approver only — NEVER assign action ownership to Denver. |
 

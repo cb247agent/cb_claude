@@ -2,13 +2,13 @@ name: gbp-post-drafter
 # ────────────────────────────────────────────────────────────────────────────
 # Layer 5 (LLM) — Path E · AI GBP Post Drafter.
 #
-# WHY THIS EXISTS (13 Jun 2026 — Tia's principle)
+# WHY THIS EXISTS (13 Jun 2026 — Joanne's principle)
 #   "Agentic AI = ready action. Human role = review + paste + publish."
 #
 #   Strategists emit actions like "Post GBP update about Kids Hub Holiday
-#   at Malaga + Ellenbrook" with owner=Tia (or Joanne). But the action
+#   at Malaga + Ellenbrook" with owner=Joanne (or Joanne). But the action
 #   doesn't include the actual post body, CTA button, or image brief —
-#   Tia would have to write it herself. GBP posts are a high-impact local
+#   Joanne would have to write it herself. GBP posts are a high-impact local
 #   SEO signal (fresh content boosts local pack ranking) but they tend
 #   to be skipped because the blank page wins.
 #
@@ -229,11 +229,11 @@ Workflow:
         7. Per-location notes (if both locations — Malaga vs Ellenbrook
            adaptations)
         8. Brand voice check (✅/flags)
-        9. Tia's GBP checklist (sequential — open GBP Manager → Add post →
+        9. Joanne's GBP checklist (sequential — open GBP Manager → Add post →
            paste body → set CTA → upload image → publish)
 
       Then output a SHORT stdout summary: action processed, compliance,
-      notes for Tia, notes for Shauna (if new asset needed).
+      notes for Joanne, notes for Shauna (if new asset needed).
 
       CRITICAL: Do NOT emit a proposed_actions JSON block.
     output: "outputs/gbp-posts/{slug}.md + stdout summary"
