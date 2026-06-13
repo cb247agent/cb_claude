@@ -18565,6 +18565,26 @@ function _renderProposedActionBriefHTML(row) {
       `<div style="font-size:11px;color:#6b7280;margin-top:8px">Pre-written by AI. Your job: read, tweak, approve, send. If the page 404s, the deliverable-drafter agent hasn't run yet (Mondays) — source will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/drafts/${esc(_dSlug)}.md</code> after the run.</div></div>`;
   }
 
+  // 13 Jun 2026 — Path B: surface any outputs/media-plans/*.md reference as a
+  // prominent "View the media plan" button. Pairs with campaign-launch-strategist
+  // (phase1b_promo_launch.sh) + render_media_plan_html.py. Surfaces the full
+  // Meta + Google media plan (objective, audiences, budget, bid, kill criteria)
+  // so Joanne can copy-paste into Ads Manager without making decisions.
+  let attachedMediaPlanHTML = '';
+  const _mpMatch = rawDescStr.match(/outputs\/media-plans\/([\w\-.]+)\.md/i);
+  if (_mpMatch) {
+    const _mpSlug = _mpMatch[1];
+    const _mpUrl = baseHref + `media-plans/${_mpSlug}.html`;
+    attachedMediaPlanHTML =
+      `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">Attached media plan · ready to launch</div>` +
+      `<a href="${esc(_mpUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">View the media plan →</a>` +
+      `<div style="font-size:11px;color:#6b7280;margin-top:8px">Full Meta + Google setup: objective, audiences, budget, bid strategy, placements, kill criteria. Copy-paste into Ads Manager. If the page 404s, campaign-launch-strategist hasn't run yet — source will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/media-plans/${esc(_mpSlug)}.md</code> after the run.</div></div>`;
+  }
+
+  // Also rewrite outputs/media-plans/*.md URLs in the description so they
+  // survive the blob:// context (matches the pattern for playbooks + drafts).
+  desc = desc.replace(/outputs\/media-plans\/([\w\-.]+)\.md/gi, `${baseHref}media-plans/$1.html`);
+
   // 13 Jun 2026 — Tia: every brief needs CLICK-BY-CLICK execution steps.
   // The description tells WHAT to do, not HOW. Joanne / Tia / Angela should
   // be able to open the brief and execute without asking "where do I do
@@ -18757,6 +18777,7 @@ ${effort ? `<span class="meta-chip" style="background:#f3f4f6;color:#374151">Eff
 ${attachedListHTML}
 ${attachedPlaybookHTML}
 ${attachedDraftHTML}
+${attachedMediaPlanHTML}
 ${deliverableHTML}
 <div class="section"><div class="label">Instructions for ${owner}</div><div class="instructions">${desc}</div></div>
 ${executionStepsHTML}
@@ -19806,15 +19827,58 @@ const PROMO_PIPELINE_DATA = {
 // state/promo-pipeline.json into window.PROMO_PIPELINE_LIVE on each weekly
 // cron run. When present, it replaces the hardcoded data above.
 function _promoData() {
+  let base;
   if (typeof window !== 'undefined' && window.PROMO_PIPELINE_LIVE) {
     const live = window.PROMO_PIPELINE_LIVE;
-    return {
+    base = {
       acquisition: Array.isArray(live.acquisition) ? live.acquisition : (PROMO_PIPELINE_DATA.acquisition || []),
       retention:   Array.isArray(live.retention)   ? live.retention   : (PROMO_PIPELINE_DATA.retention   || []),
     };
+  } else {
+    base = PROMO_PIPELINE_DATA;
   }
-  return PROMO_PIPELINE_DATA;
+
+  // 13 Jun 2026 (Path B) — Layer team's Supabase stage overrides on top of
+  // the AI-proposed pipeline. localStorage cache (cb247-promo-pipeline-stages)
+  // hydrates instantly; cbState.promoPipeline.fetchStages() fills in any
+  // gaps from Supabase async. Team's stage ALWAYS wins over the AI's
+  // default 'Concept' on the JSON file.
+  let overrides = {};
+  try {
+    overrides = JSON.parse(localStorage.getItem('cb247-promo-pipeline-stages') || '{}');
+  } catch {}
+
+  const applyOverrides = (list) => (list || []).map(c => {
+    if (!c || !c.id) return c;
+    const o = overrides[c.id];
+    if (!o) return c;
+    return { ...c, stage: o.stage, notes: o.notes || c.notes };
+  });
+
+  return {
+    acquisition: applyOverrides(base.acquisition),
+    retention:   applyOverrides(base.retention),
+  };
 }
+
+// 13 Jun 2026 (Path B) — Async Supabase fetch for promo_pipeline_state.
+// Fires after page load and on realtime broadcasts. Mirrors cbState.planner
+// pattern but lighter (no separate approval table). Updates localStorage
+// cache + re-renders the kanban if rendered.
+window.fetchPromoStagesFromSupabase = async () => {
+  if (!window.cbState || !window.cbState.readAll) return;
+  const { data, error } = await window.cbState.readAll('promo_pipeline_state');
+  if (error || !Array.isArray(data)) return;
+  const cached = {};
+  data.forEach(r => {
+    if (!r || !r.id) return;
+    cached[r.id] = { stage: r.stage, notes: r.notes, updated_at: r.updated_at };
+  });
+  try {
+    localStorage.setItem('cb247-promo-pipeline-stages', JSON.stringify(cached));
+  } catch {}
+  if (typeof renderPromoPipeline === 'function') renderPromoPipeline();
+};
 
 // Stage colour + position helpers
 const PROMO_STAGES_ORDER = ['Concept','Approved','Asset Shoot Scheduled','In Production','Active','Performance Review'];
@@ -20003,12 +20067,91 @@ window.openPromoDetailModal = (id) => {
       ? `<a href="${p.gdrive_folder_url}" target="_blank" rel="noopener" style="display:inline-block;background:#fff;border:1px solid var(--brand-accent);color:var(--brand-accent-deep);padding:8px 14px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;margin-bottom:18px">Open in Google Drive →</a>`
       : `<div style="font-size:11.5px;color:var(--muted);margin-bottom:18px;font-style:italic">No folder yet — paste URL into the promo data once shoot is scheduled. (Wave 4 will add upload zone.)</div>`}
 
+    ${(() => {
+      // 13 Jun 2026 (Path B) — Stage transition buttons. Without these,
+      // campaign-launch-strategist has no clean trigger. Buttons are
+      // contextual per current stage: a Concept can be Approved or
+      // Rejected; an Approved one can move forward to Asset Shoot or
+      // back to Concept; etc.
+      const CURRENT = p.stage || 'Concept';
+      const TRANSITIONS = {
+        'Concept':                 { back: null,          fwd: 'Approved',              rejectLabel: 'Reject' },
+        'Approved':                { back: 'Concept',     fwd: 'Asset Shoot Scheduled', rejectLabel: 'Reject' },
+        'Asset Shoot Scheduled':   { back: 'Approved',    fwd: 'In Production',         rejectLabel: 'Cancel' },
+        'In Production':           { back: 'Asset Shoot Scheduled', fwd: 'Active',      rejectLabel: 'Cancel' },
+        'Active':                  { back: 'In Production', fwd: 'Performance Review',  rejectLabel: 'Cancel' },
+        'Performance Review':      { back: 'Active',      fwd: null,                    rejectLabel: 'Archive' },
+        'Rejected':                { back: 'Concept',     fwd: null,                    rejectLabel: null },
+      };
+      const t = TRANSITIONS[CURRENT] || TRANSITIONS['Concept'];
+      const id = esc(p.id);
+      const back  = t.back  ? `<button onclick="window.setPromoStage('${id}', '${t.back}')" style="background:#fff;border:1px solid var(--border);color:var(--text-2);border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">← ${esc(t.back)}</button>` : '';
+      const fwd   = t.fwd   ? `<button onclick="window.setPromoStage('${id}', '${t.fwd}')" style="background:var(--brand-accent);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">${esc(t.fwd)} →</button>` : '';
+      const rej   = t.rejectLabel ? `<button onclick="window.setPromoStage('${id}', 'Rejected', { prompt: true })" style="background:#fff;border:1px solid #fca5a5;color:#b91c1c;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">${esc(t.rejectLabel)}</button>` : '';
+      return `<div style="display:flex;gap:8px;justify-content:flex-end;margin:18px 0 8px;flex-wrap:wrap">${back}${rej}${fwd}</div>`;
+    })()}
+
     <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px">
       <span>Child Work Queue items: <b>${(p.child_actions || []).length}</b> · linked via promo ID</span>
-      <button onclick="document.getElementById('promo-detail-overlay').style.display='none'" style="background:var(--brand-accent);color:#fff;border:none;border-radius:4px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Close</button>
+      <button onclick="document.getElementById('promo-detail-overlay').style.display='none'" style="background:#fff;border:1px solid var(--border);color:var(--text-2);border-radius:4px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Close</button>
     </div>
   </div>`;
   overlay.style.display = 'flex';
+};
+
+// 13 Jun 2026 (Path B) — Promo stage setter. Writes to Supabase
+// promo_pipeline_state, optimistically updates the local PROMO_PIPELINE_DATA
+// snapshot, re-renders kanban + closes modal. If Supabase is unreachable,
+// falls back to localStorage and surfaces a warning.
+window.setPromoStage = async (id, newStage, opts = {}) => {
+  let notes = null;
+  if (opts.prompt) {
+    notes = prompt(`Reason for moving "${id}" to ${newStage}? (optional)`);
+    if (notes === null) return;  // user cancelled
+  }
+
+  const me = (window.cbState && window.cbState.whoAmI && window.cbState.whoAmI()) || 'unknown';
+  const row = { id, stage: newStage, notes: notes || null, updated_by: me };
+
+  // 1. Optimistic local update — find the concept in PROMO_PIPELINE_DATA and bump its stage
+  const live = (typeof window !== 'undefined' && window.PROMO_PIPELINE_DATA) || PROMO_PIPELINE_DATA;
+  for (const track of ['acquisition', 'retention']) {
+    const list = live[track] || [];
+    const c = list.find(x => x && x.id === id);
+    if (c) {
+      c.stage = newStage;
+      if (notes) c.notes = notes;
+      break;
+    }
+  }
+
+  // Also save to localStorage so refreshes keep the change even before Supabase round-trip
+  try {
+    const cached = JSON.parse(localStorage.getItem('cb247-promo-pipeline-stages') || '{}');
+    cached[id] = { stage: newStage, notes: notes || null, updated_at: new Date().toISOString() };
+    localStorage.setItem('cb247-promo-pipeline-stages', JSON.stringify(cached));
+  } catch {}
+
+  // 2. Close modal + re-render kanban immediately so user sees the move
+  const overlay = document.getElementById('promo-detail-overlay');
+  if (overlay) overlay.style.display = 'none';
+  if (typeof renderPromoPipeline === 'function') renderPromoPipeline();
+
+  // 3. Persist to Supabase (best-effort — local change already applied)
+  if (window.cbState && window.cbState.upsert) {
+    const { error } = await window.cbState.upsert('promo_pipeline_state', row);
+    if (error) {
+      console.warn(`[setPromoStage] Supabase write failed for ${id}:`, error);
+      // Surface a non-intrusive toast — Supabase failure shouldn't block the UI flow
+      const t = document.createElement('div');
+      t.textContent = `Stage saved locally only — Supabase write failed (${error.message || 'unknown'}). Open the migration: db/migrations/2026-06-13-promo-pipeline-stage.sql`;
+      t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#fef3c7;color:#92400e;border:1px solid #f59e0b;padding:14px 18px;border-radius:8px;font-size:12.5px;max-width:380px;z-index:2000;box-shadow:0 4px 12px rgba(0,0,0,.1);font-family:inherit';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 8000);
+    } else {
+      console.log(`[setPromoStage] ${id} → ${newStage} synced to Supabase`);
+    }
+  }
 };
 
 // ── Render: Asset Library (Wave 4 · 10 Jun 2026) ──────────────────────────────
@@ -26136,6 +26279,18 @@ function init() {
   renderMeta();
   renderGBP();
   renderPromoPipeline();   // Wave 3 · 10 Jun 2026
+  // 13 Jun 2026 (Path B) — Hydrate promo stage overrides from Supabase
+  // async + subscribe to realtime broadcasts so multi-user stage changes
+  // sync live. Safe to fire even if Supabase isn't connected — fetch returns
+  // gracefully if cbState.readAll errors.
+  if (window.fetchPromoStagesFromSupabase) {
+    setTimeout(window.fetchPromoStagesFromSupabase, 100);
+  }
+  if (window.cbState && window.cbState.subscribe) {
+    window.cbState.subscribe('promo_pipeline_state', () => {
+      if (window.fetchPromoStagesFromSupabase) window.fetchPromoStagesFromSupabase();
+    });
+  }
   renderAssetLibrary();    // Wave 4 · 10 Jun 2026
   renderPlanner();
   renderContentReview();

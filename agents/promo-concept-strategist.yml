@@ -82,7 +82,7 @@ CB247_Brand_Anchors:
   banned_phrases:
     - "only gym with"        # ACL — Ryderwear has sauna + reformer
     - "burns fat"            # TGA
-    - "heals" / "cures" / "treats"
+    - 'heals / cures / treats'
   forbidden_competitor_mentions: ["Revo", "Anytime", "Snap", "Ryderwear"]
   paid_add_ons_never_bundled: ["Recovery", "Reformer Pilates", "ChasingRX"]
 

@@ -72,6 +72,13 @@ VALID_METRICS = {
     "pages_4xx",                        # count of URLs returning 4xx (target: 0)
     "schema_implemented",               # 0/1 — has the page got LocalBusiness JSON-LD yet
     "duplicate_metas",                  # count of pages sharing the same meta description (target: 0)
+    # Path B (13 Jun 2026) — new metrics proposed by the 3 added strategists.
+    # No auto-measure handler yet → actions land with qualitative_assessment
+    # fallback verdict path. Add baselines + measurement_runner dispatch when
+    # the metric proves valuable enough to instrument.
+    "meta_frequency",                   # campaign-launch kill criterion (impressions per unique user)
+    "seo_keyword_count_ranked",         # opportunity-strategist hub-page lift
+    "org_social_engagement_rate",       # promo-concept-strategist organic verdict
     "qualitative_assessment",
 }
 

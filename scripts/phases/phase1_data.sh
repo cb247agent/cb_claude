@@ -151,9 +151,15 @@ log "Step 1h''''' — Membership: rule emitter DISABLED 12 Jun 2026 — replaced
 # a CUMULATIVE monthly ROI summary card (executive headline).
 # Together they close Tia's "reduce Google Ads spend as SEO catches up" loop
 # with structured, measurable, programmatic outputs.
-log "Step 1h'''''' — Emit ROI Opportunity actions (paid→organic switch)..."
-"$PYTHON" "$BASE_DIR/scripts/work_queue/opportunity_emitter.py" >> "$LOG" 2>&1 \
-    || log "  ⚠️  Opportunity emitter had issues — check $LOG"
+log "Step 1h'''''' — Opportunity rule emitter DISABLED 13 Jun 2026 — replaced by LLM strategist below (Step 1h0opp)"
+# The rule-based opportunity_emitter.py thresholded paid keywords mechanically
+# (rank ≤ 3 → PAUSE, rank 4-10 → REDUCE). The strategist below reasons about
+# intent class, realistic difficulty (KD vs DR), cluster opportunities, and
+# brand-defence exclusions before proposing. Replaced by agents/opportunity-
+# strategist.yml — runs as Step 1h0opp.
+# Re-enable this line if the strategist is down for an extended period.
+# "$PYTHON" "$BASE_DIR/scripts/work_queue/opportunity_emitter.py" >> "$LOG" 2>&1 \
+#     || log "  ⚠️  Opportunity emitter had issues — check $LOG"
 
 log "Step 1h''''''' — Emit ROI Attribution summary (cumulative savings)..."
 "$PYTHON" "$BASE_DIR/scripts/work_queue/attribution_emitter.py" >> "$LOG" 2>&1 \
@@ -168,9 +174,17 @@ log "Step 1h''''''' — Emit ROI Attribution summary (cumulative savings)..."
 # inject-promo-pipeline rewrites the docs/index.html <script id="promo-
 # pipeline-block"> so renderPromoPipeline + renderAssetLibrary consume the
 # latest concepts at next page load.
-log "Step 1h'''''''' — Emit Promo Concepts (acquisition + retention)..."
-"$PYTHON" "$BASE_DIR/scripts/work_queue/promo_concept_emitter.py" >> "$LOG" 2>&1 \
-    || log "  ⚠️  Promo concept emitter had issues — check $LOG"
+log "Step 1h'''''''' — Promo concept rule emitter DISABLED 13 Jun 2026 — replaced by LLM strategist (Step 1h0promo) on day-of-month=1 only"
+# The rule-based promo_concept_emitter.py hard-coded 4 acquisition archetypes
+# + 4 retention rules. The strategist below reads the SAME signals plus
+# Campaign-History narrative + meta-ads-data + ga4 to write ENRICHED concepts
+# with audience_seed, conversion_event, budget_envelope, historical_cpa_baseline,
+# launch_window, kill_criteria, creative_hints — fields the downstream
+# campaign-launch-strategist needs to write a media plan. Runs MONTHLY only
+# (1st of month) to control cost.
+# Re-enable this line if the strategist is down for an extended period.
+# "$PYTHON" "$BASE_DIR/scripts/work_queue/promo_concept_emitter.py" >> "$LOG" 2>&1 \
+#     || log "  ⚠️  Promo concept emitter had issues — check $LOG"
 
 log "Step 1h''''''''' — Inject promo pipeline into dashboard..."
 "$PYTHON" "$BASE_DIR/scripts/inject-promo-pipeline.py" >> "$LOG" 2>&1 \
@@ -590,6 +604,132 @@ outputs/organic-social/social-strategist-$DATE.md." \
 "$OUTPUTS/organic-social/social-strategist-$DATE.md" \
 "Read(state/apify-data.json),Read(state/metricool-data.json),Read(state/work-queue.json),Read(context/brand-voice.md),Read(context/seasonal-calendar.md)" \
 "$MODEL_OPUS"
+
+# ── Step 1h0opp — Opportunity Strategist (LLM, replaces rule-based emitter) ──
+# Shipped 13 Jun 2026 (Path B). The rule emitter mechanically thresholded
+# paid keywords (rank ≤3 → PAUSE, 4-10 → REDUCE). This strategist reasons
+# about intent class (commercial/informational/navigational/brand), realistic
+# difficulty (KD vs CB247's DR), cluster opportunities (5 related keywords →
+# 1 hub page action), and brand-defence exclusions. Weekly cadence.
+mkdir -p "$OUTPUTS/opportunity-strategist"
+log "Step 1h0opp — Opportunity Strategist (LLM, paid→organic switcher)..."
+run_agent "opportunity-strategist" \
+"You are the CB247 Opportunity Strategist. Today is $DATE.
+
+Your job is to look at paid Google Ads spend vs CB247's actual organic GSC
+positions, decide which paid keywords to PAUSE / REDUCE / cluster into hub
+pages, and emit measurable WorkQueueActions Tia (paid) and John (SEO) can
+execute next week.
+
+Read these files:
+- state/google-ads-data.json   (campaigns, search_terms with cost + clicks)
+- state/gsc-data.json          (organic position + clicks per query)
+- state/apify-data.json        (competitor SERP per term)
+- state/ahrefs-data.json       (CB247 DR + keyword difficulty)
+- state/work-queue.json        (existing PAUSE/REDUCE actions — de-dupe)
+- context/seo-priorities.md    (John's priority cluster list)
+- context/seasonal-calendar.md (seasonal intent windows — don't pause peak)
+- CB_Brain/wiki/SEO-Learnings.md (past paid→organic switches + actual lift)
+
+Workflow + rules: see agents/opportunity-strategist.yml — full schema and
+constraints declared there. Emit 3-8 actions covering CLUSTER (one hub page
+for ≥3 related keywords) + PAUSE (durable organic + commercial) + REDUCE
+(fragile organic) + ORGANIC_OVERLAP (competitor outranks, fixable). Brand-
+defence keywords NEVER PAUSE (\"chasingbetter247\", \"cb247\", brand+suburb).
+
+Output:
+# CB247 Opportunity Strategist — $DATE
+## Paid Spend Landscape (paragraph)
+## Cluster Opportunities (table)
+## Paid Keywords to PAUSE (table)
+## Paid Keywords to REDUCE (table)
+## Organic Overlap (SEO climb) (table)
+## Considered but Kept Funded (bullets)
+## Proposed Actions
+\`\`\`json proposed_actions
+[ ... 3-8 actions ... ]
+\`\`\`
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT the entire
+markdown report directly to stdout. The bash wrapper saves your stdout to
+the output path. Do NOT try to Write to outputs/opportunity-strategist/." \
+    "$OUTPUTS/opportunity-strategist/opportunity-strategist-$DATE.md" \
+    "Read(state/google-ads-data.json),Read(state/gsc-data.json),Read(state/apify-data.json),Read(state/ahrefs-data.json),Read(state/work-queue.json),Read(context/seo-priorities.md),Read(context/seasonal-calendar.md),Read(context/brand-voice.md)" \
+    "$MODEL_OPUS"
+
+# ── Step 1h0promo — Promo Concept Strategist (LLM, MONTHLY ONLY) ──
+# Shipped 13 Jun 2026 (Path B). The rule emitter hard-coded 4 acquisition +
+# 4 retention archetypes. This strategist reads 12 months of Campaign-History
+# narrative + verdict feedback + membership signals + meta/google historicals
+# and writes ENRICHED concepts containing audience_seed, conversion_event,
+# budget_envelope, historical_cpa_baseline, launch_window, kill_criteria,
+# creative_hints. Those fields feed the campaign-launch-strategist
+# (event-driven, separate phase1b_promo_launch.sh).
+#
+# MONTHLY ONLY — fires when today is the 1st of the month, OR when forced
+# via PROMO_STRATEGIST_FORCE=1 env var (for manual re-emits).
+if [[ "$(date +%d)" == "01" || "${PROMO_STRATEGIST_FORCE:-0}" == "1" ]]; then
+    mkdir -p "$OUTPUTS/promo-strategist"
+    log "Step 1h0promo — Promo Concept Strategist (LLM, monthly — 1st of month fired)..."
+    run_agent "promo-concept-strategist" \
+"You are the CB247 Promo Concept Strategist. Today is $DATE.
+
+Your job is to propose 2-4 ACQUISITION concepts + 1-3 RETENTION concepts for
+the coming month, ENRICHED with the audience / budget / conversion / kill
+criteria fields the downstream campaign-launch-strategist needs to write a
+full media plan. Without these fields the launch agent has to guess.
+
+Read these files:
+- state/membership-data.json     (this week per-club + cleverwaiver + addons — audience seed sizes)
+- state/membership-history.json  (prior-week deltas + trend)
+- state/promo-pipeline.json      (existing in-flight promos — PRESERVE past Concept stage)
+- state/work-queue.json          (existing ops — de-dupe + read verdicts on completed actions)
+- state/meta-ads-data.json       (historical CPA + frequency baselines for kill criteria)
+- state/google-ads-data.json     (historical CPC + conversion-rate baselines)
+- state/ga4-data.json            (member-acquisition funnel — which channel converted last similar promo)
+- context/seasonal-calendar.md   (event triggers — acquisition side)
+- context/brand-voice.md         (voice constraints)
+- CB_Brain/wiki/Campaign-History.md (12 months of winners + losers + why)
+- CB_Brain/wiki/CB247-Knowledge-Base.md (strategic playbook)
+
+Workflow + rules + enriched schema: see agents/promo-concept-strategist.yml.
+The enrich-for-campaign-launch step is MANDATORY — every concept must carry
+audience_seed (lookalike_seeds with sizes from membership-data, interest_
+categories, geo, demographic, exclusions), conversion_event (pixel + CAPI
+event name), budget_envelope (total_aud + days + meta/google split), historical
+_cpa_baseline (citing a real prior campaign from Campaign-History), launch_
+window (start/end derived from seasonal calendar), kill_criteria (CPA threshold
+1.2-1.6× baseline + frequency cap), creative_hints (primary format + hook).
+
+Output TWO JSON blocks at the end of the markdown:
+\`\`\`json proposed_promos
+{\"acquisition\": [ ... 2-4 concepts ... ], \"retention\": [ ... 1-3 concepts ... ]}
+\`\`\`
+
+\`\`\`json proposed_actions
+[ ... child WorkQueueAction items, one per format × count from each concept's asset_requirements ... ]
+\`\`\`
+
+CRITICAL: For every child action with format in {edm_assets, sms, reels, stories, meta_ad},
+the description MUST include the literal string \"outputs/drafts/{prefix}-{slugify(concept_label)}-$DATE.md\"
+so the dashboard brief auto-surfaces the View the draft button (prefix: edm/sms/social/ad).
+
+CRITICAL OUTPUT INSTRUCTION: Do NOT use the Write tool. OUTPUT the entire
+markdown report directly to stdout. The bash wrapper saves your stdout to
+the output path." \
+        "$OUTPUTS/promo-strategist/promo-strategist-$DATE.md" \
+        "Read(state/membership-data.json),Read(state/membership-history.json),Read(state/promo-pipeline.json),Read(state/work-queue.json),Read(state/meta-ads-data.json),Read(state/google-ads-data.json),Read(state/ga4-data.json),Read(context/seasonal-calendar.md),Read(context/brand-voice.md),Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/Campaign-History.md),Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/CB247-Knowledge-Base.md)" \
+        "$MODEL_OPUS"
+
+    # Extract the two JSON blocks from the strategist's markdown output into
+    # state/promo-pipeline.json + appended state/work-queue.json
+    log "Step 1h0promo.2 — Extract promo-strategist output (2 JSON blocks)..."
+    "$PYTHON" "$BASE_DIR/scripts/work_queue/extract_promo_strategist_output.py" \
+        --input "$OUTPUTS/promo-strategist/promo-strategist-$DATE.md" >> "$LOG" 2>&1 \
+        || log "  ⚠️  Promo-strategist extraction had issues — check $LOG"
+else
+    log "Step 1h0promo — Skipping (only fires on 1st of month — set PROMO_STRATEGIST_FORCE=1 to override)"
+fi
 
 # ── Step 1h0a — Normalise strategist JSON output ──
 # The LLM sometimes outputs projected_kpis as a dict ({"gsc_position":{...}})
