@@ -18308,9 +18308,17 @@ function _structureWhyText(rawDesc) {
   const strategy = [];
   const reasonLines = [];
   const STRATEGY_RE = /^(Tone\s*:|ICP\s*:|Audience\s*:|Channel\s*:|Context\s*:|Format\s*:|Setup\s*:|Child work item of promo|Assets land in)/i;
-  const ACTION_VERBS = /^(Capture|Post|Refresh|Run|Pause|Scale|Add|Test|Swap|Reduce|Lift|Adapt|Shift|Counter|Schedule|Brief|Reactivate|Train|Push|Extend|Investigate|Build|Trend-ride|Drive|Upload|Respond|Stop|Batch-film|Enable)/i;
+  // 13 Jun 2026 — Tia: strategists often prefix the action with "Action:" or
+  // "Steps:". The classifier missed these, leaving the actionable item buried
+  // in Reason where it looked like just another analysis bullet.
+  const EXPLICIT_ACTION_RE = /^(Action|Actions|Steps|Execute|Execution|Do|Task|Recommendation|Recommended)\s*:\s*/i;
+  // Expanded vocabulary so common imperative verbs (Improve, Optimise, Update,
+  // Create, Write, Draft, etc.) get routed to the Action section.
+  const ACTION_VERBS = /^(Capture|Post|Refresh|Run|Pause|Scale|Add|Test|Swap|Reduce|Lift|Adapt|Shift|Counter|Schedule|Brief|Reactivate|Train|Push|Extend|Investigate|Build|Trend-ride|Drive|Upload|Respond|Stop|Batch-film|Enable|Improve|Optimi[sz]e|Update|Create|Write|Draft|Send|Review|Implement|Deploy|Fix|Launch|Setup|Set up|Submit|Publish|Edit|Rewrite|Expand|Configure|Activate|Install|Roll out|Replace|Remove|Migrate|Audit|Verify|Confirm|Generate|Rebuild|Rewire|Tag|Boost|Cut|Move|Open|Close|Start|Finish|Promote)/i;
   for (const sent of sentences) {
-    if (STRATEGY_RE.test(sent)) {
+    if (EXPLICIT_ACTION_RE.test(sent)) {
+      actionBullets.push(sent.replace(EXPLICIT_ACTION_RE, '').trim().replace(/^[•·]\s*/, ''));
+    } else if (STRATEGY_RE.test(sent)) {
       strategy.push(sent.replace(/^[•·]\s*/, ''));
     } else if (ACTION_VERBS.test(sent)) {
       actionBullets.push(sent.replace(/^[•·]\s*/, ''));
