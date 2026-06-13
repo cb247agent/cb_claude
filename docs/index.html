@@ -18784,9 +18784,6 @@ function _renderProposedActionBriefHTML(row) {
     attachedSeoRefreshHTML =
       `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">AI-drafted SEO refresh · ready to paste into Webflow</div>` +
       `<a href="${esc(_srUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">View AI Draft →</a>` +
-      (_srUrlSlug && _srUrlSlug !== _srUrlId
-        ? ` <a href="${esc(_srUrlId)}" target="_blank" style="display:inline-block;background:#fff;border:1px solid ${CB247_TEAL_DEEP};color:${CB247_TEAL_DEEP};text-decoration:none;padding:10px 18px;border-radius:6px;font-size:12px;font-weight:600;font-family:inherit;margin-left:8px">(alt: by ID)</a>`
-        : '') +
       `<div style="font-size:11px;color:#6b7280;margin-top:8px">Contains ready-to-paste new H1, meta title, meta description, FAQs, and internal link table. John opens Webflow → pastes → publishes. No writing needed. If the page 404s, the seo-refresh-drafter agent hasn't generated it yet — source will be at <code style="background:#fff;padding:1px 6px;border-radius:3px">outputs/seo-refreshes/${esc(_titleSlug || _seoRefreshId)}.md</code> after Monday's run.</div></div>`;
   }
 
