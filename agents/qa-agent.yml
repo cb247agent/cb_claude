@@ -134,7 +134,12 @@ Workflow:
 
       JSON rules:
       - category: "seo-organic" (most QA issues touch SEO actions)
-      - owner: "Joanne" + owner_role: "QA Specialist" for ALL QA findings.
+      - owner: "Tia" + owner_role: "OS Owner" for ALL QA findings.
+        QA findings are SYSTEM/DATA integrity work (orphaned files, stale
+        Supabase rows, schema drift, source-agent attribution gaps) — they
+        belong to the OS Owner, NOT to Organic Social. Joanne handles
+        organic-social QA only via the modal approval pills, not as a
+        prioritised action owner.
         Joanne is the QA triage point — she decides whether to fix herself
         (Meta + Social issues), delegate to John (SEO content), or escalate
         to Tia (infra / sync / data pipeline issues). Never auto-assign
