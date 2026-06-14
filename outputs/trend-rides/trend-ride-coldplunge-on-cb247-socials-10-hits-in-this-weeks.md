@@ -6,20 +6,18 @@ owner: Joanne (Organic Social)
 drafted_at: 2026-06-14
 format: trend-ride
 status: asset-attached
-asset_slug: ice-bath-malaga-2026-06-14
-asset_path: docs/Image/ice-bath-malaga-2026-06-14.jpg
+asset_slug: ice-bath-ellenbrook-p1071860
+asset_path: docs/Image/Ellenbrook/P1071860.JPG
 ready_to_post: true
 ---
 
-> **READY TO POST** — Asset attached (`docs/Image/ice-bath-malaga-2026-06-14.jpg`).
+> **READY TO POST** — Asset attached (`docs/Image/Ellenbrook/P1071860.JPG`).
 > Joanne: use **Variation B** (best fit for the static, no-person shot).
 > Post to Instagram feed Wed 17:30 AWST. Reel/TikTok version: wait for Shauna shoot day or use a slow zoom over the static + ambient audio.
 
 ## Visual Preview
 
-![CB247 ice bath — blue cold plunge tub with stainless steel access ladder, grey tile walls, hose and gauge visible. Recovery zone at Malaga gym.](../Image/ice-bath-malaga-2026-06-14.jpg)
-
-*Save the photo at `docs/Image/ice-bath-malaga-2026-06-14.jpg` for this preview to load. Once saved, hard-refresh this page.*
+![CB247 ice bath at Ellenbrook — blue cold plunge tub with stainless steel access ladder, grey tile walls, hose and gauge visible. Recovery zone.](../Image/Ellenbrook/P1071860.JPG)
 
 # Ice Bath Hits Different at $11.95/Week
 
@@ -38,8 +36,8 @@ Fly in, ice bath, fly out. FIFO-friendly freeze when you're away. Traditional sa
 #coldplunge #icebath #perthfitness #malagagym #recoverymode #fwaw
 
 ## Asset Attached
-- **Use existing asset:** `docs/Image/ice-bath-malaga-2026-06-14.jpg`
-- Location: CB247 Malaga · Shoot date: 2026-06-14
+- **Use existing asset:** `docs/Image/Ellenbrook/P1071860.JPG`
+- Location: CB247 Ellenbrook · Shoot date: 2024-05-20 (per EXIF)
 - Description: Blue cold-plunge tub with stainless steel access ladder, grey tile walls, hose + temperature gauge visible. Empty tub, no person in frame.
 - **Alt-text for accessibility:** "CB247 ice bath — blue cold plunge tub with stainless steel access ladder, grey tile walls, hose + gauge visible. Recovery zone at Malaga gym."
 
