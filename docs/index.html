@@ -20646,6 +20646,26 @@ const ASSET_LIBRARY_DATA = {
     {tool:'Canva Pro',  use:'Static posts, stories, EDM headers, in-club posters',    cost:'$15/mo'},
     {tool:'Midjourney', use:'Concept art, alternative thumbnails, cinematic stills',  cost:'$20/mo'},
   ],
+  // 14 Jun 2026 (Tia) — seed of the asset inventory. Future work (per
+  // memory/project_asset_library_extraction_pending.md) will move this
+  // into state/asset-library.json so drafter agents can query before
+  // briefing a re-shoot. For now, drafters check this hardcoded list.
+  // Schema: { slug, file_path, location, shoot_date, tags, description,
+  //           orientation, has_person, suitable_for }
+  assets: [
+    {
+      slug: 'ice-bath-malaga-2026-06-14',
+      file_path: 'Image/ice-bath-malaga-2026-06-14.jpg',
+      location: 'CB247 Malaga',
+      shoot_date: '2026-06-14',
+      tags: ['icebath', 'coldplunge', 'recovery', 'malaga'],
+      description: 'Blue cold-plunge tub with stainless steel access ladder, grey tile walls, hose + temperature gauge visible. Empty tub — no person in frame.',
+      orientation: 'landscape',
+      has_person: false,
+      suitable_for: ['instagram-feed', 'instagram-story'],   // NOT suitable for Reels/TikTok — static only
+      attached_to_actions: ['soc-act-2026w24-001'],          // Trend-ride #coldplunge
+    },
+  ],
 };
 
 function _assetDaysUntil(isoDate) {
@@ -26842,7 +26862,7 @@ window.AI_GBP_POSTS   = [];
 window.AI_TREND_RIDES = ["adapt-high-engagement-tiktok-format-43211-engagement-23900-l", "adapt-high-engagement-tiktok-format-46701-engagement-17800-l", "trend-ride-coldplunge-on-cb247-socials-10-hits-in-this-weeks"];
 // 14 Jun 2026 — slug → {day, time, platform} so the action row can
 // render a "Wed 17:30" chip without the user opening View AI Draft.
-window.AI_TREND_RIDE_META = {"adapt-high-engagement-tiktok-format-43211-engagement-23900-l": {"day": "Thursday", "time": "06:30 AWST", "platform": "Instagram Reels + TikTok"}, "adapt-high-engagement-tiktok-format-46701-engagement-17800-l": {"day": "Thursday", "time": "18:30 AWST", "platform": "TikTok primary, cross-post to Instagram Reels"}, "trend-ride-coldplunge-on-cb247-socials-10-hits-in-this-weeks": {"day": "Wednesday", "time": "17:30 AWST", "platform": "Instagram Reels + TikTok (cross-post)"}};
+window.AI_TREND_RIDE_META = {"adapt-high-engagement-tiktok-format-43211-engagement-23900-l": {"day": "Thursday", "time": "06:30 AWST", "platform": "Instagram Reels + TikTok"}, "adapt-high-engagement-tiktok-format-46701-engagement-17800-l": {"day": "Thursday", "time": "18:30 AWST", "platform": "TikTok primary, cross-post to Instagram Reels"}, "trend-ride-coldplunge-on-cb247-socials-10-hits-in-this-weeks": {"day": "Wednesday", "time": "17:30 AWST", "platform": ""}};
 </script>
 </body>
 </html>
