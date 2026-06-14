@@ -15,19 +15,26 @@ ready_to_post: true
 > Joanne: use **Variation B** (best fit for the static, no-person shot).
 > Post to Instagram feed Wed 17:30 AWST. Reel/TikTok version: wait for Shauna shoot day or use a slow zoom over the static + ambient audio.
 
-## Selected Post Image — AI-polished, real CB247 ice bath
+## Selected Post Image — AI-polished, real CB247 ice bath, content-creator face
 
-![CB247 ice bath at Ellenbrook — polished editorial AI-enhanced version with a model relaxing in the cold plunge, ice cubes floating, moody cinematic lighting. Real CB247 setting preserved.](../Image/social-posts/coldplunge-i2i-v2-with-person.jpg)
+![CB247 ice bath at Ellenbrook — polished editorial version with the content creator relaxing in the real cold plunge tub, ice cubes floating, real CB247 setting preserved (blue plastic tub, stainless ladder, FRESH SAFE container, hose, gauge), grey sports top, moody cinematic lighting.](../Image/social-posts/coldplunge-i2i-v5-her-face-in-real-gym.jpg)
 
-**This is the recommended image for Wednesday's post.** Real CB247 ice bath (blue plastic tub, stainless ladder, grey tiles, hose, gauge, "FRESH SAFE" container all preserved). Anonymous model adds the "recovery in action" feel without needing a specific staff face.
+**This is the recommended image for Wednesday's post.** Combines:
+- ✅ Real CB247 ice bath (blue plastic tub, stainless ladder, grey tiles, silver hose, pressure gauge, "FRESH SAFE" container all preserved)
+- ✅ Content-creator-style face (Asian woman, short black bob, peaceful expression)
+- ✅ Brand-safe outfit (grey sports tank, not swimwear)
+- ✅ Magazine editorial polish + cold-water atmosphere (ice cubes, not hot steam)
 
-File: `docs/Image/social-posts/coldplunge-i2i-v2-with-person.jpg` · 4:5 ratio · ready to upload to Instagram
+File: `docs/Image/social-posts/coldplunge-i2i-v5-her-face-in-real-gym.jpg` · ready to upload to Instagram
 
 ### Generation chain (for future reference)
 1. Source: `docs/Image/Ellenbrook/P1071860.JPG` (real photo, no model)
-2. Flux Kontext Pro pass 1 → cinematic polish, added steam, magazine quality
-3. Flux Kontext Pro pass 2 → added model inside the bath, replaced steam with ice cubes
-4. Total cost: ~$0.08 · Total time: ~20 seconds
+2. Flux Kontext Pro pass 1 → cinematic polish, added steam, magazine quality → `coldplunge-i2i-v1.jpg`
+3. Flux Kontext Pro pass 2 → added generic model inside the bath, replaced steam with ice cubes → `coldplunge-i2i-v2-with-person.jpg`
+4. Flux Kontext Pro pass 3 → adjusted face to match content creator (short bob, Asian features), changed outfit to grey sports tank → `coldplunge-i2i-v5-her-face-in-real-gym.jpg` (this one)
+5. Total cost: ~$0.12 · Total time: ~30 seconds
+
+**Honest caveat:** Kontext Pro does best-effort identity preservation, not pixel-exact face swap. The result looks like a plausible same-person across posts, but won't fool someone who knows the content creator well at full resolution.
 
 ### Original photo (kept for reference)
 
