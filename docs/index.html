@@ -14321,6 +14321,24 @@ function _renderActionList(actions, opts = {}) {
   };
   actions = actions.filter(a => !_isAiOwned(a));
 
+  // 13 Jun 2026 (Tia) — Promo approval gate: child actions of a promo
+  // still in "Concept" (awaiting your/Denver's approval) or "Rejected"
+  // should NOT appear in channel queues yet. Joanne shouldn't see
+  // "Schedule + post 4× reels for Kids Hub Holiday" until you've
+  // explicitly approved the promo concept on the Promo Pipeline page.
+  // Show only items whose parent is past Concept (Approved / Asset Shoot
+  // / In Progress / Scheduled / Published) — or items with no parent.
+  const _isParentApproved = (a) => {
+    if (!a || !a.parent_promo_id) return true;
+    if (typeof _promoById !== 'function') return true;
+    const parent = _promoById(a.parent_promo_id);
+    if (!parent) return true;
+    const stage = parent.stage || 'Concept';
+    return stage !== 'Concept' && stage !== 'Rejected';
+  };
+  const _hiddenByPromoGate = actions.filter(a => !_isParentApproved(a)).length;
+  actions = actions.filter(_isParentApproved);
+
   if (actions.length === 0) return '';
 
   // 12 Jun 2026 — Tia: "prioritised actions must be short by priority
@@ -19609,9 +19627,23 @@ function renderPlanner() {
   // by default — toggle window._showRejected = true to surface them.
   const _showRejected = !!window._showRejected;
   const ALL_ITEMS_RAW = _getAllWorkItems();
-  const ALL_ITEMS = _showRejected
+  // 13 Jun 2026 (Tia) — Promo approval gate (same as _renderActionList):
+  // hide child actions whose parent promo is still in "Concept" or "Rejected".
+  // Joanne shouldn't see scheduled posts for promos that haven't been
+  // approved on the Promo Pipeline page yet.
+  const _isParentApprovedForKanban = (i) => {
+    if (!i || !i.parent_promo_id) return true;
+    if (typeof _promoById !== 'function') return true;
+    const parent = _promoById(i.parent_promo_id);
+    if (!parent) return true;
+    const stage = parent.stage || 'Concept';
+    return stage !== 'Concept' && stage !== 'Rejected';
+  };
+  const _hiddenByPromoGateKanban = ALL_ITEMS_RAW.filter(i => !_isParentApprovedForKanban(i)).length;
+  const ALL_ITEMS = (_showRejected
     ? ALL_ITEMS_RAW
-    : ALL_ITEMS_RAW.filter(i => (approved[i.id] || {}).status !== 'rejected');
+    : ALL_ITEMS_RAW.filter(i => (approved[i.id] || {}).status !== 'rejected')
+  ).filter(_isParentApprovedForKanban);
   const ACTIVE_ITEMS = ALL_ITEMS.filter(i => (saved[i.id]||'Proposed') !== 'Published');
 
   // ── Status counts for KPI bar ────────────────────────────────────────────
