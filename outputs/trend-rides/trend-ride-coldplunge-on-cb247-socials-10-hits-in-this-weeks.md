@@ -15,11 +15,23 @@ ready_to_post: true
 > Joanne: use **Variation B** (best fit for the static, no-person shot).
 > Post to Instagram feed Wed 17:30 AWST. Reel/TikTok version: wait for Shauna shoot day or use a slow zoom over the static + ambient audio.
 
-## Source Photo
+## Selected Post Image — AI-polished, real CB247 ice bath
 
-![CB247 ice bath at Ellenbrook — blue cold plunge tub with stainless steel access ladder, grey tile walls, hose and gauge visible. Recovery zone.](../Image/Ellenbrook/P1071860.JPG)
+![CB247 ice bath at Ellenbrook — polished editorial AI-enhanced version with a model relaxing in the cold plunge, ice cubes floating, moody cinematic lighting. Real CB247 setting preserved.](../Image/social-posts/coldplunge-i2i-v2-with-person.jpg)
 
-File: `docs/Image/Ellenbrook/P1071860.JPG` · 6000×4000 · location: CB247 Ellenbrook
+**This is the recommended image for Wednesday's post.** Real CB247 ice bath (blue plastic tub, stainless ladder, grey tiles, hose, gauge, "FRESH SAFE" container all preserved). Anonymous model adds the "recovery in action" feel without needing a specific staff face.
+
+File: `docs/Image/social-posts/coldplunge-i2i-v2-with-person.jpg` · 4:5 ratio · ready to upload to Instagram
+
+### Generation chain (for future reference)
+1. Source: `docs/Image/Ellenbrook/P1071860.JPG` (real photo, no model)
+2. Flux Kontext Pro pass 1 → cinematic polish, added steam, magazine quality
+3. Flux Kontext Pro pass 2 → added model inside the bath, replaced steam with ice cubes
+4. Total cost: ~$0.08 · Total time: ~20 seconds
+
+### Original photo (kept for reference)
+
+![CB247 ice bath at Ellenbrook — original photo, no overlay](../Image/Ellenbrook/P1071860.JPG)
 
 ## Canva Design Brief — paste into Magic Design
 
