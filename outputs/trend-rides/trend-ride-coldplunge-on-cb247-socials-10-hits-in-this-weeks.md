@@ -15,26 +15,36 @@ ready_to_post: true
 > Joanne: use **Variation B** (best fit for the static, no-person shot).
 > Post to Instagram feed Wed 17:30 AWST. Reel/TikTok version: wait for Shauna shoot day or use a slow zoom over the static + ambient audio.
 
-## Selected Post Image — AI-polished, real CB247 ice bath, content-creator face
+## Selected Post Image — AI-polished, real CB247 ice bath, no person
 
-![CB247 ice bath at Ellenbrook — polished editorial version with the content creator relaxing in the real cold plunge tub, ice cubes floating, real CB247 setting preserved (blue plastic tub, stainless ladder, FRESH SAFE container, hose, gauge), grey sports top, moody cinematic lighting.](../Image/social-posts/coldplunge-i2i-v5-her-face-in-real-gym.jpg)
+![CB247 ice bath at Ellenbrook — polished editorial version of the real cold plunge. Solid opaque blue plastic tub, a few realistic ice chunks on the water surface, stainless steel access ladder, grey tile walls, silver hose, pressure gauge, and "FRESH SAFE" wipes container all preserved. Cinematic moody lighting.](../Image/social-posts/coldplunge-i2i-v7-real-ice-opaque-tub.jpg)
 
-**This is the recommended image for Wednesday's post.** Combines:
-- ✅ Real CB247 ice bath (blue plastic tub, stainless ladder, grey tiles, silver hose, pressure gauge, "FRESH SAFE" container all preserved)
-- ✅ Content-creator-style face (Asian woman, short black bob, peaceful expression)
-- ✅ Brand-safe outfit (grey sports tank, not swimwear)
-- ✅ Magazine editorial polish + cold-water atmosphere (ice cubes, not hot steam)
+**This is the recommended image for Wednesday's post.**
 
-File: `docs/Image/social-posts/coldplunge-i2i-v5-her-face-in-real-gym.jpg` · ready to upload to Instagram
+Why v7 over the others:
+- ✅ Real CB247 ice bath — every signature element preserved (blue plastic tub, stainless ladder, grey tiles, silver hose, pressure gauge, "FRESH SAFE" container)
+- ✅ Opaque tub (no fake see-through artistic effect like v6)
+- ✅ Only a few realistic ice chunks on the surface (not the over-dramatised cube grid from v6)
+- ✅ No person — avoids the brand-consistency risk of introducing a face that conflicts with Shauna (the established face in CB247 coldplunge content per the Feb 18 IG post)
+- ✅ Reusable — Joanne can pair this asset with multiple captions without "who's that model?" questions
 
-### Generation chain (for future reference)
-1. Source: `docs/Image/Ellenbrook/P1071860.JPG` (real photo, no model)
-2. Flux Kontext Pro pass 1 → cinematic polish, added steam, magazine quality → `coldplunge-i2i-v1.jpg`
-3. Flux Kontext Pro pass 2 → added generic model inside the bath, replaced steam with ice cubes → `coldplunge-i2i-v2-with-person.jpg`
-4. Flux Kontext Pro pass 3 → adjusted face to match content creator (short bob, Asian features), changed outfit to grey sports tank → `coldplunge-i2i-v5-her-face-in-real-gym.jpg` (this one)
-5. Total cost: ~$0.12 · Total time: ~30 seconds
+File: `docs/Image/social-posts/coldplunge-i2i-v7-real-ice-opaque-tub.jpg` · ready to upload to Instagram
 
-**Honest caveat:** Kontext Pro does best-effort identity preservation, not pixel-exact face swap. The result looks like a plausible same-person across posts, but won't fool someone who knows the content creator well at full resolution.
+### Generation chain
+1. Source: `docs/Image/Ellenbrook/P1071860.JPG` (real raw photo)
+2. Flux Kontext Pro → opaque-tub fix + a few realistic ice cubes + magazine polish → `coldplunge-i2i-v7-real-ice-opaque-tub.jpg`
+3. Single pass · $0.04 · ~14s
+
+### Follow-up — Shauna Reel for next week
+The June 18 Ellenbrook shoot day (per ASSET_LIBRARY_DATA.shoot_schedule) can capture a fresh ice-bath Reel with Shauna's actual face. Use that for a video cross-post that should outperform the Feb 18 baseline (60 likes).
+
+### Other generations (not selected — kept for reference)
+- `coldplunge-i2i-v1.jpg` — polished, no person, with steam (looked like hot water)
+- `coldplunge-i2i-v2-with-person.jpg` — generic model in the real gym
+- `coldplunge-ai-2026-06-14-v1.jpg` — pure AI gen (fake stainless tub)
+- `coldplunge-i2i-v4-her-face.jpg` — content-creator face in generic spa
+- `coldplunge-i2i-v5-her-face-in-real-gym.jpg` — content-creator face in real gym
+- `coldplunge-i2i-v6-ice-cubes-no-person.jpg` — too-fake transparent tub effect
 
 ### Original photo (kept for reference)
 
