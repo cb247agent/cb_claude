@@ -46,11 +46,41 @@ def slugs_in(directory: Path) -> list[str]:
     return sorted(p.stem for p in directory.glob("*.md") if p.is_file())
 
 
+# 14 Jun 2026 — extract "Posting Schedule" block from each trend-ride .md
+# so the action-list row can render a "Wed 17:30" chip without forcing the
+# user to click into View AI Draft. Returns slug → {day, time, platform}.
+_DAY_RE      = re.compile(r"-\s*Best\s*day:\s*([^\n]+)", re.IGNORECASE)
+_TIME_RE     = re.compile(r"-\s*Best\s*time:\s*([^\n]+)", re.IGNORECASE)
+_PLATFORM_RE = re.compile(r"-\s*Platform:\s*([^\n]+)", re.IGNORECASE)
+
+
+def trend_ride_meta(directory: Path) -> dict[str, dict]:
+    if not directory.exists():
+        return {}
+    out: dict[str, dict] = {}
+    for p in sorted(directory.glob("*.md")):
+        if not p.is_file():
+            continue
+        body = p.read_text(encoding="utf-8")
+        day_m  = _DAY_RE.search(body)
+        time_m = _TIME_RE.search(body)
+        plat_m = _PLATFORM_RE.search(body)
+        if not (day_m or time_m):
+            continue
+        out[p.stem] = {
+            "day":      (day_m.group(1).strip()  if day_m  else ""),
+            "time":     (time_m.group(1).strip() if time_m else ""),
+            "platform": (plat_m.group(1).strip() if plat_m else ""),
+        }
+    return out
+
+
 def inject() -> None:
     meta_slugs  = slugs_in(META_DIR)
     gads_slugs  = slugs_in(GADS_DIR)
     gbp_slugs   = slugs_in(GBP_DIR)
     trend_slugs = slugs_in(TREND_DIR)
+    trend_meta  = trend_ride_meta(TREND_DIR)
 
     html = INDEX_PATH.read_text(encoding="utf-8")
     new_block = (
@@ -62,6 +92,9 @@ def inject() -> None:
         f'window.AI_GOOGLE_RSAS = {json.dumps(gads_slugs)};\n'
         f'window.AI_GBP_POSTS   = {json.dumps(gbp_slugs)};\n'
         f'window.AI_TREND_RIDES = {json.dumps(trend_slugs)};\n'
+        '// 14 Jun 2026 — slug → {day, time, platform} so the action row can\n'
+        '// render a "Wed 17:30" chip without the user opening View AI Draft.\n'
+        f'window.AI_TREND_RIDE_META = {json.dumps(trend_meta)};\n'
         '</script>'
     )
 

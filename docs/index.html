@@ -14540,10 +14540,34 @@ function _renderActionList(actions, opts = {}) {
           }
         }
 
+        // ── Post-time chip (14 Jun 2026, Tia) ──
+        // For trend-ride + adapt-format actions, if the AI draft includes a
+        // Posting Schedule section we surface "Wed 17:30" as a chip on the
+        // row so Joanne can batch-schedule without opening View AI Draft.
+        // Lookup: window.AI_TREND_RIDE_META[slug] → {day, time, platform}.
+        let _timeChip = '';
+        if (a.source_page === 'organic-social' && /^(Trend-ride|Adapt\s+high-engagement)/i.test(String(a.title || ''))) {
+          const _slugTime = String(a.title || '').toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-').replace(/-+/g, '-')
+            .replace(/^-|-$/g, '').slice(0, 60).replace(/-$/, '');
+          const _meta = (window.AI_TREND_RIDE_META || {})[_slugTime];
+          if (_meta && (_meta.day || _meta.time)) {
+            // Compact day: "Wednesday" → "Wed"
+            const _dayShort = (_meta.day || '').replace(/^(\w{3}).*/, '$1');
+            const _timeStr = (_meta.time || '').replace(/\s*AWST\s*$/i, '');
+            const _label = [_dayShort, _timeStr].filter(Boolean).join(' ');
+            const _title = `Best post time per AI draft${_meta.platform ? ` · ${_meta.platform}` : ''}`;
+            // Design rule: no emojis in UI chips. Teal palette per
+            // context/design-standards.md (#3FA69A teal · gray scale only).
+            _timeChip = `<span title="${_title}" style="display:inline-block;background:#e6f4f3;color:#1f6f66;border:1px solid #b5e0d9;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px;letter-spacing:.03em;vertical-align:middle">${_label}</span>`;
+          }
+        }
+
         return `<tr>
           <td style="font-weight:700;color:var(--brand-accent-deep)">${i+1}</td>
           <td>
-            <div style="font-weight:600;font-size:12.5px;line-height:1.4">${n.title}${_stuckChip}</div>
+            <div style="font-weight:600;font-size:12.5px;line-height:1.4">${n.title}${_stuckChip}${_timeChip}</div>
             <!-- 12 Jun 2026 — Tia: descriptions removed from Prioritised
                  List rows. They were too long (Membership had a multi-step
                  execution playbook embedded). Full description lives in
@@ -26816,6 +26840,9 @@ window.AI_META_ADS    = ["meta-strategist-2026-06-12"];
 window.AI_GOOGLE_RSAS = [];
 window.AI_GBP_POSTS   = [];
 window.AI_TREND_RIDES = ["adapt-high-engagement-tiktok-format-43211-engagement-23900-l", "adapt-high-engagement-tiktok-format-46701-engagement-17800-l", "trend-ride-coldplunge-on-cb247-socials-10-hits-in-this-weeks"];
+// 14 Jun 2026 — slug → {day, time, platform} so the action row can
+// render a "Wed 17:30" chip without the user opening View AI Draft.
+window.AI_TREND_RIDE_META = {"adapt-high-engagement-tiktok-format-43211-engagement-23900-l": {"day": "Thursday", "time": "06:30 AWST", "platform": "Instagram Reels + TikTok"}, "adapt-high-engagement-tiktok-format-46701-engagement-17800-l": {"day": "Thursday", "time": "18:30 AWST", "platform": "TikTok primary, cross-post to Instagram Reels"}, "trend-ride-coldplunge-on-cb247-socials-10-hits-in-this-weeks": {"day": "Wednesday", "time": "17:30 AWST", "platform": "Instagram Reels + TikTok (cross-post)"}};
 </script>
 </body>
 </html>
