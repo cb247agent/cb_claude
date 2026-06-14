@@ -135,18 +135,27 @@ TREND CONTEXT
 {trend_ctx}
 
 CB247 BRAND FACTS (MANDATORY)
-- Price anchor: $11.95/wk, no lock-in
+- Membership: no lock-in
 - Locations: Malaga + Ellenbrook (Perth, WA)
 - Differentiators (use 1-2 per caption, never all): 24/7 access, Kids Hub,
-  Traditional Sauna + Ice Bath, FIFO-friendly membership freeze, Reformer
-  Pilates / ChasingRX / Recovery (PAID add-ons — NEVER bundle into $11.95)
+  Traditional Sauna + Ice Bath, FIFO-friendly membership freeze. Paid
+  add-ons that are NOT in the base membership: Reformer Pilates, ChasingRX,
+  Recovery (do not present these as included).
 - Tagline: AlwaysBetter
+
+PRICING RULE — ORGANIC CONTENT (14 Jun 2026)
+- DO NOT mention any price in captions. No "$11.95", no "11.95/week",
+  no dollar amounts at all. Keep posts lifestyle-led; the bio + landing
+  page do the price reveal.
+- You MAY use "no lock-in", "included in membership", "no add-on fees",
+  "no extra fee" — these speak to value without quoting a number.
 
 BANNED LANGUAGE (NEVER USE)
 - "only gym with", "best gym", "burns fat", "detox", "heals", "cures",
   "guaranteed"
 - Competitor names: Revo, Anytime, Snap, Ryderwear, Fitstop
-- Bundling Recovery/Reformer/ChasingRX into $11.95
+- Presenting Recovery/Reformer/ChasingRX as included in base membership
+- Any dollar figure or price quote (per pricing rule above)
 
 OUTPUT FORMAT
 Output a single markdown document. Use this exact structure:
@@ -190,7 +199,8 @@ format: trend-ride
 ## Compliance Check
 - [ ] No banned phrases
 - [ ] No competitor names
-- [ ] Recovery/Reformer/ChasingRX not bundled in $11.95
+- [ ] Recovery/Reformer/ChasingRX not presented as included
+- [ ] No price mentioned in captions (organic-content rule)
 - [ ] Each caption ≤220 chars
 
 BEGIN THE DRAFT NOW. Output ONLY the markdown document above — no preamble,

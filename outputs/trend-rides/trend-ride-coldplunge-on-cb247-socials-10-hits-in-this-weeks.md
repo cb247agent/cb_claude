@@ -65,10 +65,11 @@ The June 18 Ellenbrook shoot day (per ASSET_LIBRARY_DATA.shoot_schedule) can cap
 ```
 Bold, raw, authentic Instagram post for a Perth gym promoting
 ice bath recovery. Photo focal point with high-contrast headline
-overlay. Teal accent stripe with price tag. Minimal text, lots
-of breathing room. Cold, clinical, masculine but inviting.
-Style: documentary photography meets minimalist fitness brand.
-NOT polished/corporate. NOT colourful — only teal, black, white.
+overlay. Teal accent stripe with a short benefit line (NOT price).
+Minimal text, lots of breathing room. Cold, clinical, masculine
+but inviting. Style: documentary photography meets minimalist
+fitness brand. NOT polished/corporate. NOT colourful — only
+teal, black, white. Do NOT include any pricing.
 ```
 
 ### Brand Kit (set up once in Canva → Brand Hub)
@@ -88,7 +89,7 @@ NOT polished/corporate. NOT colourful — only teal, black, white.
 |---|---|
 | Main headline | `3 MIN ICE BATH` |
 | Sub-line | `> 30 min scrolling` |
-| Price tag | `$11.95/wk · no lock-in` |
+| Benefit chip | `Included · no add-on fees` |
 | Handle | `@chasingbetter247 · Malaga + Ellenbrook` |
 | Hashtag corner | `#coldplunge` |
 
@@ -111,18 +112,18 @@ high window. Slow zoom in. Shallow depth of field. Documentary
 style, raw, unpolished. No people in frame. 5 seconds. Vertical 9:16.
 ```
 
-# Ice Bath Hits Different at $11.95/Week
+# Ice Bath Hits Different
 
 ## Caption Variations
 
 ### Variation A — Recovery Flex
-Cold plunge after leg day? ✅ Ice bath included in your membership? ✅ $11.95/week, no lock-in. Recovery doesn't have to cost extra. Malaga + Ellenbrook. AlwaysBetter 🧊
+Cold plunge after leg day? ✅ Ice bath included in your membership? ✅ No add-on fees, no lock-in. Recovery shouldn't be a luxury tier. Malaga + Ellenbrook. AlwaysBetter 🧊
 
 ### Variation B — Mental Reset ⭐ RECOMMENDED FOR THIS ASSET
-3 minutes in the ice bath > 30 minutes scrolling. Traditional sauna + ice bath included. $11.95/week gets you 24/7 access to the reset your body actually needs. Malaga + Ellenbrook. AlwaysBetter
+3 minutes in the ice bath > 30 minutes scrolling. Traditional sauna + ice bath, both included. 24/7 access to the reset your body actually needs. Malaga + Ellenbrook. AlwaysBetter
 
 ### Variation C — FIFO-Friendly Recovery
-Fly in, ice bath, fly out. FIFO-friendly freeze when you're away. Traditional sauna + ice bath waiting when you're back. $11.95/week, no lock-in. Malaga + Ellenbrook. AlwaysBetter 🧊
+Fly in, ice bath, fly out. FIFO-friendly freeze when you're away. Traditional sauna + ice bath waiting when you're back. No lock-in. Malaga + Ellenbrook. AlwaysBetter 🧊
 
 ## Hashtag Stack
 #coldplunge #icebath #perthfitness #malagagym #recoverymode #fwaw
@@ -147,10 +148,11 @@ Capture ice bath from above (overhead angle) with visible steam rising. Member m
 - Platform (for THIS asset): Instagram feed + Story (static image only — not Reel/TikTok)
 
 ## Differentiator Landing
-Traditional Sauna + Ice Bath included at $11.95/week — trend-rides the #coldplunge wave while anchoring CB247's recovery facilities as a core membership benefit, not a paid add-on.
+Traditional Sauna + Ice Bath included in membership — trend-rides the #coldplunge wave while anchoring CB247's recovery facilities as a core benefit, not a paid add-on. Pricing is intentionally kept out of the caption (per organic-content rule) so the post stays lifestyle-led; the bio + landing page do the price reveal.
 
 ## Compliance Check
 - [x] No banned phrases
 - [x] No competitor names
-- [x] Recovery/Reformer/ChasingRX not bundled in $11.95
+- [x] Recovery/Reformer/ChasingRX not bundled with base membership
+- [x] **No pricing mentioned in captions** (organic-content rule, 14 Jun 2026)
 - [x] Each caption ≤220 chars
