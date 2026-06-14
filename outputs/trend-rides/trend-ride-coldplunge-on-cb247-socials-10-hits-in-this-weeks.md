@@ -15,25 +15,38 @@ ready_to_post: true
 > Joanne: use **Variation B** (best fit for the static, no-person shot).
 > Post to Instagram feed Wed 17:30 AWST. Reel/TikTok version: wait for Shauna shoot day or use a slow zoom over the static + ambient audio.
 
-## Selected Post Image — AI-polished, real CB247 ice bath, no person
+## Selected Post Image — Campaign poster, v7 background + branded overlay
 
-![CB247 ice bath at Ellenbrook — polished editorial version of the real cold plunge. Solid opaque blue plastic tub, a few realistic ice chunks on the water surface, stainless steel access ladder, grey tile walls, silver hose, pressure gauge, and "FRESH SAFE" wipes container all preserved. Cinematic moody lighting.](../Image/social-posts/coldplunge-i2i-v7-real-ice-opaque-tub.jpg)
+**Instagram Feed (1080×1350, 4:5):**
 
-**This is the recommended image for Wednesday's post.**
+![CB247 coldplunge campaign post — v7 ice bath background with CB247 sticker logo top-left, huge white "3 MIN ICE BATH" Impact headline, "> 30 min scrolling" sub-line, teal CTA bar "VISIT MALAGA + ELLENBROOK · Sauna + ice bath in your membership"](../Image/social-posts/coldplunge-campaign-v1-feed.jpg)
 
-Why v7 over the others:
-- ✅ Real CB247 ice bath — every signature element preserved (blue plastic tub, stainless ladder, grey tiles, silver hose, pressure gauge, "FRESH SAFE" container)
-- ✅ Opaque tub (no fake see-through artistic effect like v6)
-- ✅ Only a few realistic ice chunks on the surface (not the over-dramatised cube grid from v6)
-- ✅ No person — avoids the brand-consistency risk of introducing a face that conflicts with Shauna (the established face in CB247 coldplunge content per the Feb 18 IG post)
-- ✅ Reusable — Joanne can pair this asset with multiple captions without "who's that model?" questions
+**Instagram Story (1080×1920, 9:16):**
 
-File: `docs/Image/social-posts/coldplunge-i2i-v7-real-ice-opaque-tub.jpg` · ready to upload to Instagram
+![CB247 coldplunge campaign story — v7 ice bath background with CB247 sticker logo top-left, huge white "3 MIN ICE BATH" Impact headline, "> 30 min scrolling" sub-line, teal CTA bar at bottom](../Image/social-posts/coldplunge-campaign-v1-story.jpg)
+
+**This is the recommended pair for Wednesday's post.**
+
+Why this version:
+- ✅ Matches the proven CB247 campaign-poster layout (same style as the Feb 18 "Your 7-Day Upgrade Is Still Waiting" post)
+- ✅ v7 ice bath background — real CB247 setting (blue plastic tub, stainless ladder, grey tiles, silver hose, pressure gauge, "FRESH SAFE" container preserved)
+- ✅ CB247 sticker-style logo top-left
+- ✅ Massive white Impact headline with drop shadow — scroll-stopper
+- ✅ Teal CTA bar per brand palette (no pink — design standards rule)
+- ✅ No price mentioned (organic-content rule)
+- ✅ Sauna + ice bath only positioned as included — Recovery NOT mentioned (paid add-on protected)
+
+Files: `docs/Image/social-posts/coldplunge-campaign-v1-feed.jpg` + `coldplunge-campaign-v1-story.jpg`
 
 ### Generation chain
-1. Source: `docs/Image/Ellenbrook/P1071860.JPG` (real raw photo)
-2. Flux Kontext Pro → opaque-tub fix + a few realistic ice cubes + magazine polish → `coldplunge-i2i-v7-real-ice-opaque-tub.jpg`
-3. Single pass · $0.04 · ~14s
+1. Source background: `docs/Image/social-posts/coldplunge-i2i-v7-real-ice-opaque-tub.jpg`
+2. Pillow overlay via `scripts/_design_coldplunge_campaign.py` — logo + headline + sub-line + teal CTA bar
+3. Free (no API cost) · seconds to render
+4. Underlying v7 generation: ~$0.04 (Flux Kontext Pro img2img on raw photo)
+
+### v7 background (kept for reference / future re-skins)
+
+![CB247 ice bath at Ellenbrook v7 — polished, opaque tub, no person, a few ice chunks on surface](../Image/social-posts/coldplunge-i2i-v7-real-ice-opaque-tub.jpg)
 
 ### Follow-up — Shauna Reel for next week
 The June 18 Ellenbrook shoot day (per ASSET_LIBRARY_DATA.shoot_schedule) can capture a fresh ice-bath Reel with Shauna's actual face. Use that for a video cross-post that should outperform the Feb 18 baseline (60 likes).
