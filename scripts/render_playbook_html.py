@@ -179,7 +179,7 @@ def _render_md(md: str) -> str:
 
 
 def _inline(s: str) -> str:
-    """Inline markdown: bold, italic, code, links. Order matters."""
+    """Inline markdown: bold, italic, code, images, links. Order matters."""
     # Escape HTML first
     s = html.escape(s, quote=False)
     # Inline code (must come before bold/italic to protect backtick content)
@@ -188,6 +188,14 @@ def _inline(s: str) -> str:
     s = re.sub(r"\*\*([^\*]+)\*\*", r"<strong>\1</strong>", s)
     s = re.sub(r"(?<!\w)\*([^\*]+)\*(?!\w)", r"<em>\1</em>", s)
     s = re.sub(r"(?<!\w)_([^_]+)_(?!\w)", r"<em>\1</em>", s)
+    # Images — MUST come before links (links would match the [alt](src) part
+    # and leave a stray "!" otherwise). 14 Jun 2026 — added to support
+    # asset previews in trend-ride + content drafts.
+    s = re.sub(
+        r"!\[([^\]]*)\]\(([^)]+)\)",
+        r'<img src="\2" alt="\1" style="max-width:520px;width:100%;height:auto;border-radius:8px;border:1px solid #e5e7eb;display:block;margin:14px 0">',
+        s,
+    )
     # Links
     s = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2" target="_blank">\1</a>', s)
     return s
