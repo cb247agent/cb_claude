@@ -18857,6 +18857,31 @@ function _renderProposedActionBriefHTML(row) {
     }
   }
 
+  // 13 Jun 2026 — Path F · Trend-Ride Drafter: surface AI-drafted trend-ride
+  // (3 caption variations + hashtag stack + Shauna shot brief) for trend-ride
+  // and adapt-format actions. Detection: source_page == 'organic-social' AND
+  // title starts with "Trend-ride" or "Adapt high-engagement". Hidden unless
+  // slug is in window.AI_TREND_RIDES.
+  let attachedTrendRideHTML = '';
+  if (row.source_page === 'organic-social' && /^(Trend-ride|Adapt\s+high-engagement)/i.test(String(row.title || ''))) {
+    const _slugify = (t) => String(t || '').toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 60)
+      .replace(/-$/, '');
+    const _trendSlug = _slugify(row.title);
+    const _availableTrends = (window.AI_TREND_RIDES || []);
+    if (_trendSlug && _availableTrends.includes(_trendSlug)) {
+      const _trendUrl = baseHref + `trend-rides/${_trendSlug}.html`;
+      attachedTrendRideHTML =
+        `<div class="section" style="background:${CB247_TEAL_MIST}"><div class="label" style="color:${CB247_TEAL_DEEP}">AI-drafted trend-ride · ready post + shot brief for Shauna</div>` +
+        `<a href="${esc(_trendUrl)}" target="_blank" style="display:inline-block;background:${CB247_TEAL_DEEP};color:#fff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:13px;font-weight:700;font-family:inherit">View Trend-Ride Draft →</a>` +
+        `<div style="font-size:11px;color:#6b7280;margin-top:8px">3 caption variations · 6-tag hashtag stack · shot brief for Shauna (2 directions) · posting time recommendation. Joanne briefs Shauna, picks winning caption, schedules.</div></div>`;
+    }
+  }
+
   // 13 Jun 2026 — Path E · GBP Post Drafter: surface AI-drafted GBP post copy
   // (2 body variations, CTA, image brief, per-location guidance) for action-
   // level GBP post tasks. Detection: source_page == 'gbp' AND title verb
@@ -19170,6 +19195,7 @@ ${attachedSeoRefreshHTML}
 ${attachedMetaAdHTML}
 ${attachedGoogleRsaHTML}
 ${attachedGbpPostHTML}
+${attachedTrendRideHTML}
 ${attachedDraftHTML}
 ${attachedMediaPlanHTML}
 ${attachedContentHTML}
@@ -26789,6 +26815,7 @@ window.AI_SEO_REFRESHES = ["improve-organic-content-for-gym-ellenbrook-perth-out
 window.AI_META_ADS    = ["meta-strategist-2026-06-12"];
 window.AI_GOOGLE_RSAS = [];
 window.AI_GBP_POSTS   = [];
+window.AI_TREND_RIDES = [];
 </script>
 </body>
 </html>

@@ -36,6 +36,7 @@ BASE_DIR    = Path(__file__).resolve().parent.parent
 META_DIR    = BASE_DIR / "outputs" / "meta-ads"
 GADS_DIR    = BASE_DIR / "outputs" / "google-ads-rsa"
 GBP_DIR     = BASE_DIR / "outputs" / "gbp-posts"
+TREND_DIR   = BASE_DIR / "outputs" / "trend-rides"
 INDEX_PATH  = BASE_DIR / "docs" / "index.html"
 
 
@@ -46,9 +47,10 @@ def slugs_in(directory: Path) -> list[str]:
 
 
 def inject() -> None:
-    meta_slugs = slugs_in(META_DIR)
-    gads_slugs = slugs_in(GADS_DIR)
-    gbp_slugs  = slugs_in(GBP_DIR)
+    meta_slugs  = slugs_in(META_DIR)
+    gads_slugs  = slugs_in(GADS_DIR)
+    gbp_slugs   = slugs_in(GBP_DIR)
+    trend_slugs = slugs_in(TREND_DIR)
 
     html = INDEX_PATH.read_text(encoding="utf-8")
     new_block = (
@@ -59,6 +61,7 @@ def inject() -> None:
         f'window.AI_META_ADS    = {json.dumps(meta_slugs)};\n'
         f'window.AI_GOOGLE_RSAS = {json.dumps(gads_slugs)};\n'
         f'window.AI_GBP_POSTS   = {json.dumps(gbp_slugs)};\n'
+        f'window.AI_TREND_RIDES = {json.dumps(trend_slugs)};\n'
         '</script>'
     )
 
@@ -87,7 +90,7 @@ def inject() -> None:
         return
 
     INDEX_PATH.write_text(updated, encoding="utf-8")
-    print(f"[paid-ad-list] OK — {action} · meta={len(meta_slugs)} · gads={len(gads_slugs)} · gbp={len(gbp_slugs)}")
+    print(f"[paid-ad-list] OK — {action} · meta={len(meta_slugs)} · gads={len(gads_slugs)} · gbp={len(gbp_slugs)} · trends={len(trend_slugs)}")
 
 
 if __name__ == "__main__":

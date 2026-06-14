@@ -46,6 +46,7 @@ CONTENT_DIRS = [
     ("meta-ads",       "meta_ad"),        # 13 Jun 2026 — Path E: AI-drafted Meta ad copy (primary text, headlines, descriptions, CTA, audience)
     ("google-ads-rsa", "google_rsa"),     # 13 Jun 2026 — Path E: AI-drafted Google RSA copy (15 headlines, 4 descs, sitelinks, callouts)
     ("gbp-posts",      "gbp_post"),       # 13 Jun 2026 — Path E: AI-drafted GBP post copy (body × 2, CTA, image brief, per-location)
+    ("trend-rides",    "trend_ride"),     # 13 Jun 2026 — Path F: AI-drafted trend-ride/adapt-format (3 captions + hashtag stack + Shauna shot brief)
 ]
 
 TAG_LABEL = {
@@ -56,6 +57,7 @@ TAG_LABEL = {
     "meta_ad":      "Meta Ad Draft",
     "google_rsa":   "Google RSA Draft",
     "gbp_post":     "GBP Post Draft",
+    "trend_ride":   "Trend-Ride Draft",
 }
 
 # Re-use the playbook renderer's markdown engine

@@ -304,6 +304,52 @@ Then output a SHORT stdout summary." \
     log "  Processed $gbp_count GBP post action(s)."
 fi
 
+# ── Step 2e — Path F · Trend-Ride Drafter (13 Jun 2026) ──────────────
+mkdir -p "$OUTPUTS/trend-rides" "$BASE_DIR/docs/trend-rides"
+log "Step 2e — Path F · Trend-Ride Drafter..."
+
+TREND_TARGETS=$("$PYTHON" "$BASE_DIR/scripts/work_queue/find_pending_trend_rides.py" 2>>"$LOG" || true)
+
+if [[ -z "$TREND_TARGETS" ]]; then
+    log "  No trend-ride actions pending a draft. Skipping."
+else
+    trend_count=0
+    while IFS='|' read -r ACTION_ID SLUG; do
+        [[ -z "$ACTION_ID" ]] && continue
+        trend_count=$((trend_count + 1))
+        log "  → ${ACTION_ID} (trend, slug=${SLUG}) — firing trend-ride-drafter..."
+
+        OUT_PATH="$OUTPUTS/trend-rides/trend-ride-drafter-${ACTION_ID}-${DATE}.md"
+
+        run_agent "trend-ride-drafter" \
+"You are the CB247 Trend-Ride Drafter. Today is $DATE.
+
+Your job: draft the FULL trend-ride (3 caption variations + 6-tag hashtag
+stack + Shauna shot brief + posting time) for action '$ACTION_ID' so Joanne
+can brief Shauna, pick the winning caption, and schedule — NO writing.
+
+The action is in state/work-queue.json. Inputs.target_action_id is
+'$ACTION_ID'. Follow agents/trend-ride-drafter.yml's Workflow exactly.
+
+Output file: outputs/trend-rides/${SLUG}.md
+
+Brand compliance is MANDATORY:
+- \$11.95/wk anchor, no lock-in
+- NEVER name Revo / Anytime / Snap / Ryderwear / Fitstop
+- NEVER use 'only gym with', 'best gym', 'burns fat', 'heals', 'cures',
+  'detox', 'guaranteed'
+- Recovery / Reformer / ChasingRX are PAID add-ons, NEVER bundled in \$11.95
+- Include 1 local tag (#malagagym / #ellenbrookgym / #perthgym) + brand tag
+
+CRITICAL: Do NOT emit a proposed_actions JSON block." \
+            "$OUT_PATH" \
+            "Read(state/work-queue.json),Read(state/apify-data.json),Read(state/social-trends.json),Read(state/metricool-data.json),Read(context/brand-voice.md),Read(context/icp-profiles.md),Read(context/psychology-triggers.md),Read(context/team-workflow-mapping.md),Read(/Users/tiachasingbetter/Documents/ChasingBetter/CB_Brain/wiki/CB247-Knowledge-Base.md),Write(outputs/trend-rides/**)" \
+            "$MODEL_SONNET"
+
+    done <<< "$TREND_TARGETS"
+    log "  Processed $trend_count trend-ride action(s)."
+fi
+
 # ── Render markdown → HTML so team can preview ──
 log "Step 3 — Render content .md → docs/{blogs,landing-pages,service-pages,seo-refreshes,meta-ads,google-ads-rsa}/*.html..."
 "$PYTHON" "$BASE_DIR/scripts/render_content_html.py" >> "$LOG" 2>&1 \
